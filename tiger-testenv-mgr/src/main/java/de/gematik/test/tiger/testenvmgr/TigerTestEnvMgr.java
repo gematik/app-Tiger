@@ -757,6 +757,6 @@ public class TigerTestEnvMgr
   }
 
   public void initializeLocalProxyCallbacks() {
-    getLocalTigerProxyOrFail().setRemovedMessageUuidsHandler(this::handleRemovedMessageUuids);
+    getLocalTigerProxyOrFail().addRemovedMessageUuidsHandler(this::handleRemovedMessageUuids);
   }
 }

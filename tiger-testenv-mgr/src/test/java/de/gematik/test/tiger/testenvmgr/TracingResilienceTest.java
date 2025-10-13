@@ -75,12 +75,12 @@ class TracingResilienceTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          adminPort: ${free.port.12}
-          proxyPort: ${free.port.22}
-          rbelBufferSizeInMb: 50
-          name: Sending proxy
-        """,
+          tigerProxy:
+            adminPort: ${free.port.12}
+            proxyPort: ${free.port.22}
+            rbelBufferSizeInMb: 50
+            name: Sending proxy
+          """,
       skipEnvironmentSetup = true)
   void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
     try (ServerSocket socket = new ServerSocket(0)) {

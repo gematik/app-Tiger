@@ -25,8 +25,8 @@ import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandle
 import static de.gematik.test.tiger.mockserver.model.BinaryMessage.bytes;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageKind;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
@@ -93,8 +93,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
             throwable -> {
               binaryExchangeCallback.propagateExceptionMessageSafe(
                   throwable,
-                  RbelHostname.create(binaryRequestInfo.getRemoteServerAddress()),
-                  RbelHostname.create(binaryRequestInfo.getIncomingChannel().remoteAddress()));
+                  RbelSocketAddress.create(binaryRequestInfo.getRemoteServerAddress()),
+                  RbelSocketAddress.create(binaryRequestInfo.getIncomingChannel().remoteAddress()));
               return null;
             });
 
@@ -119,7 +119,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     binaryExchangeCallback.propagateExceptionMessageSafe(
-        cause, RbelHostname.create(ctx.channel().remoteAddress()), null);
+        cause, RbelSocketAddress.create(ctx.channel().remoteAddress()), null);
     closeOnFlush(ctx.channel());
   }
 }

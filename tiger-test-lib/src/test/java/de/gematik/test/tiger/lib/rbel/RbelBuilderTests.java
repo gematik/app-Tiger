@@ -48,81 +48,82 @@ class RbelBuilderTests {
 
   String jsonTest =
       """
-        {
-            "blub": {
-                "foo":"bar"
-            }
-        }
-        """;
+      {
+          "blub": {
+              "foo":"bar"
+          }
+      }
+      """;
 
   String jsonTestModified =
       """
-        {
-            "blub": {
-                "foo": {
-                    "some": "object"
-                }
-            }
-        }
-        """;
+      {
+          "blub": {
+              "foo": {
+                  "some": "object"
+              }
+          }
+      }
+      """;
 
-  String xmlTest = """
-            <blub>
-                foo
-            </blub>
-            """;
+  String xmlTest =
+      """
+      <blub>
+          foo
+      </blub>
+      """;
 
   static String complexJsonObject =
       """
-        {
-            "entry1": {
-                "entry1a": {
-                    "entry1aI": "stringValue1"
-                }
-            },
-            "entry2": [
-                {
-                    "entry2a": {
-                        "entry2aI": 0,
-                        "entry2aII": {
-                            "entry2aIIx": "stringValue2",
-                            "entry2aIIy": "stringValue3"
-                        },
-                        "entry2aIII": [
-                            "some",
-                            "more",
-                            "values",
-                            "and",
-                            "a",
-                            "number",
-                            5,
-                            "and",
-                            "an",
-                            {
-                                "object": {
-                                    "key": "stringValue4"
-                                }
-                            }
-                        ],
-                        "entry2aIV": "stringValue5"
-                    }
-                },
-                "stringValue6",
-                "stringValue7"
-            ],
-            "entry3": {
-                "entry3a": {
-                    "entry3aI": "stringValue8"
-                },
-                "entry3b": {
-                    "entry3bI": "=$/=)$§)(=)$/$=§",
-                    "entry3bII": ":;DFNÖWRGÄ FERJÖÄRHG",
-                    "(/)§=$§)=)§": 3
-                },
-                "entry3c": []
-            }
-        }
-    """;
+          {
+              "entry1": {
+                  "entry1a": {
+                      "entry1aI": "stringValue1"
+                  }
+              },
+              "entry2": [
+                  {
+                      "entry2a": {
+                          "entry2aI": 0,
+                          "entry2aII": {
+                              "entry2aIIx": "stringValue2",
+                              "entry2aIIy": "stringValue3"
+                          },
+                          "entry2aIII": [
+                              "some",
+                              "more",
+                              "values",
+                              "and",
+                              "a",
+                              "number",
+                              5,
+                              "and",
+                              "an",
+                              {
+                                  "object": {
+                                      "key": "stringValue4"
+                                  }
+                              }
+                          ],
+                          "entry2aIV": "stringValue5"
+                      }
+                  },
+                  "stringValue6",
+                  "stringValue7"
+              ],
+              "entry3": {
+                  "entry3a": {
+                      "entry3aI": "stringValue8"
+                  },
+                  "entry3b": {
+                      "entry3bI": "=$/=)$§)(=)$/$=§",
+                      "entry3bII": ":;DFNÖWRGÄ FERJÖÄRHG",
+                      "(/)§=$§)=)§": 3
+                  },
+                  "entry3c": []
+              }
+          }
+      """;
 
   static String insertIntoComplexStringAtPathentry1aI(Object newValue) {
     JSONObject modifiedComplexJsonObject = new JSONObject(complexJsonObject);
@@ -261,14 +262,14 @@ class RbelBuilderTests {
     RbelBuilder builder = RbelBuilder.fromString(jsonTest);
     String newArray =
         """
-                        {
-                            "new_array": [
-                              "with",
-                              "some",
-                              "entries"
-                            ]
-                        }
-                """;
+                {
+                    "new_array": [
+                      "with",
+                      "some",
+                      "entries"
+                    ]
+                }
+        """;
     String expectedAfterAdding =
         """
                                 {
@@ -337,15 +338,19 @@ class RbelBuilderTests {
       for (Object successNewValue : successNewValueParameters) {
         String expectedValue =
             switch (successPath) {
-              case "$.entry1.entry1a.entry1aI" -> insertIntoComplexStringAtPathentry1aI(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry2.0.entry2a.entry2aIII.5" -> insertIntoComplexStringAtPathentry2aIII5(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry3.entry3b.(/)§=$§)=)§" -> insertIntoComplexStringAtPathentry3bSpecialChars(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              default -> throw new NotImplementedException(
-                  "SuccessPath %s is not yet implemented for Parameterized tests."
-                      .formatted(successPath));
+              case "$.entry1.entry1a.entry1aI" ->
+                  insertIntoComplexStringAtPathentry1aI(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry2.0.entry2a.entry2aIII.5" ->
+                  insertIntoComplexStringAtPathentry2aIII5(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry3.entry3b.(/)§=$§)=)§" ->
+                  insertIntoComplexStringAtPathentry3bSpecialChars(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              default ->
+                  throw new NotImplementedException(
+                      "SuccessPath %s is not yet implemented for Parameterized tests."
+                          .formatted(successPath));
             };
         successParameters.add(Arguments.of(successPath, successNewValue, true, expectedValue));
       }

@@ -27,6 +27,7 @@ Keep in mind that placeholders can be used in the filename!
 In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
 To configure your test environment you can compose the `tiger.yaml` file manually.
+There is a JSON schema that can be included in your IDE for editing the tiger.yaml: https://json.schemastore.org/gematik-tiger.json.
 
 The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.
 
@@ -50,6 +51,8 @@ It starts a https://github.com/gaul/java-httpbin[httpbin] server which provides 
 ==== YAML configuration files in a nutshell
 
 Before you start writing your own `tiger.yaml` configuration files, make sure you have worked with yaml files before and know its syntax and structure.
+There is a JSON schema that can be included in your IDE for editing the tiger.yaml: https://json.schemastore.org/gematik-tiger.json.
+
 If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
 
 ==== General properties
@@ -82,6 +85,7 @@ servers:
     startupPollIntervalMs: int
     # MANDATORY type specific property in that for some types it's a list,
     # for some others it's a single URL
+    # important: the source entry must not contain any spaces.
     source:
       - source entry 1
       - source entry 2
@@ -126,6 +130,7 @@ servers:
 # the server is reachable under "identityServer" via the Tiger Proxy
   identityServer:
     type: externalJar
+    # important: the source entry must not contain any spaces.
     source:
       - local:../octopus-identity-service/target/octopus-identity-service-1.0-SNAPSHOT.jar
     healthcheckUrl: http://localhost:${tiger.ports.identity}/status

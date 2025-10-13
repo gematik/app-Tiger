@@ -215,11 +215,12 @@ public class TigerConfigurationTest { // NOSONAR
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
                   """
-                              string: yamlOuterFoo
-                              inner:
-                                foo: yamlMediumFoo
-                                inner:
-                                  foo: yamlInnerFoo""",
+                  string: yamlOuterFoo
+                  inner:
+                    foo: yamlMediumFoo
+                    inner:
+                      foo: yamlInnerFoo\
+                  """,
                   "nestedBean");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
@@ -249,11 +250,12 @@ public class TigerConfigurationTest { // NOSONAR
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
                   """
-                              string: yamlOuterFoo
-                              inner:
-                                foo: yamlMediumFoo
-                                inner:
-                                  foo: yamlInnerFoo""",
+                  string: yamlOuterFoo
+                  inner:
+                    foo: yamlMediumFoo
+                    inner:
+                      foo: yamlInnerFoo\
+                  """,
                   "nestedBean");
               assertThat(TigerGlobalConfiguration.readString("nestedBean.Inner.foo"))
                   .isEqualTo("medium");
@@ -285,10 +287,11 @@ public class TigerConfigurationTest { // NOSONAR
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
                   """
-                              list:
-                                - foo: nonFoo0
-                                - foo: nonFoo1
-                                - foo: nonFoo2""",
+                  list:
+                    - foo: nonFoo0
+                    - foo: nonFoo1
+                    - foo: nonFoo2\
+                  """,
                   "nestedBean");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
@@ -307,10 +310,11 @@ public class TigerConfigurationTest { // NOSONAR
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
                   """
-                              map:
-                                camelCase1: fooBar1
-                                camelCase2: fooBar2
-                                camelCase3: fooBar3""");
+                  map:
+                    camelCase1: fooBar1
+                    camelCase2: fooBar2
+                    camelCase3: fooBar3\
+                  """);
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(Map.class, "map").get();
               assertThat(dummyBean)
@@ -323,13 +327,13 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
         """
-      some.key:
-        and.then:
-          some:
-            - fooBar1
-            - fooBar2
-            - fooBar3
-      """);
+        some.key:
+          and.then:
+            some:
+              - fooBar1
+              - fooBar2
+              - fooBar3
+        """);
     assertThat(TigerGlobalConfiguration.readList("some.key.and", "then", "some"))
         .containsExactly("fooBar1", "fooBar2", "fooBar3");
   }
@@ -352,21 +356,21 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
         """
-                    users:
-                      -
-                         username: admin
-                         password: admin1234
-                         roles:
-                               - READ
-                               - WRITE
-                               - VIEW
-                               - DELETE
-                      -
-                         username: guest
-                         password: guest1234
-                         roles:
-                            - VIEW
-                    """);
+        users:
+          -
+             username: admin
+             password: admin1234
+             roles:
+                   - READ
+                   - WRITE
+                   - VIEW
+                   - DELETE
+          -
+             username: guest
+             password: guest1234
+             roles:
+                - VIEW
+        """);
     final List<Users> usersList =
         TigerGlobalConfiguration.instantiateConfigurationBean(new TypeReference<>() {}, "users");
     assertThat(usersList)
@@ -648,16 +652,17 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
         """
-                    integer: '123${this.value.does.not.exist}'
-                    b: ${this.value.does.not.exist}
-                    c: ${this.value.does.not.exist}
-                    d: ${this.value.does.not.exist}
-                    l: ${this.value.does.not.exist}
-                    s: ${this.value.does.not.exist}
-                    by: ${this.value.does.not.exist}
-                    f: ${this.value.does.not.exist}
-                    objectInt: ${this.value.does.not.exist}
-                    nestedBean.bar: ${this.value.does.not.exist}""");
+        integer: '123${this.value.does.not.exist}'
+        b: ${this.value.does.not.exist}
+        c: ${this.value.does.not.exist}
+        d: ${this.value.does.not.exist}
+        l: ${this.value.does.not.exist}
+        s: ${this.value.does.not.exist}
+        by: ${this.value.does.not.exist}
+        f: ${this.value.does.not.exist}
+        objectInt: ${this.value.does.not.exist}
+        nestedBean.bar: ${this.value.does.not.exist}\
+        """);
     var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
     assertThat(dummyBean.getInteger()).isEqualTo(-1);
     assertThat(dummyBean.isB()).isFalse();
@@ -677,10 +682,11 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
         """
-                    key:
-                      select:
-                        aKey: aValue
-                        bKey: bValue""");
+        key:
+          select:
+            aKey: aValue
+            bKey: bValue\
+        """);
     var map = TigerGlobalConfiguration.readMap("key.select");
     assertThat(map)
         .containsAllEntriesOf(
@@ -706,10 +712,11 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
         """
-                    key:
-                      select:
-                        aKey: aValue
-                        bKey: bValue""");
+        key:
+          select:
+            aKey: aValue
+            bKey: bValue\
+        """);
     var map = TigerGlobalConfiguration.readMap();
     assertThat(map)
         .containsAllEntriesOf(

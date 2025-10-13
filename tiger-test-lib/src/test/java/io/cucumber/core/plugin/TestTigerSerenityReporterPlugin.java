@@ -20,20 +20,14 @@
  */
 package io.cucumber.core.plugin;
 
+// add required static imports
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
-import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
-import static org.mockito.Mockito.mock;
 
 import com.jayway.jsonpath.JsonPath;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.report.ReportDataKeys;
-import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.server.TigerBuildPropertiesService;
-import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
-import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TestResult;
@@ -43,16 +37,10 @@ import io.cucumber.core.gherkin.DocStringArgument;
 import io.cucumber.core.internal.com.fasterxml.jackson.core.TreeNode;
 import io.cucumber.core.internal.com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.core.internal.com.fasterxml.jackson.databind.node.ArrayNode;
-import io.cucumber.core.plugin.report.LocationConverter;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
-import io.cucumber.plugin.event.Argument;
-import io.cucumber.plugin.event.Group;
 import io.cucumber.plugin.event.Location;
-import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Result;
 import io.cucumber.plugin.event.Status;
-import io.cucumber.plugin.event.Step;
-import io.cucumber.plugin.event.StepArgument;
 import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
@@ -63,7 +51,6 @@ import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -71,25 +58,18 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import junit.framework.AssertionFailedError;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
 import net.minidev.json.JSONArray;
 import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.launcher.Launcher;
-import org.junit.platform.launcher.TestPlan;
-import org.junit.platform.launcher.core.LauncherFactory;
 
-public class TestTigerSerenityReporterPlugin {
+public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvStatusTest {
 
   public static final String GENERATED_JSON_REPORT =
       "target/site/serenity/d11408aff740706845d0a023dbe62d62f228d65c01a235474885c0879ce920e1.json";
@@ -142,47 +122,12 @@ public class TestTigerSerenityReporterPlugin {
         }
       };
 
-  private TigerSerenityReporterPlugin listener;
-
-  private static EnvStatusController envStatusController;
-
-  private final String featureName = "Authentifiziere Anwendung am IDP Server";
-  private final UUID scenarioId = UUID.randomUUID();
-
-  private final String scenarioName = "Auth - Gutfall - Validiere Claims";
   private final String scenarioOutlineId = "6223db6e-708e-4c3f-ab11-1373b7e94ad7";
   private final String scenarioOutlineName = "Auth - Fehlende Parameter alle anderen";
-  private final String featureFilePath =
-      "src/test/resources/testdata/parser/bdd/features/authentication.feature";
-  private final URI featureUri = new File(featureFilePath).toURI();
-
-  @BeforeAll
-  public static void startTiger() {
-    TigerDirector.start();
-    envStatusController =
-        new EnvStatusController(
-            TigerDirector.getTigerTestEnvMgr(), mock(TigerBuildPropertiesService.class));
-  }
 
   @BeforeEach
-  public void setUp() {
-    Launcher launcher = LauncherFactory.create();
-    TestPlan testPlan =
-        launcher.discover(
-            request().configurationParameter(FEATURES_PROPERTY_NAME, featureFilePath).build());
-    new TigerExecutionListener().testPlanExecutionStarted(testPlan);
-  }
-
-  @AfterEach
-  public void tearDown() {
-    ScenarioRunner.clearScenarios();
-  }
-
-  @BeforeEach
-  public void initListener() {
-    listener = new TigerSerenityReporterPlugin();
+  public void configurePort() {
     LOCAL_PROXY_ADMIN_PORT.putValue(9999);
-    envStatusController.getStatus().getFeatureMap().clear();
   }
 
   @Test
@@ -193,7 +138,7 @@ public class TestTigerSerenityReporterPlugin {
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
 
-    TestcaseAdapter testCase = new TestcaseAdapter();
+    var testCase = new BasicTestCase(List.of(TestStepAdapter.builder().line(71).column(5).build()));
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
 
     listener.handleTestCaseStarted(startedEvent);
@@ -222,8 +167,8 @@ public class TestTigerSerenityReporterPlugin {
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
 
-    TestCaseStarted startedEvent =
-        new TestCaseStarted(Instant.now(), new ScenarioOutlineTestCaseAdapter());
+    ScenarioOutlineTestCase testCase = new ScenarioOutlineTestCase();
+    TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
     String scenarioId = listener.getReporterCallbacks().scenarioIdFrom(startedEvent.getTestCase());
@@ -249,19 +194,20 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
 
-    ScenarioOutlineTestCaseAdapter testCase =
-        (ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase();
+    ScenarioOutlineTestCase outlineTestCase = (ScenarioOutlineTestCase) startedEvent.getTestCase();
 
     IScenarioContext context = listener.getContext(featureUri);
     SerenityReporterCallbacks reporterCallbacks = listener.getReporterCallbacks();
 
-    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isZero();
+    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, outlineTestCase))
+        .isZero();
 
     // moving to next variant
-    testCase.incrementLocationLine();
+    outlineTestCase.incrementLocationLine();
     listener.handleTestCaseStarted(startedEvent);
 
-    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isEqualTo(1);
+    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, outlineTestCase))
+        .isEqualTo(1);
 
     status = envStatusController.getStatus();
     scenarios = status.getFeatureMap().get(featureName).getScenarios();
@@ -283,13 +229,7 @@ public class TestTigerSerenityReporterPlugin {
     listener.handleTestSourceRead(event);
     TestStep testStep1 = TestStepAdapter.builder().line(71).column(5).build();
     TestStep testStep2 = TestStepAdapter.builder().line(73).column(5).build();
-    TestCase testCase =
-        new TestcaseAdapter() {
-          @Override
-          public List<TestStep> getTestSteps() {
-            return List.of(testStep1, testStep2);
-          }
-        };
+    TestCase testCase = new BasicTestCase(List.of(testStep1, testStep2));
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
@@ -431,13 +371,7 @@ public class TestTigerSerenityReporterPlugin {
     allSteps.add(testStepFail);
     allSteps.addAll(steps);
 
-    TestCase testCase =
-        new TestcaseAdapter() {
-          @Override
-          public List<TestStep> getTestSteps() {
-            return allSteps;
-          }
-        };
+    TestCase testCase = new BasicTestCase(allSteps);
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
@@ -569,13 +503,7 @@ public class TestTigerSerenityReporterPlugin {
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
     TestStep testStep = TestStepAdapter.builder().line(71).column(5).build();
-    TestCase testCase =
-        new TestcaseAdapter() {
-          @Override
-          public List<TestStep> getTestSteps() {
-            return List.of(testStep);
-          }
-        };
+    TestCase testCase = new BasicTestCase(List.of(testStep));
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
@@ -600,10 +528,10 @@ public class TestTigerSerenityReporterPlugin {
 
     File logFileFolder = new File("target/rbellogs/");
     File logFile =
-        Arrays.stream(logFileFolder.listFiles())
+        Arrays.stream(Optional.ofNullable(logFileFolder.listFiles()).orElse(new File[0]))
             .filter(file -> file.lastModified() > startms)
             .findFirst()
-            .get();
+            .orElseThrow();
     assertThat(logFile.getName())
         .startsWith(
             "rbel_"
@@ -632,162 +560,21 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
   }
 
-  private String findScenarioUniqueId(TestCase testCase) {
-    return ScenarioRunner.findScenarioUniqueId(
-            featureUri, new LocationConverter().convertLocation(testCase.getLocation()))
-        .toString();
-  }
+  private class ScenarioOutlineTestCase extends BasicTestCase {
+    private int outlineLine = 181; // first example line in feature
 
-  @Getter
-  @AllArgsConstructor
-  private static class ArgumentAdapter implements Argument {
-    private final String parameterTypeName;
-    private final String value;
-
-    @Override
-    public int getStart() {
-      return 0;
+    ScenarioOutlineTestCase() {
+      super(List.of(TestStepAdapter.builder().line(71).column(5).build()));
     }
-
-    @Override
-    public int getEnd() {
-      return 0;
-    }
-
-    @Override
-    public Group getGroup() {
-      return null;
-    }
-  }
-
-  @Data
-  @Builder
-  private static class TestStepAdapter implements PickleStepTestStep {
-    private int line;
-    private int column;
-    private StepArgument stepArgument;
-    private @Builder.Default String codeLocation = TEST_GLUE_STEP_LOCATION;
-    private @Builder.Default String pattern =
-        "test step resolves {tigerResolvedString} and does not resolve {string}";
-    private @Builder.Default String stepText =
-        "test step resolves "
-            + REPLACED_STRING_REF
-            + " and does not resolve \""
-            + NOT_REPLACED_STRING_REF
-            + "\"";
-    private @Builder.Default List<Argument> definitionArgument = List.of();
-
-    private final UUID stepUuid = UUID.randomUUID();
-
-    @Override
-    public UUID getId() {
-      return stepUuid;
-    }
-
-    @Override
-    public Step getStep() {
-      return new Step() {
-        @Override
-        public StepArgument getArgument() {
-          return stepArgument;
-        }
-
-        @Override
-        public String getKeyword() {
-          return "When ";
-        }
-
-        @Override
-        public String getText() {
-          return stepText;
-        }
-
-        @Override
-        public int getLine() {
-          return line;
-        }
-
-        @Override
-        public Location getLocation() {
-          return new Location(line, column);
-        }
-      };
-    }
-
-    @Override
-    public int getStepLine() {
-      return line;
-    }
-
-    @Override
-    public URI getUri() {
-      return null;
-    }
-  }
-
-  private class TestcaseAdapter implements TestCase {
-
-    public TestcaseAdapter() {}
 
     @Override
     public Integer getLine() {
-      return 60;
+      return outlineLine;
     }
 
     @Override
     public Location getLocation() {
-      return new Location(60, 3);
-    }
-
-    @Override
-    public String getKeyword() {
-      return null;
-    }
-
-    @Override
-    public String getName() {
-      return scenarioName;
-    }
-
-    @Override
-    public String getScenarioDesignation() {
-      return null;
-    }
-
-    @Override
-    public List<String> getTags() {
-      return List.of();
-    }
-
-    @Override
-    public List<TestStep> getTestSteps() {
-      return List.of(TestStepAdapter.builder().line(71).column(5).build());
-    }
-
-    @Override
-    public URI getUri() {
-      return featureUri;
-    }
-
-    @Override
-    public UUID getId() {
-      return scenarioId;
-    }
-  }
-
-  private class ScenarioOutlineTestCaseAdapter extends TestcaseAdapter {
-
-    // Line refers to first example in src/test/resources/testdata/parser/bdd/authentication.feature
-    private int line = 181;
-
-    @Override
-    public Integer getLine() {
-      return line;
-    }
-
-    @Override
-    public Location getLocation() {
-      return new Location(line, 7);
+      return new Location(outlineLine, 7);
     }
 
     @Override
@@ -800,8 +587,8 @@ public class TestTigerSerenityReporterPlugin {
       return UUID.fromString(scenarioOutlineId);
     }
 
-    public void incrementLocationLine() {
-      line++;
+    void incrementLocationLine() {
+      outlineLine++;
     }
   }
 }

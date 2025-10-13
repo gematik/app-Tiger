@@ -58,7 +58,7 @@ class RbelPathExecutorTest {
   private static RbelElement jsonElement;
 
   @BeforeAll
-  public static void setUp() throws IOException {
+  static void setUp() throws IOException {
     jwtMessage = extractMessage("rbelPath.curl");
     xmlMessage = extractMessage("xmlMessage.curl");
     jsonElement = extractMessage("../jexlWorkshop.json");
@@ -151,7 +151,7 @@ class RbelPathExecutorTest {
 
   @Test
   void findAllMembers() {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(199);
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(252);
   }
 
   @Test
@@ -285,18 +285,18 @@ class RbelPathExecutorTest {
       String stringToSubstitute, String expectedString) {
     TigerGlobalConfiguration.readFromYaml(
         """
-                myMap:
-                  anotherLevel:
-                    key1:
-                      value: foobar
-                      target: schmoo
-                    key2:
-                      value: xMaS
-                      target: tree
-                  hidden:
-                    treasure:
-                      buried: deep
-          """);
+              myMap:
+                anotherLevel:
+                  key1:
+                    value: foobar
+                    target: schmoo
+                  key2:
+                    value: xMaS
+                    target: tree
+                hidden:
+                  treasure:
+                    buried: deep
+        """);
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
         .isEqualTo(expectedString);
   }

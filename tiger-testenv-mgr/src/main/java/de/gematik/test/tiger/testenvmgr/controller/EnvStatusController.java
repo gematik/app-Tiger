@@ -64,6 +64,10 @@ public class EnvStatusController implements TigerUpdateListener {
 
       update.getServerUpdate().forEach(this::receiveServerStatusUpdate);
 
+      if (update.getTestSuiteLifecycle() != null) {
+        tigerEnvStatus.setTestSuiteLifecycle(update.getTestSuiteLifecycle());
+      }
+
       if (update.getBannerMessage() != null) {
         tigerEnvStatus.setBannerMessage(update.getBannerMessage());
         tigerEnvStatus.setBannerColor(update.getBannerColor());
@@ -147,6 +151,9 @@ public class EnvStatusController implements TigerUpdateListener {
     if (scenarioUpdate.getExampleList() != null) {
       scenario.setExampleList(scenarioUpdate.getExampleList());
     }
+    if (scenarioUpdate.getTags() != null) {
+      scenario.setTags(scenarioUpdate.getTags());
+    }
     scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
     scenario.setDryRun(scenarioUpdate.isDryRun());
     fillInStepData(scenarioUpdate, scenario);
@@ -178,12 +185,16 @@ public class EnvStatusController implements TigerUpdateListener {
     if (stepUpdate.getStatus() != TestResult.FAILED) {
       step.setFailureMessage(null);
       step.setFailureStacktrace(null);
+      step.setMismatchNotes(null);
     } else {
       if (!StringUtils.isBlank(stepUpdate.getFailureMessage())) {
         step.setFailureMessage(stepUpdate.getFailureMessage());
       }
       if (!StringUtils.isBlank(stepUpdate.getFailureStacktrace())) {
         step.setFailureStacktrace(stepUpdate.getFailureStacktrace());
+      }
+      if (stepUpdate.getMismatchNotes() != null) {
+        step.setMismatchNotes(stepUpdate.getMismatchNotes());
       }
     }
     if (!StringUtils.isBlank(stepUpdate.getDescription())) {

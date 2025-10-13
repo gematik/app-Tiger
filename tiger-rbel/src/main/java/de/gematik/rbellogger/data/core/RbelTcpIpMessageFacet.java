@@ -21,18 +21,21 @@
 package de.gematik.rbellogger.data.core;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelMessageRenderer;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
+@Slf4j
 public class RbelTcpIpMessageFacet implements RbelFacet {
 
   static {
@@ -44,20 +47,53 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
   private final RbelElement sender;
   private final RbelElement receiver;
 
+  public static Long getSequenceNumber(RbelElement msg) {
+    while (msg.getParentNode() != null) {
+      msg = msg.getParentNode();
+    }
+    return msg.getFacet(RbelTcpIpMessageFacet.class)
+        .map(RbelTcpIpMessageFacet::getSequenceNumber)
+        .orElse(-1L);
+  }
+
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>().with("sender", sender).with("receiver", receiver);
   }
 
-  public Optional<RbelHostname> getSenderHostname() {
-    return hostname(sender).map(RbelHostnameFacet::toRbelHostname);
+  public Optional<RbelSocketAddress> getSenderHostname() {
+    return hostname(sender).map(RbelHostnameFacet::toRbelSocketAddress);
   }
 
-  public Optional<RbelHostname> getReceiverHostname() {
-    return hostname(receiver).map(RbelHostnameFacet::toRbelHostname);
+  public Optional<RbelSocketAddress> getReceiverHostname() {
+    return hostname(receiver).map(RbelHostnameFacet::toRbelSocketAddress);
   }
 
   private Optional<RbelHostnameFacet> hostname(RbelElement element) {
     return element.getFacet(RbelHostnameFacet.class);
+  }
+
+  public boolean isSameDirectionAs(RbelElement previousMessage) {
+    return previousMessage
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .map(this::compareDirectionWith)
+        .orElse(false);
+  }
+
+  public boolean compareDirectionWith(RbelTcpIpMessageFacet other) {
+    val otherSender = other.getSender().getFacet(RbelHostnameFacet.class).orElse(null);
+    val otherReceiver = other.getReceiver().getFacet(RbelHostnameFacet.class).orElse(null);
+    val thisSender = this.getSender().getFacet(RbelHostnameFacet.class).orElse(null);
+    val thisReceiver = this.getReceiver().getFacet(RbelHostnameFacet.class).orElse(null);
+
+    if (otherSender == null
+        || otherReceiver == null
+        || thisSender == null
+        || thisReceiver == null) {
+      return false;
+    }
+
+    return (thisSender.domainAndPortEquals(otherSender)
+        && thisReceiver.domainAndPortEquals(otherReceiver));
   }
 }

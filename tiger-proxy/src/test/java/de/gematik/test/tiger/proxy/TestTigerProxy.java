@@ -30,16 +30,19 @@ import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import de.gematik.rbellogger.util.RbelInternetAddress;
+import de.gematik.rbellogger.util.RbelInternetAddressParser;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -119,14 +122,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname())
-        .contains(new RbelHostname("backend", 80));
+        .contains(RbelSocketAddress.create("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(1)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname())
-        .contains(new RbelHostname("backend", 80));
+        .contains(RbelSocketAddress.create("backend", 80));
 
     assertThat(response2.getStatus()).isEqualTo(666);
     assertThat(response2.getBody().getObject().get("foo")).hasToString("bar");
@@ -136,14 +139,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(2)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname())
-        .contains(new RbelHostname("backend", 80));
+        .contains(RbelSocketAddress.create("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(3)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname())
-        .contains(new RbelHostname("backend", 80));
+        .contains(RbelSocketAddress.create("backend", 80));
   }
 
   @Test
@@ -160,17 +163,15 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getRbelMessagesList()
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getReceiverHostname()
-                .get())
-        .isEqualTo(new RbelHostname("backend", 80));
+                .getReceiverHostname())
+        .contains(RbelSocketAddress.create("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(1)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getSenderHostname()
-                .get())
-        .isEqualTo(new RbelHostname("backend", 80));
+                .getSenderHostname())
+        .contains(RbelSocketAddress.create("backend", 80));
   }
 
   @Test
@@ -291,18 +292,22 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(0)
                 .findElement("$.receiver")
                 .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-                .map(Object::toString))
+                .map(RbelHostnameFacet::toRbelSocketAddress)
+                .map(RbelSocketAddress::asSocketAddress))
         .get()
-        .isEqualTo("localhost:" + fakeBackendServerPort);
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(1)
-                .findElement("$.sender")
-                .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-                .map(Object::toString))
-        .get()
-        .isEqualTo("localhost:" + fakeBackendServerPort);
+        .matches(
+            adr ->
+                adr instanceof InetSocketAddress
+                    && ((InetSocketAddress) adr).getAddress().isLoopbackAddress());
+    RbelHostnameFacet senderHostname =
+        tigerProxy
+            .getRbelMessagesList()
+            .get(1)
+            .findElement("$.sender")
+            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .orElseThrow();
+    assertThat(senderHostname.getPort()).hasStringContentEqualTo("" + fakeBackendServerPort);
+    assertThat(senderHostname.toRbelSocketAddress().isLoopbackAddress()).isTrue();
   }
 
   @Test
@@ -676,7 +681,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     awaitMessagesInTigerProxy(4);
 
-    checkMessageAddresses(LOCALHOST_REGEX, "backend");
+    checkMessageAddresses("backend");
     checkMessagePorts();
   }
 
@@ -692,7 +697,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     awaitMessagesInTigerProxy(4);
 
-    checkMessageAddresses(LOCALHOST_REGEX, LOCALHOST_REGEX);
+    checkMessageAddresses("127.0.0.1");
     checkMessagePorts();
   }
 
@@ -714,7 +719,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .atMost(20, TimeUnit.SECONDS)
         .until(() -> extractHostnames(RbelTcpIpMessageFacet::getReceiver).toList().size() == 4);
 
-    checkMessageAddresses(LOCALHOST_REGEX, LOCALHOST_REGEX);
+    checkMessageAddresses("127.0.0.1");
     checkMessagePorts();
   }
 
@@ -928,22 +933,23 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .hasStringContentEqualTo("bar");
   }
 
-  private void checkMessageAddresses(final String clientRegex, final String serverRegex) {
-    final List<String> extractedReceiverHostnames =
+  private void checkMessageAddresses(final String serverName) {
+    val desiredServerAddress = RbelInternetAddressParser.parseInetAddress(serverName);
+    val desiredClientAddress = RbelInternetAddressParser.parseInetAddress("127.0.0.1");
+    val extractedReceiverHostnames =
         extractHostnames(RbelTcpIpMessageFacet::getReceiver).collect(Collectors.toList());
-    final List<String> extractedSenderHostnames =
-        extractHostnames(RbelTcpIpMessageFacet::getSender).toList();
+    val extractedSenderHostnames = extractHostnames(RbelTcpIpMessageFacet::getSender).toList();
     log.info(
         "hostnames: {} and {} (sender and receiver), matching to {} and {}",
         extractedSenderHostnames,
         extractedReceiverHostnames,
-        clientRegex,
-        serverRegex);
+        desiredClientAddress,
+        desiredServerAddress);
     for (int i = 0; i < extractedSenderHostnames.size(); i++) {
-      String senderRegex = i % 2 == 0 ? clientRegex : serverRegex;
-      String receiverRegex = i % 2 == 0 ? serverRegex : clientRegex;
-      assertThat(extractedSenderHostnames.get(i)).matches(senderRegex);
-      assertThat(extractedReceiverHostnames.get(i)).matches(receiverRegex);
+      val sender = i % 2 == 0 ? desiredClientAddress : desiredServerAddress;
+      val receiver = i % 2 == 0 ? desiredServerAddress : desiredClientAddress;
+      assertThat(extractedSenderHostnames.get(i)).isEqualTo(sender);
+      assertThat(extractedReceiverHostnames.get(i)).isEqualTo(receiver);
     }
   }
 
@@ -1002,7 +1008,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @NotNull
-  private Stream<String> extractHostnames(
+  private Stream<RbelInternetAddress> extractHostnames(
       final Function<RbelTcpIpMessageFacet, RbelElement> hostnameExtractor) {
     return tigerProxy.getRbelMessagesList().stream()
         .map(msg -> msg.getFacetOrFail(RbelTcpIpMessageFacet.class))
@@ -1011,9 +1017,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .map(el -> el.getFacet(RbelHostnameFacet.class))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(RbelHostnameFacet::toRbelHostname)
-        .map(RbelHostname::getHostname)
-        .map(Objects::toString);
+        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .map(RbelSocketAddress::getAddress);
   }
 
   @Test

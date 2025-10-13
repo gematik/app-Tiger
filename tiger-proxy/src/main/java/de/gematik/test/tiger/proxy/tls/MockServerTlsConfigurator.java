@@ -28,6 +28,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.TigerProxyMasterSecretListener;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
@@ -37,10 +38,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBeh
 import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import javax.net.ssl.SSLException;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +66,24 @@ public class MockServerTlsConfigurator {
     mockServerConfiguration.serverKeyAndCertificateFactory(buildServerKeyAndCertificateFactory());
     mockServerConfiguration.clientKeyAndCertificateFactory(buildClientKeyAndCertificateFactory());
     customizeSslIfApplicable();
+    mockServerConfiguration.keyAlgorithmPreference(determineKeyAlgorithmPreference());
+  }
+
+  private KeyAlgorithmPreference determineKeyAlgorithmPreference() {
+    return tlsConfiguration
+        .map(TigerTlsConfiguration::getServerSslSuites)
+        .filter(CollectionUtils::isNotEmpty)
+        .map(
+            suites -> {
+              if (suites.stream().anyMatch(suite -> suite.contains("ECDSA"))) {
+                return KeyAlgorithmPreference.ECC;
+              } else if (suites.stream().anyMatch(suite -> suite.contains("RSA"))) {
+                return KeyAlgorithmPreference.RSA;
+              } else {
+                return KeyAlgorithmPreference.UNKNOWN;
+              }
+            })
+        .orElse(KeyAlgorithmPreference.UNKNOWN);
   }
 
   private void customizeSslIfApplicable() {

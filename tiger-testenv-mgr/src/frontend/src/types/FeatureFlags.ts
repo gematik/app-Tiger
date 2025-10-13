@@ -22,11 +22,17 @@
 export class FeatureFlags {
   trafficVisualization: boolean = false;
   testSelection: boolean = false;
+  runTestsOnStart: boolean = true;
 
   static fromMap(map: { [x: string]: string }): FeatureFlags {
     const features = new FeatureFlags();
     features.trafficVisualization = map["trafficvisualization"] === "true";
     features.testSelection = map["enabletestselection"] === "true";
+    features.runTestsOnStart = map["runtestsonstart"] === "true";
     return features;
+  }
+
+  shouldOpenDialog(): boolean {
+    return this.testSelection && !this.runTestsOnStart;
   }
 }

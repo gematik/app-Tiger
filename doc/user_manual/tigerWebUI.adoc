@@ -80,6 +80,14 @@ The picture below shows the content of the whole response.
 
 image::screenshots/webui_btn_content.png[title="Example of the content of a response"]
 
+In case that the message is too large to be rendered fully (displaying a "<...redacted due to size of" text), the message will have a "Full Message" button in the top right corner of the request or the response that is highlighted in the following screenshot.
+
+image::screenshots/webui_full_message.png[title="Button to show the full message"]
+
+By clicking on this button the full message will be displayed in a new tab/window.
+
+image::screenshots/webui_single_message_page.png[title="Single message view to show the full message"]
+
 ===== Switching between request/response
 
 Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message.

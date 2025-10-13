@@ -72,7 +72,6 @@ class RbelX509ConverterTest {
   void shouldRenderCleanHtml() {
     log.info("About to render html...");
     final String render = RbelHtmlRenderer.render(List.of(xmlMessage, rawX509Certificate));
-    System.out.println(rawX509Certificate.printTreeStructure());
     log.info("Done rendering html! (length is {}k)", render.length() / 1000);
     FileUtils.writeStringToFile(
         FileUtils.getFile("target", "rbelX509ConverterTest.html"), render, "UTF-8");
@@ -98,7 +97,6 @@ class RbelX509ConverterTest {
   void shouldParseRelevantParts() {
     assertThat(xmlMessage)
         .extractChildWithPath("$..x5c.0.content")
-        .andPrintTree()
         // Check Version
         .hasGivenValueAtPosition("$.version", 3)
         // Check Serial Number

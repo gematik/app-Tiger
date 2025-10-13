@@ -121,12 +121,16 @@ watch(pathElements.value, async () => {
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
-      <button class="btn btn-primary" type="button" @click="rbelTest.testRbelPathQuery">
+      <button
+        class="btn btn-primary test-expression-button"
+        type="button"
+        @click="rbelTest.testRbelPathQuery"
+      >
         Test Expression
       </button>
     </div>
     <div
-      class="card mt-3"
+      class="card mt-3 test-expression-success"
       v-if="rbelPathTestResult?.elementsWithTree && rbelPathTestResult?.elementsWithTree.length > 0"
     >
       <div
@@ -139,7 +143,7 @@ watch(pathElements.value, async () => {
       </div>
     </div>
     <div
-      class="card mt-3"
+      class="card mt-3 test-expression-failure"
       v-if="
         rbelPathTestResult &&
         (!rbelPathTestResult?.elementsWithTree ||

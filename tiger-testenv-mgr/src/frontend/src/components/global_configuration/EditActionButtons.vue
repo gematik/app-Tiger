@@ -31,8 +31,7 @@
       data-action="edit"
     >
       <i
-        id="test-tg-config-editor-btn-edit"
-        class="fa fa-solid fa-pencil"
+        class="fa fa-solid fa-pencil test-tg-config-editor-btn-edit"
         data-action="edit"
       />
     </button>
@@ -43,8 +42,7 @@
       data-action="delete"
     >
       <i
-        id="test-tg-config-editor-btn-delete"
-        class="fa fa-solid fa-trash"
+        class="fa fa-solid fa-trash test-tg-config-editor-btn-delete"
         data-action="delete"
       />
     </button>

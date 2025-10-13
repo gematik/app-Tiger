@@ -48,14 +48,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, onUnmounted, ref } from "vue";
-import { ICellRendererParams } from "ag-grid-community";
+import { computed, type ComputedRef, onMounted, onUnmounted, ref } from "vue";
+import { type ICellRendererParams } from "ag-grid-community";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import xml from "highlight.js/lib/languages/xml";
 import plaintext from "highlight.js/lib/languages/plaintext";
 import "highlight.js/styles/stackoverflow-light.css";
-import { AutoHighlightResult } from "highlight.js";
+import { type AutoHighlightResult } from "highlight.js";
 
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("xml", xml);

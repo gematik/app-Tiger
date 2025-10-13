@@ -60,7 +60,7 @@ class FindLastRequestTest {
    */
   @TigerTest(
       tigerYaml =
-          """
+"""
 servers:
   httpbin:
     type: httpbin

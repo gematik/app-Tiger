@@ -19,44 +19,53 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import {defineConfig} from "vite";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import envCompatible from "vite-plugin-env-compatible";
 
 // https://vite.dev/config/
 export default defineConfig(() => {
-    return {
-        resolve: {
-            alias: [
-                {
-                    find: /^~/,
-                    replacement: ''
-                },
-                {
-                    find: '@',
-                    replacement: path.resolve(__dirname, 'src')
-                }
-            ],
+  return {
+    resolve: {
+      alias: [
+        {
+          find: /^~/,
+          replacement: "",
         },
-        server: {
-            proxy: {
-                '/testEnv': {
-                    target: 'http://localhost:54727',
-                    ws: true,
-                    rewrite: path => path
-                },
-                '/testLog': {
-                    target: 'http://localhost:54727',
-                    ws: true,
-                    rewrite: path => path
-                }
-            }
+        {
+          find: "@",
+          replacement: path.resolve(__dirname, "src"),
         },
-        plugins: [vue(), envCompatible()],
-        build: {
-            minify: true,
-            target: "ES2022",
+      ],
+    },
+    server: {
+      proxy: {
+        "/testEnv": {
+          target: "http://localhost:54727",
+          ws: true,
+          rewrite: (path) => path,
         },
-    };
+        "/testLog": {
+          target: "http://localhost:54727",
+          ws: true,
+          rewrite: (path) => path,
+        },
+      },
+    },
+    plugins: [vue(), envCompatible()],
+    build: {
+      minify: true,
+      target: "ES2022",
+      sourcemap: true,
+    },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: [],
+      deps: {
+        inline: ["@vitejs/plugin-vue"],
+      },
+    },
+  };
 });

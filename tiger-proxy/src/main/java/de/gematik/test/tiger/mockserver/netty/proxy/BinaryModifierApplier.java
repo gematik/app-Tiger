@@ -31,6 +31,7 @@ import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
@@ -129,17 +130,19 @@ public class BinaryModifierApplier {
   private List<RbelElement> binaryMessageToRbelElement(
       BinaryMessage message, ChannelHandlerContext ctx, RbelMessageKind messageKind) {
     try {
-      final Optional<SocketAddress> incoming =
+      final Optional<RbelSocketAddress> incoming =
           Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
               .map(Channel::remoteAddress)
-              .or(() -> Optional.ofNullable(ctx.channel().remoteAddress()));
-      final Optional<SocketAddress> outgoing =
+              .or(() -> Optional.ofNullable(ctx.channel().remoteAddress()))
+              .map(RbelSocketAddress::create);
+      final Optional<RbelSocketAddress> outgoing =
           Optional.ofNullable(ctx.channel().attr(REMOTE_SOCKET).get())
               .map(SocketAddress.class::cast)
               .or(
                   () ->
                       Optional.ofNullable(ctx.channel().attr(OUTGOING_CHANNEL).get())
-                          .map(Channel::remoteAddress));
+                          .map(Channel::remoteAddress))
+              .map(RbelSocketAddress::create);
       return multipleBinaryConnectionParser
           .addToBuffer(
               incoming.orElse(null),

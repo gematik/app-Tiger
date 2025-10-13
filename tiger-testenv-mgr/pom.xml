@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.9</version>
+        <version>4.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-testenv-mgr</artifactId>
@@ -53,10 +53,6 @@
             <artifactId>tiger-proxy-scrollable-webui</artifactId>
         </dependency>
         <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-utils</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-core</artifactId>
             <scope>compile</scope>
@@ -64,10 +60,6 @@
         <dependency>
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.jcip</groupId>
-            <artifactId>jcip-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>
@@ -114,19 +106,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>sockjs-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>stomp-websocket</artifactId>
-        </dependency>
-        <!--  frontend -->
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
@@ -137,8 +116,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-test-utils</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit-platform-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -240,7 +229,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <arguments>install</arguments>
+                            <arguments>ci</arguments>
                         </configuration>
                     </execution>
 

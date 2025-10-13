@@ -20,7 +20,7 @@
  */
 package de.gematik.test.tiger.mockserver.model;
 
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -78,8 +78,8 @@ public class SocketAddress extends ObjectWithJsonToString {
     return this;
   }
 
-  public RbelHostname toRbelHostname() {
-    return RbelHostname.builder().hostname(host).port(port).build();
+  public RbelSocketAddress toRbelHostname() {
+    return RbelSocketAddress.create(host, port);
   }
 
   public enum Scheme {

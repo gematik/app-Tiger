@@ -22,8 +22,8 @@ package de.gematik.test.tiger.proxy.client;
 
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -49,8 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PartialTracingMessage {
   @ToString.Exclude private final TigerTracingDto tracingDto;
 
-  private final RbelHostname sender;
-  private final RbelHostname receiver;
+  private final RbelSocketAddress sender;
+  private final RbelSocketAddress receiver;
   @ToString.Exclude private final TracingMessageFrame messageFrame;
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
 

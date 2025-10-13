@@ -126,12 +126,12 @@ public class TestHttpClientSteps {
         Method.POST,
         createAddress("http://httpbin/post"),
         """
-                        {
-                          "object": { "field": "value" },
-                          "array" : [ "1", 2, { "field2": "value2" } ],
-                          "member" : "test"
-                        }
-                        """);
+        {
+          "object": { "field": "value" },
+          "array" : [ "1", 2, { "field2": "value2" } ],
+          "member" : "test"
+        }
+        """);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
@@ -151,12 +151,12 @@ public class TestHttpClientSteps {
         createAddress("http://httpbin/post"),
         "application/json",
         """
-                        {
-                          "object": { "field": "value" },
-                          "array" : [ "1", 2, { "field2": "value2" } ],
-                          "member" : "test"
-                        }
-                        """);
+        {
+          "object": { "field": "value" },
+          "array" : [ "1", 2, { "field2": "value2" } ],
+          "member" : "test"
+        }
+        """);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
@@ -175,12 +175,12 @@ public class TestHttpClientSteps {
         Method.PUT,
         createAddress("http://httpbin/put"),
         """
-                        {
-                          "object": { "field": "value" },
-                          "array" : [ "1", 2, { "field2": "value2" } ],
-                          "member" : "test"
-                        }
-                        """);
+        {
+          "object": { "field": "value" },
+          "array" : [ "1", 2, { "field2": "value2" } ],
+          "member" : "test"
+        }
+        """);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
@@ -431,10 +431,10 @@ public class TestHttpClientSteps {
   @CsvSource(
       textBlock =
           """
-    {"hello": "world"}, application/json; charset=UTF-8
-    <this><is>xml</is></this>, application/xml; charset=ISO-8859-1
-    just some text, application/octet-stream; charset=ISO-8859-1
-    """)
+          {"hello": "world"}, application/json; charset=UTF-8
+          <this><is>xml</is></this>, application/xml; charset=ISO-8859-1
+          just some text, application/octet-stream; charset=ISO-8859-1
+          """)
   void
       sendRequestWithoutExplicitHeaders_shouldAutomaticallyAddContentTypeAndCharsetBasedOnContent( // NOSONAR
       String bodyContent, String expectedContentTypeHeader) {
@@ -450,13 +450,13 @@ public class TestHttpClientSteps {
   @CsvSource(
       textBlock =
           """
-        {"hello": "world"}, application/my-own-thing
-        <this><is>xml</is></this>, application/fancy-xml
-        just some text, application/text
-        {"hello": "world"}, application/json; charset=ISO-8859-1
-        <this><is>xml</is></this>, application/xml; charset=UTF-8
-        just some text, application/text; charset=UTF-8
-    """)
+              {"hello": "world"}, application/my-own-thing
+              <this><is>xml</is></this>, application/fancy-xml
+              just some text, application/text
+              {"hello": "world"}, application/json; charset=ISO-8859-1
+              <this><is>xml</is></this>, application/xml; charset=UTF-8
+              just some text, application/text; charset=UTF-8
+          """)
   void sendRequestWithExplicitHeaders_shouldNotAddAnythingAutomatically( // NOSONAR
       String bodyContent, String explicitSetContentTypeHeader) {
     httpGlueCode.setDefaultHeader("Content-Type", explicitSetContentTypeHeader);

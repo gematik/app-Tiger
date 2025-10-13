@@ -45,11 +45,12 @@ class XYDynamicRbelLogTests extends AbstractBase {
 
   @AfterEach
   void closeOpenModal() {
-    var modalCloseButton =
-        page.frameLocator("#rbellog-details-iframe").locator("#filterBackdrop .btn-close");
+    var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
+    var modalCloseButton = rbelFrameLocator.locator("#filterBackdrop .btn-close");
     if (modalCloseButton.isVisible()) {
       modalCloseButton.click();
     }
+    resetFilter(rbelFrameLocator);
   }
 
   @Test
@@ -140,11 +141,8 @@ class XYDynamicRbelLogTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
     var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
     rbelFrameLocator.locator("#test-rbel-path-input").click();
-    rbelFrameLocator.locator("#filterBackdrop #rbelExpressionTextArea").isVisible();
-    rbelFrameLocator
-        .locator("#filterBackdrop #rbelFilterExpressionTextArea")
-        .first()
-        .fill("$.DOESNOTEXIST");
+    rbelFrameLocator.locator("#rbelExpressionTextArea").isVisible();
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").first().fill("$.DOESNOTEXIST");
     rbelFrameLocator.locator("#setFilterCriterionBtn").click();
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -154,13 +152,23 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     .hasText("Matched 0 of %d".formatted(TOTAL_MESSAGES)));
 
     rbelFrameLocator.locator("#test-rbel-path-input").click();
-    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").isVisible();
     Locator content = rbelFrameLocator.locator("#filteredMessage");
-    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").fill(" ");
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").fill(" ");
     assertAll(
         () ->
             assertThat(content)
                 .containsText("Matched %d of %d".formatted(TOTAL_MESSAGES, TOTAL_MESSAGES)));
+  }
+
+  void resetFilter(FrameLocator frameLocator) {
+    Locator resetButton = frameLocator.locator("#test-reset-filter-button");
+    if (resetButton.isEnabled()) {
+      resetButton.click();
+      await()
+          .atMost(5, TimeUnit.SECONDS)
+          .until(() -> !frameLocator.locator(".message").first().innerText().equals("Loading..."));
+    }
   }
 
   @Test
@@ -169,10 +177,8 @@ class XYDynamicRbelLogTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
     var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
     rbelFrameLocator.locator("#test-rbel-path-input").click();
-    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
-    rbelFrameLocator
-        .locator("#filterBackdrop #rbelFilterExpressionTextArea")
-        .fill("$.body == \"hello=world\"");
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").isVisible();
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").fill("$.body == \"hello=world\"");
     rbelFrameLocator.locator("#setFilterCriterionBtn").click();
     rbelFrameLocator.locator("#test-rbel-path-input").click();
     await()
@@ -315,7 +321,78 @@ class XYDynamicRbelLogTests extends AbstractBase {
       await().pollDelay(200, TimeUnit.MILLISECONDS).until(() -> true);
     }
     Assertions.assertThat(ctr)
-        .isLessThanOrEqualTo(200)
-        .withFailMessage("Pressed page down 20 times but didnt reach end of rbel log list!");
+        .withFailMessage("Pressed page down 20 times but didnt reach end of rbel log list!")
+        .isLessThanOrEqualTo(200);
+  }
+
+  @Test
+  void testFFullMessageButton() {
+    var sequenceNumber = "11";
+    page.locator("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#rbellog_details_pane")).isVisible();
+
+    Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
+
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
+
+    // in some ocasions, the global function scrollToMessage is not available. Probably it takes
+    // longer to be attached
+    // to the window object.
+    externalPage.waitForFunction("() => typeof window.scrollToMessage === 'function'");
+    externalPage.evaluate("scrollToMessage('', " + sequenceNumber + ")");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
+
+    Locator fullMessageButton = externalPage.locator(".full-message-button").first();
+    fullMessageButton.scrollIntoViewIfNeeded();
+
+    Page singleMessagePage = externalPage.waitForPopup(fullMessageButton::click);
+
+    assertAll(
+        () -> assertThat(singleMessagePage.locator("body")).isVisible(),
+        () -> assertThat(singleMessagePage.locator(".full-message-button")).hasCount(0),
+        () ->
+            assertThat(singleMessagePage.locator(".test-message-number"))
+                .containsText(sequenceNumber),
+        () -> assertThat(singleMessagePage.locator("body")).not().containsText("redacted"));
+
+    singleMessagePage.locator(".test-btn-inspect").first().click();
+    assertThat(singleMessagePage.locator("#jexlQueryModal")).isVisible();
+
+    singleMessagePage.locator("#rbelTreeExpressionTextArea").fill("$");
+    singleMessagePage.locator("#jexlQueryModal .test-expression-button").click();
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
+
+    assertThat(singleMessagePage.locator("#jexlQueryModal .test-expression-success")).isVisible();
+
+    singleMessagePage.locator("#jexlQueryModal .btn-close").click();
+    assertThat(singleMessagePage.locator("#jexlQueryModal")).not().isVisible();
+
+    singleMessagePage.locator(".test-modal-content").first().click();
+    assertThat(singleMessagePage.locator("#rawContentModal")).isVisible();
+    assertThat(singleMessagePage.locator("#rawContentModal")).not().containsText("redacted");
+    singleMessagePage.locator("#rawContentModal .btn-close").click();
+    assertThat(singleMessagePage.locator("#rawContentModal")).not().isVisible();
+
+    Locator partnerMessageButton = singleMessagePage.locator(".partner-message-button").first();
+
+    String currentSequenceNumber =
+        singleMessagePage.locator(".test-message-number").first().textContent();
+
+    partnerMessageButton.click();
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
+
+    String partnerSequenceNumber =
+        singleMessagePage.locator(".test-message-number").first().textContent();
+    Assertions.assertThat(partnerSequenceNumber).isNotEqualTo(currentSequenceNumber);
+
+    assertAll(
+        () -> assertThat(singleMessagePage.locator(".test-message-number")).isVisible(),
+        () -> assertThat(singleMessagePage.locator("body")).not().containsText("redacted"));
+
+    singleMessagePage.close();
+    externalPage.close();
   }
 }

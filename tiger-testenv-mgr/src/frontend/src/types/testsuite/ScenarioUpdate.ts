@@ -33,6 +33,7 @@ interface IScenarioUpdate {
   exampleList: Map<string, string>;
   variantIndex: number;
   uniqueId: string;
+  tags: Array<string>;
   isDryRun: boolean;
 }
 
@@ -45,6 +46,7 @@ interface IJsonScenario {
   exampleList: IJsonOutlineList;
   variantIndex: number;
   uniqueId: string;
+  tags: Array<string>;
   isDryRun: boolean;
 }
 
@@ -65,6 +67,7 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   exampleList = new Map<string, string>();
   variantIndex = -1;
   uniqueId = "";
+  tags = new Array<string>();
   isDryRun = false;
 
   public isScenarioOutlineVariant(): boolean {
@@ -73,15 +76,24 @@ export default class ScenarioUpdate implements IScenarioUpdate {
 
   public getVariantExamplesAsString(): string {
     if (this.isScenarioOutlineVariant()) {
-      return this.jsonToTable(this.exampleList);
+      return this.examplesAsTable();
     } else {
       return "";
     }
   }
 
-  private jsonToTable(map: Map<string, string>): string {
-    const keys = Array.from(map.keys());
-    const values = Array.from(map.values());
+  public getVariantDescription() {
+    if (this.isScenarioOutlineVariant()) {
+      return this.description + " [" + (this.variantIndex + 1) + "]";
+    }
+    return this.description;
+  }
+
+  private examplesAsTable(): string {
+    const keys = this.exampleKeys;
+    //values come from a map and are not necessary in the order as they are defined in the feature file.
+    //therefore we need to use the keys to get the values.
+    const values = keys.map((key) => this.exampleList.get(key) ?? "");
 
     // Get the maximum width for each column
     const columnWidths = keys.map((key, index) =>
@@ -109,15 +121,6 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     return [header, separator, dataRow].join("\n");
   }
 
-  public getScenarioOutlineId() {
-    if (this.isScenarioOutlineVariant()) {
-      const lastSlash = this.uniqueId.lastIndexOf("/");
-      return this.uniqueId.substring(0, lastSlash);
-    } else {
-      return this.uniqueId;
-    }
-  }
-
   public static fromJson(json: IJsonScenario): ScenarioUpdate {
     const scenario: ScenarioUpdate = new ScenarioUpdate();
     scenario.steps = StepUpdate.mapFromJson(json.steps);
@@ -139,6 +142,9 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     if (json.failureMessage) {
       scenario.failureMessage = json.failureMessage;
     }
+    if (json.tags) {
+      scenario.tags = json.tags;
+    }
     if (json.uniqueId) {
       scenario.uniqueId = json.uniqueId;
     }
@@ -147,11 +153,11 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   }
 
   public static mapFromJson(
-    jsonscenarios: IJsonScenarios | undefined | null,
+    jsonScenarios: IJsonScenarios | undefined | null,
   ): Map<string, ScenarioUpdate> {
     const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
-    if (jsonscenarios) {
-      Object.entries(jsonscenarios).forEach(([key, value]) =>
+    if (jsonScenarios) {
+      Object.entries(jsonScenarios).forEach(([key, value]) =>
         map.set(key, this.fromJson(value)),
       );
     }
@@ -159,7 +165,7 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   }
 
   public static mapScenarioOutlineFromJson(
-    outlineList: IJsonOutlineList,
+    outlineList: IJsonOutlineList | undefined | null,
   ): Map<string, string> {
     const map: Map<string, string> = new Map<string, string>();
     if (outlineList) {
@@ -188,6 +194,9 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     }
     if (scenario.exampleList) {
       this.exampleList = scenario.exampleList;
+    }
+    if (scenario.tags) {
+      this.tags = scenario.tags;
     }
     this.isDryRun = scenario.isDryRun;
     if (scenario.steps) {

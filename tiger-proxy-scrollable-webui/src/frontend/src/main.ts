@@ -20,10 +20,15 @@
 ///
 
 import { createApp } from "vue";
-import App from "./App.vue";
+import MainApp from "./components/MainApp.vue";
 import "bootstrap";
 import "bootstrap/scss/bootstrap.scss";
 import "@/scss/styles.scss";
+import router from "./router";
+import hljs from "highlight.js/lib/core";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import plaintext from "highlight.js/lib/languages/plaintext";
 
 if (__USE_FONTS_OVER_CDN__) {
   import("@/scss/fontawesome-cdn.scss");
@@ -32,18 +37,14 @@ if (__USE_FONTS_OVER_CDN__) {
   import("~fontawesome/scss/solid.scss");
 }
 
-import hljs from "highlight.js/lib/core";
-import json from "highlight.js/lib/languages/json";
-import xml from "highlight.js/lib/languages/xml";
-import plaintext from "highlight.js/lib/languages/plaintext";
-
 // Highlight.js languages currently used
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("xml", xml);
 hljs.registerLanguage("html", xml);
 hljs.registerLanguage("plaintext", plaintext);
 
-const app = createApp(App);
+const app = createApp(MainApp);
 app.config.globalProperties.__IS_DETACHED_MODE__ = __IS_DETACHED_MODE__;
 app.config.globalProperties.__IS_ONLINE_MODE__ = __IS_ONLINE_MODE__;
+app.use(router);
 app.mount("#app");

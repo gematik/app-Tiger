@@ -21,7 +21,7 @@
 package de.gematik.test.tiger.proxy.exceptions;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -33,13 +33,13 @@ import lombok.Setter;
 public class TigerProxyRoutingException extends TigerProxyException { // NOSONAR
 
   private CompletableFuture<RbelElement> routedMessage; // NOSONAR
-  private final RbelHostname senderAddress; // NOSONAR
-  private final RbelHostname receiverAddress; // NOSONAR
+  private final RbelSocketAddress senderAddress; // NOSONAR
+  private final RbelSocketAddress receiverAddress; // NOSONAR
 
   public TigerProxyRoutingException(
       String errorMessage,
-      RbelHostname senderAddress,
-      RbelHostname receiverAddress,
+      RbelSocketAddress senderAddress,
+      RbelSocketAddress receiverAddress,
       Throwable cause) {
     super(errorMessage, cause);
     this.receiverAddress = receiverAddress;

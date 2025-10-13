@@ -73,8 +73,8 @@ const proxyController = useProxyController({
 
 onMounted(() => {
   // this workaround is necessary to capture `scrollToMessage` events from the messages
-  function scrollToMessage(uuid: string) {
-    messageQueue.scrollToMessage(uuid);
+  function scrollToMessage(uuid: string, sequenceNumber?: number) {
+    messageQueue.scrollToMessage(uuid, sequenceNumber);
   }
 
   (window as any).scrollToMessage = scrollToMessage;

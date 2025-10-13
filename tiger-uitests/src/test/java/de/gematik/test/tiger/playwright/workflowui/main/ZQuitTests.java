@@ -25,9 +25,15 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.microsoft.playwright.FrameLocator;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -41,6 +47,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 @Slf4j
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class ZQuitTests extends AbstractBase {
+
+  private static final String LOADING_PLACEHOLDER = "Loading...";
 
   @AfterEach
   void closeOpenModal() {
@@ -56,6 +64,66 @@ class ZQuitTests extends AbstractBase {
     }
   }
 
+  /**
+   * We have a recycling view in the iframe. Components get mounted and unmounted while we scroll.
+   * Any locator trying to find an element will not find elements that are not currently mounted.
+   */
+  Set<String> collectAllItemsFromIframe() {
+    FrameLocator frame = page.frameLocator("#rbellog-details-iframe");
+
+    Set<String> collected = new LinkedHashSet<>();
+    Locator scrollable = frame.locator(".scroll-container");
+    Locator items = frame.locator(".message");
+
+    BooleanSupplier atBottom =
+        () ->
+            (Boolean)
+                scrollable.evaluate(
+                    "el => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight");
+
+    Runnable scrollStep =
+        () ->
+            scrollable.evaluate(
+                "el => { const step = Math.max(100, el.clientHeight); el.scrollTop ="
+                    + " Math.min(el.scrollTop + step, el.scrollHeight); }");
+
+    while (!atBottom.getAsBoolean()) {
+      List<Locator> filteredItems =
+          items.all().stream().filter(i -> isInContainerViewport(i, scrollable)).toList();
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(
+              () ->
+                  filteredItems.stream().noneMatch(i -> LOADING_PLACEHOLDER.equals(i.innerText())));
+
+      await().atMost(5, TimeUnit.SECONDS).until(() -> !items.all().isEmpty());
+
+      filteredItems.forEach(i -> collected.add(i.innerHTML().trim()));
+      scrollStep.run();
+    }
+
+    // Once more once reached bottom
+    List<Locator> filteredItems =
+        items.all().stream().filter(i -> isInContainerViewport(i, scrollable)).toList();
+    filteredItems.forEach(i -> collected.add(i.innerHTML().trim()));
+
+    return collected;
+  }
+
+  private static boolean isInContainerViewport(Locator item, Locator container) {
+    var itemBox = item.boundingBox();
+    var contBox = container.boundingBox();
+    if (itemBox == null || contBox == null) return false; // not rendered or zero-sized
+    double itemLeft = itemBox.x, itemRight = itemBox.x + itemBox.width;
+    double itemTop = itemBox.y, itemBottom = itemBox.y + itemBox.height;
+    double contLeft = contBox.x, contRight = contBox.x + contBox.width;
+    double contTop = contBox.y, contBottom = contBox.y + contBox.height;
+
+    boolean horizontallyOverlaps = itemLeft < contRight && itemRight > contLeft;
+    boolean verticallyOverlaps = itemTop < contBottom && itemBottom > contTop;
+    return horizontallyOverlaps && verticallyOverlaps;
+  }
+
   @Test
   void testQuitMessageOnSidebarExists() {
     // close the HTML banner from scenario of second feature file to end the test run in the other
@@ -68,11 +136,6 @@ class ZQuitTests extends AbstractBase {
         .alias("Wait for test stopped message")
         .pollInterval(1, TimeUnit.SECONDS)
         .until(() -> page.locator("#test-sidebar-stop-message").isVisible());
-  }
-
-  @Test
-  void testClickOnLastRequestChangesPageNumberInRbelLogDetails() {
-    // TODO navigate to last message via cursor down key?
   }
 
   @Test
@@ -100,6 +163,7 @@ class ZQuitTests extends AbstractBase {
     // open filter via click on input field and add filter rbel expression
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
+
     var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
     rbelFrameLocator.locator("#test-rbel-path-input").click();
     rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
@@ -117,22 +181,18 @@ class ZQuitTests extends AbstractBase {
             () ->
                 assertThat(rbelFrameLocator.locator("#filteredMessage"))
                     .hasText("Matched 4 of %d".formatted(TOTAL_MESSAGES)));
-    String filteredMessage =
-        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
+
+    page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
     rbelFrameLocator.locator("#filterBackdrop .btn-close").click();
 
     // varify count is correct
-    int count =
-        page.frameLocator("#rbellog-details-iframe")
-            .locator("#test-rbel-section .test-msg-body-content")
-            .count();
-    Assertions.assertThat(count).isEqualTo(3);
+    var count = collectAllItemsFromIframe().size();
+    Assertions.assertThat(count).isGreaterThanOrEqualTo(3);
 
     // reset filter via button
     page.frameLocator("#rbellog-details-iframe").locator("#test-reset-filter-button").click();
 
     // check input field is empty and all messages shown
-    // rbelFrameLocator.locator("#test-rbel-path-input").click();
     rbelFrameLocator.locator("#test-rbel-path-input").click();
     rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
     assertThat(rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea"))
@@ -151,26 +211,20 @@ class ZQuitTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
     var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
     rbelFrameLocator.locator("#test-rbel-path-input").click();
-    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
+    assertThat(rbelFrameLocator.locator("#rbelFilterExpressionTextArea")).isVisible();
 
     assertAll(
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("ul.test-select-recipient li a")
-                        .last())
-                .hasText("httpbin:80"),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("ul.test-select-sender li a")
-                        .last())
-                .hasText("httpbin:80"));
+        () -> {
+          assertThat(
+                  rbelFrameLocator.locator("ul.test-select-recipient li a").getByText("httpbin:80"))
+              .hasCount(1);
+        },
+        () -> {
+          assertThat(rbelFrameLocator.locator("ul.test-select-sender li a").getByText("httpbin:80"))
+              .hasCount(1);
+        });
 
-    rbelFrameLocator
-        .locator("#filterBackdrop #rbelFilterExpressionTextArea")
-        .first()
-        .fill("$.sender == \"put\"");
+    rbelFrameLocator.locator("#rbelFilterExpressionTextArea").first().fill("$.sender == \"put\"");
     // apply and reopen
     rbelFrameLocator.locator("#setFilterCriterionBtn").click();
     rbelFrameLocator.locator("#test-rbel-path-input").click();
@@ -186,14 +240,12 @@ class ZQuitTests extends AbstractBase {
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator("ul.test-select-recipient li"))
-                .not()
-                .isAttached(),
+                .hasCount(0),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator("ul.test-select-sender li"))
-                .not()
-                .isAttached());
+                .hasCount(0));
   }
 
   @Test

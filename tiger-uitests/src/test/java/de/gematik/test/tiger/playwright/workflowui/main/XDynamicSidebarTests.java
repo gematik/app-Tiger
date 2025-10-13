@@ -125,10 +125,10 @@ class XDynamicSidebarTests extends AbstractBase {
       delimiter = '|',
       textBlock =
           """
-                                                  | 0 |
-                                remoteTigerProxy  | 1 |
-                                httpbin           | 2 |
-                            """)
+                                | 0 |
+              remoteTigerProxy  | 1 |
+              httpbin           | 2 |
+          """)
   void ServerBoxLocalTigerProxyLogfiles(String servername, int counter) {
     openSidebar();
     log.info(

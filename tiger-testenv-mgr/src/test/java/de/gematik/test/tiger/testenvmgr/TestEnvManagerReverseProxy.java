@@ -38,24 +38,24 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-        servers:
-          testWinstone2:
-            type: externalJar
-            healthcheckUrl: http://127.0.0.1:${free.port.0}
-            healthcheckReturnCode: 200
-            source:
-              - http://localhost:${wiremock.port}/download
-            externalJarOptions:
-              arguments:
-                - --httpPort=${free.port.0}
-                - --webroot=.
-          reverseproxy1:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.2}
-              proxiedServer: testWinstone2
-              proxyPort: ${free.port.3}
-       """)
+           servers:
+             testWinstone2:
+               type: externalJar
+               healthcheckUrl: http://127.0.0.1:${free.port.0}
+               healthcheckReturnCode: 200
+               source:
+                 - http://localhost:${wiremock.port}/download
+               externalJarOptions:
+                 arguments:
+                   - --httpPort=${free.port.0}
+                   - --webroot=.
+             reverseproxy1:
+               type: tigerProxy
+               tigerProxyConfiguration:
+                 adminPort: ${free.port.2}
+                 proxiedServer: testWinstone2
+                 proxyPort: ${free.port.3}
+          """)
   void testReverseProxy() {
     final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
@@ -100,25 +100,25 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-        servers:
-          testWinstone2:
-            type: externalJar
-            source:
-              - http://localhost:${wiremock.port}/download
-            healthcheckUrl: http://127.0.0.1:${free.port.0}/target
-            healthcheckReturnCode: 200
-            externalJarOptions:
-              workingDir: target/
-              arguments:
-                - --httpPort=${free.port.0}
-                - --webroot=..
-          reverseproxy1:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.2}
-              proxiedServer: testWinstone2
-              proxyPort: ${free.port.3}
-        """)
+          servers:
+            testWinstone2:
+              type: externalJar
+              source:
+                - http://localhost:${wiremock.port}/download
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/target
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                workingDir: target/
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=..
+            reverseproxy1:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.2}
+                proxiedServer: testWinstone2
+                proxyPort: ${free.port.3}
+          """)
   void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
     final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
@@ -132,26 +132,26 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-        servers:
-          testWinstone2:
-            type: externalJar
-            source:
-              - http://localhost:${wiremock.port}/download
-            healthcheckUrl: http://127.0.0.1:${free.port.0}
-            healthcheckReturnCode: 200
-            externalJarOptions:
-              arguments:
-                - --httpPort=${free.port.0}
-                - --webroot=..
-          proxykon2:
-            type: tigerProxy
-            active: true
-            tigerProxyConfiguration:
-              adminPort: ${free.port.1}
-              proxyPort: ${free.port.2}
-              tls:
-                serverIdentity: "src/test/resources/c.ak.aut-konsim.p12;00"
-        """)
+          servers:
+            testWinstone2:
+              type: externalJar
+              source:
+                - http://localhost:${wiremock.port}/download
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=..
+            proxykon2:
+              type: tigerProxy
+              active: true
+              tigerProxyConfiguration:
+                adminPort: ${free.port.1}
+                proxyPort: ${free.port.2}
+                tls:
+                  serverIdentity: "src/test/resources/c.ak.aut-konsim.p12;00"
+          """)
   void remoteProxyWithConfiguredTlsIdentity() {
     var response =
         Unirest.get(

@@ -23,10 +23,12 @@ package de.gematik.test.tiger.proxy.controller;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.file.RbelFileWriter.MESSAGE_UUID;
 import static de.gematik.rbellogger.file.RbelFileWriter.RAW_MESSAGE_CONTENT;
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.jsoup.Jsoup.parse;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -525,5 +527,132 @@ class TigerWebUiControllerTest {
         .filter(line -> !line.isEmpty())
         .map(JSONObject::new)
         .toList();
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_validUuid_shouldReturnHtmlContent() {
+    final var uuid = tigerProxy.getRbelMessagesList().get(0).getUuid();
+
+    RestAssured.given()
+        .get(getWebUiUrl() + "/fullyRenderedMessage/" + uuid)
+        .then()
+        .statusCode(200)
+        .contentType("application/json")
+        .body("uuid", equalTo(uuid))
+        .body("content", not(equalTo("")))
+        .body("sequenceNumber", not(equalTo(null)));
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_invalidUuid_shouldReturn404() {
+    final String invalidUuid = "invalid-uuid-12345";
+
+    RestAssured.given()
+        .get(getWebUiUrl() + "/fullyRenderedMessage/" + invalidUuid)
+        .then()
+        .statusCode(404);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_nonExistentUuid_shouldReturn404() {
+    final String nonExistentUuid = "00000000-0000-0000-0000-000000000000";
+
+    RestAssured.given()
+        .get(getWebUiUrl() + "/fullyRenderedMessage/" + nonExistentUuid)
+        .then()
+        .statusCode(404)
+        .body(containsString(nonExistentUuid));
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_shouldContainHtmlRenderedContent() {
+    final var uuid = tigerProxy.getRbelMessagesList().get(0).getUuid();
+
+    final var response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/fullyRenderedMessage/" + uuid)
+            .then()
+            .statusCode(200)
+            .contentType("application/json")
+            .extract()
+            .response();
+
+    final String content = response.jsonPath().getString("content");
+    assertThat(content).isNotEmpty();
+
+    var document = parse(content);
+    assertThat(document.getElementsByTag("div")).isNotEmpty();
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_allMessages_shouldReturnValidResponse() {
+    final var messages = tigerProxy.getRbelMessagesList();
+
+    for (var message : messages) {
+      RestAssured.given()
+          .get(getWebUiUrl() + "/fullyRenderedMessage/" + message.getUuid())
+          .then()
+          .statusCode(200)
+          .contentType("application/json")
+          .body("uuid", equalTo(message.getUuid()))
+          .body("content", not(equalTo("")))
+          .body("sequenceNumber", not(equalTo(null)));
+    }
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_emptyUuid_shouldReturn404() {
+    RestAssured.given().get(getWebUiUrl() + "/fullyRenderedMessage/").then().statusCode(404);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getFullHtmlMessage_largeMessage_shouldNotBeRedacted() {
+    // Clear existing messages and create a large message (>1KB)
+    tigerProxy.clearAllMessages();
+
+    try (val proxyRest = Unirest.spawnInstance()) {
+      proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
+
+      String largeBody = "X".repeat(KB);
+
+      proxyRest
+          .post("http://localhost:" + fakeBackendServerPort + "/foobar")
+          .body(largeBody)
+          .asEmpty();
+    }
+
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, 2, 10);
+
+    var largeMessage = tigerProxy.getRbelMessagesList().get(0);
+    var uuid = largeMessage.getUuid();
+
+    assertThat(largeMessage.getSize()).isGreaterThan(KB);
+
+    final var response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/fullyRenderedMessage/" + uuid)
+            .then()
+            .statusCode(200)
+            .contentType("application/json")
+            .extract()
+            .response();
+
+    assertThat(response.jsonPath().getString("uuid")).isEqualTo(uuid);
+    assertThat(response.jsonPath().getString("content")).isNotEmpty();
+
+    final String content = response.jsonPath().getString("content");
+
+    var document = parse(content);
+    assertThat(document.getElementsByTag("div")).isNotEmpty();
+
+    assertThat(content).doesNotContain("redacted"); // Should not be redacted
   }
 }

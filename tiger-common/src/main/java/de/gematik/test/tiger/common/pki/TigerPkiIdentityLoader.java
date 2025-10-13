@@ -28,7 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -160,54 +163,29 @@ public class TigerPkiIdentityLoader {
     }
 
     if (identityInformation.getStoreType().isKeystore()) {
-      identityInformation.setPassword(
-          guessPasswordField(
-                  informationSplits,
-                  identityInformation.getFilenames(),
-                  identityInformation.getStoreType())
-              .orElse(null));
+      identityInformation.setAliasesOrPasswords(
+          guessPasswordAndAliasFields(
+              informationSplits,
+              identityInformation.getFilenames(),
+              identityInformation.getStoreType()));
     }
     return identityInformation;
   }
 
   public static TigerPkiIdentity loadIdentity(TigerPkiIdentityInformation identityInformation) {
     if (identityInformation.getOrGuessStoreType().isKeystore()) {
-      if (identityInformation.getPassword() != null) {
-        return loadKeystoreFrom(identityInformation);
-      } else {
-        return getAllKeystorePasswords().stream()
-            .map(
-                password -> {
-                  try {
-                    return loadKeystoreFrom(
-                        identityInformation.toBuilder().password(password).build());
-                  } catch (Exception e) {
-                    return null;
-                  }
-                })
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new TigerPkiIdentityLoaderException(
-                        "No valid password found and could not be guessed for source '"
-                            + identityInformation.getFilenames().get(0)
-                            + "'"));
-      }
+      return loadKeystoreFrom(identityInformation);
     } else {
       return loadCertKeyPair(identityInformation);
     }
   }
 
-  private static Optional<String> guessPasswordField(
+  private static List<String> guessPasswordAndAliasFields(
       List<String> informationSplits, List<String> fileNames, StoreType storeType) {
     return informationSplits.stream()
         .filter(part -> !fileNames.contains(part))
-        .filter(
-            part ->
-                !storeType.name().equalsIgnoreCase(part)
-                    && storeType.getNames().stream().noneMatch(s -> s.equalsIgnoreCase(part)))
-        .findAny();
+        .filter(part -> storeType.getNames().stream().noneMatch(s -> s.equalsIgnoreCase(part)))
+        .toList();
   }
 
   private static TigerPkiIdentity loadCertKeyPair(TigerPkiIdentityInformation identityInformation) {
@@ -257,46 +235,150 @@ public class TigerPkiIdentityLoader {
   private static TigerPkiIdentity loadKeystoreFrom(
       TigerPkiIdentityInformation identityInformation) {
     val sourceUri = identityInformation.getFilenames().get(0);
-    val keystoreInputStream =
+    val keyStoreData =
         readDataFromLocation(sourceUri)
-            .map(ByteArrayInputStream::new)
             .orElseThrow(
                 () ->
                     new TigerPkiIdentityLoaderException(
                         "Unable to load keystore from '" + sourceUri + "'!"));
     try {
-      KeyStore ks = KeyStore.getInstance(identityInformation.getOrGuessStoreType().name());
-      ks.load(keystoreInputStream, identityInformation.getPassword().toCharArray());
-      TigerPkiIdentity result = new TigerPkiIdentity();
-      for (Iterator<String> it = ks.aliases().asIterator(); it.hasNext(); ) {
-        String alias = it.next();
-        if (ks.isKeyEntry(alias)) {
-          result.setCertificate((X509Certificate) ks.getCertificate(alias));
-          result.setPrivateKey(
-              (PrivateKey) ks.getKey(alias, identityInformation.getPassword().toCharArray()));
-          final Certificate[] certificateChain = ks.getCertificateChain(alias);
-          for (int i = 1; i < certificateChain.length; i++) {
-            result.addCertificateToCertificateChain((X509Certificate) certificateChain[i]);
-          }
-        } else {
-          result.addCertificateToCertificateChain((X509Certificate) ks.getCertificate(alias));
-        }
-      }
-      if (result.getPrivateKey() == null) {
-        throw new TigerPkiIdentityLoaderException(
-            "Error while loading keystore from '" + sourceUri + "': No matching entry found!");
-      } else {
-        return result;
-      }
+      val keyStoreAndPassword = loadKeyStore(identityInformation, keyStoreData, sourceUri);
+      val keyStore = keyStoreAndPassword.getLeft();
+      val password = keyStoreAndPassword.getRight();
+      val givenAlias = extractGivenAlias(identityInformation, password);
+      return extractResult(keyStore, givenAlias, password, sourceUri);
     } catch (Exception e) {
       throw new TigerPkiIdentityLoaderException(
           "Error while loading keystore from '"
               + sourceUri
               + "' with password '"
               + identityInformation.getPassword()
-              + "'",
+              + "' and given alias '"
+              + identityInformation.getAlias()
+              + "'!",
           e);
     }
+  }
+
+  private static TigerPkiIdentity extractResult(
+      KeyStore keyStore, String givenAlias, String password, String sourceUri)
+      throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    PrivateKey privateKey = null;
+    X509Certificate certificate = null;
+    Certificate[] certificateChain = new Certificate[0];
+    if (givenAlias != null) {
+      var foundAlias = false;
+      for (Iterator<String> it = keyStore.aliases().asIterator(); it.hasNext(); ) {
+        foundAlias |= givenAlias.equalsIgnoreCase(it.next());
+      }
+      if (!foundAlias) {
+        givenAlias = null;
+      }
+    }
+    for (Iterator<String> it = keyStore.aliases().asIterator(); it.hasNext(); ) {
+      String keyStoreAlias = it.next();
+      if (keyStore.isKeyEntry(keyStoreAlias)) {
+        if (givenAlias == null || givenAlias.equals(keyStoreAlias)) {
+          privateKey = (PrivateKey) keyStore.getKey(keyStoreAlias, password.toCharArray());
+          certificate = (X509Certificate) keyStore.getCertificate(keyStoreAlias);
+          certificateChain = keyStore.getCertificateChain(keyStoreAlias);
+          break;
+        }
+      }
+    }
+    if (privateKey == null) {
+      throw new TigerPkiIdentityLoaderException(
+          "Error while loading keystore from '" + sourceUri + "': No matching entry found!");
+    } else {
+      TigerPkiIdentity result = new TigerPkiIdentity();
+      result.setPrivateKey(privateKey);
+      addCertificates(keyStore, certificate, certificateChain, result);
+      return result;
+    }
+  }
+
+  private static void addCertificates(
+      KeyStore keyStore,
+      X509Certificate certificate,
+      Certificate[] certificateChain,
+      TigerPkiIdentity result)
+      throws KeyStoreException {
+    result.setCertificate(certificate);
+    Certificate lastCertificate = certificate;
+    for (int i = 1; i < certificateChain.length; i++) {
+      lastCertificate = certificateChain[i];
+      result.addCertificateToCertificateChain((X509Certificate) lastCertificate);
+    }
+    for (Iterator<String> it = keyStore.aliases().asIterator(); it.hasNext(); ) {
+      String alias = it.next();
+      if (keyStore.isCertificateEntry(alias)) {
+        var cert = keyStore.getCertificate(alias);
+        try {
+          lastCertificate.verify(cert.getPublicKey());
+          result.addCertificateToCertificateChain((X509Certificate) cert);
+          break;
+        } catch (Exception e) {
+          log.trace(
+              "Error while verifying certificate {} against certificate {}",
+              lastCertificate,
+              cert,
+              e);
+        }
+      }
+    }
+  }
+
+  private static String extractGivenAlias(
+      TigerPkiIdentityInformation identityInformation, String password) {
+    String alias = identityInformation.getAlias();
+    if (alias == null && !identityInformation.getAliasesOrPasswords().isEmpty()) {
+      alias =
+          identityInformation.getAliasesOrPasswords().stream()
+              .filter(aliasOrPassword -> !password.equals(aliasOrPassword))
+              .findFirst()
+              .orElse(null);
+    }
+    return alias;
+  }
+
+  private static Pair<KeyStore, String> loadKeyStore(
+      TigerPkiIdentityInformation identityInformation, byte[] keyStoreData, String sourceUri)
+      throws KeyStoreException {
+    val potentialPasswords = extractPotentialPasswords(identityInformation);
+    val ks = KeyStore.getInstance(identityInformation.getOrGuessStoreType().name());
+    for (var potentialPassword : potentialPasswords) {
+      try (InputStream keystoreInputStream = new ByteArrayInputStream(keyStoreData)) {
+        ks.load(keystoreInputStream, potentialPassword.toCharArray());
+        return Pair.of(ks, potentialPassword);
+      } catch (IOException e) {
+        // wrong password, try next
+        continue;
+      } catch (Exception e) {
+        throw new TigerPkiIdentityLoaderException(
+            "Error while loading keystore from '" + sourceUri + "'!", e);
+      }
+    }
+    throw new TigerPkiIdentityLoaderException(
+        "Unable to open keystore from '"
+            + sourceUri
+            + "' with any of these passwords: "
+            + potentialPasswords);
+  }
+
+  private static Set<String> extractPotentialPasswords(
+      TigerPkiIdentityInformation identityInformation) {
+    val password = identityInformation.getPassword();
+    val potentialPasswords = new LinkedHashSet<String>();
+    if (password != null) {
+      potentialPasswords.add(password);
+    } else {
+      potentialPasswords.addAll(
+          identityInformation.getAliasesOrPasswords().stream()
+              .filter(aliasOrPassword -> !aliasOrPassword.equals(identityInformation.getAlias()))
+              .toList());
+      potentialPasswords.addAll(getAllKeystorePasswords());
+    }
+    return potentialPasswords;
   }
 
   private static byte[] forceReadDataFromLocation(String entityLocation) {
@@ -332,12 +414,13 @@ public class TigerPkiIdentityLoader {
   private static Optional<byte[]> loadResourceData(String name) {
     try (InputStream rawStream =
         TigerPkiIdentityLoader.class.getClassLoader().getResourceAsStream(name)) {
-      return Optional.ofNullable(rawStream.readAllBytes());
+      return Optional.of(rawStream.readAllBytes());
     } catch (Exception e) {
       return Optional.empty();
     }
   }
 
+  @Getter
   public enum StoreType {
     PKCS12(true, "P12"),
     JKS(true),
@@ -345,8 +428,8 @@ public class TigerPkiIdentityLoader {
     PKCS8(false),
     PKCS1(false);
 
-    @Getter private final List<String> names;
-    @Getter private final boolean isKeystore;
+    private final List<String> names;
+    private final boolean isKeystore;
 
     StoreType(boolean isKeystore, String... alternateNames) {
       List<String> namesList = new ArrayList<>(List.of(alternateNames));

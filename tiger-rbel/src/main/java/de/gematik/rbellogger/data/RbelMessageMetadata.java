@@ -23,6 +23,7 @@ package de.gematik.rbellogger.data;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,10 +39,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class RbelMessageMetadata implements RbelFacet {
-  public static final RbelMetadataValue<RbelHostname> MESSAGE_SENDER =
-      new RbelMetadataValue<>("senderHostname", RbelHostname.class);
-  public static final RbelMetadataValue<RbelHostname> MESSAGE_RECEIVER =
-      new RbelMetadataValue<>("receiverHostname", RbelHostname.class);
+  public static final RbelMetadataValue<RbelSocketAddress> MESSAGE_SENDER =
+      new RbelMetadataValue<>("senderHostname", RbelSocketAddress.class);
+  public static final RbelMetadataValue<RbelSocketAddress> MESSAGE_RECEIVER =
+      new RbelMetadataValue<>("receiverHostname", RbelSocketAddress.class);
   public static final RbelMetadataValue<ZonedDateTime> MESSAGE_TRANSMISSION_TIME =
       new RbelMetadataValue<>("timestamp", ZonedDateTime.class);
   public static final RbelMetadataValue<String> PREVIOUS_MESSAGE_UUID =
@@ -65,21 +66,21 @@ public class RbelMessageMetadata implements RbelFacet {
     return metadata.get(key);
   }
 
-  public RbelMessageMetadata withSender(RbelHostname sender) {
+  public RbelMessageMetadata withSender(RbelSocketAddress sender) {
     addMetadata(MESSAGE_SENDER.getKey(), sender);
     return this;
   }
 
-  public Optional<RbelHostname> getSender() {
+  public Optional<RbelSocketAddress> getSender() {
     return MESSAGE_SENDER.getValue(this);
   }
 
-  public RbelMessageMetadata withReceiver(RbelHostname receiver) {
+  public RbelMessageMetadata withReceiver(RbelSocketAddress receiver) {
     addMetadata(MESSAGE_RECEIVER.getKey(), receiver);
     return this;
   }
 
-  public Optional<RbelHostname> getReceiver() {
+  public Optional<RbelSocketAddress> getReceiver() {
     return MESSAGE_RECEIVER.getValue(this);
   }
 
@@ -131,31 +132,20 @@ public class RbelMessageMetadata implements RbelFacet {
         try {
           return Optional.ofNullable(MAPPER.convertValue(result, type));
         } catch (Exception e) {
-          log.error(
-              "Failed to convert metadata value for key {} with content {} for type {}. Trying to"
-                  + " convert it via readValue.",
-              key,
-              result,
-              type.getName(),
-              e);
           try {
             return Optional.ofNullable(MAPPER.readValue(result.toString(), type));
           } catch (Exception e1) {
-            log.error(
-                "Failed to read metadata value for key {} with content {} for type {}",
-                key,
-                result,
-                type.getName(),
+            throw new RuntimeException(
+                "Metadata Value for key "
+                    + key
+                    + " with value '"
+                    + result
+                    + "' can not be converted to "
+                    + type.getName()
+                    + ", it is of type "
+                    + result.getClass().getName(),
                 e1);
           }
-          throw new RuntimeException(
-              "Metadata Value for key "
-                  + key
-                  + " is not of type "
-                  + type.getName()
-                  + ", but rather "
-                  + result.getClass().getName(),
-              e);
         }
       }
     }

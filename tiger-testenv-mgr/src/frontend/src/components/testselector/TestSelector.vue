@@ -21,9 +21,14 @@
 
 -->
 <script setup lang="ts">
-import { computed, inject, type Ref, ref } from "vue";
-import TreeTable from "primevue/treetable";
+import { computed, inject, ref, type Ref } from "vue";
+import TreeTable, { type TreeTableFilterEvent } from "primevue/treetable";
 import Column from "primevue/column";
+import Tag from "primevue/tag";
+import SplitButton from "primevue/splitbutton";
+import InputText from "primevue/inputtext";
+import InputIcon from "primevue/inputicon";
+import IconField from "primevue/iconfield";
 import type { TreeNode } from "primevue/treenode";
 import { useFeaturesStore } from "@/stores/features.ts";
 import type { DynamicDialogInstance } from "primevue/dynamicdialogoptions";
@@ -31,6 +36,16 @@ import { convertToTreeNode } from "@/components/testselector/FeatureToTreeNodeCo
 import { visitTreeNodes } from "@/components/testselector/TreeNodeVisitor.ts";
 import { runScenarios } from "@/components/replay/ScenarioRunner.ts";
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier.ts";
+import { useSelectedTestsStore } from "@/stores/selectedTests.ts";
+import {
+  relativizePaths,
+  resolvePaths,
+} from "@/components/testselector/PathsConverter.ts";
+import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
+import ProgressSpinner from "primevue/progressspinner";
+import { useCollapseExpandedTests } from "@/stores/collapseExpandedTests.ts";
+import Message from "primevue/message";
+import Popover from "primevue/popover";
 
 const thisDialogInstance = inject<Ref<DynamicDialogInstance>>("dialogRef");
 
@@ -45,27 +60,49 @@ const testsToSelect = computed(() =>
 );
 
 //we need a map of keys to booleans to indicate that all tree nodes are expanded on start
-const extractKeysAsObject = (nodes: TreeNode[]): Record<string, boolean> => {
-  const keys: Record<string, boolean> = {};
+const extractKeys = (nodes: TreeNode[]): string[] => {
+  const keys: string[] = [];
 
   visitTreeNodes(nodes, (node: TreeNode) => {
     if (node.key) {
-      keys[node.key] = true;
+      keys.push(node.key);
     }
   });
   return keys;
 };
 
-const expandedKeys = computed(() => extractKeysAsObject(testsToSelect.value));
-const checkedKeys = ref<
-  Record<string, { checked: boolean; partiallyChecked: boolean }>
->({});
+const expandedKeysStore = useCollapseExpandedTests();
+
+//needed for easier management of the expanded keys
+const allKeys = computed(() => extractKeys(testsToSelect.value));
+
+const expandAll = () => {
+  allKeys.value.forEach((key) => {
+    expandedKeysStore.expandKey(key);
+  });
+};
+const collapseAll = () => {
+  expandedKeysStore.collapseAll();
+};
+
+const selectedTestsStore = useSelectedTestsStore();
+const testSuiteLifecycleStore = useTestSuiteLifecycleStore();
+
+const tags = computed(() => {
+  const allTags = Array.from(featuresStore.featureUpdateMap.values())
+    .flatMap((f) => Array.from(f.scenarios.values()))
+    .flatMap((s) => s.tags);
+  return new Set(allTags);
+});
 
 const executeSelection = () => {
-  const selectedKeys = Object.keys(checkedKeys.value).filter(
-    (key) => checkedKeys.value[key].checked,
-  );
+  const selectionUniqueIds = uniqueIdsOfSelectedTests();
+  runScenarios(selectionUniqueIds);
+  closeDialog();
+};
 
+function uniqueIdsOfSelectedTests(): ScenarioIdentifier[] {
+  const selectedKeys = selectedTestsStore.currentlySelectedTests;
   const selectionUniqueIds: string[] = [];
   visitTreeNodes(testsToSelect.value, (node: TreeNode) => {
     if (
@@ -76,47 +113,404 @@ const executeSelection = () => {
       selectionUniqueIds.push(node.key);
     }
   });
-  runScenarios(selectionUniqueIds.map((s) => new ScenarioIdentifier(s)));
-  closeDialog();
+  return selectionUniqueIds.map((s) => new ScenarioIdentifier(s));
+}
+
+const selectAll = () => {
+  selectedTestsStore.replaceSelection(allKeys.value);
 };
+
+const selectNone = () => {
+  selectedTestsStore.clearSelection();
+};
+
+function findWithTag(tag: string): string[] {
+  const testIdsWithTag: string[] = [];
+  visitTreeNodes(testsToSelect.value, (node: TreeNode) => {
+    if (node.data.tags?.includes(tag)) {
+      testIdsWithTag.push(node.key);
+    }
+  });
+  return testIdsWithTag;
+}
+
+function addToSelection(tag: string) {
+  const keysToAdd = findWithTag(tag);
+  selectedTestsStore.addToSelection(keysToAdd);
+  updateParentsCheckedStatus();
+}
+
+// When clicking on the checkboxes, the PrimeVue components takes care of it,
+//but when changing selections via the tag buttons, we lose the information of which
+//parent nodes are partially selected.
+function updateParentsCheckedStatus() {
+  const updatedStatus = { ...selectedTestsStore.allTestsSelectedStatus };
+
+  // Recursively update each tree from the root
+  testsToSelect.value.forEach((rootNode) => {
+    updateNodeStatus(rootNode, updatedStatus);
+  });
+
+  selectedTestsStore.allTestsSelectedStatus = updatedStatus;
+}
+
+function updateNodeStatus(
+  node: TreeNode,
+  updatedStatus: Record<
+    string,
+    {
+      checked: boolean;
+      partialChecked: boolean;
+    }
+  >,
+): { checked: boolean; partialChecked: boolean } {
+  // Base case: leaf node
+  if (!node.children || node.children.length === 0) {
+    // Return the current status of this leaf node
+    return updatedStatus[node.key] || { checked: false, partialChecked: false };
+  }
+
+  // Recursive case: process all children first
+  const childStatuses = node.children.map((child) =>
+    updateNodeStatus(child, updatedStatus),
+  );
+
+  // Determine this node's status based on its children
+  const checkedChildren = childStatuses.filter((status) => status.checked);
+  const partiallyCheckedChildren = childStatuses.filter(
+    (status) => status.partialChecked,
+  );
+
+  let nodeStatus: { checked: boolean; partialChecked: boolean };
+
+  if (checkedChildren.length === childStatuses.length) {
+    // All children are checked
+    nodeStatus = { checked: true, partialChecked: false };
+  } else if (
+    checkedChildren.length === 0 &&
+    partiallyCheckedChildren.length === 0
+  ) {
+    // No children are checked or partially checked
+    nodeStatus = { checked: false, partialChecked: false };
+  } else {
+    // Some children are checked or partially checked
+    nodeStatus = { checked: false, partialChecked: true };
+  }
+
+  // Update the status for this node
+  if (node.key) {
+    if (nodeStatus.checked || nodeStatus.partialChecked) {
+      updatedStatus[node.key] = nodeStatus;
+    } else {
+      delete updatedStatus[node.key];
+    }
+  }
+
+  return nodeStatus;
+}
+
+function removeFromSelection(tag: string) {
+  const keysToUnselect = findWithTag(tag);
+  selectedTestsStore.removeFromSelection(keysToUnselect);
+  updateParentsCheckedStatus();
+}
+
+function replaceSelection(tag: string) {
+  const newSelectionIds = findWithTag(tag);
+  selectedTestsStore.replaceSelection(newSelectionIds);
+  updateParentsCheckedStatus();
+}
+
+function onFilterChange(_event: TreeTableFilterEvent) {
+  //when changing the filters, the partially checked checkboxes are not updated correctly.
+  updateParentsCheckedStatus();
+}
+
+const createTagActions = (tag: string) => [
+  {
+    label: "Unselect",
+    icon: "fa fa-minus",
+    command: () => {
+      removeFromSelection(tag);
+    },
+  },
+  {
+    label: "Replace selection",
+    icon: "fa fa-rotate-right",
+    command: () => {
+      replaceSelection(tag);
+    },
+  },
+];
+
+async function saveSelection() {
+  const relativizedPaths = await relativizePaths(uniqueIdsOfSelectedTests());
+  const dataStr = JSON.stringify(relativizedPaths, null, 2);
+  const dataBlob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "selected-tests.json";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function loadSelection() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = (event: Event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const selectedTests: ScenarioIdentifier[] = JSON.parse(
+            e.target?.result as string,
+          );
+          const testsWithResolvedPaths = await resolvePaths(selectedTests);
+
+          const justTestIds = testsWithResolvedPaths.map((s) => s.uniqueId);
+          const { inA: testThatExist, notInA: doNotExist } =
+            partitionByMembership(allKeys.value, justTestIds);
+          selectedTestsStore.replaceSelection(testThatExist);
+          if (doNotExist.length > 0) {
+            errorMessage.value = [
+              "When loading tests, the following tests were not found on the current test suite:",
+              ...doNotExist,
+            ];
+          } else {
+            errorMessage.value = [];
+          }
+          console.log(
+            "Loaded selection:",
+            selectedTestsStore.currentlySelectedTests,
+          );
+          updateParentsCheckedStatus();
+        } catch (error) {
+          console.error("Error loading selection:", error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+  input.click();
+}
+
+function partitionByMembership<T>(a: T[], b: T[]) {
+  const aSet = new Set(a);
+  const inA: T[] = [];
+  const notInA: T[] = [];
+  for (const item of b) {
+    (aSet.has(item) ? inA : notInA).push(item);
+  }
+  return { inA, notInA };
+}
+
+const filters = ref<Record<string, string>>({});
+
+const popover = ref<InstanceType<typeof Popover> | null>(null);
+const currentOpenExample = ref<string | null>(null);
+
+function openPopover(event: MouseEvent, examples: string) {
+  currentOpenExample.value = examples;
+  popover.value?.toggle(event); // anchors to the clicked button
+}
+
+const errorMessage = ref<string[]>([]);
 </script>
 
 <template>
-  <div class="container">
-    <div class="row dialog-header--sticky">
-      <h1>Select tests to execute</h1>
-      <button class="btn btn-primary" @click="executeSelection">
-        Execute selected tests
-      </button>
-    </div>
-    <div class="row">
-      <TreeTable
-        :expanded-keys="expandedKeys"
-        v-model:selection-keys="checkedKeys"
-        selectionMode="checkbox"
-        :value="testsToSelect"
-        tableStyle="min-width: 50rem"
-      >
-        <Column field="label" header="Name" expander style="width: 34%">
-          <template #body="slotProps">
-            <div>
-              <div>{{ slotProps.node.data.label }}</div>
-              <pre
-                v-if="slotProps.node.data.examples"
-                class="text-muted small"
-                >{{ slotProps.node.data.examples }}</pre
-              >
-            </div>
-          </template>
-        </Column>
+  <div class="container" id="testselector-modal">
+    <div class="dialog-header--sticky">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1>Select tests to execute</h1>
 
-        <Column
-          field="sourcePath"
-          header="Source File"
-          style="width: 33%"
-        ></Column>
-      </TreeTable>
+        <button class="btn btn-primary" @click="executeSelection">
+          Execute selected tests <i class="fa fa-play"></i>
+        </button>
+      </div>
     </div>
+    <Message
+      closable
+      class="row mt-1"
+      severity="warn"
+      v-if="errorMessage.length > 0"
+    >
+      <span style="white-space: pre-line">{{ errorMessage[0] }}</span>
+      <ul v-if="errorMessage.length > 1" class="mb-0">
+        <li v-for="(msg, idx) in errorMessage.slice(1)" :key="idx">
+          {{ msg }}
+        </li>
+      </ul>
+    </Message>
+    <div class="row mt-1">
+      <div id="testselector-table">
+        <div
+          class="d-flex gap-1 align-items-center"
+          id="testselector-action-buttons"
+        >
+          <button class="btn btn-sm btn-secondary" @click="selectAll">
+            Select All
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="selectNone">
+            Select None
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="expandAll">
+            Expand All
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="collapseAll">
+            Collapse All
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="saveSelection">
+            Save selection
+          </button>
+          <button class="btn btn-sm btn-secondary" @click="loadSelection">
+            Load selection
+          </button>
+
+          <div class="ms-auto">
+            <IconField>
+              <InputIcon class="pi pi-search" />
+              <InputText
+                size="small"
+                v-model="filters['global']"
+                placeholder="Global Search"
+              />
+            </IconField>
+          </div>
+        </div>
+        <div class="col ps-2">
+          <div
+            v-if="
+              !testSuiteLifecycleStore.waitingForTestDiscovery && tags.size > 0
+            "
+            id="testselector-tags"
+          >
+            <span class="h5 me-2">Tags</span>
+            <SplitButton
+              v-for="tag in tags"
+              class="me-1 mb-1 mt-1 tag-selection-button"
+              :key="tag"
+              :label="tag"
+              size="small"
+              icon="fa fa-plus"
+              @click="addToSelection(tag)"
+              :model="createTagActions(tag)"
+              rounded
+            >
+            </SplitButton>
+          </div>
+        </div>
+        <div
+          class="d-flex justify-content-center align-items-center"
+          v-if="testSuiteLifecycleStore.waitingForTestDiscovery"
+        >
+          <ProgressSpinner
+            class="ms-0 me-2 mt-1"
+            style="width: 50px; height: 50px"
+            strokeWidth="8"
+            fill="transparent"
+            animationDuration="5s"
+          />
+          <div>Waiting for test discovery</div>
+        </div>
+        <TreeTable
+          v-else
+          v-model:expanded-keys="expandedKeysStore.expandedState"
+          v-model:selection-keys="selectedTestsStore.allTestsSelectedStatus"
+          selectionMode="checkbox"
+          :value="testsToSelect"
+          :filters="filters"
+          filterMode="lenient"
+          @filter="onFilterChange"
+          tableStyle="min-width: 50rem"
+        >
+          <Column
+            field="label"
+            header="Name"
+            expander
+            style="width: 50%"
+            filter-match-mode="contains"
+          >
+            <template #body="slotProps">
+              <div>
+                <div>
+                  {{ slotProps.node.data.label }}
+                  <button
+                    v-if="slotProps.node.data.examples"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="openPopover($event, slotProps.node.data.examples)"
+                  >
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  </button>
+                </div>
+
+                <Popover v-if="slotProps.node.data.examples"> </Popover>
+              </div>
+            </template>
+            <template #filter>
+              <InputText
+                size="small"
+                v-model="filters['label']"
+                type="text"
+                placeholder="Filter by name"
+              />
+            </template>
+          </Column>
+
+          <Column
+            v-if="tags.size > 0"
+            field="tags"
+            header="Tags"
+            style="width: 25%"
+            filter-match-mode="contains"
+          >
+            <template #body="slotProps">
+              <div>
+                <Tag
+                  v-for="tag in slotProps.node.data.tags"
+                  class="me-1"
+                  :key="tag"
+                  :value="tag"
+                  rounded
+                ></Tag>
+              </div>
+            </template>
+            <template #filter>
+              <InputText
+                size="small"
+                v-model="filters['tags']"
+                type="text"
+                placeholder="Filter by tag"
+              />
+            </template>
+          </Column>
+          <Column
+            field="sourcePath"
+            header="Source File"
+            style="width: 25%"
+            filter-match-mode="contains"
+          >
+            <template #filter>
+              <InputText
+                size="small"
+                v-model="filters['sourcePath']"
+                type="text"
+                placeholder="Filter by file"
+              />
+            </template>
+          </Column>
+        </TreeTable>
+      </div>
+    </div>
+    <Popover ref="popover">
+      <div>
+        <pre class="text-muted small">{{ currentOpenExample }}</pre>
+      </div>
+    </Popover>
   </div>
 </template>
 
@@ -124,7 +518,41 @@ const executeSelection = () => {
 .dialog-header--sticky {
   position: sticky;
   top: 0;
-  background-color: var(--p-dialog-background); /* [1] */
-  z-index: 1055; /* [2] */
+  background-color: var(--p-dialog-background);
+  z-index: 1055;
+}
+
+/*Following styles are to ensure the tag buttons are small.
+It is tricky because we have mix of styles from primevue with bootstrap (bootstrap styles the
+button elements even if they have no specific bootstrap class.
+*/
+/* Scoped version (Vue 3): */
+:deep(.tag-selection-button.p-splitbutton) {
+  font-size: 0.875rem;
+}
+
+:deep(.tag-selection-button.p-splitbutton .p-button),
+:deep(.tag-selection-button.p-splitbutton .p-splitbutton-menubutton) {
+  padding: 0.25rem 0.5rem;
+  line-height: 1.1;
+  gap: 0.25rem;
+  min-height: 1.75rem;
+}
+
+:deep(.tag-selection-button.p-splitbutton .p-button-label) {
+  font-size: 0.875rem;
+}
+
+:deep(.tag-selection-button.p-splitbutton .p-button-icon),
+:deep(.tag-selection-button.p-splitbutton .p-button .p-icon),
+:deep(.tag-selection-button.p-splitbutton .p-splitbutton-menubutton .p-icon) {
+  font-size: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+:deep(.tag-selection-button.p-splitbutton .p-menu .p-menuitem-link) {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
 }
 </style>

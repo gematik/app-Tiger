@@ -822,6 +822,28 @@ There is however one additional property for the standalone proxy specifically:
 localResources: false
 ----
 
+=== Running Tiger Proxy as a docker container
+
+You can also simply run the Tiger Proxy as a docker container:
+
+[source,bash]
+----
+docker run -p 8080:8080 -p 9090:9090 --rm gematik1/tiger-proxy-image:latest
+----
+
+This exposes the admin-port (8080) and the proxy-port (9090) on the host.
+Be aware: When you change configuration in the container, make sure to always keep the admin port on 8080. Otherwise, the health-check of the container will fail.
+
+If you want to use a custom configuration, you can mount a configuration file into the container:
+
+[source,bash]
+----
+docker run \
+  -v application.yaml:/app/application.yaml \
+  -p 8080:8080 -p 9090:9090 --rm \
+  gematik1/tiger-proxy-image:latest
+----
+
 === Additional configuration
 
 There are some additional configuration-flags in the Tiger Proxy:

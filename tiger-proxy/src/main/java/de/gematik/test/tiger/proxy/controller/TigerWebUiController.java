@@ -44,7 +44,6 @@ import de.gematik.test.tiger.proxy.data.MetaMessageScrollableDto;
 import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
-import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.AbstractMap;
 import java.util.LinkedList;
@@ -101,19 +100,20 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
+  private final RbelHtmlRenderer fullRbelHtmlRenderer =
+      new RbelHtmlRenderer().withNoMaximumEntitySize();
 
   private final TigerProxyConfiguration proxyConfiguration;
   private ApplicationContext applicationContext;
 
   public final SimpMessagingTemplate template;
-  private final TigerBuildPropertiesService buildProperties;
 
   @Override
   public void setApplicationContext(final ApplicationContext appContext) throws BeansException {
     this.applicationContext = appContext;
   }
 
-  @GetMapping(value = "")
+  @GetMapping(value = {"", "/"})
   public ResponseEntity<Resource> getIndex() {
     final var resource = new ClassPathResource("/static/webui/index.html");
     return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/html")).body(resource);
@@ -473,11 +473,24 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public RbelContent downloadMessageContent(@PathVariable(name = "uuid") final String uuid) {
     log.trace("Downloading content of message with UUID: {}", uuid);
-    return getTigerProxy()
+    return getMessageByUuid(uuid).getContent();
+  }
+
+  @GetMapping(value = "/fullyRenderedMessage/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public HtmlMessageScrollableDto getFullHtmlMessage(@PathVariable(name = "uuid") String uuid) {
+    var msg = getMessageByUuid(uuid);
+    return HtmlMessageScrollableDto.builder()
+        .content(new RbelHtmlRenderingToolkit(fullRbelHtmlRenderer).convertMessage(msg).render())
+        .uuid(msg.getUuid())
+        .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+        .build();
+  }
+
+  private RbelElement getMessageByUuid(String uuid) {
+    return tigerProxy
         .getRbelLogger()
         .getRbelConverter()
         .findMessageByUuid(uuid)
-        .map(RbelElement::getContent)
         .orElseThrow(
             () ->
                 new ResponseStatusException(
@@ -557,5 +570,11 @@ public class TigerWebUiController implements ApplicationContextAware {
   @PostMapping(value = "/importTraffic")
   public void importTraffic(@RequestBody String rawTraffic) {
     tigerProxy.readTrafficFromString(rawTraffic);
+  }
+
+  // Serve index.html for single message view routes to enable frontend routing
+  @GetMapping(value = "/message/{uuid}")
+  public ResponseEntity<Resource> forwardMessageRoute(@PathVariable("uuid") String uuid) {
+    return getIndex();
   }
 }

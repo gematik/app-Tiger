@@ -89,12 +89,13 @@ public class RbelValidator {
       throw new AssertionError(
           String.format(
               """
-                                    Element value:
-                                    %s
-                                    Expected:
-                                    %s
-                                    Validation message:
-                                    %s""",
+              Element value:
+              %s
+              Expected:
+              %s
+              Validation message:
+              %s\
+              """,
               element.getRawStringContent(), oracle, exceptions.get(element.getUuid())));
     } else {
       throw new AssertionError(

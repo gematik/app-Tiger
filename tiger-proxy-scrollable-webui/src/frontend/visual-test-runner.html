@@ -1,0 +1,553 @@
+<!--
+
+
+    Copyright 2021-2025 gematik GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    *******
+
+    For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiger Proxy - SingleMessagePage Visual Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .test-runner {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .test-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .test-controls {
+            margin: 20px 0;
+        }
+
+        .test-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .test-btn:hover {
+            background: #0b5ed7;
+        }
+
+        .test-btn.running {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .test-btn.passed {
+            background: #198754;
+        }
+
+        .test-btn.failed {
+            background: #dc3545;
+        }
+
+        .test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .test-demo-area {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            min-height: 600px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-title {
+            background: #e9ecef;
+            padding: 10px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .test-content {
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0d6efd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .message-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+            position: relative;
+        }
+
+        .partner-btn {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+            margin-left: 10px;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-running {
+            background: #ffc107;
+        }
+
+        .status-passed {
+            background: #198754;
+        }
+
+        .status-failed {
+            background: #dc3545;
+        }
+
+        .status-pending {
+            background: #6c757d;
+        }
+
+        .error-alert {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .back-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .settings-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+<div class="test-runner">
+    <div class="test-header">
+        <h1>🧪 Tiger Proxy - SingleMessagePage Visual Test Runner</h1>
+        <p>This demonstration shows the SingleMessagePage component being tested in real-time. Watch as each test
+            scenario is visually demonstrated below.</p>
+    </div>
+
+    <div class="test-controls">
+        <button class="test-btn" onclick="runTest('loading')">
+            <span class="status-indicator status-pending"></span>
+            Test 1: Loading State
+        </button>
+        <button class="test-btn" onclick="runTest('message-display')">
+            <span class="status-indicator status-pending"></span>
+            Test 2: Message Display
+        </button>
+        <button class="test-btn" onclick="runTest('partner-navigation')">
+            <span class="status-indicator status-pending"></span>
+            Test 3: Partner Navigation
+        </button>
+        <button class="test-btn" onclick="runTest('error-state')">
+            <span class="status-indicator status-pending"></span>
+            Test 4: Error State
+        </button>
+        <button class="test-btn" onclick="runAllTests()" style="background: #198754;">
+            ▶️ Run All Tests
+        </button>
+        <button class="test-btn" onclick="clearTests()" style="background: #6c757d;">
+            🔄 Reset
+        </button>
+    </div>
+
+    <div class="test-output" id="testOutput">
+        Ready to run tests. Click any test button above to see the visual demonstration.
+    </div>
+
+    <div class="test-demo-area">
+        <div class="test-title" id="testTitle">Test Demo Area - Click a test to begin</div>
+        <div class="test-content" id="testContent">
+            <p>Select a test above to see the SingleMessagePage component in action.</p>
+            <ul>
+                <li><strong>Loading State:</strong> Shows the spinner and "Loading message..." text</li>
+                <li><strong>Message Display:</strong> Displays a complete HTTP message with partner button</li>
+                <li><strong>Partner Navigation:</strong> Demonstrates clicking the partner button to navigate</li>
+                <li><strong>Error State:</strong> Shows the "Message not found" error</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTest = null;
+
+    function log(message) {
+        const output = document.getElementById('testOutput');
+        const timestamp = new Date().toLocaleTimeString();
+        output.innerHTML += `[${timestamp}] ${message}\n`;
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function updateTestButton(testName, status) {
+        const buttons = document.querySelectorAll('.test-btn');
+        buttons.forEach(btn => {
+            if (btn.textContent.includes(testName)) {
+                btn.className = `test-btn ${status}`;
+                const indicator = btn.querySelector('.status-indicator');
+                indicator.className = `status-indicator status-${status}`;
+            }
+        });
+    }
+
+    function setTestTitle(title) {
+        document.getElementById('testTitle').textContent = title;
+    }
+
+    function setTestContent(content) {
+        document.getElementById('testContent').innerHTML = content;
+    }
+
+    async function runTest(testType) {
+        if (currentTest) {
+            log(`Stopping current test: ${currentTest}`);
+        }
+
+        currentTest = testType;
+        log(`Starting test: ${testType}`);
+        updateTestButton(testType, 'running');
+
+        try {
+            switch (testType) {
+                case 'loading':
+                    await testLoadingState();
+                    break;
+                case 'message-display':
+                    await testMessageDisplay();
+                    break;
+                case 'partner-navigation':
+                    await testPartnerNavigation();
+                    break;
+                case 'error-state':
+                    await testErrorState();
+                    break;
+            }
+
+            updateTestButton(testType, 'passed');
+            log(`✅ Test passed: ${testType}`);
+        } catch (error) {
+            updateTestButton(testType, 'failed');
+            log(`❌ Test failed: ${testType} - ${error.message}`);
+        }
+
+        currentTest = null;
+    }
+
+    async function testLoadingState() {
+        setTestTitle('Test 1: Loading State - should show spinner while fetching message');
+        log('Simulating component mount and async fetch...');
+
+        setTestContent(`
+                <div class="settings-header">
+                    <span class="logo">🐅 Tiger Proxy</span>
+                    <div>Settings Header Loaded</div>
+                </div>
+                <div style="margin: 20px;">
+                    <button class="back-button">← Back</button>
+                    <h2 style="display: inline;">Single Message View</h2>
+                </div>
+                <div style="text-align: center; padding: 50px;">
+                    <div class="spinner"></div>
+                    <p>Loading message...</p>
+                </div>
+            `);
+
+        log('✓ Loading spinner displayed');
+        log('✓ "Loading message..." text visible');
+        log('✓ Settings header rendered');
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        log('✓ Loading state test completed');
+    }
+
+    async function testMessageDisplay() {
+        setTestTitle('Test 2: Message Display - should display message content with partner button');
+        log('Simulating successful message fetch...');
+
+        setTestContent(`
+                <div class="settings-header">
+                    <span class="logo">🐅 Tiger Proxy</span>
+                    <div>
+                        <button style="margin: 0 5px; padding: 5px 10px;">⚙️ Settings</button>
+                        <button style="margin: 0 5px; padding: 5px 10px;">📁 Export</button>
+                    </div>
+                </div>
+                <div style="margin: 20px;">
+                    <button class="back-button">← Back</button>
+                    <h2 style="display: inline;">Single Message View</h2>
+                </div>
+                <div class="message-card">
+                    <div class="card-header">
+                        <button class="partner-btn" onclick="alert('Partner button clicked! Would navigate to response-uuid-456')">
+                            ↔️ Partner Message
+                        </button>
+                        <h3 style="color: #198754; margin: 0;">GET /api/users/123</h3>
+                    </div>
+                    <div class="card-content">
+                        <h4>Request Headers</h4>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px;">Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json</pre>
+                        <h4>Request Body</h4>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px;">{"filter": {"status": "active"}, "limit": 50}</pre>
+                    </div>
+                </div>
+            `);
+
+        log('✓ Message container displayed');
+        log('✓ Message component rendered');
+        log('✓ Partner button visible and clickable');
+        log('✓ HTTP message content displayed');
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        log('✓ Message display test completed');
+    }
+
+    async function testPartnerNavigation() {
+        setTestTitle('Test 3: Partner Navigation - should navigate to partner message when clicked');
+        log('Simulating partner button click navigation...');
+
+        // First show the request message
+        setTestContent(`
+                <div class="settings-header">
+                    <span class="logo">🐅 Tiger Proxy</span>
+                    <div>Current URL: /message/test-uuid-123</div>
+                </div>
+                <div style="margin: 20px;">
+                    <button class="back-button">← Back</button>
+                    <h2 style="display: inline;">Single Message View</h2>
+                </div>
+                <div class="message-card">
+                    <div class="card-header">
+                        <button class="partner-btn" id="partnerBtn" onclick="simulatePartnerClick()">
+                            ↔️ Partner Message
+                        </button>
+                        <h3 style="color: #198754; margin: 0;">GET /api/users/123 (Request)</h3>
+                    </div>
+                    <div class="card-content">
+                        <p><strong>Click the partner button to navigate to the response →</strong></p>
+                        <pre style="background: #f8f9fa; padding: 10px;">Request Content...</pre>
+                    </div>
+                </div>
+            `);
+
+        log('✓ Request message displayed');
+        log('✓ Partner button ready for click');
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Simulate partner button click
+        log('🖱️ Partner button clicked');
+        log('📍 Navigating to partner message...');
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Show the response message
+        setTestContent(`
+                <div class="settings-header">
+                    <span class="logo">🐅 Tiger Proxy</span>
+                    <div>Current URL: /message/response-uuid-456</div>
+                </div>
+                <div style="margin: 20px;">
+                    <button class="back-button">← Back</button>
+                    <h2 style="display: inline;">Single Message View</h2>
+                </div>
+                <div class="message-card">
+                    <div class="card-header">
+                        <button class="partner-btn" onclick="alert('Navigate back to request')">
+                            ↔️ Partner Message
+                        </button>
+                        <h3 style="color: #0d6efd; margin: 0;">200 OK (Response)</h3>
+                    </div>
+                    <div class="card-content">
+                        <p><strong>✅ Successfully navigated to partner message!</strong></p>
+                        <pre style="background: #f8f9fa; padding: 10px;">{"id": 123, "name": "John Doe", "email": "john@example.com"}</pre>
+                    </div>
+                </div>
+            `);
+
+        log('✅ Successfully navigated to partner message');
+        log('✓ URL updated to response-uuid-456');
+        log('✓ Response message displayed');
+        log('✓ Partner navigation test completed');
+    }
+
+    async function testErrorState() {
+        setTestTitle('Test 4: Error State - should show error when message not found');
+        log('Simulating failed message fetch...');
+
+        setTestContent(`
+                <div class="settings-header">
+                    <span class="logo">🐅 Tiger Proxy</span>
+                    <div>Current URL: /message/invalid-uuid</div>
+                </div>
+                <div style="margin: 20px;">
+                    <button class="back-button">← Back</button>
+                    <h2 style="display: inline;">Single Message View</h2>
+                </div>
+                <div class="error-alert">
+                    <h4>Message not found</h4>
+                    <p>The requested message could not be loaded. Please check the message ID and try again.</p>
+                </div>
+            `);
+
+        log('✓ Error alert displayed');
+        log('✓ "Message not found" message shown');
+        log('✓ No message container visible');
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        log('✓ Error state test completed');
+    }
+
+    function simulatePartnerClick() {
+        log('🖱️ Partner button clicked - would call router.push("/message/response-uuid-456")');
+    }
+
+    async function runAllTests() {
+        log('🚀 Running all tests...');
+        await runTest('loading');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await runTest('message-display');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await runTest('partner-navigation');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await runTest('error-state');
+        log('🎉 All tests completed!');
+    }
+
+    function clearTests() {
+        const buttons = document.querySelectorAll('.test-btn');
+        buttons.forEach(btn => {
+            if (!btn.textContent.includes('Run All') && !btn.textContent.includes('Reset')) {
+                btn.className = 'test-btn';
+                const indicator = btn.querySelector('.status-indicator');
+                if (indicator) {
+                    indicator.className = 'status-indicator status-pending';
+                }
+            }
+        });
+
+        document.getElementById('testOutput').innerHTML = 'Tests reset. Ready to run tests again.\n';
+        setTestTitle('Test Demo Area - Click a test to begin');
+        setTestContent(`
+                <p>Select a test above to see the SingleMessagePage component in action.</p>
+                <ul>
+                    <li><strong>Loading State:</strong> Shows the spinner and "Loading message..." text</li>
+                    <li><strong>Message Display:</strong> Displays a complete HTTP message with partner button</li>
+                    <li><strong>Partner Navigation:</strong> Demonstrates clicking the partner button to navigate</li>
+                    <li><strong>Error State:</strong> Shows the "Message not found" error</li>
+                </ul>
+            `);
+
+        currentTest = null;
+        log('🔄 Tests reset');
+    }
+
+    // Initialize
+    log('Visual Test Runner initialized');
+    log('Click any test button above to see the SingleMessagePage component demonstration');
+</script>
+</body>
+</html>

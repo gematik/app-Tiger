@@ -47,15 +47,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-public class RbelCborConverterTest {
+class RbelCborConverterTest {
 
   private static RbelLogger rbelLogger;
-  private ObjectMapper jsonMapper =
+  private final ObjectMapper jsonMapper =
       new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-  private CBORMapper cborMapper = new CBORMapper();
+  private final CBORMapper cborMapper = new CBORMapper();
 
   @BeforeAll
-  public static void initRbelLogger() {
+  static void initRbelLogger() {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
@@ -160,14 +160,19 @@ public class RbelCborConverterTest {
   @SneakyThrows
   @Test
   void httpCborMessage() {
+    final byte[] cborContent =
+        Hex.decode(
+            "D90100D81C86D81C86656669727374645365616E646C61737465486F6164656A6F636375706174696F6E66777269746572D81D01D81D01D81C86D81900D81901D8190266436F6E6E6572D819046A70726F6772616D6D6572D81D02D81D02");
     final RbelElement convertMessage =
         rbelLogger
             .getRbelConverter()
             .convertElement(
                 ArrayUtils.addAll(
-                    ("HTTP/1.1 200\r\nConnection: keep-alive\r\n\r\n").getBytes(),
-                    Hex.decode(
-                        "D90100D81C86D81C86656669727374645365616E646C61737465486F6164656A6F636375706174696F6E66777269746572D81D01D81D01D81C86D81900D81901D8190266436F6E6E6572D819046A70726F6772616D6D6572D81D02D81D02")),
+                    ("HTTP/1.1 200\r\nConnection: keep-alive\r\ncontent-length:"
+                            + cborContent.length
+                            + "\r\n\r\n")
+                        .getBytes(),
+                    cborContent),
                 null);
 
     assertThatNoException()

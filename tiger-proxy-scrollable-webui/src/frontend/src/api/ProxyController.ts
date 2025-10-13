@@ -30,6 +30,7 @@ export type ControllerCall<Fn extends (...args: any) => any> = (
 export interface UseProxyControllerReturn {
   getMetaMessages: ControllerCall<ProxyRepository["fetchMessagesWithMeta"]>;
   getMessages: ControllerCall<ProxyRepository["fetchMessagesWithHtml"]>;
+  getFullyRenderedMessage: ControllerCall<ProxyRepository["fetchFullyRenderedMessage"]>;
   resetMessageQueue: (options?: ControllerCallOptions) => Promise<void>;
   quitProxy: (options?: ControllerCallOptions) => Promise<void>;
   testFilter: ControllerCall<ProxyRepository["fetchTestFilter"]>;
@@ -92,6 +93,8 @@ export function useProxyController(props: UseProxyControllerOptions): UseProxyCo
       makeCall(() => proxyRepo.fetchMessagesWithMeta(props), options),
     getMessages: (props, options) =>
       makeCall(() => proxyRepo.fetchMessagesWithHtml(props), options),
+    getFullyRenderedMessage: (props, options) =>
+      makeCall(() => proxyRepo.fetchFullyRenderedMessage(props), options),
     resetMessageQueue: (options) => makeCall(() => proxyRepo.fetchResetMessages(), options),
     quitProxy: (options) => makeCall(() => proxyRepo.fetchQuitProxy(), options),
     testFilter: (props, options) => makeCall(() => proxyRepo.fetchTestFilter(props), options),

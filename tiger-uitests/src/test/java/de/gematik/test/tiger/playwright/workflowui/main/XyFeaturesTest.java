@@ -29,9 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** Tests all feature files and scenarios by name. */
 @TestMethodOrder(MethodOrderer.MethodName.class)
@@ -69,40 +72,23 @@ class XyFeaturesTest extends AbstractBase {
     }
   }
 
+  /**
+   * Provides test data for scenario names with automatically computed counters. Each pair of
+   * scenario name and example index gets assigned a counter based on its position in the list.
+   */
+  private static Stream<Arguments> provideScenarioData() {
+    return Stream.iterate(0, i -> i < SCENARIO_DATA.length, i -> i + 1)
+        .map(
+            i ->
+                Arguments.of(
+                    SCENARIO_DATA[i][0], // scenarioName
+                    i, // counter (automatically computed from position)
+                    Integer.parseInt(SCENARIO_DATA[i][1]) // index
+                    ));
+  }
+
   @ParameterizedTest()
-  @CsvSource(
-      delimiter = '|',
-      textBlock =
-          """
-                Simple Get Request                      | 0  | 0 |
-                Get Request to folder                   | 1  | 0 |
-                PUT Request to folder                   | 2  | 0 |
-                PUT Request with body to folder         | 3  | 0 |
-                DELETE Request without body shall fail  | 4  | 0 |
-                Request with custom header              | 5  | 0 |
-                Request with default header             | 6  | 0 |
-                Request with custom and default header  | 7  | 0 |
-                Request with DataTables Test            | 8  | 0 |
-                Request with custom and default header  | 9  | 0 |
-                Test red with Dagmar                    | 10 | 1 |
-                Test blue with Nils                     | 11 | 2 |
-                Test green with Tim                     | 12 | 3 |
-                Test yellow with Sophie                 | 13 | 4 |
-                Test green with foo again               | 14 | 1 |
-                Test red with bar again                 | 15 | 2 |
-                Test Find Last Request                  | 16 | 0 |
-                Test find last request with parameters  | 17 | 0 |
-                Test find last request                  | 18 | 0 |
-                JEXL Rbel Namespace Test                | 19 | 1 |
-                JEXL Rbel Namespace Test                | 20 | 2 |
-                JEXL Rbel Namespace Test                | 21 | 3 |
-                JEXL Rbel Namespace Test                | 22 | 4 |
-                JEXL Rbel Namespace Test                | 23 | 5 |
-                Request a non existing url              | 24 | 0 |
-                Request for testing tooltips            | 25 | 0 |
-                A scenario with substeps                | 26 | 0 |
-                Test zeige HTML                         | 27 | 0 |
-                """)
+  @MethodSource("provideScenarioData")
   void testScenarioNames(String scenarioName, int counter, int index) {
     openSidebar();
     assertThat(
@@ -122,10 +108,10 @@ class XyFeaturesTest extends AbstractBase {
       delimiter = '|',
       textBlock =
           """
-                my_cool_param               | 0  |
-                state                       | 1  |
-                redirect_uri                | 2  |
-                """)
+          my_cool_param               | 0  |
+          state                       | 1  |
+          redirect_uri                | 2  |
+          """)
   void testXDataTablesExistFirstRow(String testName, int counter) {
     page.querySelector("#test-execution-pane-tab").click();
     assertThat(
@@ -143,10 +129,10 @@ class XyFeaturesTest extends AbstractBase {
       delimiter = '|',
       textBlock =
           """
-                client_id                   | 0  |
-                some_value                  | 1  |
-                https://my.redirect         | 2  |
-                """)
+          client_id                   | 0  |
+          some_value                  | 1  |
+          https://my.redirect         | 2  |
+          """)
   void testXDataTablesExistSecondRow(String testName, int counter) {
     page.querySelector("#test-execution-pane-tab").click();
     assertThat(

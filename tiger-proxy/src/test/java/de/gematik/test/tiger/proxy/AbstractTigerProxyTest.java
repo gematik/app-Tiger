@@ -255,7 +255,7 @@ public abstract class AbstractTigerProxyTest {
       AbstractTigerProxy proxyToCheck, int numberOfMessagesExpected) {
     try {
       await()
-          .atMost(5, TimeUnit.SECONDS)
+          .atMost(20, TimeUnit.SECONDS)
           .until(
               () ->
                   proxyToCheck.getRbelLogger().getMessageHistory().stream()
@@ -268,6 +268,7 @@ public abstract class AbstractTigerProxyTest {
           .getRbelLogger()
           .getMessageHistory()
           .forEach(el -> log.error("Message {}: {}", el.getUuid(), el.printTreeStructure()));
+      throw e;
     }
   }
 

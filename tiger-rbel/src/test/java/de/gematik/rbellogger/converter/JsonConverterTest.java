@@ -26,11 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -75,8 +75,9 @@ class JsonConverterTest {
                 null);
     convertedMessage.addFacet(
         RbelTcpIpMessageFacet.builder()
-            .receiver(RbelElement.wrap(null, convertedMessage, new RbelHostname("recipient", 1)))
-            .sender(RbelElement.wrap(null, convertedMessage, new RbelHostname("sender", 1)))
+            .receiver(
+                RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("recipient", 1)))
+            .sender(RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("sender", 1)))
             .build());
     assertThat(RbelHtmlRenderer.render(List.of(convertedMessage))).isNotBlank();
   }

@@ -52,11 +52,13 @@ public class TigerProxyConfiguration {
   private Integer proxyPort;
   @Builder.Default private boolean skipTrafficEndpointsSubscription = false;
   @Builder.Default private boolean failOnOfflineTrafficEndpoints = false;
+  @Builder.Default private boolean requireHealthyTrafficEndpoints = false;
   private List<String> trafficEndpoints;
   @Builder.Default private boolean downloadInitialTrafficFromEndpoints = false;
   @Builder.Default private String trafficEndpointFilterString = "";
   @Builder.Default private int maximumPartialMessageAgeInSeconds = 300;
   @Builder.Default private int connectionTimeoutInSeconds = 10;
+  @Builder.Default private float waitForPreviousMessageBeforeParsingInSeconds = 5;
   @Builder.Default private int stompClientBufferSizeInMb = 1;
   @Builder.Default private int perMessageBufferSizeInMb = 100;
   @Builder.Default private int rbelBufferSizeInMb = 1024;

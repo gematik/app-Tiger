@@ -20,10 +20,7 @@
  */
 package de.gematik.test.tiger.common.config;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TESTENV_MGR_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_YAML_VALUE;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

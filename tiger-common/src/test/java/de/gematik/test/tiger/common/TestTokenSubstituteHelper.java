@@ -44,7 +44,7 @@ class TestTokenSubstituteHelper {
     TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
     TigerGlobalConfiguration.putValue("some.boolean.value", "true");
     TigerGlobalConfiguration.readFromYaml(
-        """
+"""
 myMap:
   key1:
     value: foobar

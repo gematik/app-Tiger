@@ -1,9 +1,0 @@
-zion:
-  mockResponses:
-    fdsafdsafdsa:
-      requestCriterions:
-        - message.method == 'GET'
-        - message.url =~ '.*/helloWorld'
-      response:
-        statusCode: 222
-        body: '{"Hello":"World"}'

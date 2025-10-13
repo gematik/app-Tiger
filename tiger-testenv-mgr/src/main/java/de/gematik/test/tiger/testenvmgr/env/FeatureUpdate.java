@@ -43,7 +43,11 @@ public class FeatureUpdate {
 
   public static class FeatureUpdateBuilder {
     public FeatureUpdateBuilder sourcePathFromUri(URI sourcePathUri) {
-      this.sourcePath = sourcePathUri.getPath();
+      if (sourcePathUri.getScheme().equals("classpath")) {
+        this.sourcePath = sourcePathUri.getSchemeSpecificPart();
+      } else {
+        this.sourcePath = sourcePathUri.getPath();
+      }
       return this;
     }
 

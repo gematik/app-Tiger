@@ -25,6 +25,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.ssl.*;
@@ -57,6 +58,8 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
   public static final AttributeKey<TigerPkiIdentity> SERVER_IDENTITY =
       AttributeKey.valueOf("SERVER_IDENTITY");
+  public static final AttributeKey<KeyAlgorithmPreference> PREFERRED_UPSTREAM_KEY_ALGORITHM =
+      AttributeKey.valueOf("PREFERRED_UPSTREAM_KEY_ALGORITHM");
 
   private final MockServerConfiguration configuration;
   private final NettySslContextFactory nettySslContextFactory;
@@ -68,11 +71,22 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   }
 
   @Override
+  protected Future<SslContext> lookup(ChannelHandlerContext ctx, ByteBuf clientHello)
+      throws Exception {
+    val preference = KeyAlgorithmPreference.determineKeyAlgorithmPreference(clientHello);
+    ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).set(preference);
+
+    return super.lookup(ctx, clientHello);
+  }
+
+  @Override
   protected Future<SslContext> lookup(ChannelHandlerContext ctx, String hostname) {
     if (isNotBlank(hostname)) {
       configuration.addSubjectAlternativeName(hostname);
     }
-    val serverContextAndIdentity = nettySslContextFactory.createServerSslContext(hostname);
+    val serverContextAndIdentity =
+        nettySslContextFactory.createServerSslContext(
+            hostname, ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).get());
     ctx.channel().attr(SERVER_IDENTITY).set(serverContextAndIdentity.getValue());
     return ctx.executor().newSucceededFuture(serverContextAndIdentity.getKey());
   }

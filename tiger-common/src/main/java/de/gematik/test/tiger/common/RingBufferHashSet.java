@@ -45,4 +45,8 @@ public class RingBufferHashSet<V> {
   public synchronized void clear() {
     map.clear();
   }
+
+  public String toString() {
+    return map.keys().toString();
+  }
 }

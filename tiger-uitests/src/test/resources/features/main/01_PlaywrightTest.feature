@@ -33,6 +33,15 @@ Feature: Playwright Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.hello')}" matches "world"
 
+  Scenario: PUT Request with body from file to folder
+    When TGR send PUT request to "http://httpbin/put" with body "!{file('pom.xml')}"
+    Then TGR find last request to path ".*"
+    And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
+    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
+    And TGR assert "!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}" matches "4.0.0"
+   # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
+    And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/octet-stream.*"
+
   @FailsOnPurpose
   Scenario: DELETE Request without body shall fail
     When TGR send empty DELETE request to "http://httpbin/not_a_file"
@@ -122,7 +131,7 @@ Feature: Playwright Test feature
     Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
     Then TGR send empty GET request to "http://httpbin/classes?foobar=1&xyz=4"
     Then TGR send empty GET request to "http://httpbin/classes?foobar=2"
-    Then TGR find last request to path "/classes"
+    Then TGR find last request to path "/classes" with "$.path.xyz.value" matching "2"
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
 
@@ -130,17 +139,17 @@ Feature: Playwright Test feature
     Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
     Then TGR send empty GET request to "http://httpbin/classes?foobar=2"
     Then TGR send empty GET request to "http://httpbin/classes?foobar=3"
-    Then TGR send empty GET request to "http://httpbin/directoryWhichDoesNotExist?other=param"
+    Then TGR send empty GET request to "http://httpbin/status/501?other=param"
     Then TGR find the last request
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
     Then TGR current response with attribute "$.responseCode" matches "501"
 
   Scenario Outline: JEXL Rbel Namespace Test
-    Given TGR send empty GET request to "http://httpbin"
-    Then TGR find first request to path "/"
+    Given TGR send empty GET request to "http://httpbin/html"
+    Then TGR find first request to path "/html"
     And TGR print current request as rbel-tree
-    Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
+    Then TGR current response with attribute "$.body.html.body.h1.text" matches "!{rbel:currentResponseAsString('$.body.html.body.h1.text')}"
     Examples:
       | Text1                   | Text2 | Text3 | Text4 | Text5 |
       | ${tiger.example.0.text} | 21    | 31    | 41    | 51    |

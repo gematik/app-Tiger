@@ -23,6 +23,7 @@ package de.gematik.rbellogger.renderer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public class MessageMetaDataDto {
 
   private String uuid;
   private String menuInfoString;
-  private List<String> additionalInformation = new ArrayList<>();
+  @Builder.Default private List<String> additionalInformation = new ArrayList<>();
   private String recipient;
   private String sender;
   private String bundledServerNameSender;
@@ -77,7 +78,9 @@ public class MessageMetaDataDto {
             .bundledServerNameSender(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
-                    .flatMap(RbelHostnameFacet::tryToExtractServerName)
+                    .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
+                    .map(RbelHostnameFacet::toRbelSocketAddress)
+                    .map(RbelSocketAddress::printHostname)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .or(
                         () ->
@@ -90,7 +93,9 @@ public class MessageMetaDataDto {
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
-                    .flatMap(RbelHostnameFacet::tryToExtractServerName)
+                    .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
+                    .map(RbelHostnameFacet::toRbelSocketAddress)
+                    .map(RbelSocketAddress::printHostname)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .or(
                         () ->

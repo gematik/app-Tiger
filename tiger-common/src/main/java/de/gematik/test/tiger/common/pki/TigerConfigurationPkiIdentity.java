@@ -87,6 +87,7 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
               .or(() -> findField(node, "storetype", ctxt))
               .flatMap(StoreType::findStoreTypeForString)
               .ifPresent(pkiLoadingInformation::setStoreType);
+          findField(node, "alias", ctxt).ifPresent(pkiLoadingInformation::setAlias);
           return new TigerConfigurationPkiIdentity(pkiLoadingInformation);
         }
 

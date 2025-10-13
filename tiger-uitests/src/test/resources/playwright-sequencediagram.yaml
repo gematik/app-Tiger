@@ -1,57 +1,24 @@
 servers:
   mainServer:
-    type: zion
-    healthcheckUrl:
-      http://mainServer
-    healthcheckReturnCode: 200
-    zionConfiguration:
-      serverPort: ${free.port.50}
-      mockResponses:
-        helloZionBackendServer:
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/helloZionBackendServer'
-          backendRequests:
-            sayHello:
-              method: POST
-              url: "http://backendServer/helloBackend"
-              assignments:
-                backendResponseBody: "$.body"
-              executeAfterSelection: true
-          response:
-            statusCode: 200
-            body: ${backendResponseBody}
-        healthCheckResponse:
-          importance: 20 # more important so others don't get evaluated.
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/'
-          response:
-            statusCode: 200
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: ${free.port.2}
+      proxyPort: ${free.port.1}
+      proxyRoutes:
+        - from: /helloBackendServer
+          to: http://localhost:${free.port.4}/status/200
 
   backendServer:
-    type: zion
-    healthcheckUrl:
-      http://backendServer
-    healthcheckReturnCode: 200
-    zionConfiguration:
-      serverPort: ${free.port.55}
-      mockResponses:
-        helloFromBackend:
-          request:
-            method: POST
-            path: "/helloBackend"
-          response:
-            statusCode: 200
-            body: '{"Hello": "from backend"}'
-        healthCheck:
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/'
-          response:
-            statusCode: 200
-            body: '{"status":"UP"}'
-          importance: 10
+    type: httpbin
+    serverPort: ${free.port.4}
+    healthcheckUrl: http://localhost:${free.port.4}/status/200
+
+tigerProxy:
+  proxyRoutes:
+    - from: http://mainServer
+      to: http://localhost:${free.port.1}
+  trafficEndpoints:
+    - http://localhost:${free.port.2}
 
 
 lib:
@@ -63,5 +30,4 @@ lib:
 
 logging:
   level:
-    de.gematik.test.tiger.zion: TRACE
     de.gematik.test.tiger.testenvmgr.servers: DEBUG

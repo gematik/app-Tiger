@@ -30,15 +30,15 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractNonHttpTest;
+import de.gematik.test.tiger.proxy.AbstractNonHttpTest.VerifyInteractionsConsumer;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -92,38 +92,15 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
   }
 
   @Test
-  void sendSplitNonHttpMessageWithoutResponse() throws Exception {
+  void sendNonHttpMessageWithResponse() throws Exception {
+    CountDownLatch requestSent = new CountDownLatch(1);
     executeRemoteProxyTestWithMessagesAndVerification(
         socket -> {
-          writeSingleRequestMessage(socket, "USER XYZ".getBytes());
-          writeSingleRequestMessage(socket, "\r\n".getBytes());
-          writeSingleRequestMessage(socket, "QUIT".getBytes());
-          writeSingleRequestMessage(socket, "\r\n".getBytes());
+          writeSingleRequestMessage(socket, request);
+          requestSent.countDown();
         },
         serverSocket -> {
-          final BufferedReader reader =
-              new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-          reader.readLine();
-        },
-        (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(serverCalled.get()).isEqualTo(1);
-          var messages = new ArrayList<>(tigerRemoteProxyClient.get().getRbelMessages());
-          if (messages.size() > 2) {
-            messages.forEach(
-                message -> System.out.println("content: " + message.getRawStringContent()));
-          }
-          assertThat(messages).hasSize(2);
-          assertThat(messages.get(0).getRawStringContent()).isEqualTo("USER XYZ\r\n");
-          assertThat(messages.get(1).getRawStringContent()).isEqualTo("QUIT\r\n");
-        },
-        Object::toString);
-  }
-
-  @Test
-  void sendNonHttpMessageWithResponse() throws Exception {
-    executeRemoteProxyTestWithMessagesAndVerification(
-        socket -> writeSingleRequestMessage(socket, request),
-        serverSocket -> {
+          requestSent.await();
           serverSocket.getOutputStream().write(response);
           serverSocket.getOutputStream().flush();
         },
@@ -171,8 +148,6 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                         Map.of(
                             "tigerProxy.name",
                             "tigerProxyApplication",
-                            "tigerProxy.activateRbelParsingFor",
-                            "pop3",
                             "tigerProxy.directReverseProxy.hostname",
                             "127.0.0.1",
                             "tigerProxy.directReverseProxy.port",
@@ -191,7 +166,6 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                     TigerProxyConfiguration.builder()
                         .name("tigerRemoteProxyClient")
                         .proxyLogLevel("WARN")
-                        .activateRbelParsingFor(List.of("pop3", "smtp", "mime"))
                         .build()));
             tigerRemoteProxyClient.get().connect();
             await().until(tigerRemoteProxyClient.get()::isConnected);

@@ -183,7 +183,9 @@ public class PcapReplayer implements AutoCloseable {
                       .build()));
       buildClientSocket();
 
-      log.info("Replaying with direct forward using TigerProxy");
+      log.info(
+          "Replaying with direct forward using TigerProxy ({} packets) ",
+          this.toBeReplayedPackets.size());
       log.info(
           "Bouncing traffic via {} -> {} and {} -> {} (Wireshark Filter: tcp.port in {{}, {}, {}})",
           clientSocket.getLocalPort(),

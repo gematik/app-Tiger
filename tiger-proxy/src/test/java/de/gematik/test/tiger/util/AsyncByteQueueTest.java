@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Random;
@@ -38,8 +38,8 @@ import org.junit.jupiter.api.Test;
 
 class AsyncByteQueueTest {
 
-  private static final InetSocketAddress CLIENT = new InetSocketAddress("localhost", 8080);
-  private static final InetSocketAddress SERVER = new InetSocketAddress("localhost", 9090);
+  private static final RbelSocketAddress CLIENT = RbelSocketAddress.create("localhost", 8080);
+  private static final RbelSocketAddress SERVER = RbelSocketAddress.create("localhost", 9090);
 
   private AsyncByteQueue queue;
   private TcpIpConnectionIdentifier pair;

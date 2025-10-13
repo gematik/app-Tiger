@@ -53,6 +53,7 @@ import kong.unirest.core.Unirest;
 import lombok.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,12 +62,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
   private static final String FIX_VAU_KEY =
       """
-            -----BEGIN PRIVATE KEY-----
-            MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM
-            7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx
-            9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==
-            -----END PRIVATE KEY-----
-            """;
+      -----BEGIN PRIVATE KEY-----
+      MIGIAgEAMBQGByqGSM49AgEGCSskAwMCCAEBBwRtMGsCAQEEIAeOzpSQT8a/mQDM
+      7Uxa9NzU++vFhbIFS2Nsw/djM73uoUQDQgAEIfr+3Iuh71R3mVooqXlPhjVd8wXx
+      9Yr8iPh+kcZkNTongD49z2cL0wXzuSP5Fb/hGTidhpw1ZYKMib1CIjH59A==
+      -----END PRIVATE KEY-----
+      """;
   private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
   @Getter private final TigerProxyConfiguration tigerProxyConfiguration;
   @Getter private RbelLogger rbelLogger;
@@ -95,7 +96,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
     final String loggerName =
         StringUtils.isNotBlank(configuration.getName()) ? "(" + configuration.getName() + ")" : "";
-    log = LoggerFactory.getLogger(this.getClass().getSimpleName() + loggerName);
+    log = LoggerFactory.getLogger(this.getClass().getName() + loggerName);
     name = Optional.ofNullable(configuration.getName());
     if (configuration.getTls() == null) {
       throw new TigerProxyStartupException("no TLS-configuration found!");
@@ -324,13 +325,21 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   private boolean isGivenTigerProxyHealthy(String url) {
     try {
       log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
+      String statusUrl = url;
+      if (getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints()) {
+        statusUrl += "/actuator/health";
+      }
       final int status =
-          Unirest.get(url + "/actuator/health")
+          Unirest.get(statusUrl)
               .requestTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
               .asEmpty()
               .getStatus();
       log.trace("Tiger-proxy at '{}' is online! (status is {})", url, status);
-      return status == 200;
+      if (getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints()) {
+        return status == HttpStatus.SC_OK;
+      } else {
+        return true;
+      }
     } catch (RuntimeException e) {
       return false;
     }
@@ -363,10 +372,10 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     }
   }
 
-  public void setRemovedMessageUuidsHandler(Consumer<List<String>> handleRemovedMessageUuids) {
+  public void addRemovedMessageUuidsHandler(Consumer<List<String>> handleRemovedMessageUuids) {
     rbelLogger
         .getRbelConverter()
         .getKnownMessageUuids()
-        .setRemovedMessageUuidsHandler(handleRemovedMessageUuids);
+        .addRemovedMessageUuidsHandler(handleRemovedMessageUuids);
   }
 }

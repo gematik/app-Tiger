@@ -20,7 +20,7 @@
  */
 package de.gematik.test.tiger.lib.rbel;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static de.gematik.rbellogger.data.core.RbelMismatchNoteFacet.MismatchType.*;
 import static org.awaitility.Awaitility.await;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,7 +29,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
-import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.RbelLoggerWriter;
@@ -39,6 +38,7 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
+import de.gematik.test.tiger.lib.exception.ValidatorAssertionError;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.net.URI;
@@ -57,6 +57,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 
@@ -262,8 +263,10 @@ public class RbelMessageRetriever {
     final int waitsec = RBEL_REQUEST_TIMEOUT.getValueOrDefault();
 
     Optional<RbelElement> initialElement = getInitialElement(requestParameter);
+    val startAfterMessage = new AtomicReference<RbelElement>(); // avoid double checks
+    val mismatchNotes = new HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>>();
+    val candidate = new AtomicReference<RbelElement>();
 
-    final AtomicReference<RbelElement> candidate = new AtomicReference<>();
     try {
       await("Waiting for matching request")
           .atMost(waitsec, TimeUnit.SECONDS)
@@ -275,7 +278,7 @@ public class RbelMessageRetriever {
                   return true;
                 }
                 final Optional<RbelElement> found =
-                    filterRequests(requestParameter, initialElement);
+                    findMessage(requestParameter, initialElement, startAfterMessage, mismatchNotes);
                 found.ifPresent(candidate::set);
                 return found.isPresent();
               });
@@ -285,26 +288,35 @@ public class RbelMessageRetriever {
     } catch (final ConditionTimeoutException cte) {
       log.error("Didn't find any matching messages!");
       printAllPathsOfMessages(getRbelMessages());
+      String message;
       if (requestParameter.getPath() == null) {
-        throw new AssertionError(
+        message =
             String.format(
                 "No request with matching rbelPath '%s%s",
-                requestParameter.getRbelPath(), FOUND_IN_MESSAGES));
+                requestParameter.getRbelPath(), FOUND_IN_MESSAGES);
       } else if (requestParameter.getRbelPath() == null) {
-        throw new AssertionError(
+        message =
             String.format(
-                "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES));
+                "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES);
       } else {
-        throw new AssertionError(
+        message =
             String.format(
                 "No request with path '%s' and rbelPath '%s' matching '%s%s",
                 requestParameter.getPath(),
                 requestParameter.getRbelPath(),
                 StringUtils.abbreviate(requestParameter.getValue(), 300),
-                FOUND_IN_MESSAGES));
+                FOUND_IN_MESSAGES);
       }
+      throw buildValidatorError(message, mismatchNotes);
     }
     return candidate.get();
+  }
+
+  private static @NotNull AssertionError buildValidatorError(
+      String message, Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    return mismatchNotes.isEmpty()
+        ? new AssertionError(message)
+        : new ValidatorAssertionError(message, mismatchNotes);
   }
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
@@ -323,15 +335,19 @@ public class RbelMessageRetriever {
     }
   }
 
-  protected Optional<RbelElement> filterRequests(
-      final RequestParameter requestParameter, Optional<RbelElement> startFromMessageInclusively) {
+  protected Optional<RbelElement> findMessage(
+      final RequestParameter requestParameter,
+      Optional<RbelElement> startFromMessageInclusively,
+      AtomicReference<RbelElement> startAfterMessage,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     List<RbelElement> msgs =
-        getRbelElementsOptionallyFromGivenMessageInclusively(startFromMessageInclusively);
+        getRbelElementsOptionallyFromGivenMessageInclusively(
+            startFromMessageInclusively, startAfterMessage);
     final String hostFilter = TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault();
     final String methodFilter = TigerConfigurationKeys.REQUEST_FILTER_METHOD.getValueOrDefault();
 
     List<RbelElement> candidateMessages =
-        getCandidateMessages(requestParameter, msgs, hostFilter, methodFilter);
+        getCandidateMessages(requestParameter, msgs, hostFilter, methodFilter, mismatchNotes);
     if (candidateMessages.isEmpty()) {
       return Optional.empty();
     }
@@ -345,23 +361,57 @@ public class RbelMessageRetriever {
                     + " deterministic!");
         printAllPathsOfMessages(candidateMessages);
       }
-      if (requestParameter.isFilterPreviousRequest()) {
-        return Optional.of(candidateMessages.get(candidateMessages.size() - 1));
-      } else {
-        return Optional.of(candidateMessages.get(0));
-      }
+      val candidate = getRequiredCandidate(requestParameter, candidateMessages);
+      addMismatchNotesForOtherCandidates(mismatchNotes, candidateMessages, candidate);
+      return Optional.of(candidate);
     }
 
     if (requestParameter.isFilterPreviousRequest()) {
       candidateMessages = Lists.reverse(candidateMessages);
     }
 
-    return filterMatchingCandidateMessages(requestParameter, candidateMessages);
+    return findFirstMatchingMessage(requestParameter, candidateMessages, mismatchNotes);
+  }
+
+  private static void addMismatchNotesForOtherCandidates(
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes,
+      List<RbelElement> candidateMessages,
+      RbelElement candidate) {
+    for (var candidateMessage : candidateMessages) {
+      if (candidateMessage != candidate) {
+        addMismatchNote(
+            mismatchNotes,
+            candidateMessage,
+            AMBIGUOUS,
+            "Possible candidate message (dependent on given path, host filter and method), but"
+                + " not used");
+      }
+    }
+  }
+
+  private static RbelElement getRequiredCandidate(
+      RequestParameter requestParameter, List<RbelElement> candidateMessages) {
+    if (requestParameter.isFilterPreviousRequest()) {
+      return candidateMessages.get(candidateMessages.size() - 1);
+    } else {
+      return candidateMessages.get(0);
+    }
   }
 
   private List<RbelElement> getRbelElementsOptionallyFromGivenMessageInclusively(
-      Optional<RbelElement> startFromMessageExclusively) {
+      Optional<RbelElement> startFromMessageExclusively, AtomicReference<RbelElement> lastChecked) {
     List<RbelElement> msgs = getRbelMessages();
+    var lastCheckedMessage = lastChecked.get();
+    if (lastCheckedMessage != null) {
+      // we have already searched for messages before
+      for (int i = msgs.size() - 1; i >= 0; i--) { // probably few new messages, so start at the end
+        if (msgs.get(i) == lastCheckedMessage) {
+          lastChecked.set(msgs.get(msgs.size() - 1));
+          return new ArrayList<>(msgs.subList(i + 1, msgs.size()));
+        }
+      }
+      return msgs; // last checked message not found, all messages are new
+    }
     if (startFromMessageExclusively.isPresent()) {
       int idx = -1;
       for (var i = 0; i < msgs.size(); i++) {
@@ -374,6 +424,9 @@ public class RbelMessageRetriever {
         msgs = new ArrayList<>(msgs.subList(idx, msgs.size()));
       }
     }
+    if (!msgs.isEmpty()) {
+      lastChecked.set(msgs.get(msgs.size() - 1));
+    }
     return msgs;
   }
 
@@ -382,56 +435,136 @@ public class RbelMessageRetriever {
       RequestParameter requestParameter,
       List<RbelElement> msgs,
       String hostFilter,
-      String methodFilter) {
+      String methodFilter,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     return msgs.stream()
         .filter(
             el ->
                 !requestParameter.isRequireRequestMessage() || el.hasFacet(RbelRequestFacet.class))
-        .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
-        .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
-        .filter(
-            req ->
-                methodFilter == null
-                    || methodFilter.isEmpty()
-                    || doesMethodMatch(req, methodFilter))
+        .filter(req -> pathMatches(req, requestParameter.getPath(), mismatchNotes))
+        .filter(req -> hostFilterMatches(req, hostFilter, mismatchNotes))
+        .filter(req -> methodFilterMatches(req, methodFilter, mismatchNotes))
         .toList();
   }
 
+  private boolean pathMatches(
+      RbelElement req,
+      String path,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    if (path == null) {
+      return true;
+    }
+    try {
+      final URI uri = getHttpRequestPath(req);
+      if (doesPathOfMessageMatch(uri.getPath(), path)) {
+        return true;
+      } else {
+        addMismatchNote(
+            mismatchNotes,
+            req,
+            WRONG_PATH,
+            String.format("Path '%s' didn't match '%s'!", uri.getPath(), path));
+        return false;
+      }
+    } catch (URISyntaxException e) {
+      addMismatchNote(
+          mismatchNotes,
+          req,
+          WRONG_PATH,
+          String.format("Path '%s' couldn't be parsed as URI!", path));
+      return false;
+    }
+  }
+
+  private boolean hostFilterMatches(
+      RbelElement req,
+      String hostFilter,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    if (hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter)) {
+      return true;
+    } else {
+      addMismatchNote(
+          mismatchNotes,
+          req,
+          FILTER_MISMATCH,
+          String.format("Host '%s' didn't match!", hostFilter));
+      return false;
+    }
+  }
+
+  private boolean methodFilterMatches(
+      RbelElement req,
+      String methodFilter,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    if (methodFilter == null || methodFilter.isEmpty() || doesMethodMatch(req, methodFilter)) {
+      return true;
+    } else {
+      addMismatchNote(
+          mismatchNotes,
+          req,
+          FILTER_MISMATCH,
+          String.format("Method '%s' didn't match!", methodFilter));
+      return false;
+    }
+  }
+
+  private static void addMismatchNote(
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes,
+      RbelElement req,
+      RbelMismatchNoteFacet.MismatchType mismatchType,
+      String note) {
+    mismatchNotes
+        .computeIfAbsent(req, k -> new TreeSet<>(RbelMismatchNoteFacet.COMPARATOR))
+        .add(new RbelMismatchNoteFacet(mismatchType, note, req));
+  }
+
   @NotNull
-  private Optional<RbelElement> filterMatchingCandidateMessages(
-      RequestParameter requestParameter, List<RbelElement> candidateMessages) {
-    for (final RbelElement candidateMessage : candidateMessages) {
-      final List<RbelElement> pathExecutionResult =
-          new RbelPathExecutor<>(candidateMessage, requestParameter.getRbelPath()).execute();
-      if (pathExecutionResult.isEmpty()) {
+  private Optional<RbelElement> findFirstMatchingMessage(
+      RequestParameter requestParameter,
+      List<RbelElement> candidateMessages,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    val rbelPath = requestParameter.getRbelPath();
+    val expectedValue = requestParameter.getValue();
+    for (val candidateMessage : candidateMessages) {
+      val nodesAtGivenPath = candidateMessage.findRbelPathMembers(rbelPath);
+      if (nodesAtGivenPath.isEmpty()) {
+        addMismatchNote(
+            mismatchNotes,
+            candidateMessage,
+            MISSING_NODE,
+            String.format("No node found for rbelPath '%s'!", rbelPath));
         continue;
       }
-      if (StringUtils.isEmpty(requestParameter.getValue())) {
+      if (StringUtils.isEmpty(expectedValue)) {
         return Optional.of(candidateMessage);
       } else {
-        final String content =
-            pathExecutionResult.stream()
+        val content =
+            nodesAtGivenPath.stream()
                 .map(RbelMessageRetriever::getValueOrContentString)
                 .map(String::trim)
                 .collect(Collectors.joining());
         try {
-          if (content.equals(requestParameter.getValue())
-              || content.matches(requestParameter.getValue())
-              || Pattern.compile(requestParameter.getValue(), Pattern.DOTALL)
-                  .matcher(content)
-                  .matches()) {
+          if (content.equals(expectedValue)
+              || content.matches(expectedValue)
+              || Pattern.compile(expectedValue, Pattern.DOTALL).matcher(content).matches()) {
             return Optional.of(candidateMessage);
           } else {
-            log.atInfo()
+            log.atTrace()
                 .addArgument(() -> StringUtils.abbreviate(content, 300))
-                .addArgument(() -> StringUtils.abbreviate(requestParameter.getValue(), 300))
+                .addArgument(() -> StringUtils.abbreviate(expectedValue, 300))
                 .log("Found rbel node but \n'{}' didnt match\n'{}'");
+            nodesAtGivenPath.forEach(
+                node ->
+                    addMismatchNote(
+                        mismatchNotes,
+                        node,
+                        VALUE_MISMATCH,
+                        String.format(
+                            "Mismatch at rbelPath '%s':%n'%s' didn't match expected%n'%s'",
+                            rbelPath, content, expectedValue)));
           }
         } catch (final Exception ex) {
-          log.error(
-              "Failure while trying to apply regular expression '{}'!",
-              requestParameter.getValue(),
-              ex);
+          log.error("Failure while trying to apply regular expression '{}'!", expectedValue, ex);
         }
       }
     }
@@ -443,20 +576,28 @@ public class RbelMessageRetriever {
       return true;
     }
     try {
-      final URI uri =
-          new URI(
-              req.getFacet(RbelHttpRequestFacet.class)
-                  .map(RbelHttpRequestFacet::getPath)
-                  .map(RbelMessageRetriever::getValueOrContentString)
-                  .orElse(""));
-      boolean match = doesItMatch(uri.getPath(), path);
-      if (!match && EMPTY_PATH.contains(path) && EMPTY_PATH.contains(uri.getPath())) {
-        match = true;
-      }
-      return match;
+      return doesPathOfMessageMatch(getHttpRequestPath(req).getPath(), path);
     } catch (final URISyntaxException e) {
       return false;
     }
+  }
+
+  private static @NotNull URI getHttpRequestPath(RbelElement req) throws URISyntaxException {
+    final URI uri =
+        new URI(
+            req.getFacet(RbelHttpRequestFacet.class)
+                .map(RbelHttpRequestFacet::getPath)
+                .map(RbelMessageRetriever::getValueOrContentString)
+                .orElse(""));
+    return uri;
+  }
+
+  private boolean doesPathOfMessageMatch(String pathValue, String pathExpression) {
+    boolean match = doesItMatch(pathValue, pathExpression);
+    if (!match && EMPTY_PATH.contains(pathExpression) && EMPTY_PATH.contains(pathValue)) {
+      match = true;
+    }
+    return match;
   }
 
   public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
@@ -504,17 +645,18 @@ public class RbelMessageRetriever {
   public RbelElement findElementInCurrentResponse(final String rbelPath) {
     try {
       assertCurrentResponseFound();
-      final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
-      assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
-      assertThat(elems)
-          .withFailMessage("Expected exactly one match for path '" + rbelPath + "'!")
-          .hasSize(1);
-      return elems.get(0);
+      return findElementInMessage(rbelPath, currentResponse);
     } catch (final Exception e) {
-      throw new AssertionError(
+      val note =
+          new RbelMismatchNoteFacet(
+              UNKNOWN,
+              "Unable to find element in last response for rbel path '" + rbelPath + "'",
+              currentResponse);
+      throw new ValidatorAssertionError(
           "Unable to find element in last response for rbel path '"
               + rbelPath
-              + printMessageTree(currentResponse));
+              + printMessageTree(currentResponse),
+          mismatchNotes(currentResponse, note));
     }
   }
 
@@ -531,34 +673,61 @@ public class RbelMessageRetriever {
   public RbelElement findElementInCurrentRequest(final String rbelPath) {
     try {
       assertCurrentRequestFound();
-      final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
-      if (elems.size() != 1) {
-        log.atWarn()
-            .addArgument(rbelPath)
-            .addArgument(currentRequest::printTreeStructure)
-            .log("Could not find elements {} in message\n {}");
-      }
-      assertThat(elems).withFailMessage("No node matching path '" + rbelPath + "'!").isNotEmpty();
-      assertThat(elems)
-          .withFailMessage("Expected exactly one match for path '" + rbelPath + "'!")
-          .hasSize(1);
-      return elems.get(0);
+      return findElementInMessage(rbelPath, currentRequest);
     } catch (final Exception e) {
-      throw new AssertionError(
+      val note =
+          new RbelMismatchNoteFacet(
+              UNKNOWN,
+              "Unable to find element in last request for rbel path '" + rbelPath + "'",
+              currentRequest);
+      throw new ValidatorAssertionError(
           "Unable to find element in last request for rbel path '"
               + rbelPath
-              + printMessageTree(currentRequest));
+              + printMessageTree(currentRequest),
+          mismatchNotes(currentResponse, note));
     }
+  }
+
+  private static RbelElement findElementInMessage(String rbelPath, RbelElement message) {
+    val elems = message.findRbelPathMembers(rbelPath);
+    if (elems.size() != 1) {
+      log.atWarn()
+          .addArgument(elems.size())
+          .addArgument(rbelPath)
+          .addArgument(message::printTreeStructure)
+          .log("Found {} elements with path {} in message:\n{}");
+    }
+    String errorMsg;
+    RbelMismatchNoteFacet.MismatchType mismatchType;
+    if (elems.isEmpty()) {
+      errorMsg = "No node matching path '" + rbelPath + "'!";
+      mismatchType = MISSING_NODE;
+    } else if (elems.size() > 1) {
+      errorMsg = "Expected exactly one match for path '" + rbelPath + "'!";
+      mismatchType = AMBIGUOUS;
+    } else {
+      return elems.get(0);
+    }
+    val note = new RbelMismatchNoteFacet(mismatchType, errorMsg, message);
+    throw new ValidatorAssertionError(errorMsg, mismatchNotes(message, note));
+  }
+
+  private static @NotNull Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes(
+      RbelElement message, RbelMismatchNoteFacet note) {
+    return Map.of(message, new TreeSet<>(List.of(note)));
   }
 
   public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
     assertCurrentResponseFound();
     final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
     if (elems.isEmpty()) {
-      throw new AssertionError(
+      val errorMsg = "Unable to find element in response for rbel path '" + rbelPath + "'";
+      val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentResponse);
+      throw new ValidatorAssertionError(
           "Unable to find element in response for rbel path '"
               + rbelPath
-              + printMessageTree(currentResponse));
+              + printMessageTree(currentResponse),
+          mismatchNotes(currentResponse, note));
     }
     return elems;
   }
@@ -567,10 +736,13 @@ public class RbelMessageRetriever {
     assertCurrentRequestFound();
     final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
     if (elems.isEmpty()) {
-      throw new AssertionError(
+      val errorMsg = "Unable to find element in request for rbel path '" + rbelPath + "'";
+      val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentRequest);
+      throw new ValidatorAssertionError(
           "Unable to find element in request for rbel path '"
               + rbelPath
-              + printMessageTree(currentRequest));
+              + printMessageTree(currentRequest),
+          mismatchNotes(currentRequest, note));
     }
     return elems;
   }
@@ -582,23 +754,45 @@ public class RbelMessageRetriever {
   }
 
   public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
+    val mismatchNotes = new HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>>();
     if (getRbelMessages().stream()
         .map(
             msg -> {
-              List<RbelElement> findings = new RbelPathExecutor<>(msg, rbelPath).execute();
+              List<RbelElement> findings = msg.findRbelPathMembers(rbelPath);
 
               if (findings.isEmpty()) {
+                addMismatchNote(
+                    mismatchNotes,
+                    msg,
+                    MISSING_NODE,
+                    String.format("No node found for rbelPath '%s'!", rbelPath));
                 return null;
               } else {
-                return getValueOrContentString(findings.get(0));
+                return Pair.of(msg, getValueOrContentString(findings.get(0)));
               }
             })
         .filter(Objects::nonNull)
-        .filter(msg -> msg.equals(value))
+        .filter(
+            msg -> {
+              String content = msg.getRight();
+              if (content.equals(value)) {
+                return true;
+              } else {
+                addMismatchNote(
+                    mismatchNotes,
+                    msg.getLeft(),
+                    VALUE_MISMATCH,
+                    String.format(
+                        "Mismatch at rbelPath '%s':%n'%s' didn't match expected%n'%s'",
+                        rbelPath, content, value));
+                return false;
+              }
+            })
         .findAny()
         .isEmpty()) {
-      throw new AssertionError(
-          "No message with matching value '" + value + "' at path '" + rbelPath + "'");
+      throw buildValidatorError(
+          "No message with matching value '" + value + "' at path '" + rbelPath + "'",
+          mismatchNotes);
     }
   }
 

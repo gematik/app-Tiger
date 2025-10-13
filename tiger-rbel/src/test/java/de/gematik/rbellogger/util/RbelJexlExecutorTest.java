@@ -27,7 +27,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
@@ -51,8 +50,8 @@ class RbelJexlExecutorTest {
   @BeforeEach
   public void setUp() throws IOException {
     final RbelLogger rbelLogger = RbelLogger.build();
-    final RbelHostname serverHostname = RbelHostname.fromString("server:1234").get();
-    final RbelHostname clientHostname = RbelHostname.fromString("client:54321").get();
+    final RbelSocketAddress serverHostname = RbelSocketAddress.fromString("server:1234").get();
+    final RbelSocketAddress clientHostname = RbelSocketAddress.fromString("client:54321").get();
     request =
         rbelLogger
             .getRbelConverter()
@@ -214,19 +213,19 @@ class RbelJexlExecutorTest {
   @CsvSource(
       textBlock =
           """
-         $..scopes.[?(@.content=='test')] =~ '.*',$..scopes.[?(@.content=='test')]
-         $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
-         $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
-         $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
-         $.header.['Cache-Control'] =~ 'max-age=300',$.header.['Cache-Control']
-         $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
-         $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
-         $.body.['urn:telematik:claims:email'].* =~ 'max-age=300',$.body.['urn:telematik:claims:email'].*
-         $.header.['Content-Type'] =~ 'max-age=300',$.header.['Content-Type']
-         $.header.Content-Type =~ 'max-age=300',$.header.Content-Type
-         $.body.['xmlns:soap'] =~ 'blabliblu',$.body.['xmlns:soap']
-         $.header.[~'cache-control'] =~ 'blabliblu',$.header.[~'cache-control']
-        """)
+           $..scopes.[?(@.content=='test')] =~ '.*',$..scopes.[?(@.content=='test')]
+           $..scopes.[?(@.content == 'test')] =~ '.*',$..scopes.[?(@.content == 'test')]
+           $..scopes.[?(@.content == 'test')]=~'.*',$..scopes.[?(@.content == 'test')]
+           $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
+           $.header.['Cache-Control'] =~ 'max-age=300',$.header.['Cache-Control']
+           $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
+           $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
+           $.body.['urn:telematik:claims:email'].* =~ 'max-age=300',$.body.['urn:telematik:claims:email'].*
+           $.header.['Content-Type'] =~ 'max-age=300',$.header.['Content-Type']
+           $.header.Content-Type =~ 'max-age=300',$.header.Content-Type
+           $.body.['xmlns:soap'] =~ 'blabliblu',$.body.['xmlns:soap']
+           $.header.[~'cache-control'] =~ 'blabliblu',$.header.[~'cache-control']
+          """)
   void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
     assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
         .containsOnly(firstRbelPath);
@@ -236,13 +235,13 @@ class RbelJexlExecutorTest {
   @CsvSource(
       textBlock =
           """
-         content == 'test'
-         content=='test'
-         $content =='test'
-         @content== 'test'
-         $content=='test'
-         @content=='test'
-        """)
+           content == 'test'
+           content=='test'
+           $content =='test'
+           @content== 'test'
+           $content=='test'
+           @content=='test'
+          """)
   void testRbelPathExtractorEmptyResults(String jexlExpression) {
     assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression)).isEmpty();
   }

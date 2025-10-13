@@ -20,16 +20,17 @@
  */
 package de.gematik.test.tiger.proxy.tracing;
 
+import static de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet.getSequenceNumber;
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
 import java.util.HashMap;
@@ -106,15 +107,15 @@ public class TracingPushService {
   private void sendMessageToRemotes(RbelElement msg, RbelMessageMetadata metadata) {
     try {
       RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
-      final RbelHostname sender =
+      final RbelSocketAddress sender =
           Optional.ofNullable(rbelTcpIpMessageFacet.getSender())
               .map(RbelElement::getRawStringContent)
-              .flatMap(RbelHostname::fromString)
+              .flatMap(RbelSocketAddress::fromString)
               .orElse(null);
-      final RbelHostname receiver =
+      final RbelSocketAddress receiver =
           Optional.ofNullable(rbelTcpIpMessageFacet.getReceiver())
               .map(RbelElement::getRawStringContent)
-              .flatMap(RbelHostname::fromString)
+              .flatMap(RbelSocketAddress::fromString)
               .orElse(null);
 
       log.atTrace().addArgument(msg::getUuid).log("Propagating message via mesh... (ID: {})");
@@ -129,7 +130,7 @@ public class TracingPushService {
               .proxyTransmissionHistory(
                   new ProxyTransmissionHistory(
                       tigerProxy.getTigerProxyConfiguration().getName(),
-                      List.of(rbelTcpIpMessageFacet.getSequenceNumber()),
+                      List.of(rbelTcpIpMessageFacet.getSequenceNumber()), // TODO npe
                       msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
               .request(
                   msg.hasFacet(RbelRequestFacet.class) || !msg.hasFacet(RbelResponseFacet.class))
@@ -193,12 +194,6 @@ public class TracingPushService {
               .build());
       nextPartIndex += partContent.length;
     }
-  }
-
-  private static Long getSequenceNumber(RbelElement msg) {
-    return msg.getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-        .orElse(-1L);
   }
 
   private void waitForPreviousMessageFullyProcessed(RbelElement msg) {

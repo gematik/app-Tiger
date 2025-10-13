@@ -29,7 +29,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-testsuite-baseimage</artifactId>
-    <version>3.6.1</version>
+    <version>4.0.9</version>
     <name>${project.artifactId}</name>
     <description>Tiger testsuite baseimage modul of the tiger test platform.</description>
     <properties>
@@ -38,12 +38,22 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-bom</artifactId>
+                <version>${project.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -52,7 +62,6 @@
             <plugin>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>${project.version}</version>
             </plugin>
         </plugins>
     </build>

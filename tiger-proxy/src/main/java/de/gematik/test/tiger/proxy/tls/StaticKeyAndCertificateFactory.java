@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import java.security.cert.CertificateParsingException;
@@ -52,15 +53,19 @@ public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory 
   }
 
   @Override
-  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(
+      String hostname, KeyAlgorithmPreference keyAlgorithmPreference) {
     return availableIdentities.stream()
         .filter(id -> matchesHostname(id.getCertificate(), hostname))
+        .filter(id -> keyAlgorithmPreference.matches(id))
         .findAny();
   }
 
   @Override
-  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
-    return findExactIdentityForHostname(hostname).orElseGet(() -> availableIdentities.get(0));
+  public TigerPkiIdentity resolveIdentityForHostname(
+      String hostname, KeyAlgorithmPreference algorithmPreference) {
+    return findExactIdentityForHostname(hostname, algorithmPreference)
+        .orElseGet(() -> availableIdentities.get(0));
   }
 
   private boolean matchesHostname(X509Certificate certificate, String hostname) {

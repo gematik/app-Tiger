@@ -86,14 +86,16 @@ class XyScreenshotsTest extends AbstractBase {
   @Test
   void screenshotMainContent() {
     page.querySelector("#test-execution-pane-tab").click();
-    screenshotElementById(page, "maincontent_date_highlight.png", "test-execution-pane-date");
+    screenshotWithHighlightedElementById(
+        page, "maincontent_date_highlight.png", "test-execution-pane-date");
     page.evaluate(
         "document.getElementById(\"test-execution-pane-tab\").parentElement.style.backgroundColor='yellow'");
     screenshot(page, "maincontent_tabs_highlight.png");
     page.evaluate(
         "document.getElementById(\"test-execution-pane-tab\").parentElement.style.removeProperty(\"background-color\")");
 
-    screenshotByClassname(page, "featuretitle_highlight.png", "test-execution-pane-feature-title");
+    screenshotWithHighlightedByClassname(
+        page, "featuretitle_highlight.png", "test-execution-pane-feature-title");
 
     page.evaluate(
         "document.getElementsByClassName(\"test-feature-status-word\")[0].style.backgroundColor='yellow'");
@@ -114,15 +116,18 @@ class XyScreenshotsTest extends AbstractBase {
   void screenshotSubstepToggles() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator(".test-step-toggle-button").first().focus();
-    screenshotByClassname(page, "webui_substep_collapsed.png", "test-step-toggle-button");
+    screenshotWithHighlightedByClassname(
+        page, "webui_substep_collapsed.png", "test-step-toggle-button");
     page.locator(".test-step-toggle-button").first().click();
     page.querySelector("#test-execution-pane-tab").click();
     page.locator(".test-step-toggle-button").first().focus();
-    screenshotByClassname(page, "webui_substep_partially_expanded.png", "test-step-toggle-button");
+    screenshotWithHighlightedByClassname(
+        page, "webui_substep_partially_expanded.png", "test-step-toggle-button");
     page.locator(".test-step-toggle-button").nth(1).click();
     page.querySelector("#test-execution-pane-tab").click();
     page.locator(".test-step-toggle-button").nth(1).focus();
-    screenshotByClassname(page, "webui_substep_fully_expanded.png", "test-step-toggle-button");
+    screenshotWithHighlightedByClassname(
+        page, "webui_substep_fully_expanded.png", "test-step-toggle-button");
   }
 
   @SuppressWarnings("squid:S2699")
@@ -161,11 +166,12 @@ class XyScreenshotsTest extends AbstractBase {
   void screenshotServerLog() {
     page.querySelector("#test-server-log-tab").click();
     screenshot(page, "maincontent_serverlog.png");
-    screenshotElementById(
+    screenshotWithHighlightedElementById(
         page, "maincontent_serverlog_buttons_highlight.png", "test-server-log-pane-buttons");
 
     page.querySelector("#test-server-log-pane-select").click();
-    screenshotElementById(page, "serverlog_level_highlight.png", "test-server-log-pane-select");
+    screenshotWithHighlightedElementById(
+        page, "serverlog_level_highlight.png", "test-server-log-pane-select");
   }
 
   @SuppressWarnings("squid:S2699")
@@ -180,10 +186,40 @@ class XyScreenshotsTest extends AbstractBase {
         .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
-    screenshotByClassname(externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
+    screenshotWithHighlightedByClassname(
+        externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
+    screenshotWithHighlightedByClassname(
+        externalPage, "webui_message_partner.png", "partner-message-button");
+    screenshotFullMessageButtonAndPage(externalPage);
+    screenshotInspectButton(externalPage);
+    screenshotFilterButton(externalPage);
+    screenshotExportButton(externalPage);
+    screenshotRouteButton(externalPage);
+    screenshotRawContentButton(externalPage);
+    externalPage.close();
+  }
 
-    screenshotByClassname(externalPage, "webui_message_partner.png", "partner-message-button");
+  private void screenshotFullMessageButtonAndPage(Page externalPage) {
+    externalPage.evaluate("scrollToMessage('', 10)");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
 
+    Locator fullMessageButton = externalPage.locator(".full-message-button").first();
+    screenshotWithHighlightedByClassname(
+        externalPage, "webui_full_message.png", "full-message-button");
+
+    Page singleMessagePage = externalPage.waitForPopup(fullMessageButton::click);
+
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> assertNotNull(singleMessagePage.locator(".test-message-number").first()));
+
+    screenshot(singleMessagePage, "webui_single_message_page.png");
+
+    singleMessagePage.close();
+  }
+
+  private void screenshotInspectButton(Page externalPage) {
     externalPage.locator(".test-btn-settings").click();
     await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     externalPage
@@ -234,7 +270,9 @@ class XyScreenshotsTest extends AbstractBase {
     externalPage.evaluate(jsElemLookupStr + ".removeProperty(\"background-color\")");
 
     externalPage.locator("#jexlQueryModal .btn-close").click();
+  }
 
+  private void screenshotFilterButton(Page externalPage) {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
@@ -245,7 +283,9 @@ class XyScreenshotsTest extends AbstractBase {
         .isVisible();
     screenshot(externalPage, "webui_filter_open.png");
     externalPage.locator("#filterBackdrop .btn-close").click();
+  }
 
+  private void screenshotExportButton(Page externalPage) {
     externalPage.locator(".test-btn-settings").click();
     externalPage.locator("#exportModalButton").click();
     com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
@@ -253,7 +293,9 @@ class XyScreenshotsTest extends AbstractBase {
         .isVisible();
     screenshot(externalPage, "webui_save_open.png");
     externalPage.locator("#saveModalButtonClose").click();
+  }
 
+  private void screenshotRouteButton(Page externalPage) {
     externalPage.locator(".test-btn-settings").click();
     externalPage.locator("#routeModalButton").click();
     com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
@@ -261,7 +303,9 @@ class XyScreenshotsTest extends AbstractBase {
         .isVisible();
     screenshot(externalPage, "webui_routing_open.png");
     externalPage.locator("#routeModal .btn-close").click();
+  }
 
+  private void screenshotRawContentButton(Page externalPage) {
     externalPage.evaluate(
         "document.getElementsByClassName(\"test-modal-content\")[0].style.backgroundColor='yellow'");
     externalPage.evaluate(
@@ -281,6 +325,157 @@ class XyScreenshotsTest extends AbstractBase {
     screenshot(externalPage, "webui_btn_content.png");
     externalPage.evaluate(
         "document.getElementById(\"rawContentModal\").children.item(0).children.item(0).style.removeProperty(\"background-color\")");
-    externalPage.close();
+  }
+
+  private void ensureRbelLogClosed() {
+    Locator slider = page.locator("#test-webui-slider");
+    // Correct pane id is 'rbellog_details_pane' (see Vue component RbelLogDetailsPane.vue)
+    boolean isOpen =
+        Boolean.TRUE.equals(
+            page.evaluate(
+                "() => { const e = document.getElementById('rbellog_details_pane'); if(!e) return"
+                    + " false; return !e.classList.contains('d-none'); }"));
+    if (isOpen) {
+      slider.click();
+      await()
+          .atMost(Duration.ofSeconds(2))
+          .until(
+              () ->
+                  Boolean.TRUE.equals(
+                      page.evaluate(
+                          "() => { const e = document.getElementById('rbellog_details_pane');"
+                              + " if(!e) return true; return e.classList.contains('d-none'); }")));
+    }
+  }
+
+  private void ensureRbelLogOpen() {
+    Locator slider = page.locator("#test-webui-slider");
+    boolean isClosed =
+        Boolean.TRUE.equals(
+            page.evaluate(
+                "() => { const e = document.getElementById('rbellog_details_pane'); if(!e) return"
+                    + " true; return e.classList.contains('d-none'); }"));
+    if (isClosed) {
+      slider.click();
+      await()
+          .atMost(Duration.ofSeconds(3))
+          .until(
+              () ->
+                  Boolean.TRUE.equals(
+                      page.evaluate(
+                          "() => { const e = document.getElementById('rbellog_details_pane');"
+                              + " if(!e) return false; return !e.classList.contains('d-none');"
+                              + " }")));
+    }
+  }
+
+  private String readFirstRbelMessageText() {
+    try {
+      var frameLocator = page.frameLocator("#rbellog-details-iframe");
+      Locator firstMsg = frameLocator.locator(".test-message-number").first();
+      if (firstMsg.isVisible()) {
+        return firstMsg.innerText();
+      }
+    } catch (Exception ignored) {
+      // ignore and return empty
+    }
+    return "";
+  }
+
+  private void waitForRbelMessageChange(String previous) {
+    try {
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(
+              () -> {
+                String current = readFirstRbelMessageText();
+                return !current.isEmpty() && !current.equals(previous);
+              });
+    } catch (Exception ignored) {
+      // timeout acceptable; proceed anyway
+    }
+  }
+
+  @Test
+  void screenshotMismatchNotesForFindLastRequestWithParameters() {
+    // Navigate to the execution pane (where scenario results are shown)
+    page.querySelector("#test-execution-pane-tab").click();
+
+    ensureRbelLogClosed();
+
+    // Find and click the scenario in the execution pane table by its name
+    Locator mismatchDropdown = page.locator(".mismatch-dropdown");
+
+    Locator failureMessage =
+        mismatchDropdown
+            .first()
+            .locator("..")
+            .locator("..")
+            .locator("..")
+            .locator("..")
+            .locator("..");
+
+    failureMessage.scrollIntoViewIfNeeded();
+    await().atMost(Duration.ofSeconds(5)).until(failureMessage::isVisible);
+
+    // Take a screenshot of the failure message area (including mismatch notes)
+    ensureRbelLogClosed();
+    screenshotHighlightedElement(failureMessage, mismatchDropdown, "mismatch_notes_dropbox.png");
+
+    // Step 1: Press the down button to navigate to the next message
+    Locator downButton =
+        failureMessage.locator(".mismatch-nav-button").nth(1); // second button is down
+    // capture current first rbel message text (if available) BEFORE navigation
+    String prevMsg = readFirstRbelMessageText();
+    downButton.click();
+    // keep log open for this screenshot to show updated message
+    ensureRbelLogOpen();
+    waitForRbelMessageChange(prevMsg);
+    screenshotHighlightedElement(failureMessage, downButton, "mismatch_notes_down_button.png");
+    // after screenshot we can close again for consistency
+    ensureRbelLogClosed();
+
+    // Step 2: Press the up button to navigate to the previous message
+    Locator upButton = failureMessage.locator(".mismatch-nav-button").first();
+    upButton.click();
+    ensureRbelLogClosed();
+    screenshotHighlightedElement(failureMessage, upButton, "mismatch_notes_up_button.png");
+
+    // Step 3: Press the selection box and check for 3 options
+    Locator dropdown = failureMessage.locator(".mismatch-dropdown");
+    dropdown.click();
+    ensureRbelLogClosed();
+    screenshotPageWithHighlightedElement(dropdown, "mismatch_notes_dropdown.png");
+
+    // Open again (if it closed due to outside click) before keyboard navigation
+    dropdown.click();
+    page.waitForTimeout(400); // Let panel render
+
+    // Use keyboard navigation to select the third option
+    dropdown.press("ArrowDown"); // first
+    page.waitForTimeout(80);
+    page.keyboard().press("ArrowDown"); // second
+    page.waitForTimeout(80);
+    page.keyboard().press("ArrowDown"); // third
+    page.waitForTimeout(120);
+
+    // Capture focused option BEFORE closing pane (we'll keep reference even if focus changes)
+    Locator focusedOption = null;
+    if (page.locator(":focus").count() > 0) {
+      String ariaActiveDescendant = page.locator(":focus").getAttribute("aria-activedescendant");
+      if (ariaActiveDescendant != null && !ariaActiveDescendant.isEmpty()) {
+        focusedOption = page.locator("#" + ariaActiveDescendant);
+      }
+    }
+
+    // Close pane now to ensure clean screenshot (may shift focus, locator still valid)
+    ensureRbelLogClosed();
+
+    if (focusedOption != null) {
+      failureMessage.scrollIntoViewIfNeeded();
+      page.evaluate("window.scrollBy(0, 200)");
+      page.waitForTimeout(150);
+      screenshotPageWithHighlightedElement(focusedOption, "mismatch_notes_third_option.png");
+    }
   }
 }

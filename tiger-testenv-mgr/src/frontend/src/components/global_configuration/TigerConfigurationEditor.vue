@@ -21,18 +21,41 @@
 
 -->
 <script setup lang="ts">
-import { inject, onMounted, onUnmounted, Ref, ref } from "vue";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
+import { inject, onMounted, onUnmounted, type Ref, ref, shallowRef } from "vue";
+import {
+  type CellClickedEvent,
+  CellStyleModule,
+  ClientSideRowModelModule,
+  type ColDef,
+  CustomEditorModule,
+  EventApiModule,
+  type GridApi,
+  type GridReadyEvent,
+  RowAutoHeightModule,
+  TextFilterModule,
+  themeAlpine,
+  ValidationModule,
+} from "ag-grid-community";
 import TigerConfigurationPropertyDto from "@/types/TigerConfigurationPropertyDto";
 import ConfigurationValueCell from "@/components/global_configuration/ConfigurationValueCell.vue";
 import ConfigurationSourceCell from "@/components/global_configuration/ConfigurationSourceCell.vue";
 import EditActionButtons from "@/components/global_configuration/EditActionButtons.vue";
 import ConfigurationValueCellEditor from "@/components/global_configuration/ConfigurationValueCellEditor.vue";
-import { Emitter } from "mitt";
+import { type Emitter } from "mitt";
 import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
-import { CellClickedEvent, ColDef, GridApi } from "ag-grid-community";
 import { AgGridVue } from "ag-grid-vue3";
+
+//By using modules, we just load what we need and can reduce bundle size.
+//If additional functionality is needed, check https://www.ag-grid.com/javascript-data-grid/modules/#selecting-modules
+const modules = [
+  ValidationModule,
+  ClientSideRowModelModule,
+  CellStyleModule,
+  CustomEditorModule,
+  EventApiModule,
+  RowAutoHeightModule,
+  TextFilterModule,
+];
 
 const {
   loadConfigurationProperties,
@@ -45,7 +68,7 @@ const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 const configurationProperties = ref(new Array<TigerConfigurationPropertyDto>());
 
 const editorGrid: Ref<typeof AgGridVue | null> = ref(null);
-const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
+const gridApi: Ref<GridApi | null | undefined> = shallowRef(undefined);
 const importFileStatus = ref("");
 
 const isImportButtonDisabled = ref(false);
@@ -53,11 +76,13 @@ const isRefreshButtonDisabled = ref(false);
 
 onMounted(async () => {
   configurationProperties.value = await loadConfigurationProperties();
-  if (editorGrid.value) {
-    gridApi.value = editorGrid.value.api;
-  }
   emitter.on("cellValueSaved", onCellValueSaved);
 });
+
+// Store the api for later use
+const onGridReady = (params: GridReadyEvent) => {
+  gridApi.value = params.api;
+};
 
 onUnmounted(() => {
   emitter.off("cellValueSaved", onCellValueSaved);
@@ -83,7 +108,7 @@ function onCellClicked(params: CellClickedEvent) {
 
 function isClickInActionsColumn(params: CellClickedEvent) {
   return (
-    params.column["colId"] === "action" &&
+    params.column.getColId() === "action" &&
     (params.event?.target as HTMLElement).dataset.action
   );
 }
@@ -134,9 +159,9 @@ async function deleteRow(data: TigerConfigurationPropertyDto) {
 }
 
 async function startEdit(params: CellClickedEvent) {
-  if (params.node.rowIndex !== null) {
+  if (params.rowIndex !== null) {
     params.api.startEditingCell({
-      rowIndex: params.node.rowIndex,
+      rowIndex: params.rowIndex,
       colKey: "value",
     });
   }
@@ -240,18 +265,21 @@ const columnDefs: ColDef[] = [
       <i class="fas fa-exclamation-triangle"></i> {{ importFileStatus }}
     </div>
     <ag-grid-vue
+      :modules="modules"
       id="test-tg-config-editor-table"
       ref="editorGrid"
       class="ag-theme-alpine editor-table"
       :row-data="configurationProperties"
       :column-defs="columnDefs"
       :default-col-def="defaultColDef"
-      suppress-click-edit="false"
+      :theme="themeAlpine"
+      :suppress-click-edit="false"
       suppress-navigable="true"
-      suppress-menu-hide="true"
+      :suppress-menu-hide="true"
       cell-class="no-border"
       dom-layout="autoHeight"
       @cell-clicked="onCellClicked"
+      @grid-ready="onGridReady"
     >
     </ag-grid-vue>
   </div>

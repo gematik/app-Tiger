@@ -24,6 +24,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -90,23 +91,25 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
   }
 
   @Override
-  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
-    return Optional.of(resolveIdentityForHostname(hostname));
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(
+      String hostname, KeyAlgorithmPreference keyAlgorithmPreference) {
+    return Optional.of(resolveIdentityForHostname(hostname, keyAlgorithmPreference));
   }
 
   @Override
-  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
+  public TigerPkiIdentity resolveIdentityForHostname(
+      String hostname, KeyAlgorithmPreference algorithmPreference) {
     assureCurrentCertificateCoversAllNecessaryHosts();
     if (eeIdentity == null) {
-      return generateNewIdentity();
+      return generateNewIdentity(algorithmPreference);
     } else {
       return eeIdentity;
     }
   }
 
-  private TigerPkiIdentity generateNewIdentity() {
+  private TigerPkiIdentity generateNewIdentity(KeyAlgorithmPreference algorithmPreference) {
     try {
-      KeyPair keyPair = this.generateRsaKeyPair(2048);
+      KeyPair keyPair = generateNewKeyPair(algorithmPreference);
       X509Certificate x509Certificate =
           this.createCertificateSignedByCa(
               keyPair.getPublic(),
@@ -121,6 +124,18 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
         | OperatorCreationException e) {
       throw new IllegalArgumentException(
           "exception while generating private key and X509 certificate", e);
+    }
+  }
+
+  private KeyPair generateNewKeyPair(KeyAlgorithmPreference algorithmPreference)
+      throws GeneralSecurityException {
+    if (algorithmPreference == KeyAlgorithmPreference.RSA
+        || algorithmPreference == KeyAlgorithmPreference.MIXED) {
+      return generateRsaKeyPair(2048);
+    } else {
+      KeyPairGenerator generator = KeyPairGenerator.getInstance("EC", "BC");
+      generator.initialize(256, new SecureRandom());
+      return generator.generateKeyPair();
     }
   }
 

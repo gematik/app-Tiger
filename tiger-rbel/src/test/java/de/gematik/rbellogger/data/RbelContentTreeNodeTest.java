@@ -45,27 +45,27 @@ class RbelContentTreeNodeTest {
 
   static String jsonTest =
       """
-            {
-                "blub": {
-                    "foo":"bar"
-                }
-            }
-            """;
+      {
+          "blub": {
+              "foo":"bar"
+          }
+      }
+      """;
 
   static String jsonTest2 =
       """
-            {
-                "blub": {
-                    "foo":"bar",
-                    "foo": {
-                        "some": "value"
-                        }
-                },
-                "blab": {
-                    "foo":"bar"
-                }
-            }
-            """;
+      {
+          "blub": {
+              "foo":"bar",
+              "foo": {
+                  "some": "value"
+                  }
+          },
+          "blab": {
+              "foo":"bar"
+          }
+      }
+      """;
 
   static String xmlTest = "<blub><foo>bar</foo></blub>";
   private RbelConverter converter;
@@ -188,11 +188,11 @@ class RbelContentTreeNodeTest {
     final RbelElement input =
         converter.convertElement(
             """
-        {
-          "alice": "bob",
-          "tom": "jerry"
-        }
-        """,
+            {
+              "alice": "bob",
+              "tom": "jerry"
+            }
+            """,
             null);
     val builder =
         new RbelBuilder(

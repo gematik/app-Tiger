@@ -22,8 +22,8 @@ package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageKind;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -82,8 +82,8 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     binaryProxyListener.propagateExceptionMessageSafe(
         cause,
-        RbelHostname.create(ctx.channel().remoteAddress()),
-        RbelHostname.create(ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress()));
+        RbelSocketAddress.create(ctx.channel().remoteAddress()),
+        RbelSocketAddress.create(ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress()));
     closeOnFlush(ctx.channel());
   }
 }

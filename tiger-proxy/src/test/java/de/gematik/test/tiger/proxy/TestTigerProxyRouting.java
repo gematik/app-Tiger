@@ -49,7 +49,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
   @ParameterizedTest
   @CsvSource(
       textBlock =
-          """
+"""
       http, http, http
       https, https, https
       http, https, http

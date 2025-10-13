@@ -22,6 +22,7 @@ package de.gematik.test.tiger.testenvmgr.env;
 
 import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
+import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,8 @@ public class TigerStatusUpdate {
       BannerType bannerType,
       BannerDetails bannerDetails,
       boolean isHtml,
-      List<String> removedMessageUuids) {
+      List<String> removedMessageUuids,
+      TestSuiteLifecycle testSuiteLifecycle) {
     this.featureMap = featureMap == null ? new LinkedHashMap<>() : new LinkedHashMap<>(featureMap);
     this.serverUpdate =
         serverUpdate == null ? new LinkedHashMap<>() : new LinkedHashMap<>(serverUpdate);
@@ -59,6 +61,7 @@ public class TigerStatusUpdate {
     this.bannerDetails = bannerDetails;
     this.bannerType = Objects.requireNonNullElse(bannerType, BannerType.MESSAGE);
     this.removedMessageUuids = removedMessageUuids;
+    this.testSuiteLifecycle = testSuiteLifecycle;
     synchronized (indexMutex) {
       index = lastIndex++;
     }
@@ -72,7 +75,8 @@ public class TigerStatusUpdate {
       String bannerColor,
       BannerDetails bannerDetails,
       BannerType bannerType,
-      List<String> removedMessageUuids) {
+      List<String> removedMessageUuids,
+      TestSuiteLifecycle testSuiteLifecycle) {
     this(
         dummyIndexForJackson,
         featureMap,
@@ -82,7 +86,8 @@ public class TigerStatusUpdate {
         bannerType,
         bannerDetails,
         false,
-        removedMessageUuids);
+        removedMessageUuids,
+        testSuiteLifecycle);
   }
 
   private long index;
@@ -96,6 +101,7 @@ public class TigerStatusUpdate {
 
   private boolean bannerIsHtml;
   private List<String> removedMessageUuids;
+  private TestSuiteLifecycle testSuiteLifecycle;
 
   @Data
   public static class BannerDetails {

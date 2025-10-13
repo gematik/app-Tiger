@@ -25,6 +25,7 @@ import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandle
 import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_1_1;
 import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.*;
+import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.PREFERRED_UPSTREAM_KEY_ALGORITHM;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.SERVER_IDENTITY;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getAlpnProtocol;
 
@@ -156,7 +157,12 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                         final Pair<SslContext, TigerPkiIdentity> serverSslContext =
                                             server
                                                 .getServerSslContextFactory()
-                                                .createServerSslContext(host);
+                                                .createServerSslContext(
+                                                    host,
+                                                    proxyClientCtx
+                                                        .channel()
+                                                        .attr(PREFERRED_UPSTREAM_KEY_ALGORITHM)
+                                                        .get());
                                         channelFuture
                                             .channel()
                                             .attr(SERVER_IDENTITY)

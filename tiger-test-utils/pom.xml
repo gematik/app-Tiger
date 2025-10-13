@@ -28,11 +28,11 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.9</version>
+        <version>4.1.0</version>
     </parent>
     <artifactId>tiger-test-utils</artifactId>
     <name>${project.artifactId}</name>
-    <description>tiger-test-utils Zion modul of the tiger test platform.</description>
+    <description>tiger-test-utils modul of the tiger test platform.</description>
 
     <dependencies>
         <dependency>
@@ -121,9 +121,6 @@
                         <include>**/TestContextFeatureTest.java</include>
                     </includes>
                     <skipITs>false</skipITs>
-                    <systemPropertyVariables>
-                        <TIGER_TESTENV_CFGFILE>src/test/resources/testdata/noServersActive.yaml</TIGER_TESTENV_CFGFILE>
-                    </systemPropertyVariables>
                     <threadCount>16</threadCount>
                     <forkCount>2</forkCount>
                 </configuration>

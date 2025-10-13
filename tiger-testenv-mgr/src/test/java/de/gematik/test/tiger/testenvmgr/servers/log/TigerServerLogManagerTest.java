@@ -76,21 +76,21 @@ class TigerServerLogManagerTest {
   @TigerTest(
       tigerYaml =
           """
-            localProxyActive: false
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - local:winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                logFile: target/serverLogs/test1.log
-                externalJarOptions:
-                  workingDir: target
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
-            """)
+          localProxyActive: false
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - local:winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              logFile: target/serverLogs/test1.log
+              externalJarOptions:
+                workingDir: target
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
+          """)
   @Test
   void testCheckAddAppendersEnabledLog_OK() throws Exception {
     assertThat(new File("target/serverLogs/test1.log"))
@@ -101,22 +101,22 @@ class TigerServerLogManagerTest {
   @TigerTest(
       tigerYaml =
           """
-            localProxyActive: false
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - local:winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                logFile: target/serverLogs/test2.log
-                externalJarOptions:
-                  activateLogs: false
-                  workingDir: target
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
-            """)
+          localProxyActive: false
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - local:winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              logFile: target/serverLogs/test2.log
+              externalJarOptions:
+                activateLogs: false
+                workingDir: target
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
+          """)
   @Test
   void testCheckAddAppendersDisabledLog_OK() {
     assertThat(new File("target/serverLogs/test2.log")).doesNotExist();
@@ -125,22 +125,22 @@ class TigerServerLogManagerTest {
   @TigerTest(
       tigerYaml =
           """
-            localProxyActive: false
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - local:winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                logFile: target/serverLogs/test3.log
-                externalJarOptions:
-                  activateWorkflowLogs: false
-                  workingDir: target
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
-            """)
+          localProxyActive: false
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - local:winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              logFile: target/serverLogs/test3.log
+              externalJarOptions:
+                activateWorkflowLogs: false
+                workingDir: target
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
+          """)
   @Test
   void testCheckAddAppendersDisabledOnlyWorkflowUiLog_OK() {
     assertThat(new File("target/serverLogs/test3.log"))
@@ -151,23 +151,23 @@ class TigerServerLogManagerTest {
   @TigerTest(
       tigerYaml =
           """
-            localProxyActive: false
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - local:winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                logFile: target/serverLogs/test4.log
-                externalJarOptions:
-                  activateLogs: false
-                  activateWorkflowLogs: true
-                  workingDir: target
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
-            """)
+          localProxyActive: false
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - local:winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              logFile: target/serverLogs/test4.log
+              externalJarOptions:
+                activateLogs: false
+                activateWorkflowLogs: true
+                workingDir: target
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
+          """)
   @Test
   void testCheckAddAppendersDisabledAllButOnlyWorkflowUiLog_OK() {
     assertThat(new File("target/serverLogs/test4.log")).doesNotExist();

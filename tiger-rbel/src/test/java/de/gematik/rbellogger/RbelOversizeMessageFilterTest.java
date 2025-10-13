@@ -42,8 +42,13 @@ class RbelOversizeMessageFilterTest {
 
   @BeforeAll
   static void initializeRbelLogger() throws IOException {
+    final String rawMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/getRequest.curl");
     final String oversizedRequest =
-        readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/getRequest.curl")
+        rawMessage.substring(0, rawMessage.length() - 2)
+            + "Content-Length: 50000000\r\n"
+            + "\r\n"
             + "{\"foo\":\""
             + RandomStringUtils.insecure().nextAlphabetic(50_000_000)
             + "\"}\r\n";
@@ -62,6 +67,6 @@ class RbelOversizeMessageFilterTest {
 
     FileUtils.writeStringToFile(new File("target/large.html"), html, StandardCharsets.UTF_8);
 
-    assertThat(html).hasSizeLessThan(MB);
+    assertThat(html.length()).isLessThan(MB);
   }
 }

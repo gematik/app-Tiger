@@ -183,19 +183,19 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - "http://localhost:${wiremock.port}/download"
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                externalJarOptions:
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - "http://localhost:${wiremock.port}/download"
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
 
-            """,
+          """,
       skipEnvironmentSetup = true)
   void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
     envMgr.startLocalTigerProxyIfActivated();
@@ -207,21 +207,21 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              proxyPort: ${free.port.1}
-              adminPort: ${free.port.2}
-            servers:
-              externalJarServer:
-                type: externalJar
-                source:
-                  - "http://localhost:${wiremock.port}/download"
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                externalJarOptions:
-                  arguments:
-                    - "--httpPort=${free.port.0}"
-                    - "--webroot=."
-            """,
+          tigerProxy:
+            proxyPort: ${free.port.1}
+            adminPort: ${free.port.2}
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - "http://localhost:${wiremock.port}/download"
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - "--httpPort=${free.port.0}"
+                  - "--webroot=."
+          """,
       skipEnvironmentSetup = true)
   void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch() {
     assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault())
@@ -234,11 +234,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            additionalConfigurationFiles:
-              - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml
-                baseKey: tiger
+          additionalConfigurationFiles:
+            - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml
+              baseKey: tiger
 
-            """)
+          """)
   void readAdditionalYamlFiles(UnirestInstance unirestInstance) {
     assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess()).isTrue();
   }
@@ -247,9 +247,9 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            additionalConfigurationFiles:
-              - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml
-            """)
+          additionalConfigurationFiles:
+            - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml
+          """)
   void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
     assertThat(unirestInstance.get("http://testExternalJar").asString().isSuccess()).isTrue();
   }

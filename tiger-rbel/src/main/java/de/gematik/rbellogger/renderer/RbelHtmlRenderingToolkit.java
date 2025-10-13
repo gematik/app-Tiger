@@ -22,7 +22,6 @@ package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 import static j2html.TagCreator.*;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -85,6 +84,7 @@ public class RbelHtmlRenderingToolkit {
   private static final String HEX_STYLE =
       "display: inline-flex;padding-bottom: 0.2rem;padding-top: 0.2rem;white-space: revert;";
   public static final String JSON_NOTE = "json-note";
+  public static final String CRLF = "\r\n";
 
   private static String isSize(int n) {
     return "is-size-" + n;

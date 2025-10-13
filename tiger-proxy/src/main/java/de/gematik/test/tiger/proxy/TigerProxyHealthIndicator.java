@@ -66,7 +66,6 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
     if (tigerProxy.getTigerProxyConfiguration().getDirectReverseProxy() != null) {
       return Status.UP;
     }
-    int adminPort = tigerProxy.getAdminPort();
 
     LocalDateTime timestamp = LocalDateTime.now();
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {

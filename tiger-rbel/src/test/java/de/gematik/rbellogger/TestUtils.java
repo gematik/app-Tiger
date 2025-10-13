@@ -21,11 +21,16 @@
 package de.gematik.rbellogger;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelInternetAddress;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.exceptions.RbelHostnameFormatException;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.function.Function;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 
 public class TestUtils {
@@ -47,14 +52,37 @@ public class TestUtils {
       throws IOException {
     String fromFile =
         FileUtils.readFileToString(new File(fileName), charset).replaceAll("(?<!\\r)\\n", "\r\n");
-    if (fromFile.endsWith("\r\n")) {
+    if (fromFile.lines().findFirst().filter(line -> line.contains("HTTP/")).isEmpty()) {
       return fromFile;
-    } else {
-      return fromFile + "\r\n";
     }
+    if (!fromFile.endsWith("\r\n")) {
+      fromFile += "\r\n";
+    }
+    if (!fromFile.toLowerCase().contains("content-length")
+        && !fromFile.toLowerCase().contains("transfer-encoding")) {
+      val headerEndIndex = fromFile.indexOf("\r\n\r\n");
+      val bodyLength = fromFile.substring(headerEndIndex + 4).getBytes(charset).length;
+      if (bodyLength > 0) {
+        fromFile =
+            fromFile.substring(0, headerEndIndex)
+                + "\r\n"
+                + "Content-Length: "
+                + bodyLength
+                + "\r\n\r\n"
+                + fromFile.substring(headerEndIndex + 4);
+      }
+    }
+    return fromFile;
   }
 
-  public static RbelHostname localhostWithPort(int tcpPort) {
-    return RbelHostname.builder().hostname("localhost").port(tcpPort).build();
+  public static RbelSocketAddress localhostWithPort(int tcpPort) {
+    try {
+      return RbelSocketAddress.builder()
+          .address(RbelInternetAddress.fromInetAddress(InetAddress.getLocalHost()))
+          .port(tcpPort)
+          .build();
+    } catch (UnknownHostException e) {
+      throw new RbelHostnameFormatException("Could not resolve localhost", e);
+    }
   }
 }

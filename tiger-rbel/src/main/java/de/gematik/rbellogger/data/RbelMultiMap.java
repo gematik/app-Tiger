@@ -164,4 +164,10 @@ public class RbelMultiMap<T> implements Map<String, T> {
   public Iterator<Entry<String, T>> iterator() {
     return values.iterator();
   }
+
+  public void putIfNotNull(String key, T value) {
+    if (value != null) {
+      put(key, value);
+    }
+  }
 }

@@ -23,6 +23,7 @@ import TigerServerStatusUpdateDto from "./TigerServerStatusUpdateDto";
 import FeatureUpdate from "./testsuite/FeatureUpdate";
 import BannerType from "@/types/BannerType";
 import { BannerDetails } from "@/types/BannerDetails";
+import { TestSuiteLifecycle } from "@/types/TestSuiteLifecycle.ts";
 
 export default class TestEnvStatusDto {
   index: number = -1;
@@ -37,6 +38,7 @@ export default class TestEnvStatusDto {
   bannerIsHtml: boolean = false;
   bannerDetails: BannerDetails | null = null;
   removedMessageUuids: string[] | null = null;
+  testSuiteLifecycle: TestSuiteLifecycle = TestSuiteLifecycle.STARTUP;
 
   public static sortArray(array: Array<TestEnvStatusDto>) {
     // sort prefetched Messages based on index;

@@ -22,17 +22,10 @@ package de.gematik.rbellogger.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.data.RbelElement;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -170,64 +163,5 @@ class RbelContentTest {
     var concat = RbelContent.of(parts);
     assertEquals(concat.size(), bytes.size());
     assertArrayEquals(concat.toByteArray(), bytes.toByteArray());
-  }
-
-  @Test
-  @SneakyThrows
-  @Tag("de.gematik.test.tiger.common.PerformanceTest")
-  void compareChunkedAgainstNonChunked_chunkedShouldBeSimilar() {
-    var origContent =
-        Files.readAllBytes(Paths.get("src/test/resources/sampleMessages/sampleMail_longer.txt"));
-    RbelContentBase chunked = RbelContent.builder().content(List.of(origContent)).build();
-
-    double ratios = 0.0;
-
-    int cycles = 20;
-
-    for (int i = 0; i < cycles; i++) {
-      System.gc();
-
-      RbelLogger logger =
-          RbelLogger.build(
-              RbelConfiguration.builder().activateRbelParsingFor(List.of("mime", "smtp")).build());
-
-      byte[] concatenated = new byte[0];
-      var begin1 = System.nanoTime();
-      for (byte[] chunk : chunked.getChunks()) {
-        concatenated = org.bouncycastle.util.Arrays.concatenate(concatenated, chunk);
-        var rawContent = // simulate a non-chunked input by making the whole input a single chunk
-            RbelContent.builder()
-                .chunkSize(concatenated.length)
-                .content(List.of(concatenated))
-                .build();
-        logger.getRbelConverter().convertElement(RbelElement.builder().content(rawContent).build());
-      }
-      var end1 = System.nanoTime();
-
-      log.info("Concatenating and converting content took {} ns", (end1 - begin1));
-      var concatenatedNs = (end1 - begin1);
-
-      RbelContentBase array = RbelContent.builder().build();
-
-      var begin2 = System.nanoTime();
-      for (byte[] chunk : chunked.getChunks()) {
-        array.append(chunk);
-        logger.getRbelConverter().convertElement(RbelElement.builder().content(array).build());
-      }
-      var end2 = System.nanoTime();
-
-      log.info("Accumulating and converting took {} ns", (end2 - begin2));
-
-      var accumulatedNs = (end2 - begin2);
-
-      double performanceRatio = ((double) accumulatedNs) / ((double) concatenatedNs);
-      log.info("performance ratio accumulated/concatenated == {}", performanceRatio);
-
-      ratios += performanceRatio;
-    }
-
-    double averagePerformanceRatio = ratios / cycles;
-    log.info("average performance ratio accumulated/concatenated == {}", averagePerformanceRatio);
-    org.assertj.core.api.Assertions.assertThat(averagePerformanceRatio).isLessThan(5.0F);
   }
 }

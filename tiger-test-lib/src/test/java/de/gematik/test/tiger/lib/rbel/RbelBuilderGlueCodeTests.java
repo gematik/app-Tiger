@@ -47,12 +47,12 @@ class RbelBuilderGlueCodeTests {
   RbelBuilderGlueCode glueCode = new RbelBuilderGlueCode();
   String nestedObjectAsJsonString =
       """
-            {
-            	"blub": {
-            		"foo":"bar"
-            	}
-            }
-            """;
+      {
+      	"blub": {
+      		"foo":"bar"
+      	}
+      }
+      """;
   String testFilePath = "src/test/resources/testdata/rbelBuilderTests/blub.json";
   String fileContentFromJexl = "!{file('%s')}".formatted(testFilePath);
 
@@ -99,15 +99,15 @@ class RbelBuilderGlueCodeTests {
   void setValueAtTest() {
     String expectedBlub =
         """
-            {
-            	"blub": {
-            		"foo":"bar"
-            	},
-            	"blib": {
-            	    "new": "entry"
-            	}
-            }
-                """;
+        {
+        	"blub": {
+        		"foo":"bar"
+        	},
+        	"blib": {
+        	    "new": "entry"
+        	}
+        }
+        """;
 
     RbelBuilder expectedBuilder = RbelBuilder.fromString(nestedObjectAsJsonString);
     expectedBuilder.setValueAt("$.blib", "{ \"new\": \"entry\" }");
@@ -132,15 +132,15 @@ class RbelBuilderGlueCodeTests {
   void fromScratchTest() {
     String expectedBuild =
         """
-                {
-                    "new": {
-                        "object": {
-                            "with": "some",
-                            "new": "values"
-                        }
-                    }
+        {
+            "new": {
+                "object": {
+                    "with": "some",
+                    "new": "values"
                 }
-                """;
+            }
+        }
+        """;
 
     RbelBuilder expectedBuilder = RbelBuilder.fromScratch(RbelContentType.JSON);
     expectedBuilder.setValueAt(
@@ -167,61 +167,61 @@ class RbelBuilderGlueCodeTests {
   void addEntryTest() {
     String testArray =
         """
+        {
+            "array1": [
+                "entry1",
                 {
-                    "array1": [
-                        "entry1",
-                        {
-                            "innerArray": [
-                                "innerEntry1",
-                                "innerEntry2",
-                                "innerEntry3"
-                            ]
-                        },
-                        {
-                            "some": "object"
-                        }
-                    ],
-                    "array2": [
-                        {
-                            "some": {
-                                "more": "stuff"
-                            }
-                        }
+                    "innerArray": [
+                        "innerEntry1",
+                        "innerEntry2",
+                        "innerEntry3"
                     ]
+                },
+                {
+                    "some": "object"
                 }
-                """;
+            ],
+            "array2": [
+                {
+                    "some": {
+                        "more": "stuff"
+                    }
+                }
+            ]
+        }
+        """;
 
     String expectedResult =
         """
+        {
+            "array1": [
+                "entry1",
                 {
-                    "array1": [
-                        "entry1",
+                    "innerArray": [
+                        "innerEntry1",
+                        "innerEntry2",
+                        "innerEntry3",
                         {
-                            "innerArray": [
-                                "innerEntry1",
-                                "innerEntry2",
-                                "innerEntry3",
-                                {
-                                    "innerEntry4": [
-                                        "crazy",
-                                        "stuff"
-                                    ]
-                                }
+                            "innerEntry4": [
+                                "crazy",
+                                "stuff"
                             ]
-                        },
-                        {
-                            "some": "object"
-                        }
-                    ],
-                    "array2": [
-                        {
-                            "some": {
-                                "more": "stuff"
-                            }
                         }
                     ]
+                },
+                {
+                    "some": "object"
                 }
-                """;
+            ],
+            "array2": [
+                {
+                    "some": {
+                        "more": "stuff"
+                    }
+                }
+            ]
+        }
+        """;
 
     RbelBuilder expectedBuilder =
         RbelBuilder.fromString(testArray)
@@ -258,13 +258,13 @@ class RbelBuilderGlueCodeTests {
   void rbelBuilderChangelogTest() {
     String valueToSet =
         """
-                        {
-                            "array": [
-                                "blib",
-                                "blab"
-                            ]
-                        }
-                        """;
+        {
+            "array": [
+                "blib",
+                "blab"
+            ]
+        }
+        """;
 
     Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
 

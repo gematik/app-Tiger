@@ -23,6 +23,7 @@ package de.gematik.rbellogger.facets.jackson;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.RbelRootFacet;
 import java.io.IOException;
 
 /**
@@ -43,6 +44,9 @@ public class RbelCborConverter extends AbstractJacksonConverter<RbelCborFacet> {
 
   @Override
   JsonNode convertContentUsingJackson(RbelElement target) throws IOException {
+    if (target.hasFacet(RbelRootFacet.class)) {
+      return null;
+    }
     return getMapper().readTree(target.getContent().toInputStream());
   }
 }

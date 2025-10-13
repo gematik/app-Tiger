@@ -24,7 +24,8 @@ import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelInternetAddressParser;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
@@ -40,6 +41,7 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -95,7 +97,7 @@ public class HttpActionHandler {
             responseWriter,
             request,
             new TigerProxyRoutingException(
-                "No route found", RbelHostname.create(getRemoteAddress(ctx)), null, null));
+                "No route found", RbelSocketAddress.create(getRemoteAddress(ctx)), null, null));
       } else {
         final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
         final HttpRequest clonedRequest = hopByHopHeaderFilter.onRequest(request);
@@ -233,9 +235,9 @@ public class HttpActionHandler {
       if (error instanceof TigerProxyRoutingException routingException) {
         configuration.exceptionHandlingCallback().accept(routingException, ctx);
       } else {
-        RbelHostname senderAddress = null;
+        RbelSocketAddress senderAddress = null;
         if (remoteAddress.length > 0) {
-          senderAddress = RbelHostname.create(remoteAddress[0]);
+          senderAddress = RbelSocketAddress.create(remoteAddress[0]);
         }
         val routingException =
             new TigerProxyRoutingException(error.getMessage(), senderAddress, null, error);
@@ -254,7 +256,21 @@ public class HttpActionHandler {
 
   public static InetSocketAddress getRemoteAddress(final ChannelHandlerContext ctx) {
     if (ctx != null && ctx.channel() != null && ctx.channel().attr(REMOTE_SOCKET) != null) {
-      return ctx.channel().attr(REMOTE_SOCKET).get();
+      var remoteSocket = ctx.channel().attr(REMOTE_SOCKET).get();
+      final SocketAddress localAddress = ctx.channel().localAddress();
+      if (remoteSocket != null) {
+        if (remoteSocket.getAddress() != null
+            && remoteSocket.getAddress().isLoopbackAddress()
+            && localAddress instanceof InetSocketAddress localInetSocketAddress) {
+          return new InetSocketAddress(localInetSocketAddress.getAddress(), remoteSocket.getPort());
+        } else {
+          return RbelInternetAddressParser.parseInetAddress(remoteSocket.toString())
+              .toInetAddress()
+              .map(inetAdr -> new InetSocketAddress(inetAdr, remoteSocket.getPort()))
+              .orElse(remoteSocket);
+        }
+      }
+      return remoteSocket;
     } else {
       return null;
     }

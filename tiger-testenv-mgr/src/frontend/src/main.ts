@@ -25,6 +25,7 @@ import DialogService from "primevue/dialogservice";
 import Lara from "@primeuix/themes/lara";
 import App from "./App.vue";
 import { createPinia } from "pinia";
+import "primeicons/primeicons.css";
 
 const pinia = createPinia();
 const app = createApp(App);

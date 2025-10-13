@@ -24,7 +24,9 @@ import static org.awaitility.Awaitility.await;
 
 import com.google.common.collect.Streams;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.RbelMismatchNoteFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -36,33 +38,24 @@ import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerInitializer;
+import de.gematik.test.tiger.lib.exception.ValidatorAssertionError;
 import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
-import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
-import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
-import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
-import de.gematik.test.tiger.testenvmgr.env.TestResult;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.core.plugin.FeatureFileLoader;
 import io.cucumber.core.plugin.IScenarioContext;
 import io.cucumber.core.plugin.SerenityUtils;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
-import io.cucumber.messages.types.Examples;
-import io.cucumber.messages.types.Feature;
+import io.cucumber.messages.types.*;
 import io.cucumber.messages.types.Location;
-import io.cucumber.messages.types.Scenario;
-import io.cucumber.messages.types.TableCell;
-import io.cucumber.messages.types.TableRow;
+import io.cucumber.plugin.event.*;
 import io.cucumber.plugin.event.Event;
-import io.cucumber.plugin.event.HookTestStep;
-import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
-import io.cucumber.plugin.event.TestSourceRead;
 import io.cucumber.plugin.event.TestStep;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
@@ -82,6 +75,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
@@ -139,6 +133,9 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   private static final ThreadLocal<TigerStatusUpdate> currentStatusUpdate = new ThreadLocal<>();
   private static final ThreadLocal<Stack<StepUpdate>> currentSteps = new ThreadLocal<>();
 
+  private static final ConcurrentHashMap<String, List<RbelMismatchNoteFacet>> scenarioMismatches =
+      new ConcurrentHashMap<>();
+
   @NotNull
   private static Path getEvidenceDir() throws IOException {
     final Path parentDir = Path.of(TARGET_DIR, "evidences");
@@ -192,6 +189,16 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
 
     var testCase = testCaseStartedEvent.getTestCase();
     boolean isDryRun = TestCaseDelegate.of(testCase).isDryRun();
+
+    TigerDirector.getTigerTestEnvMgr()
+        .receiveTestEnvUpdate(
+            TigerStatusUpdate.builder()
+                .testSuiteLifecycle(
+                    isDryRun
+                        ? TestSuiteLifecycle.DISCOVERING_TESTS
+                        : TestSuiteLifecycle.EXECUTING_TESTS)
+                .build());
+
     currentFeature.ifPresent(
         feature -> informWorkflowUiAboutCurrentScenario(feature, testCase, context, isDryRun));
 
@@ -235,6 +242,9 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
         ScenarioRunner.findScenarioUniqueId(
                 context.getFeatureURI(), convertLocation(testCase.getLocation()))
             .toString();
+
+    removeOldMismatchNotes(scenarioUniqueId);
+
     ScenarioUpdate scenarioUpdate =
         ScenarioUpdate.builder()
             .isDryRun(isDryRun)
@@ -246,6 +256,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
                     ? context.getTable(scenarioId).getHeaders()
                     : null)
             .exampleList(variantDataMap)
+            .tags(testCase.getTags())
             .steps(stepUpdates(StepDescription.extractStepDescriptions(testCase)))
             .build();
     FeatureUpdate featureUpdate =
@@ -259,6 +270,32 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
             TigerStatusUpdate.builder()
                 .featureMap(convertToLinkedHashMap(feature.getName(), featureUpdate))
                 .build());
+  }
+
+  private void removeOldMismatchNotes(String scenarioUniqueId) {
+    var oldMismatches = scenarioMismatches.remove(scenarioUniqueId);
+    if (oldMismatches != null && !oldMismatches.isEmpty()) {
+      log.debug(
+          "Removing {} old mismatches of scenario {}", oldMismatches.size(), scenarioUniqueId);
+      var sequenceNumbersOfMismatches =
+          oldMismatches.stream()
+              .map(RbelMismatchNoteFacet::getSequenceNumber)
+              .collect(Collectors.toSet());
+      var knownMessages =
+          TigerDirector.getTigerTestEnvMgr()
+              .getLocalTigerProxyOptional()
+              .map(TigerProxy::getRbelMessagesList)
+              .stream()
+              .flatMap(Collection::stream);
+      var seqNumToMsg =
+          knownMessages
+              .map(msg -> Pair.of(RbelTcpIpMessageFacet.getSequenceNumber(msg), msg))
+              .filter(pair -> sequenceNumbersOfMismatches.contains(pair.getKey()))
+              .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+      oldMismatches.stream()
+          .filter(mismatch -> seqNumToMsg.containsKey(mismatch.getSequenceNumber()))
+          .forEach(mismatch -> mismatch.removeFrom(seqNumToMsg.get(mismatch.getSequenceNumber())));
+    }
   }
 
   private static @NotNull <T> LinkedHashMap<String, T> convertToLinkedHashMap(String key, T value) {
@@ -491,6 +528,10 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
 
     val stepDescription = StepDescription.of(pickleTestStep);
     val currentStepMessages = getCurrentStepMessages(isDryRun, stepState);
+    val currentStepMismatches = getCurrentStepMismatches(error);
+    scenarioMismatches
+        .computeIfAbsent(scenarioUniqueId, k -> new ArrayList<>())
+        .addAll(currentStepMismatches);
     val messageMetaData = getMessageMetaData(currentStepMessages);
 
     StepUpdate currentStepUpdate =
@@ -502,6 +543,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
             .failureStacktrace(getStackTrace(error))
             .stepIndex(stepIndex)
             .rbelMetaData(messageMetaData)
+            .mismatchNotes(currentStepMismatches)
             .build();
 
     val scenarioUpdate =
@@ -515,6 +557,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
                     ? context.getTable(scenarioId).getHeaders()
                     : null)
             .exampleList(variantDataMap)
+            .tags(testCase.getTags())
             .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
             .failureMessage(error != null ? error.getMessage() : null)
             .build();
@@ -692,6 +735,22 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     return requestsWaitingForResponses.isEmpty();
   }
 
+  public Set<RbelMismatchNoteFacet> getCurrentStepMismatches(Throwable error) {
+    val mismatches = new TreeSet<>(RbelMismatchNoteFacet.COMPARATOR);
+    if (error instanceof ValidatorAssertionError validatorAssertionError) {
+      validatorAssertionError
+          .getMismatchNotes()
+          .forEach(
+              (element, notes) ->
+                  notes.forEach(
+                      note -> {
+                        element.addFacet(note);
+                        mismatches.add(note);
+                      }));
+    }
+    return mismatches;
+  }
+
   private static int findStepIndex(TestStep step, List<TestStep> steps) {
     var pickleSteps = steps.stream().filter(PickleStepTestStep.class::isInstance).toList();
     return pickleSteps.indexOf(step);
@@ -836,7 +895,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   @NotNull
   private RbelHtmlRenderer getRbelHtmlRenderer(
       String scenarioName, URI scenarioUri, int dataVariantIndex) {
-    var rbelRenderer = new RbelHtmlRenderer();
+    var rbelRenderer = new RbelHtmlRenderer().withNoMaximumEntitySize();
     rbelRenderer.setTitle(scenarioName);
     rbelRenderer.setSubTitle(
         "<p>"

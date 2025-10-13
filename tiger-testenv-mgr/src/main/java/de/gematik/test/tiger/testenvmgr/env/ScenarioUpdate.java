@@ -45,6 +45,8 @@ public class ScenarioUpdate {
   @Builder.Default private int variantIndex = -1;
   private String uniqueId;
 
+  @Builder.Default private List<String> tags = new ArrayList<>();
+
   @JsonProperty(value = "isDryRun")
   @Builder.Default
   private boolean isDryRun = false;
