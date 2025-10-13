@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.0.9 - 2025-08-25</span>
+<span id="revdate">Version 4.1.0 - 2025-10-13</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -244,8 +244,9 @@ video {
 <li><a href="#adding-notes-to-messages">4.7. Adding notes to messages</a></li>
 <li><a href="#_rbel_path_details">4.8. Understanding RBelPath</a></li>
 <li><a href="#running-tiger-proxy-as-standalone-jar">4.9. Running Tiger Proxy as standalone JAR</a></li>
-<li><a href="#additional-configuration">4.10. Additional configuration</a></li>
-<li><a href="#understanding-filtering">4.11. Understanding filtering</a></li>
+<li><a href="#running-tiger-proxy-as-a-docker-container">4.10. Running Tiger Proxy as a docker container</a></li>
+<li><a href="#additional-configuration">4.11. Additional configuration</a></li>
+<li><a href="#understanding-filtering">4.12. Understanding filtering</a></li>
 </ul>
 </li>
 <li><a href="#tiger-test-library-2">5. Tiger Test library</a>
@@ -280,49 +281,38 @@ video {
 <li><a href="#tiger-user-interfaces">7. Tiger User interfaces</a>
 <ul class="sectlevel2">
 <li><a href="#_workflow_ui">7.1. Workflow UI</a></li>
-<li><a href="#postpone-start-of-test-scenarios">7.2. Postpone start of test scenarios</a></li>
-<li><a href="#_web_ui">7.3. Standalone Tiger Proxy Log</a></li>
-<li><a href="#_jexl_expression_detail">7.4. Explanation of JEXL Expressions</a></li>
+<li><a href="#_runTestsOnStart">7.2. Postpone start of test scenarios</a></li>
+<li><a href="#select-a-subset-of-tests-to-run">7.3. Select a subset of tests to run</a></li>
+<li><a href="#_web_ui">7.4. Standalone Tiger Proxy Log</a></li>
+<li><a href="#_jexl_expression_detail">7.5. Explanation of JEXL Expressions</a></li>
 </ul>
 </li>
-<li><a href="#tiger-zion">8. Tiger Zion</a>
+<li><a href="#tiger-extensions-2">8. Tiger Extensions</a>
 <ul class="sectlevel2">
-<li><a href="#simple-canned-response">8.1. Simple canned response</a></li>
-<li><a href="#looping-tgrfor">8.2. Looping (tgrFor)</a></li>
-<li><a href="#conditional-rendering-tgrif">8.3. Conditional rendering (tgrIf)</a></li>
-<li><a href="#backend-request">8.4. Backend request</a></li>
-<li><a href="#nested-response">8.5. Nested response</a></li>
-<li><a href="#matching-path-variables">8.6. Matching path variables</a></li>
-<li><a href="#tgrencodeas">8.7. tgrEncodeAs</a></li>
-<li><a href="#rbelwriter-content-structures">8.8. RbelWriter content structures</a></li>
+<li><a href="#tiger-konnektor-management-extension">8.1. Tiger Konnektor Management Extension</a></li>
+<li><a href="#tiger-on-fhir-extension">8.2. Tiger On FHIR Extension</a></li>
+<li><a href="#tiger-cats-extension">8.3. Tiger CATS Extension</a></li>
+<li><a href="#tiger-cloud-extension">8.4. Tiger Cloud Extension</a></li>
+<li><a href="#tiger-pssim-extension">8.5. Tiger PSSIM Extension</a></li>
+<li><a href="#tiger-robot-extension">8.6. Tiger Robot Extension</a></li>
 </ul>
 </li>
-<li><a href="#tiger-extensions-2">9. Tiger Extensions</a>
-<ul class="sectlevel2">
-<li><a href="#tiger-konnektor-management-extension">9.1. Tiger Konnektor Management Extension</a></li>
-<li><a href="#tiger-on-fhir-extension">9.2. Tiger On FHIR Extension</a></li>
-<li><a href="#tiger-cats-extension">9.3. Tiger CATS Extension</a></li>
-<li><a href="#tiger-cloud-extension">9.4. Tiger Cloud Extension</a></li>
-<li><a href="#tiger-pssim-extension">9.5. Tiger PSSIM Extension</a></li>
-<li><a href="#tiger-robot-extension">9.6. Tiger Robot Extension</a></li>
-</ul>
-</li>
-<li><a href="#rest-api">10. Rest API</a>
+<li><a href="#rest-api">9. Rest API</a>
 <ul class="sectlevel3">
-<li><a href="#tests">10.1. Tests</a></li>
-<li><a href="#models">10.2. Models</a></li>
+<li><a href="#tests">9.1. Tests</a></li>
+<li><a href="#models">9.2. Models</a></li>
 </ul>
 </li>
-<li><a href="#links-to-test-relevant-topics">11. Links to test relevant topics</a></li>
-<li><a href="#frequently-asked-questions">12. Frequently asked questions</a>
+<li><a href="#links-to-test-relevant-topics">10. Links to test relevant topics</a></li>
+<li><a href="#frequently-asked-questions">11. Frequently asked questions</a>
 <ul class="sectlevel2">
-<li><a href="#maven">12.1. Maven</a></li>
-<li><a href="#extensions">12.2. Extensions</a></li>
-<li><a href="#workflow-ui">12.3. Workflow UI</a></li>
-<li><a href="#other-topics">12.4. Other topics</a></li>
-<li><a href="#extensions-2">12.5. Extensions</a></li>
-<li><a href="#workflow-ui-2">12.6. Workflow UI</a></li>
-<li><a href="#other-topics-2">12.7. Other topics</a></li>
+<li><a href="#maven">11.1. Maven</a></li>
+<li><a href="#extensions">11.2. Extensions</a></li>
+<li><a href="#workflow-ui">11.3. Workflow UI</a></li>
+<li><a href="#other-topics">11.4. Other topics</a></li>
+<li><a href="#extensions-2">11.5. Extensions</a></li>
+<li><a href="#workflow-ui-2">11.6. Workflow UI</a></li>
+<li><a href="#other-topics-2">11.7. Other topics</a></li>
 </ul>
 </li>
 </ul>
@@ -1471,7 +1461,8 @@ Keep in mind that placeholders can be used in the filename!</p>
 <p>In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.</p>
 </div>
 <div class="paragraph">
-<p>To configure your test environment you can compose the <code>tiger.yaml</code> file manually.</p>
+<p>To configure your test environment you can compose the <code>tiger.yaml</code> file manually.<br>
+There is a JSON schema that can be included in your IDE for editing the tiger.yaml: <a href="https://json.schemastore.org/gematik-tiger.json" class="bare">https://json.schemastore.org/gematik-tiger.json</a>.</p>
 </div>
 <div class="paragraph">
 <p>The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.</p>
@@ -1518,7 +1509,10 @@ It starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server wh
 <h4 id="yaml-configuration-files-in-a-nutshell"><a class="anchor" href="#yaml-configuration-files-in-a-nutshell"></a>3.2.1. YAML configuration files in a nutshell</h4>
 <div class="paragraph">
 <p>Before you start writing your own <code>tiger.yaml</code> configuration files, make sure you have worked with yaml files before and know its syntax and structure.<br>
-If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06">20 minutes primer</a>, although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.</p>
+There is a JSON schema that can be included in your IDE for editing the tiger.yaml: <a href="https://json.schemastore.org/gematik-tiger.json" class="bare">https://json.schemastore.org/gematik-tiger.json</a>.</p>
+</div>
+<div class="paragraph">
+<p>If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06">20 minutes primer</a>, although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.</p>
 </div>
 </div>
 <div class="sect3">
@@ -1553,6 +1547,7 @@ If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-b
     startupPollIntervalMs: int
     # MANDATORY type specific property in that for some types it's a list,
     # for some others it's a single URL
+    # important: the source entry must not contain any spaces.
     source:
       - source entry 1
       - source entry 2
@@ -1599,6 +1594,7 @@ If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-b
 # the server is reachable under "identityServer" via the Tiger Proxy
   identityServer:
     type: externalJar
+    # important: the source entry must not contain any spaces.
     source:
       - local:../octopus-identity-service/target/octopus-identity-service-1.0-SNAPSHOT.jar
     healthcheckUrl: http://localhost:${tiger.ports.identity}/status
@@ -3849,12 +3845,38 @@ localResources: false</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="additional-configuration"><a class="anchor" href="#additional-configuration"></a>4.10. Additional configuration</h3>
+<h3 id="running-tiger-proxy-as-a-docker-container"><a class="anchor" href="#running-tiger-proxy-as-a-docker-container"></a>4.10. Running Tiger Proxy as a docker container</h3>
+<div class="paragraph">
+<p>You can also simply run the Tiger Proxy as a docker container:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker run -p 8080:8080 -p 9090:9090 --rm gematik1/tiger-proxy-image:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This exposes the admin-port (8080) and the proxy-port (9090) on the host.<br>
+Be aware: When you change configuration in the container, make sure to always keep the admin port on 8080. Otherwise, the health-check of the container will fail.</p>
+</div>
+<div class="paragraph">
+<p>If you want to use a custom configuration, you can mount a configuration file into the container:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">docker run \
+  -v application.yaml:/app/application.yaml \
+  -p 8080:8080 -p 9090:9090 --rm \
+  gematik1/tiger-proxy-image:latest</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="additional-configuration"><a class="anchor" href="#additional-configuration"></a>4.11. Additional configuration</h3>
 <div class="paragraph">
 <p>There are some additional configuration-flags in the Tiger Proxy:</p>
 </div>
 <div class="sect3">
-<h4 id="displaying-nested-messages"><a class="anchor" href="#displaying-nested-messages"></a>4.10.1. Displaying Nested Messages</h4>
+<h4 id="displaying-nested-messages"><a class="anchor" href="#displaying-nested-messages"></a>4.11.1. Displaying Nested Messages</h4>
 <div class="paragraph">
 <p>Some messages are deeply nested and thus inconvenient to handle in the UI.</p>
 </div>
@@ -3872,7 +3894,7 @@ localResources: false</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="performance"><a class="anchor" href="#performance"></a>4.10.2. Performance</h4>
+<h4 id="performance"><a class="anchor" href="#performance"></a>4.11.2. Performance</h4>
 <div class="paragraph">
 <p>Below some properties along with their respective default values:</p>
 </div>
@@ -3984,7 +4006,7 @@ If the optional flag <code>ignoreConnectionErrors</code> is true, no connection 
 </div>
 </div>
 <div class="sect3">
-<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.10.3. activateTrafficLogging</h4>
+<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.11.3. activateTrafficLogging</h4>
 <div class="paragraph">
 <p>This flag controls whether the Tiger Proxy will log all traffic.<br>
 If activated every request and response is noted in the log.<br>
@@ -3994,7 +4016,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.10.4. rewriteHostHeader</h4>
+<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.11.4. rewriteHostHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the host-header.<br>
 If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).<br>
@@ -4002,7 +4024,7 @@ Default is false.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.10.5. rewriteLocationHeader</h4>
+<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.5. rewriteLocationHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the location-header for 3xx responses.<br>
 If activated the location-header will be modified so the client will still use the proxy to reach the new location.<br>
@@ -4010,7 +4032,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.10.6. maxLoopCounter</h4>
+<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.6. maxLoopCounter</h4>
 <div class="paragraph">
 <p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself).<br>
 If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
@@ -4020,7 +4042,7 @@ Note: This behavior can only be customized for all Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.11. Understanding filtering</h3>
+<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.12. Understanding filtering</h3>
 <div class="paragraph">
 <p>The filtering of messages in the tiger proxy consists of three main stages.<br>
 These are:</p>
@@ -4042,7 +4064,7 @@ These are:</p>
 <p>Lets dive a bit deeper!</p>
 </div>
 <div class="sect3">
-<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.11.1. Traffic filter</h4>
+<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.12.1. Traffic filter</h4>
 <div class="paragraph">
 <p>At the core of the Tiger Proxy sits a RbelLogger instance.<br>
 Here the messages are parsed and stored.<br>
@@ -4076,7 +4098,7 @@ They are however kept in memory since the partner, the response in that case, do
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.11.2. Tiger Proxy Log filter</h4>
+<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.12.2. Tiger Proxy Log filter</h4>
 <div class="paragraph">
 <p>When you display the messages on the Tiger Proxy Log you have the ability to filter out certain messages to be displayed exclusively.<br>
 The messages, which are filtered out, do still remain stored in the Tiger Proxy.<br>
@@ -4092,7 +4114,7 @@ This way they are consistent across different Tiger Proxy Log filters (message #
 </div>
 </div>
 <div class="sect3">
-<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.11.3. Pagination</h4>
+<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.12.3. Pagination</h4>
 <div class="paragraph">
 <p>Finally, pagination is applied in the Tiger Proxy Log.<br>
 This comes after the Tiger Proxy Log-Filter has been applied.<br>
@@ -4385,7 +4407,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-steps-in-validation-glue-code"><a class="anchor" href="#complete-set-of-steps-in-validation-glue-code"></a>5.3.5. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.3.5. Complete set of steps in validation glue code</h4>
 <div class="sect4">
 <h5 id="tgr-setze-anfrage-timeout-auf-int-sekunden"><a class="anchor" href="#tgr-setze-anfrage-timeout-auf-int-sekunden"></a>TGR setze Anfrage Timeout auf {int} Sekunden</h5>
 
@@ -7255,6 +7277,51 @@ The same works when clicking on the failed icon beside the scenario in the featu
 </div>
 <div class="title">Figure 36. Hovering over the failed icon</div>
 </div>
+<div class="sect5">
+<h6 id="_mismatch_notes"><a class="anchor" href="#_mismatch_notes"></a>Mismatch Notes</h6>
+<div class="paragraph">
+<p>If a step failed because of a mismatch, i.e. no message could be found matching the search criteria, the cause for the mismatch can potentially be in any number of messages that were observed before the validating step.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/mismatch_notes_dropbox.png" alt="mismatch notes dropbox">
+</div>
+<div class="title">Figure 37. Select Mismatch Dropdown Box</div>
+</div>
+<div class="paragraph">
+<p>In this case, it is possible to iterate through all the mismatching messages that were checked during search by using the up and down arrows beside the <code>Select mismatch</code> dropdown box beneath the failure message or by selecting a specific mismatch reason from the dropdown box.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/mismatch_notes_down_button.png" alt="mismatch notes down button">
+</div>
+<div class="title">Figure 38. Down Button</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/mismatch_notes_up_button.png" alt="mismatch notes up button">
+</div>
+<div class="title">Figure 39. Up Button</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/mismatch_notes_dropdown.png" alt="mismatch notes dropdown">
+</div>
+<div class="title">Figure 40. Expanded Mismatch Notes</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/mismatch_notes_third_option.png" alt="mismatch notes third option">
+</div>
+<div class="title">Figure 41. Selected Mismatch Note</div>
+</div>
+<div class="paragraph">
+<p>This will lead to the mismatching message being displayed in the Rbel Log Details view on the right hand side of the Workflow UI.<br>
+If the mismatching node exists in the message, it should be annotated there with an error note.</p>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_sub_steps"><a class="anchor" href="#_sub_steps"></a>Sub-Steps</h6>
 <div class="paragraph">
 <p>If a test step executes sub-steps, these are displayed (per default collapsed) in the test execution section beneath their parent test step.<br>
 They can be expanded by clicking on the small plus symbol to the left of the step description.<br>
@@ -7264,19 +7331,19 @@ Steps without sub-steps will not have the plus symbol and will not be expandable
 <div class="content">
 <img src="screenshots/webui_substep_collapsed.png" alt="webui substep collapsed">
 </div>
-<div class="title">Figure 37. Collapsed sub-steps of a test step</div>
+<div class="title">Figure 42. Collapsed sub-steps of a test step</div>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="screenshots/webui_substep_partially_expanded.png" alt="webui substep partially expanded">
 </div>
-<div class="title">Figure 38. Partially expanded sub-steps of a test step</div>
+<div class="title">Figure 43. Partially expanded sub-steps of a test step</div>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="screenshots/webui_substep_fully_expanded.png" alt="webui substep fully expanded">
 </div>
-<div class="title">Figure 39. Fully expanded sub-steps of a test step</div>
+<div class="title">Figure 44. Fully expanded sub-steps of a test step</div>
 </div>
 <div class="paragraph">
 <p>Sub-steps can not be defined in feature files directly.<br>
@@ -7291,7 +7358,7 @@ When the user clicks on the light blue rectangle with the number (whereas uneven
 <div class="content">
 <img src="screenshots/maincontent_rbelpath.png" alt="maincontent rbelpath">
 </div>
-<div class="title">Figure 40. Rbel Log Details</div>
+<div class="title">Figure 45. Rbel Log Details</div>
 </div>
 <div class="paragraph">
 <p>In the Rbel Log Details view the RbelMessages are displayed that are also saved as HTML files as described in the <a href="#_cucumber_hooks">Cucumber and Hooks</a> section.<br>
@@ -7301,12 +7368,13 @@ Next to the headline there is a link to the <a href="#_web_ui">WebUI (aka Tiger 
 <div class="content">
 <img src="screenshots/maincontent_rbelpath_urllink_highlight.png" alt="maincontent rbelpath urllink highlight">
 </div>
-<div class="title">Figure 41. Link to open the Tiger Proxy Log</div>
+<div class="title">Figure 46. Link to open the Tiger Proxy Log</div>
 </div>
 <div class="paragraph">
 <p>The Rbel Log Details view is described in the <a href="#_web_ui">WebUI</a> section as it is a slimmed down version of the WebUI.<br>
 In order to increase/decrease the width of the Rbel Log Details view the user can drag the border between the main window and the Rbel Log Details view.<br>
 The Rbel Log Details can be minimized by clicking on the double arrow on the top left of the Rbel Log Details section.</p>
+</div>
 </div>
 </div>
 </div>
@@ -7330,7 +7398,7 @@ The feature needs to be explicitly enabled in the <code>tiger.yaml</code> config
 <div class="content">
 <img src="screenshots/trafficVisualization.png" alt="trafficVisualization">
 </div>
-<div class="title">Figure 42. Traffic Visualization</div>
+<div class="title">Figure 47. Traffic Visualization</div>
 </div>
 <div class="paragraph">
 <p>The sequence diagram shows the messages that were exchanged between the servers under test.<br>
@@ -7360,7 +7428,7 @@ For external jars this can be achieved by configuring the servers with the follo
 </div>
 </div>
 <div class="sect2">
-<h3 id="postpone-start-of-test-scenarios"><a class="anchor" href="#postpone-start-of-test-scenarios"></a>7.2. Postpone start of test scenarios</h3>
+<h3 id="_runTestsOnStart"><a class="anchor" href="#_runTestsOnStart"></a>7.2. Postpone start of test scenarios</h3>
 <div class="paragraph">
 <p>It is possible to configure the Workflow UI to not start all tests automatically at startup.<br>
 When setting the following configuration option in the <code>tiger.yaml</code>:</p>
@@ -7373,7 +7441,8 @@ When setting the following configuration option in the <code>tiger.yaml</code>:<
 </div>
 <div class="paragraph">
 <p>the tests will only be discovered and displayed in the Workflow UI.<br>
-That includes all the tests in the feature files, even if they don&#8217;t match the "cucumber.filter.tags" configuration. This allows you to run manually any selection of tests.<br>
+That includes all the tests in the feature files, even if they don&#8217;t match the "cucumber.filter.tags" configuration.<br>
+This allows you to run manually any selection of tests.<br>
 The user can then choose which test scenario he/she wants to execute.<br>
 This can be done by clicking the play buttons in either the Test Execution pane or in the Status Bar.</p>
 </div>
@@ -7381,11 +7450,104 @@ This can be done by clicking the play buttons in either the Test Execution pane 
 <div class="content">
 <img src="screenshots/play_button.png" alt="play button">
 </div>
-<div class="title">Figure 43. Play Buttons</div>
+<div class="title">Figure 48. Play Buttons</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_web_ui"><a class="anchor" href="#_web_ui"></a>7.3. Standalone Tiger Proxy Log</h3>
+<h3 id="select-a-subset-of-tests-to-run"><a class="anchor" href="#select-a-subset-of-tests-to-run"></a>7.3. Select a subset of tests to run</h3>
+<div class="paragraph">
+<p>A Test Selector modal window can be used to select a subset of tests to run.<br>
+This feature must be enabled in the <code>tiger.yaml</code> configuration file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">lib:
+  enableTestSelection: true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the Workflow UI is started without automatic execution of tests (see <a href="#_runTestsOnStart">Postpone start of test scenarios</a>), the Test Selector modal window will open automatically in the Workflow UI.<br>
+The Test Selector modal window can also be opened manually by clicking the "Select tests to execute&#8230;&#8203;" button in the Status Bar.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_modal.png" alt="testselector modal">
+</div>
+<div class="title">Figure 49. Test Selector modal window opened in the Workflow UI</div>
+</div>
+<div class="paragraph">
+<p>The Test Selector modal window presents the tests in a tree table, where tests are organized by the folder structure of the feature files, and by scenarios within the feature files.<br>
+The folder structure is omitted if the feature files are located all in the same folder.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, the Test Selector modal window allows selecting tests by tags.<br>
+The tags are displayed on the right side of the modal window.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_tags.png" alt="testselector tags">
+</div>
+<div class="title">Figure 50. Select tests by tags</div>
+</div>
+<div class="paragraph">
+<p>By clicking on a tag, all tests with that tag will be selected.<br>
+Additionally, one can remove a given tag from the selection or replace the full selection with just the selected tag.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_tags_dropdown.png" alt="testselector tags dropdown">
+</div>
+<div class="title">Figure 51. Submenu for tag selection with option for unselect and replace selection</div>
+</div>
+<div class="paragraph">
+<p>A global search field as well as individual search fields for each column allow filtering the tests by name, tags or description.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_searchfields.png" alt="testselector searchfields">
+</div>
+<div class="title">Figure 52. Search fields in the Test Selector table</div>
+</div>
+<div class="paragraph">
+<p>It is possible to save the current selection of tests in a file, which can be loaded later on.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_save_load.png" alt="testselector save load">
+</div>
+<div class="title">Figure 53. Save and load buttons for test selections</div>
+</div>
+<div class="paragraph">
+<p>This may be useful for collaboration with other team members or for reusing the same selection in future test runs.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Cucumber discovers and identifies tests partially based on the feature file location and the line number where the tests are located.<br>
+When saving a test selection, we save the relative path of the feature path in relation to the current working directory of the java process.<br>
+When loading the selection, the relative path is again resolved.<br>
+When loading a selection configuration, the relative directory structure must be the same, and the tests must be located in the same line number within the files.<br>
+Otherwise, we cannot unambiguously identify the tests.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>After selecting the tests, the user can click the "Run selected tests" button to start their execution.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/testselector_run_button.png" alt="testselector run button">
+</div>
+<div class="title">Figure 54. Run selected tests button</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_web_ui"><a class="anchor" href="#_web_ui"></a>7.4. Standalone Tiger Proxy Log</h3>
 <div class="paragraph">
 <p>To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:</p>
 </div>
@@ -7401,7 +7563,7 @@ This can be done by clicking the play buttons in either the Test Execution pane 
 <p>When the user works with the <a href="#_workflow_ui">Workflow UI</a> the Tiger Proxy UI can be opened via a link in the Rbel Log Details view in a new browser tab.</p>
 </div>
 <div class="sect3">
-<h4 id="overview"><a class="anchor" href="#overview"></a>7.3.1. Overview</h4>
+<h4 id="overview"><a class="anchor" href="#overview"></a>7.4.1. Overview</h4>
 <div class="paragraph">
 <p>The following screenshot shows the WebUI.<br>
 On the left side the request/response pairs are displayed.<br>
@@ -7411,7 +7573,7 @@ The user can see the request type and the error code of the response as well as 
 <div class="content">
 <img src="screenshots/webui.png" alt="webui">
 </div>
-<div class="title">Figure 44. Tiger Proxy Log</div>
+<div class="title">Figure 55. Tiger Proxy Log</div>
 </div>
 <div class="paragraph">
 <p>On the top right the tiger version and the build date are displayed.<br>
@@ -7427,7 +7589,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_filter_open.png" alt="webui filter open">
 </div>
-<div class="title">Figure 45. Filter Managment</div>
+<div class="title">Figure 56. Filter Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -7439,7 +7601,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_inspect_highlight.png" alt="webui inspect highlight">
 </div>
-<div class="title">Figure 46. Access RBel-Path/JEXL Debugging</div>
+<div class="title">Figure 57. Access RBel-Path/JEXL Debugging</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the RBel-Path tab.<br>
@@ -7449,7 +7611,7 @@ The user can execute the RBel-Path on the request or the response and the result
 <div class="content">
 <img src="screenshots/webui_inspect_rbelpath_highlight.png" alt="webui inspect rbelpath highlight">
 </div>
-<div class="title">Figure 47. RBel-Path</div>
+<div class="title">Figure 58. RBel-Path</div>
 </div>
 <div class="paragraph">
 <p>For more information in the Rbel-Path check out <a href="#_rbel_path_details">this</a> section.</p>
@@ -7463,7 +7625,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_inspect_jexl_highlight.png" alt="webui inspect jexl highlight">
 </div>
-<div class="title">Figure 48. JEXL Debugging</div>
+<div class="title">Figure 59. JEXL Debugging</div>
 </div>
 <div id="_jexl_filter" class="paragraph">
 <p>When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.</p>
@@ -7506,7 +7668,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_routing_open.png" alt="webui routing open">
 </div>
-<div class="title">Figure 49. Route Managment</div>
+<div class="title">Figure 60. Route Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -7518,7 +7680,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content_highlight.png" alt="webui btn content highlight">
 </div>
-<div class="title">Figure 50. Buttons to show message content</div>
+<div class="title">Figure 61. Buttons to show message content</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the content of the whole response.</p>
@@ -7527,7 +7689,25 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content.png" alt="webui btn content">
 </div>
-<div class="title">Figure 51. Example of the content of a response</div>
+<div class="title">Figure 62. Example of the content of a response</div>
+</div>
+<div class="paragraph">
+<p>In case that the message is too large to be rendered fully (displaying a "&lt;&#8230;&#8203;redacted due to size of" text), the message will have a "Full Message" button in the top right corner of the request or the response that is highlighted in the following screenshot.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/webui_full_message.png" alt="webui full message">
+</div>
+<div class="title">Figure 63. Button to show the full message</div>
+</div>
+<div class="paragraph">
+<p>By clicking on this button the full message will be displayed in a new tab/window.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/webui_single_message_page.png" alt="webui single message page">
+</div>
+<div class="title">Figure 64. Single message view to show the full message</div>
 </div>
 </div>
 <div class="sect4">
@@ -7540,13 +7720,13 @@ To make this easier the user can switch between the request and the response by 
 <div class="content">
 <img src="screenshots/webui_message_partner.png" alt="webui message partner">
 </div>
-<div class="title">Figure 52. Buttons to switch between request and response</div>
+<div class="title">Figure 65. Buttons to switch between request and response</div>
 </div>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_jexl_expression_detail"><a class="anchor" href="#_jexl_expression_detail"></a>7.4. Explanation of JEXL Expressions</h3>
+<h3 id="_jexl_expression_detail"><a class="anchor" href="#_jexl_expression_detail"></a>7.5. Explanation of JEXL Expressions</h3>
 <div class="paragraph">
 <p>In the <a href="#_workflow_ui">Workflow UI</a> and in the <a href="#_web_ui">WebUI</a> you can inspect the requests and response messages.<br>
 For that you can use RbelPath and/or JEXL expressions. This section should give you a brief review on the JEXL expressions.</p>
@@ -7556,7 +7736,7 @@ For that you can use RbelPath and/or JEXL expressions. This section should give 
 Therefor the following operators could be used.</p>
 </div>
 <div class="sect3">
-<h4 id="operators"><a class="anchor" href="#operators"></a>7.4.1. Operators</h4>
+<h4 id="operators"><a class="anchor" href="#operators"></a>7.5.1. Operators</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 10%;">
@@ -7649,11 +7829,11 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
 </div>
-<div class="title">Figure 53. Rbel Path Expression</div>
+<div class="title">Figure 66. Rbel Path Expression</div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="access-on-array-lists-and-maps"><a class="anchor" href="#access-on-array-lists-and-maps"></a>7.4.2. Access on Array, Lists and Maps</h4>
+<h4 id="access-on-array-lists-and-maps"><a class="anchor" href="#access-on-array-lists-and-maps"></a>7.5.2. Access on Array, Lists and Maps</h4>
 <div class="paragraph">
 <p>To access maps in JEXL/RbelPath the point notations is used. In case of lists use the number of the list entry you want to access, starting with 0, 1, 2 and so on.</p>
 </div>
@@ -7661,11 +7841,11 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/accessarray.png" alt="accessarray" width="50%">
 </div>
-<div class="title">Figure 54. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+<div class="title">Figure 67. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="access-jexl-contexts"><a class="anchor" href="#access-jexl-contexts"></a>7.4.3. Access JEXL contexts</h4>
+<h4 id="access-jexl-contexts"><a class="anchor" href="#access-jexl-contexts"></a>7.5.3. Access JEXL contexts</h4>
 <div class="paragraph">
 <p>There are predefined JEXL contexts which can be used for the query, for example <code>isRequest</code>, <code>isResponse</code>, <code>charset</code>, <code>content</code> or also more<br>
 complex contexts like <code>response.statuscode</code>, <code>request.url</code>, <code>message.method</code> etc.<br>
@@ -7675,11 +7855,11 @@ For more details check the InlineJexlToolbox</p>
 <div class="content">
 <img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
 </div>
-<div class="title">Figure 55. Use single quotes when using JEXL contexts with a hyphen. </div>
+<div class="title">Figure 68. Use single quotes when using JEXL contexts with a hyphen. </div>
 </div>
 </div>
 <div class="sect3">
-<h4 id="more-examples"><a class="anchor" href="#more-examples"></a>7.4.4. More Examples</h4>
+<h4 id="more-examples"><a class="anchor" href="#more-examples"></a>7.5.4. More Examples</h4>
 <div class="paragraph">
 <p><code>message.headers.'content-length'.0 == "0"</code>  &#8594; Use single quotes when using JEXL contexts with a hyphen.</p>
 </div>
@@ -7706,7 +7886,7 @@ For more details check the InlineJexlToolbox</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="post-form-get-parameters"><a class="anchor" href="#post-form-get-parameters"></a>7.4.5. POST Form / GET parameters</h4>
+<h4 id="post-form-get-parameters"><a class="anchor" href="#post-form-get-parameters"></a>7.5.5. POST Form / GET parameters</h4>
 <div class="paragraph">
 <p>When accessing parameters POST and GET are handled differently.<br>
 POST form data requests contain the data as Url encoded query string in the body of the request.<br>
@@ -7731,663 +7911,8 @@ To access POST form data you may use <code><code>$.body.paramname</code></code> 
 <p>For further help on JEXL please check out the official website (<a href="https://commons.apache.org/proper/commons-jexl" class="bare">https://commons.apache.org/proper/commons-jexl</a>).</p>
 </div>
 <div style="page-break-after: always;"></div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="tiger-zion"><a class="anchor" href="#tiger-zion"></a>8. Tiger Zion</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>Tiger Zion is a server that is highly customizable.<br>
-It serves as a stand-in, an interactive, Zero-Line mock for more complicated servers.</p>
-</div>
-<div class="paragraph">
-<p>It can be stateful, do backend-requests, give conditional answers (allowing for error cases, edge cases).<br>
-It can return JSON, XML, JWT, JWE and many more, nest these formats into each other.<br>
-The underlying templating language supports loops and conditions.<br>
-It can be used both as a standalone server or as a server directly inside of tiger.</p>
-</div>
-<div class="paragraph">
-<p>In order to use zion, make sure that you add the tiger-zion dependency in the most recent version.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">        &lt;dependency&gt;
-            &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-            &lt;artifactId&gt;tiger-zion&lt;/artifactId&gt;
-            &lt;version&gt;${tiger.version}&lt;/version&gt;
-        &lt;/dependency&gt;</code></pre>
-</div>
-</div>
-<div class="sect2">
-<h3 id="simple-canned-response"><a class="anchor" href="#simple-canned-response"></a>8.1. Simple canned response</h3>
-<div class="paragraph">
-<p>To start lets write a server that has one endpoint: Return a simple JSON.<br>
-We do this as part of a tiger testsuite.</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 24. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      # define the server port.
-      # In a real setup you would leave this empty (then a random port will be used)
-      serverPort: 8080
-      mockResponses:
-      # a map with all the responses
-        helloWorld:
-        # the name is arbitrary. It can be used to alter the response later on
-          requestCriterions:
-          # This is a list of JEXL expressions. Only when all expressions are met is this response considered
-            - message.method == 'GET'
-            - message.path == '/helloWorld'
-          response:
-            statusCode: 200
-            body: '{"Hello":"World"}'</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This will give us:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl localhost:8080/helloWorld
-{"Hello": "World"}</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="looping-tgrfor"><a class="anchor" href="#looping-tgrfor"></a>8.2. Looping (tgrFor)</h3>
-<div class="paragraph">
-<p>Let&#8217;s now make this a bit more interactive: Return a map of all given HTTP headers.<br>
-And please return it as an XML!</p>
-</div>
-<div class="paragraph">
-<p>Because XMLs are large and get complicated easily we don&#8217;t want to write it directly inside the <code>tiger.yaml</code>.<br>
-So we reference an external file, where we do the heavy lifting:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 25. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      serverPort: 8080
-      mockResponses:
-        helloWorld:
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/helloWorld'
-          response:
-            statusCode: 200
-            bodyFile: complicatedResponse.xml</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Listing 26. complicatedResponse.xml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
-&lt;requestDescription&gt;
-    &lt;headers&gt;
-        &lt;header&gt;
-            &lt;tgrFor&gt;header : request.headers.entrySet()&lt;/tgrFor&gt;
-            ${header}
-        &lt;/header&gt;
-    &lt;/headers&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Let&#8217;s try it out:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl localhost:8080/helloWorld
-&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-
-&lt;requestDescription&gt;
-  &lt;url&gt;http://localhost:8080/helloWorld&lt;/url&gt;
-  &lt;path&gt;/helloWorld&lt;/path&gt;
-  &lt;headers&gt;
-    &lt;header&gt;host=[localhost:8080]&lt;/header&gt;
-    &lt;header&gt;accept=[*/*]&lt;/header&gt;
-    &lt;header&gt;user-agent=[curl/7.88.1]&lt;/header&gt;
-  &lt;/headers&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Here you see a <code>tgrFor</code> construct.<br>
-As the name leads on, it is used for looped rendering.<br>
-It reside WITHIN the element which needs to be considered, which is a bit different compared to other templating languages.<br>
-It just has to be beneath the element in the logical tree of the document.<br>
-So the <code>tgrFor</code> can be a tag within <code>&lt;header&gt;</code>, but it also could have been an attribute.<br>
-It can also be used in a JSON-fragment: The tgrFor then has to be a field in the object that you want looped.</p>
-</div>
-<div class="paragraph">
-<p>The <code>tgrFor</code> must consist of three parts: The name of the loop-variable (here: <code>header</code>), followed by colon and then the loop expression to be evaluated.<br>
-The loop expression must yield a Java-Collection as a result.<br>
-Some examples:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>1..42</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>{ 'one' , 2, 'more'}</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>{ 'one' : 1}.entrySet()</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The loop-variable will be set for every iteration in the TigerConfiguration.<br>
-So to access it directly, use <code>${myLoopVariable}</code>.<br>
-You can then also combine the loop-variable with JEXL like so:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 27. complicatedResponse.xml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
-&lt;requestDescription&gt;
-    &lt;headers&gt;
-        &lt;header&gt;
-            &lt;tgrFor&gt;header : {1,2,3}&lt;/tgrFor&gt;
-            ${header} and !{ ${header} + 1}
-        &lt;/header&gt;
-    &lt;/headers&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>will lead to</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-&lt;requestDescription&gt;
-  &lt;headers&gt;
-    &lt;header&gt;1 and 2&lt;/header&gt;
-    &lt;header&gt;2 and 3&lt;/header&gt;
-    &lt;header&gt;3 and 4&lt;/header&gt;
-  &lt;/headers&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="conditional-rendering-tgrif"><a class="anchor" href="#conditional-rendering-tgrif"></a>8.3. Conditional rendering (tgrIf)</h3>
-<div class="paragraph">
-<p>To make the presence of elements conditional you can use the <code>tgrIf</code> statement.<br>
-Consider the following example:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 28. complicatedResponse.xml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
-&lt;requestDescription&gt;
-    &lt;checkIf tgrIf="1 &amp;lt; 5" logic="still applies" /&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This will give us</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-
-&lt;requestDescription&gt;
-  &lt;checkIf logic="still applies"&gt;&lt;/checkIf&gt;
-&lt;/requestDescription&gt;</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The tgrIf statement just consist of one single JEXL expression.<br>
-The result must be of type boolean.<br>
-Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree.<br>
-This can be done via an attribute in XML, but it can also be done using a tag:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 29. complicatedResponse.xml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
-&lt;requestDescription&gt;
-    &lt;checkIf logic="still applies"&gt;
-        &lt;tgrIf&gt;1 &amp;lt; 5&lt;/tgrIf&gt;
-    &lt;/checkIf&gt;
-&lt;/requestDescription&gt;</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Here are some examples for other possible criteria:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$.header.connection == 'Keep-Alive'</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>This will only be true if the matching header is present.</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$.header.host =~ 'local.*'</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can also use the more complex JEXL operators (here <code>=~</code>, comparing using a regex).</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="backend-request"><a class="anchor" href="#backend-request"></a>8.4. Backend request</h3>
-<div class="paragraph">
-<p>To simulate complex interactions you can execute backend requests.<br>
-The following example should clarify the mechanism:</p>
-</div>
-<div class="paragraph">
-<p>We want measure the length of the response by google to a query:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 30. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      serverPort: 8080
-      mockResponses:
-        helloWorld:
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/helloWorld'
-          backendRequests:
-            tokenCheck:
-              url: "https://google.com/!{$.path.myParam.value}"
-# the method is optional. GET is the default, POST if a body is present
-              method: GET
-              assignments:
-                length: "$.header.Content-Length"
-          response:
-            statusCode: 200
-            body: "{'responseLength':'${length}', 'testedPath':'?{$.path.myParam.value}'}"</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>To test, we sent:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ curl "localhost:8080/helloWorld?myParam=dsfds"
-{"responseLength": "1566","testedPath": "dsfds"}</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The request is sent, the path is taken from the <code>myParam</code> query-parameter of the initial request.<br>
-Afterwards, the value of the <code>Content-Length</code>-Header is stored in the variable named <code>length</code> in the TigerGlobalConfiguration.<br>
-We then sent a response with status-code 200 and json-body.<br>
-Here we first reference the measured <code>length</code> variable from the backend-request and next we return the testedPath, taking the parameter from the initial request.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="nested-response"><a class="anchor" href="#nested-response"></a>8.5. Nested response</h3>
-<div class="paragraph">
-<p>To reduce the overhead when simulating conditional responses you can use the <code>nestedResponses</code> mechanism.<br>
-This allows subdividing responses.<br>
-Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 31. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      serverPort: 8080
-      mockResponses:
-        passwordCheckResponse:
-          requestCriterions:
-            - message.method == 'GET'
-            - message.path == '/helloWorld'
-          nestedResponses:
-            correctPassword:
-              importance: 10
-              requestCriterions:
-                - "'?{$.header.password}' == 'geheim'"
-              response:
-                statusCode: 200
-                body: '{"Hello":"World"}'
-            wrongPassword:
-              importance: 0
-              response:
-                statusCode: 405
-                body: '{"Wrong":"The password !{$.header.password} is not correct"}'</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The two answers are both considered.<br>
-Since they are stored in the YAML as a map, the order in the YAML is of no significance.<br>
-Rather you have to specify the importance of a response, with a higher number meaning a higher importance meaning the response will be considered first.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="matching-path-variables"><a class="anchor" href="#matching-path-variables"></a>8.6. Matching path variables</h3>
-<div class="paragraph">
-<p>In many REST-Apis it is usual to include variables as part of the resource path.<br>
-Zion allows to configure a response that will match a path and extract the given variables.<br>
-The assigned values can then be used in the response or be used in additional matching criteria.<br>
-Here is an example:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 32. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      serverPort: 8080
-      mockResponses:
-        users:
-          request:
-            path: "/users/{userId}"
-            method: "GET"
-            additionalCriterions:
-              - "'${userId}' == '123'"
-          response:
-            statusCode: 200
-            body: "{'id':'${userId}', 'username': 'Tiger'}"</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The matching of the response is made with the new configuration entry <code>request</code>.Here we defined the <code>path</code> and <code>method</code> that should match and <code>additionalCriterions</code>.In the path we can see a variable defined with <code>{userId}</code>.</p>
-</div>
-<div class="paragraph">
-<p>When making the following request:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>$ curl "localhost:8080/users/123"
-{'id':'123', 'username': 'Tiger'}</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>the variable <code>userId</code> will be matched with the requested url and be assigned the value of <code>"123"</code>.<br>
-This value can then be used in the <code>additionalCriterions</code> and in the <code>body</code>.</p>
-</div>
-<div class="paragraph">
-<p>The matching of paths using the <code>request</code> configuration can also be made using nested responses.<br>
-The path to match will combine paths specified in the different levels of the nested response.<br>
-For example:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 33. tiger.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  zionServer:
-    type: zion
-    zionConfiguration:
-      serverPort: 8080
-      mockResponses:
-        users:
-          request:
-            path: "/users"
-          nestedResponses:
-            getSpecificUser:
-              request:
-                path: "/{userId}"
-                method: "GET"
-                additionalCriterions:
-                  - "'${userId}' == '123'"
-              response:
-                statusCode: 200
-                body: "{'id':'${userId}', 'username': 'Tiger'}"
-            addUser:
-              request:
-                method: "POST"
-                path: ""
-              response:
-                statusCode: 201
-                headers:
-                  Location: "/users/456"</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Here we have two nested responses in the <code>/users</code> path.<br>
-One will match GET requests to the path <code>/users/{userId}</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="tgrencodeas"><a class="anchor" href="#tgrencodeas"></a>8.7. tgrEncodeAs</h3>
-<div class="paragraph">
-<p>One of the core capabilities of Zion is the ability to switch between media types.<br>
-You can return XML, JSON, JWT and many more types.<br>
-You can also embed one into the other.</p>
-</div>
-<div class="paragraph">
-<p>As an example we want to return a JSON containing a freshly signed JWT (JSON Web Token).<br>
-For this we use the following response body file:</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 34. complicatedResponse.json</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "myToken": {
-    "tgrEncodeAs": "JWT",
-    "header": {
-      "alg": "BP256R1",
-      "typ": "JWT"
-    },
-    "body": {
-      "name": "Max Power",
-      "iat": {
-        "tgrAttributes": ["jsonNonStringPrimitive"],
-        "value": "!{currentTimestamp()}"
-      }
-    },
-    "signature": {
-      "verifiedUsing": "idpEnc"
-    }
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>will lead to</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "myToken": "eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJuYW1lIjogIk1heCBQb3dlciIsImlhdCI6IDE2ODg2MzQ5MjR9.aOnFMxSkzvo9fJjnDSFCeX0G5-IP3XFQPZCRyZFBOEyBAgV2Dy3ImEjz_DpFRqSqtkHdkCcV-T_e6aBejN_A2g"
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We see the keyword <code>tgrEncodeAs</code> being used here.<br>
-Currently the following values are supported: <code>XML, JSON, JWT, JWE, URL, BEARER_TOKEN</code>.<br>
-A JWT consists of three parts: header, body, signature.<br>
-The given nodes are searched and taken.<br>
-The description of the JWT also could have been done in XML.</p>
-</div>
-<div class="paragraph">
-<p>We then see another mode-switch being done in the <code>iat</code>-claim in the body of the JWT: <code>iat</code> is the Unix-Timestamp at which the token was issued.<br>
-For our faked ad-hoc token we of course want to use the current time for this claim.<br>
-Unfortunately the <code>iat</code> claim is a number, which precludes the direct use of a JEXL-expression.<br>
-To solve this problem make the claim complex, add the <code>"jsonNonStringPrimitive"</code> attribute to the resulting node and set the value to the desired value.<br>
-This also works for floating-point and boolean values.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="rbelwriter-content-structures"><a class="anchor" href="#rbelwriter-content-structures"></a>8.8. RbelWriter content structures</h3>
-<div class="paragraph">
-<p>In this paragraph we&#8217;ll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server.<br>
-The following examples are kept in JSON (apart from the Bearer token example).<br>
-Please note that the same result can be achieved from XML (or any other format for that matter).</p>
-</div>
-<div class="sect3">
-<h4 id="jwt"><a class="anchor" href="#jwt"></a>8.8.1. JWT</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "tgrEncodeAs": "JWT",
-  "header": {
-    "alg": "BP256R1",
-    "typ": "JWT"
-  },
-  "body": {
-    "claim": "value"
-  },
-  "signature": {
-    "verifiedUsing": "idpEnc"
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature).<br>
-RbelWriter will automatically try to sign the given JWT.<br>
-For this the key at <code>$.signature.verifiedUsing</code> is consulted and a matching key is searched in the tiger key-database.<br>
-This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.</p>
-</div>
-<div class="paragraph">
-<p>Please note that the header-claims have to match the given key, otherwise the signing operation can&#8217;t be completed successfully.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="jwe"><a class="anchor" href="#jwe"></a>8.8.2. JWE</h4>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "tgrEncodeAs": "JWE",
-  "header": {
-    "alg": "ECDH-ES",
-    "enc": "A256GCM"
-  },
-  "body": {
-    "some_claim": "foobar",
-    "other_claim": "code"
-  },
-  "encryptionInfo": {
-    "decryptedUsingKeyWithId": "idpEnc"
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As with the JWT, for the JWE all relevant claims are to be found in the appropriate sections.<br>
-The signature has been replaced by the <code>encryptionInfo</code>-section.<br>
-Here you need to specify the key to be used for the encryption.<br>
-Here in this example we are using a public/private key-pair (with the same name as before).<br>
-Again the header claims have to match the key used.</p>
-</div>
-<div class="paragraph">
-<p>Apart from a public/private key-pair you can also use direct keys to encrypt your JWE.<br>
-Here is an example:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "tgrEncodeAs": "JWE",
-  "header": {
-    "alg": "dir",
-    "enc": "A256GCM"
-  },
-  "body": {
-    "some_claim": "foobar",
-    "other_claim": "code"
-  },
-  "encryptionInfo": {
-    "decryptedUsingKey": "YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg"
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>As we are using a AES 256 bit key the supplied key has to exactly carry 256 bits, Base64 encoded.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="url"><a class="anchor" href="#url"></a>8.8.3. URL</h4>
-<div class="paragraph">
-<p>To generate a URL you can also use the RbelWriter.<br>
-Consult the following structure:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "tgrEncodeAs": "url",
-  "basicPath": "http://blub/fdsa",
-  "parameters": {
-    "foo": "bar"
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>The parameters will be added as query-parameters.<br>
-This can be rather useful to construct more complex parameters, for example a dynamically generated JWT.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="bearer-token"><a class="anchor" href="#bearer-token"></a>8.8.4. Bearer Token</h4>
-<div class="paragraph">
-<p>A Bearer token can also be serialized directly via RbelWriter.<br>
-This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token.<br>
-The straight-forward way would be to directly write the Bearer token like so:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-none hljs">Bearer {
-  "tgrEncodeAs":"JWT",
-  "header":{
-    "alg": "BP256R1",
-    "typ": "JWT"
-  },
-  "body":{
-    "claim": "value",
-  },
-  "signature":{
-    "verifiedUsing":"idpEnc"
-  }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word <code>Bearer</code>, followed by a space and any string).<br>
-The value of the Bearer token will be parsed as a JSON.<br>
-When the result is then serialized, the <code>tgrEncodeAs</code> is interpreted and the JSON will be written as a Base64-encoded JWT.</p>
-</div>
-<div class="paragraph">
-<p>The following example will produce the same result.<br>
-However the overall structure is a JSON, which will be written as a Bearer token (<code>"tgrEncodeAs": "BEARER_TOKEN"</code>).<br>
-The content of the token is taken from the child-node with the name <code>BearerToken</code>.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
-  "tgrEncodeAs": "BEARER_TOKEN",
-  "BearerToken": {
-    "tgrEncodeAs": "JWT",
-    "header": {
-      "alg": "BP256R1",
-      "typ": "JWT"
-    },
-    "body": {
-      "claim": "value"
-    },
-    "signature": {
-      "verifiedUsing": "idpEnc"
-    }
-  }
-}</code></pre>
-</div>
+<p>Unresolved directive in tiger_user_manual.adoc - include::tigerZion.adoc[]</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -8395,14 +7920,14 @@ The content of the token is taken from the child-node with the name <code>Bearer
 </div>
 </div>
 <div class="sect1">
-<h2 id="tiger-extensions-2"><a class="anchor" href="#tiger-extensions-2"></a>9. Tiger Extensions</h2>
+<h2 id="tiger-extensions-2"><a class="anchor" href="#tiger-extensions-2"></a>8. Tiger Extensions</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Tiger has certain extensions that fulfil certain tasks.<br>
 The different extensions are shortly described in the following sections.</p>
 </div>
 <div class="sect2">
-<h3 id="tiger-konnektor-management-extension"><a class="anchor" href="#tiger-konnektor-management-extension"></a>9.1. Tiger Konnektor Management Extension</h3>
+<h3 id="tiger-konnektor-management-extension"><a class="anchor" href="#tiger-konnektor-management-extension"></a>8.1. Tiger Konnektor Management Extension</h3>
 <div class="paragraph">
 <p>The Tiger-Konnektor-Management-Extension provides an interface to the KMS system of different connector providers.<br>
 It also provides cucumber feature steps to access the different connectors.<br>
@@ -8410,7 +7935,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-on-fhir-extension"><a class="anchor" href="#tiger-on-fhir-extension"></a>9.2. Tiger On FHIR Extension</h3>
+<h3 id="tiger-on-fhir-extension"><a class="anchor" href="#tiger-on-fhir-extension"></a>8.2. Tiger On FHIR Extension</h3>
 <div class="paragraph">
 <p>The Tiger-On-Fhir-extension provides a set of simple BDD steps which can be used to check for valid FHIR content therein.<br>
 FHIR stands for Fast Healthcare Interoperability Resources.<br>
@@ -8418,7 +7943,7 @@ The tiger-on-fhir can be found on GitHub <a href="https://github.com/gematik/tig
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-cats-extension"><a class="anchor" href="#tiger-cats-extension"></a>9.3. Tiger CATS Extension</h3>
+<h3 id="tiger-cats-extension"><a class="anchor" href="#tiger-cats-extension"></a>8.3. Tiger CATS Extension</h3>
 <div class="paragraph">
 <p>CATS stands for Card Terminal Simulator.<br>
 Tiger-Cats-Extensions offers the option to use the REST interface of CATS as Java functionality or as BDD steps.<br>
@@ -8426,14 +7951,14 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-cloud-extension"><a class="anchor" href="#tiger-cloud-extension"></a>9.4. Tiger Cloud Extension</h3>
+<h3 id="tiger-cloud-extension"><a class="anchor" href="#tiger-cloud-extension"></a>8.4. Tiger Cloud Extension</h3>
 <div class="paragraph">
 <p>The Tiger-Cloud-Extension allows to embed docker image based containers, docker compose scripts and even helm charts to local or remote kubernetes clusters.<br>
 The GitHub repo is <a href="https://github.com/gematik/tiger-cloud-extension" class="bare">https://github.com/gematik/tiger-cloud-extension</a>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-pssim-extension"><a class="anchor" href="#tiger-pssim-extension"></a>9.5. Tiger PSSIM Extension</h3>
+<h3 id="tiger-pssim-extension"><a class="anchor" href="#tiger-pssim-extension"></a>8.5. Tiger PSSIM Extension</h3>
 <div class="paragraph">
 <p>The Tiger-PSSIM-Extension is an extension for simulating a Primärsystem (PS) in your tests.<br>
 It provides a wide range of BDD Steps and covers the majority of PS functionalities.<br>
@@ -8441,7 +7966,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-robot-extension"><a class="anchor" href="#tiger-robot-extension"></a>9.6. Tiger Robot Extension</h3>
+<h3 id="tiger-robot-extension"><a class="anchor" href="#tiger-robot-extension"></a>8.6. Tiger Robot Extension</h3>
 <div class="paragraph">
 <p>The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.<br>
 This is an internal gematik extension and can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension" class="bare">https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension</a>.</p>
@@ -8451,7 +7976,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect1">
-<h2 id="rest-api"><a class="anchor" href="#rest-api"></a>10. Rest API</h2>
+<h2 id="rest-api"><a class="anchor" href="#rest-api"></a>9. Rest API</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The tiger test environment provides a Rest API which allows the automation of test execution and retrieval of the corresponding test results.</p>
@@ -8491,7 +8016,7 @@ But it is not included if you just import the <code>tiger-testenv-mgr</code>.</p
 Additionally, the OpenApi specification yaml can be found in the <a href="https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml">tiger repository</a>.</p>
 </div>
 <div class="sect3 Tests">
-<h4 id="tests"><a class="anchor" href="#tests"></a>10.1. Tests</h4>
+<h4 id="tests"><a class="anchor" href="#tests"></a>9.1. Tests</h4>
 <div class="sect4 getAvailableTests">
 <h5 id="getavailabletests"><a class="anchor" href="#getavailabletests"></a>getAvailableTests</h5>
 <div class="paragraph">
@@ -8867,9 +8392,9 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </div>
 </div>
 <div class="sect2">
-<h3 id="models"><a class="anchor" href="#models"></a>10.2. Models</h3>
+<h3 id="models"><a class="anchor" href="#models"></a>9.2. Models</h3>
 <div class="sect3">
-<h4 id="Error"><a class="anchor" href="#Error"></a>10.2.1. <em>Error</em></h4>
+<h4 id="Error"><a class="anchor" href="#Error"></a>9.2.1. <em>Error</em></h4>
 <div class="paragraph">
 <p>Default error object with information about the occurred error</p>
 </div>
@@ -8913,7 +8438,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="ExecutionResult"><a class="anchor" href="#ExecutionResult"></a>10.2.2. <em>ExecutionResult</em></h4>
+<h4 id="ExecutionResult"><a class="anchor" href="#ExecutionResult"></a>9.2.2. <em>ExecutionResult</em></h4>
 <div class="paragraph">
 <p>the result of an executed test</p>
 </div>
@@ -8957,7 +8482,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="TestDescription"><a class="anchor" href="#TestDescription"></a>10.2.3. <em>TestDescription</em></h4>
+<h4 id="TestDescription"><a class="anchor" href="#TestDescription"></a>9.2.3. <em>TestDescription</em></h4>
 <div class="paragraph">
 <p>The description of a test case</p>
 </div>
@@ -9017,7 +8542,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="TestExecutionInformation"><a class="anchor" href="#TestExecutionInformation"></a>10.2.4. <em>TestExecutionInformation</em></h4>
+<h4 id="TestExecutionInformation"><a class="anchor" href="#TestExecutionInformation"></a>9.2.4. <em>TestExecutionInformation</em></h4>
 <div class="paragraph">
 <p>information of which tests were started and where to find the results of the test run</p>
 </div>
@@ -9069,7 +8594,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="TestExecutionRequest"><a class="anchor" href="#TestExecutionRequest"></a>10.2.5. <em>TestExecutionRequest</em></h4>
+<h4 id="TestExecutionRequest"><a class="anchor" href="#TestExecutionRequest"></a>9.2.5. <em>TestExecutionRequest</em></h4>
 <div class="paragraph">
 <p>Request the execution of a subset of tests. Multiple specifications will be combined with AND. If one of the tags, sourceFiles, or testUniqueIds is an empty list, it will not be considered in the selection of tests. If all are empty, all tests are selected.</p>
 </div>
@@ -9121,7 +8646,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="TestExecutionResult"><a class="anchor" href="#TestExecutionResult"></a>10.2.6. <em>TestExecutionResult</em></h4>
+<h4 id="TestExecutionResult"><a class="anchor" href="#TestExecutionResult"></a>9.2.6. <em>TestExecutionResult</em></h4>
 <div class="paragraph">
 <p>the result of the executed tests</p>
 </div>
@@ -9181,7 +8706,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 <div class="sect3">
-<h4 id="TestExecutionResultTestsInner"><a class="anchor" href="#TestExecutionResultTestsInner"></a>10.2.7. <em>TestExecutionResultTestsInner</em></h4>
+<h4 id="TestExecutionResultTestsInner"><a class="anchor" href="#TestExecutionResultTestsInner"></a>9.2.7. <em>TestExecutionResultTestsInner</em></h4>
 <table class="tableblock frame-all grid-all stretch fields-TestExecutionResultTestsInner">
 <colgroup>
 <col style="width: 18.1818%;">
@@ -9226,7 +8751,7 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </div>
 </div>
 <div class="sect1">
-<h2 id="links-to-test-relevant-topics"><a class="anchor" href="#links-to-test-relevant-topics"></a>11. Links to test relevant topics</h2>
+<h2 id="links-to-test-relevant-topics"><a class="anchor" href="#links-to-test-relevant-topics"></a>10. Links to test relevant topics</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -9306,18 +8831,18 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </div>
 </div>
 <div class="sect1">
-<h2 id="frequently-asked-questions"><a class="anchor" href="#frequently-asked-questions"></a>12. Frequently asked questions</h2>
+<h2 id="frequently-asked-questions"><a class="anchor" href="#frequently-asked-questions"></a>11. Frequently asked questions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="maven"><a class="anchor" href="#maven"></a>12.1. Maven</h3>
+<h3 id="maven"><a class="anchor" href="#maven"></a>11.1. Maven</h3>
 <div class="sect3">
-<h4 id="fm01-which-serenity-are-we-currently-using"><a class="anchor" href="#fm01-which-serenity-are-we-currently-using"></a>12.1.1. FM01 Which Serenity are we currently using?</h4>
+<h4 id="fm01-which-serenity-are-we-currently-using"><a class="anchor" href="#fm01-which-serenity-are-we-currently-using"></a>11.1.1. FM01 Which Serenity are we currently using?</h4>
 <div class="paragraph">
 <p>You can find the Serenity compatible with each Tiger version in the [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm02-when-using-maven-no-tests-are-executed"><a class="anchor" href="#fm02-when-using-maven-no-tests-are-executed"></a>12.1.2. FM02 When using maven, no tests are executed.</h4>
+<h4 id="fm02-when-using-maven-no-tests-are-executed"><a class="anchor" href="#fm02-when-using-maven-no-tests-are-executed"></a>11.1.2. FM02 When using maven, no tests are executed.</h4>
 <div class="paragraph">
 <p>Please first make sure that either the surefire or failsafe plugin is enabled and shown as running in the console.<br>
 If you use Junit4 test annotations, you have to make sure that the junit vintage engine from the Junit5 library is included in the dependencies.</p>
@@ -9333,7 +8858,7 @@ If you use Junit4 test annotations, you have to make sure that the junit vintage
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"><a class="anchor" href="#fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"></a>12.1.3. FM03 When running tests in Tiger, the test run aborts with a java.lang.NoSuchMethodError.</h4>
+<h4 id="fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"><a class="anchor" href="#fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"></a>11.1.3. FM03 When running tests in Tiger, the test run aborts with a java.lang.NoSuchMethodError.</h4>
 <div class="paragraph">
 <p>More specifically, the error is as follows:</p>
 </div>
@@ -9355,7 +8880,7 @@ If you use Junit4 test annotations, you have to make sure that the junit vintage
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"><a class="anchor" href="#fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"></a>12.1.4. FM04 I don&#8217;t see any log output, there are only warnings about outdated versions at the beginning</h4>
+<h4 id="fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"><a class="anchor" href="#fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"></a>11.1.4. FM04 I don&#8217;t see any log output, there are only warnings about outdated versions at the beginning</h4>
 <div class="paragraph">
 <p>Apparently you included SLF4J V2 dependencies.<br>
 We currently use the logback classic 1.2.x branch, which is delivered in the most recent SpringBoot version.<br>
@@ -9363,7 +8888,7 @@ This is not compatible to SLF4J 2.x.x.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"><a class="anchor" href="#fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"></a>12.1.5. FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium</h4>
+<h4 id="fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"><a class="anchor" href="#fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"></a>11.1.5. FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium</h4>
 <div class="paragraph">
 <p>SpringBoot deploys an outdated selenium version.<br>
 To solve the conflicts, please use the versions stated in the release notes via dependency managent in the maven pom.xml.</p>
@@ -9371,9 +8896,9 @@ To solve the conflicts, please use the versions stated in the release notes via 
 </div>
 </div>
 <div class="sect2">
-<h3 id="extensions"><a class="anchor" href="#extensions"></a>12.2. Extensions</h3>
+<h3 id="extensions"><a class="anchor" href="#extensions"></a>11.2. Extensions</h3>
 <div class="sect3">
-<h4 id="fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"><a class="anchor" href="#fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"></a>12.2.1. FE01 When I start a docker image in tiger.yaml, the TestenvironmentManager&#8217;s startup fails</h4>
+<h4 id="fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"><a class="anchor" href="#fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"></a>11.2.1. FE01 When I start a docker image in tiger.yaml, the TestenvironmentManager&#8217;s startup fails</h4>
 <div class="paragraph">
 <p>Please make sure that you added the tiger-cloud-extension dependency in the most recent version.</p>
 </div>
@@ -9388,7 +8913,7 @@ To solve the conflicts, please use the versions stated in the release notes via 
 </div>
 </div>
 <div class="sect3">
-<h4 id="fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"><a class="anchor" href="#fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"></a>12.2.2. FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails</h4>
+<h4 id="fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"><a class="anchor" href="#fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"></a>11.2.2. FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails</h4>
 <div class="paragraph">
 <p>Tiger expects that Docker Daemon starts the container locally.<br>
 However, if this is not the case, you may use the environment variable TIGER_DOCKER_HOST to share on which server instance the container is started and the HealthcheckURL is adjusted accordingly.<br>
@@ -9409,9 +8934,9 @@ For purposes of the Gematik SW-factory, the following code snippet is recommende
 </div>
 </div>
 <div class="sect2">
-<h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>12.3. Workflow UI</h3>
+<h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>11.3. Workflow UI</h3>
 <div class="sect3">
-<h4 id="fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"><a class="anchor" href="#fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"></a>12.3.1. FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)</h4>
+<h4 id="fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"><a class="anchor" href="#fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"></a>11.3.1. FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)</h4>
 <div class="paragraph">
 <p>Usually, this only happens when the test suite is started in intellij and TigerCucumberListener is delivered as a plugin in TigerCucumberListener.<br>
 This is no longer necessary since v1.3 because the listener is added automatically.<br>
@@ -9420,7 +8945,7 @@ If this happens in a mvn call, please check the tiger-maven-plugin configuration
 </div>
 </div>
 <div class="sect3">
-<h4 id="fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"><a class="anchor" href="#fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"></a>12.3.2. FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore</h4>
+<h4 id="fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"><a class="anchor" href="#fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"></a>11.3.2. FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore</h4>
 <div class="paragraph">
 <p>By stopping the test runs, the workflow UI backend is terminated as well.<br>
 You may recognize this by the light-red color of the side bar.<br>
@@ -9430,9 +8955,9 @@ In addition, RbelPath- and JEXL inspect dialogues are not working.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="other-topics"><a class="anchor" href="#other-topics"></a>12.4. Other topics</h3>
+<h3 id="other-topics"><a class="anchor" href="#other-topics"></a>11.4. Other topics</h3>
 <div class="sect3">
-<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"></a>12.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"></a>11.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
 <div class="paragraph">
 <p>Inside the tiger.yaml file, you can add a section logging.level: and add a list of packages / classes and the desired logging level.</p>
 </div>
@@ -9448,7 +8973,7 @@ In addition, RbelPath- and JEXL inspect dialogues are not working.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo02-docker-container-creation-fails"><a class="anchor" href="#fo02-docker-container-creation-fails"></a>12.4.2. FO02 Docker container creation fails</h4>
+<h4 id="fo02-docker-container-creation-fails"><a class="anchor" href="#fo02-docker-container-creation-fails"></a>11.4.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers.<br>
 Or look for containers starting with "tiger", stop and remove them.</p>
@@ -9471,7 +8996,7 @@ Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception"></a>12.4.3. FO03 Adding alternative names programatically throws SSLException</h4>
+<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception"></a>11.4.3. FO03 Adding alternative names programatically throws SSLException</h4>
 <div class="paragraph">
 <p>When using directly the method <code>de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()</code> to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:</p>
 </div>
@@ -9498,13 +9023,13 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>12.4.4. FM01 What serenity do we use currently?</h4>
+<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>11.4.4. FM01 What serenity do we use currently?</h4>
 <div class="paragraph">
 <p>Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>12.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
+<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>11.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
 <div class="paragraph">
 <p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird.<br>
 Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
@@ -9520,7 +9045,7 @@ Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, d
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>12.4.6. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
+<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>11.4.6. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
 <div class="paragraph">
 <p>Genauer geht es um folgenden Fehler:</p>
 </div>
@@ -9542,7 +9067,7 @@ Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, d
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>12.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
+<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>11.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
 <div class="paragraph">
 <p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
 Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird.<br>
@@ -9550,14 +9075,14 @@ Dieses ist NICHT kompatibel zu SLF4J 2.x.x!</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>12.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
+<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>11.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
 <div class="paragraph">
 <p>Spring Boot liefert eine veraltete Version von Selenium aus.<br>
 Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"><a class="anchor" href="#fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"></a>12.4.9. FM06 Wenn ich Scenario Outlines nutze, werden die Tests im junit Report nicht mit dem Namen des Scenarios angezeigt, sondern z.B. als Examples.Example #1.1.</h4>
+<h4 id="fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"><a class="anchor" href="#fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"></a>11.4.9. FM06 Wenn ich Scenario Outlines nutze, werden die Tests im junit Report nicht mit dem Namen des Scenarios angezeigt, sondern z.B. als Examples.Example #1.1.</h4>
 <div class="paragraph">
 <p>Vermutlich ist die System Property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> (meist im File junit-platform.properties) auf etwas anderes als "pickle" gesetzt.<br>
 Wenn diese Property nicht explizit gesetzt wurde, wird sie von Tiger automatisch auf "pickle" gesetzt.</p>
@@ -9565,9 +9090,9 @@ Wenn diese Property nicht explizit gesetzt wurde, wird sie von Tiger automatisch
 </div>
 </div>
 <div class="sect2">
-<h3 id="extensions-2"><a class="anchor" href="#extensions-2"></a>12.5. Extensions</h3>
+<h3 id="extensions-2"><a class="anchor" href="#extensions-2"></a>11.5. Extensions</h3>
 <div class="sect3">
-<h4 id="fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"><a class="anchor" href="#fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"></a>12.5.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
+<h4 id="fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"><a class="anchor" href="#fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"></a>11.5.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
 <div class="paragraph">
 <p>Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.</p>
 </div>
@@ -9582,7 +9107,7 @@ Wenn diese Property nicht explizit gesetzt wurde, wird sie von Tiger automatisch
 </div>
 </div>
 <div class="sect3">
-<h4 id="fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"><a class="anchor" href="#fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"></a>12.5.2. FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
+<h4 id="fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"><a class="anchor" href="#fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"></a>11.5.2. FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
 <div class="paragraph">
 <p>Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.<br>
 Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst.<br>
@@ -9603,9 +9128,9 @@ Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipel
 </div>
 </div>
 <div class="sect2">
-<h3 id="workflow-ui-2"><a class="anchor" href="#workflow-ui-2"></a>12.6. Workflow UI</h3>
+<h3 id="workflow-ui-2"><a class="anchor" href="#workflow-ui-2"></a>11.6. Workflow UI</h3>
 <div class="sect3">
-<h4 id="fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"><a class="anchor" href="#fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"></a>12.6.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
+<h4 id="fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"><a class="anchor" href="#fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"></a>11.6.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
 <div class="paragraph">
 <p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird.<br>
 Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird.<br>
@@ -9614,7 +9139,7 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 </div>
 </div>
 <div class="sect3">
-<h4 id="fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"><a class="anchor" href="#fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"></a>12.6.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
+<h4 id="fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"><a class="anchor" href="#fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"></a>11.6.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
 <div class="paragraph">
 <p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden.<br>
 Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist.<br>
@@ -9624,9 +9149,9 @@ Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="other-topics-2"><a class="anchor" href="#other-topics-2"></a>12.7. Other topics</h3>
+<h3 id="other-topics-2"><a class="anchor" href="#other-topics-2"></a>11.7. Other topics</h3>
 <div class="sect3">
-<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"></a>12.7.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"></a>11.7.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
 <div class="paragraph">
 <p>Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level.</p>
 </div>
@@ -9642,7 +9167,7 @@ Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo02-docker-container-creation-fails-2"><a class="anchor" href="#fo02-docker-container-creation-fails-2"></a>12.7.2. FO02 Docker container creation fails</h4>
+<h4 id="fo02-docker-container-creation-fails-2"><a class="anchor" href="#fo02-docker-container-creation-fails-2"></a>11.7.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers.<br>
 Or look for containers starting with "tiger", stop and remove them.</p>
@@ -9665,7 +9190,7 @@ Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception-2"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception-2"></a>12.7.3. FO03 Adding alternative names programatically throws SSLException</h4>
+<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception-2"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception-2"></a>11.7.3. FO03 Adding alternative names programatically throws SSLException</h4>
 <div class="paragraph">
 <p>When using directly the method <code>de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()</code> to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:</p>
 </div>
@@ -9697,7 +9222,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-08-25 14:17:55 +0200
+Last updated 2025-10-13 09:40:57 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
