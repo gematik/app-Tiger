@@ -1,6 +1,6 @@
 # Changelog Tiger Test platform
 
-# Release 4.0.10
+# Release 4.1.0
 
 ## Breaking Changes
 
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-mail-extension</artifactId>
-    <version>4.0.10</version>
+    <version>4.1.0</version>
 </dependency>
 ```
 
