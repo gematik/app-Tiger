@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.test.tiger.common.util;
 
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Arrays;

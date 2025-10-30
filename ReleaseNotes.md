@@ -1,6 +1,14 @@
 # Changelog Tiger Test platform
 
-# Release 4.1.0
+# Release 4.1.1
+
+* Upgrade to bouncycastle 1.82
+
+# Bugfixes
+
+* TGR-1948: Fixed SMTP messages not being processed properly by local proxy when POP3 parsing is also active.
+
+# Release 4.0.10
 
 ## Breaking Changes
 
@@ -13,7 +21,7 @@
 <dependency>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-mail-extension</artifactId>
-    <version>4.1.0</version>
+    <version>4.0.10</version>
 </dependency>
 ```
 
@@ -981,8 +989,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

@@ -23,6 +23,7 @@ package de.gematik.test.tiger.proxy.data;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
