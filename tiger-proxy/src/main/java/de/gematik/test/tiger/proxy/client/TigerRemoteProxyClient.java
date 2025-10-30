@@ -351,6 +351,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   void tryParseMessages(PartialTracingMessage message, Consumer<RbelElement> messagePreProcessor) {
     var messageUuid = message.getTracingDto().getMessageUuid();
+    log.trace("Trying to parse message with UUID {}", messageUuid);
     if (getRbelLogger().getRbelConverter().getKnownMessageUuids().add(messageUuid)) {
       getBinaryChunksBuffer()
           .addToBuffer(
@@ -654,6 +655,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 parsingTasks.addAll(waitingParsingTasks);
               });
     }
+    log.trace("Submitting {} parsing tasks after completing {}", parsingTasks.size(), uuid);
     parsingTasks.forEach(meshHandlerPool::submit);
   }
 

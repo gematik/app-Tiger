@@ -31,9 +31,9 @@ import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.file.BundledServerNameWriterAndReader;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
-import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.util.AsyncByteQueue;
 import de.gematik.test.tiger.util.DeterministicUuidGenerator;
 import io.micrometer.common.util.StringUtils;
@@ -200,6 +200,9 @@ public class SingleConnectionParser {
 
   private synchronized List<RbelElement> parseAllAvailableMessages() {
     val result = new ArrayList<RbelElement>();
+    log.atTrace()
+        .addArgument(bufferedParts::availableBytes)
+        .log("Starting to parse all available messages for connection parser, buffered parts: {}");
     while (!bufferedParts.isEmpty()) {
       val message = tryToConvertMessage();
       if (message.isPresent()) {

@@ -157,20 +157,6 @@ public class RbelConversionExecutor {
     return converter.isActivateRbelParsing();
   }
 
-  private boolean haveSameConnection(RbelElement element1, RbelElement element2) {
-    Optional<RbelTcpIpMessageFacet> tcpIpFacet1 = element1.getFacet(RbelTcpIpMessageFacet.class);
-    Optional<RbelTcpIpMessageFacet> tcpIpFacet2 = element2.getFacet(RbelTcpIpMessageFacet.class);
-    if (tcpIpFacet1.isEmpty() || tcpIpFacet2.isEmpty()) {
-      return false;
-    }
-    var sender1 = tcpIpFacet1.get().getSenderHostname().orElse(null);
-    var sender2 = tcpIpFacet2.get().getSenderHostname().orElse(null);
-    var receiver1 = tcpIpFacet1.get().getReceiverHostname().orElse(null);
-    var receiver2 = tcpIpFacet2.get().getReceiverHostname().orElse(null);
-    return (Objects.equals(sender1, sender2) && Objects.equals(receiver1, receiver2))
-        || (Objects.equals(sender1, receiver2) && Objects.equals(receiver1, sender2));
-  }
-
   public Optional<RbelElement> findPreviousMessageInSameConnectionAs(
       RbelElement targetElement, Predicate<RbelElement> additionalFilter) {
     var stream = getPreviousMessagesInSameConnectionAs(targetElement);
@@ -185,7 +171,7 @@ public class RbelConversionExecutor {
                 messageHistoryAsync.descendingIterator(), Spliterator.ORDERED),
             false)
         .filter(msg -> msg != targetElement)
-        .filter(msg -> haveSameConnection(msg, targetElement));
+        .filter(msg -> RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement));
   }
 
   public Optional<RbelElement> findAndPairMatchingRequest(

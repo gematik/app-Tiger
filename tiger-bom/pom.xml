@@ -16,12 +16,12 @@
   ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -58,7 +58,7 @@
         <version.assertj>3.27.3</version.assertj>
         <version.awaitility>4.3.0</version.awaitility>
         <version.bootstrap>5.3.3</version.bootstrap>
-        <version.bouncycastle>1.78.1</version.bouncycastle>
+        <version.bouncycastle>1.82</version.bouncycastle>
         <version.central-publishing-maven-plugin>0.7.0</version.central-publishing-maven-plugin>
         <version.commons-codec>1.18.0</version.commons-codec>
         <version.commons-collections4>4.4</version.commons-collections4>
@@ -310,57 +310,57 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-failsafe-provider</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
 
             <dependency>

@@ -81,6 +81,9 @@ public class TracingMessageFrame {
       log.info("NOTAUSGANG für {}", message.getTracingDto().getMessageUuid());
       return;
     }
+    log.atTrace()
+        .addArgument(() -> message.getTracingDto().getMessageUuid())
+        .log("Parsing tracing message {}");
     remoteProxyClient.tryParseMessages(
         message, el -> el.addFacet(new MeshMessagePostProcessingFacet(message, remoteProxyClient)));
     addedToBuffer.set(true);

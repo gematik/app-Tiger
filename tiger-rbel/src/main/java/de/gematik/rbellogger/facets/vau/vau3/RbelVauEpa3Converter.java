@@ -46,6 +46,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -53,9 +54,9 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
+import org.testcontainers.shaded.org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.testcontainers.shaded.org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 
 @ConverterInfo(onlyActivateFor = "epa3-vau")
 @Slf4j
@@ -351,9 +352,11 @@ public class RbelVauEpa3Converter extends RbelConverterPlugin {
         .ifPresent(key -> keyManager.addKey("vau3_handshake_client_kyber_pk" + uuid, key, 0));
   }
 
+  @SneakyThrows
   private Key toKyberPublicKey(RbelElement element) {
     return new BCKyberPublicKey(
-        new KyberPublicKeyParameters(KyberParameters.kyber768, element.getRawContent()));
+        SubjectPublicKeyInfo.getInstance(
+            new KyberPublicKeyParameters(KyberParameters.kyber768, element.getRawContent())));
   }
 
   @SneakyThrows

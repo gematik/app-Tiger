@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelMessageRenderer;
 import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -81,10 +82,10 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
   }
 
   public boolean compareDirectionWith(RbelTcpIpMessageFacet other) {
-    val otherSender = other.getSender().getFacet(RbelHostnameFacet.class).orElse(null);
-    val otherReceiver = other.getReceiver().getFacet(RbelHostnameFacet.class).orElse(null);
-    val thisSender = this.getSender().getFacet(RbelHostnameFacet.class).orElse(null);
-    val thisReceiver = this.getReceiver().getFacet(RbelHostnameFacet.class).orElse(null);
+    val otherSender = hostname(other.getSender()).orElse(null);
+    val otherReceiver = hostname(other.getReceiver()).orElse(null);
+    val thisSender = hostname(this.getSender()).orElse(null);
+    val thisReceiver = hostname(this.getReceiver()).orElse(null);
 
     if (otherSender == null
         || otherReceiver == null
@@ -95,5 +96,33 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
 
     return (thisSender.domainAndPortEquals(otherSender)
         && thisReceiver.domainAndPortEquals(otherReceiver));
+  }
+
+  public RbelSocketAddress getSenderAddress() {
+    return getAddress(sender);
+  }
+
+  public RbelSocketAddress getReceiverAddress() {
+    return getAddress(receiver);
+  }
+
+  private RbelSocketAddress getAddress(RbelElement address) {
+    return hostname(address).map(RbelHostnameFacet::toUnbundledRbelSocketAddress).orElse(null);
+  }
+
+  public TcpIpConnectionIdentifier getTcpIpConnectionIdentifier() {
+    return new TcpIpConnectionIdentifier(getSenderAddress(), getReceiverAddress());
+  }
+
+  public boolean isSameConnection(RbelTcpIpMessageFacet other) {
+    return getTcpIpConnectionIdentifier().equals(other.getTcpIpConnectionIdentifier());
+  }
+
+  public static boolean haveSameConnection(RbelElement element1, RbelElement element2) {
+    return element1.getFacet(RbelTcpIpMessageFacet.class).stream()
+        .anyMatch(
+            tcpIp ->
+                element2.getFacet(RbelTcpIpMessageFacet.class).stream()
+                    .anyMatch(tcpIp::isSameConnection));
   }
 }

@@ -93,6 +93,14 @@ public class RbelHostnameFacet implements RbelFacet {
         .build();
   }
 
+  public RbelSocketAddress toUnbundledRbelSocketAddress() {
+    val localAddress = RbelInternetAddressParser.parseInetAddress(domain.getRawStringContent());
+    return RbelSocketAddress.builder()
+        .address(localAddress)
+        .port(port.seekValue(Integer.class).orElse(0))
+        .build();
+  }
+
   private static RbelInternetAddress combineHostnameAndIpAddress(
       RbelInternetAddress bundledServerName, RbelInternetAddress localAddress) {
     return new RbelInternetAddress(bundledServerName.getHostname(), localAddress.getIpAddress());
