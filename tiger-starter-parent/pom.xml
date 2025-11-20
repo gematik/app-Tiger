@@ -27,7 +27,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-starter-parent</artifactId>
-    <version>4.1.5</version>
+    <version>4.1.6</version>
     <packaging>pom</packaging>
     <name>tiger-starter-parent</name>
     <description>Parent pom for getting a tiger test suite project quickly up and running</description>
@@ -63,13 +63,15 @@
         <version.maven.failsafe>3.5.4</version.maven.failsafe>
         <tiger.featuresDir>${basedir}/src/test/resources/features</tiger.featuresDir>
         <tiger.glues>${project.groupId}</tiger.glues>
+        <version.central-publishing-maven-plugin>0.9.0</version.central-publishing-maven-plugin>
+        <version.maven.javadoc>3.12.0</version.maven.javadoc>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-bom</artifactId>
-                <version>4.1.5</version>
+                <version>4.1.6</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -130,6 +132,73 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>external</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.8</version>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.central-publishing-maven-plugin}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${version.maven.javadoc}</version>
+                        <configuration>
+                            <doclint>none</doclint>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
     <build>
         <pluginManagement>
@@ -142,7 +211,7 @@
                 <plugin>
                     <groupId>de.gematik.test</groupId>
                     <artifactId>tiger-maven-plugin</artifactId>
-                    <version>4.1.5</version>
+                    <version>4.1.6</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -191,7 +260,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
     </build>
 
 </project>
