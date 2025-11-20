@@ -405,7 +405,7 @@ public class RbelHtmlRenderingToolkit {
                         .withSrc(
                             localRessources
                                 ? "../webjars/dayjs/dayjs.min.js"
-                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.11/dayjs.min.js"),
+                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js"),
                     link2CSS(
                         localRessources
                             ? "../webjars/bootstrap/css/bootstrap.min.css"
@@ -417,7 +417,7 @@ public class RbelHtmlRenderingToolkit {
                     link2CSS(
                         localRessources
                             ? "../webjars/font-awesome/css/all.min.css"
-                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"),
+                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style")
                         .withId("rbel_css")

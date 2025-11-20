@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-testenv-mgr</artifactId>
@@ -117,6 +117,12 @@
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-httpbin</artifactId>
+            <classifier>jar-with-dependencies</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-utils</artifactId>
             <scope>test</scope>
         </dependency>
@@ -178,15 +184,15 @@
                 <configuration>
                     <artifactItems>
                         <artifactItem>
-                            <groupId>org.jenkins-ci</groupId>
-                            <artifactId>winstone</artifactId>
-                            <version>${version.winstone}</version>
-                            <type>jar</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <destFileName>winstone.jar</destFileName>
+                            <groupId>de.gematik.test</groupId>
+                            <artifactId>tiger-httpbin</artifactId>
+                            <version>${project.version}</version>
+                            <classifier>jar-with-dependencies</classifier>
+                            <overWrite>true</overWrite>
+                            <destFileName>tiger-httpbin.jar</destFileName>
                         </artifactItem>
                     </artifactItems>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -344,7 +350,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.12.0</version>
+                <version>7.17.0</version>
                 <executions>
                     <execution>
                         <id>generate java code</id>

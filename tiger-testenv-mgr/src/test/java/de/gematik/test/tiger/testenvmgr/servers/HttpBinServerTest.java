@@ -20,6 +20,9 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.AbstractTestTigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -29,9 +32,6 @@ import kong.unirest.core.HttpStatus;
 import kong.unirest.core.Unirest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 
 class HttpBinServerTest extends AbstractTestTigerTestEnvMgr {
 

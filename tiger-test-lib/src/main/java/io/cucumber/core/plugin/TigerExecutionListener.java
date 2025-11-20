@@ -46,16 +46,20 @@ import org.junit.platform.launcher.TestPlan;
 @NoArgsConstructor
 public class TigerExecutionListener implements TestExecutionListener {
 
+  private boolean isATigerTest;
+
   @Override
   public void testPlanExecutionStarted(TestPlan testPlan) {
+    isATigerTest = TigerDirector.isInitialized();
+    if (!isATigerTest) {
+      return;
+    }
     ScenarioRunner.addTigerScenarios(testPlan);
   }
 
   @Override
   public void testPlanExecutionFinished(TestPlan testPlan) {
-    if (!TigerDirector.isInitialized()) {
-      // when running unit tests in the tiger-test-lib module, this listener also
-      // gets called by junit and would break when we read the TigerDirector.getLibConfig()
+    if (!isATigerTest) {
       return;
     }
     TigerDirector.getTigerTestEnvMgr()
@@ -81,6 +85,9 @@ public class TigerExecutionListener implements TestExecutionListener {
 
   @Override
   public void dynamicTestRegistered(TestIdentifier testIdentifier) {
+    if (!isATigerTest) {
+      return;
+    }
     if (testIdentifier.isTest()) {
       ScenarioRunner.addTigerScenarios(
           List.of(new TigerTestIdentifier(testIdentifier, testIdentifier.getDisplayName())));

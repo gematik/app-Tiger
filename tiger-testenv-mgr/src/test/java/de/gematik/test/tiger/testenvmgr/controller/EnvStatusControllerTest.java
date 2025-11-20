@@ -202,16 +202,15 @@ class EnvStatusControllerTest {
           """
           localProxyActive: false
           servers:
-            winstoneServer:
+            httpbinServer:
               type: externalJar
               source:
-                - local:target/winstone.jar
+                - local:target/tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               externalJarOptions:
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=.
+                  - -port=${free.port.0}
           """,
       skipEnvironmentSetup = true)
   void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
@@ -225,7 +224,7 @@ class EnvStatusControllerTest {
               (Answer<File>)
                   invocation -> {
                     await().until(downloadShouldProceed::get);
-                    return new File("target/winstone.jar");
+                    return new File("target/tiger-httpbin.jar");
                   });
 
       final EnvStatusController envStatusController =
@@ -240,16 +239,16 @@ class EnvStatusControllerTest {
       await()
           .until(
               () ->
-                  envStatusController.getStatus().getServers().containsKey("winstoneServer")
+                  envStatusController.getStatus().getServers().containsKey("httpbinServer")
                       && envStatusController
                               .getStatus()
                               .getServers()
-                              .get("winstoneServer")
+                              .get("httpbinServer")
                               .getStatus()
                           == TigerServerStatus.STARTING);
 
-      assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
-          .hasFieldOrPropertyWithValue("name", "winstoneServer")
+      assertThat(envStatusController.getStatus().getServers().get("httpbinServer"))
+          .hasFieldOrPropertyWithValue("name", "httpbinServer")
           .hasFieldOrPropertyWithValue("status", TigerServerStatus.STARTING);
       await()
           .until(
@@ -257,20 +256,20 @@ class EnvStatusControllerTest {
                   envStatusController
                       .getStatus()
                       .getServers()
-                      .get("winstoneServer")
+                      .get("httpbinServer")
                       .getStatusMessage()
-                      .matches("Starting external jar instance winstoneServer in folder .*"));
+                      .matches("Starting external jar instance httpbinServer in folder .*"));
 
       downloadShouldProceed.set(true);
 
       await()
           .until(
               () ->
-                  envStatusController.getStatus().getServers().get("winstoneServer").getStatus()
+                  envStatusController.getStatus().getServers().get("httpbinServer").getStatus()
                       == TigerServerStatus.RUNNING);
 
-      assertThat(envStatusController.getStatus().getServers().get("winstoneServer"))
-          .hasFieldOrPropertyWithValue("name", "winstoneServer")
+      assertThat(envStatusController.getStatus().getServers().get("httpbinServer"))
+          .hasFieldOrPropertyWithValue("name", "httpbinServer")
           .hasFieldOrPropertyWithValue("status", TigerServerStatus.RUNNING)
           // TODO TGR-491 message are not always in correct order
           //  .hasFieldOrPropertyWithValue("statusMessage", "winstoneServer READY")

@@ -28,6 +28,7 @@ import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalConfigurationFileProperty;
 import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -71,6 +72,7 @@ public class TigerGlobalConfiguration {
   }
 
   public static void initialize() {
+    TigerJexlExecutor.initialize();
     initializeWithCliProperties(Map.of());
   }
 

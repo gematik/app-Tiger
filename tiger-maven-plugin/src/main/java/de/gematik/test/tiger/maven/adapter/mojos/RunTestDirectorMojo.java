@@ -20,10 +20,12 @@
  */
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import javax.inject.Inject;
 import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.springframework.boot.maven.RunMojo;
 
 @Mojo(
@@ -32,4 +34,9 @@ import org.springframework.boot.maven.RunMojo;
     defaultPhase = LifecyclePhase.VALIDATE,
     requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.TEST_COMPILE)
-public class RunTestDirectorMojo extends RunMojo {}
+public class RunTestDirectorMojo extends RunMojo {
+  @Inject
+  public RunTestDirectorMojo(ToolchainManager toolchainManager) {
+    super(toolchainManager);
+  }
+}

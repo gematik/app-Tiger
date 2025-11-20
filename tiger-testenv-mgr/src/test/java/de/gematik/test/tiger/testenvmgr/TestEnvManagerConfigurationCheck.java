@@ -589,17 +589,17 @@ additionalYamls:
       tigerYaml =
           """
           servers:
-            google:
+            gematik:
               type: externalUrl
               source:
-                - https://www.google.com
+                - https://www.gematik.de
           localProxyActive: true
           """)
   void testExtUrlServer_healthCheckUrlDefaultsToSource(TigerTestEnvMgr envMgr) {
-    assertThat(envMgr.getServers().get("google").getStatus()).isEqualTo(TigerServerStatus.RUNNING);
+    assertThat(envMgr.getServers().get("gematik").getStatus()).isEqualTo(TigerServerStatus.RUNNING);
     final UnirestInstance instance = Unirest.spawnInstance();
     instance.config().proxy("127.0.0.1", envMgr.getLocalTigerProxyOrFail().getProxyPort());
-    assertThat(instance.get("http://google").asString().getStatus()).isEqualTo(200);
+    assertThat(instance.get("http://gematik").asString().getStatus()).isEqualTo(200);
     instance.close();
   }
 }

@@ -22,12 +22,12 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>./tiger-bom/pom.xml</relativePath>
     </parent>
     <artifactId>tiger</artifactId>
@@ -35,7 +35,8 @@
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Tiger is a test platform. For more info check our project at GitHub
-        https://github.com/gematik/app-Tiger</description>
+        https://github.com/gematik/app-Tiger
+    </description>
 
     <url>https://github.com/gematik/app-Tiger</url>
     <inceptionYear>2021</inceptionYear>
@@ -65,7 +66,9 @@
     <modules>
         <!-- tiger-bom has explicitly no parent defined. It must stay here as the first entry of the modules list -->
         <module>tiger-bom</module>
+        <module>tiger-starter-parent</module>
         <module>tiger-common</module>
+        <module>tiger-httpbin</module>
         <module>tiger-rbel</module>
         <module>tiger-test-utils</module>
         <module>tiger-java-agent</module>
@@ -73,11 +76,9 @@
         <module>tiger-proxy-scrollable-webui</module>
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>
-        <module>tiger-httpbin</module>
         <module>tiger-test-lib</module>
         <module>tiger-maven-plugin</module>
         <module>tiger-uitests</module>
-        <module>tiger-failsafe-provider</module>
     </modules>
 
     <scm>
@@ -97,7 +98,9 @@
         <maven.compiler.target>17</maven.compiler.target>
         <mycila.license-maven-plugin.version>5.0.0</mycila.license-maven-plugin.version>
         <skipSurefire>false</skipSurefire>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
@@ -240,7 +243,8 @@
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
-                        -Dfile.encoding=${project.build.sourceEncoding}</argLine>
+                        -Dfile.encoding=${project.build.sourceEncoding}
+                    </argLine>
                     <properties>
                         <property>
                             <name>listener</name>
@@ -414,7 +418,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.2</version>
                 <executions>
                     <execution>
                         <id>default-cli</id>
@@ -471,17 +475,15 @@
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-plugin</artifactId>
                         <version>${version.kotlin}</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <jvmTarget>17</jvmTarget>
-                        </configuration>
                         <executions>
                             <execution>
                                 <id>compile</id>
                                 <goals>
                                     <goal>compile</goal>
                                 </goals>
+                                <phase>compile</phase>
                                 <configuration>
+                                    <jvmTarget>17</jvmTarget>
                                     <sourceDirs>
                                         <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
                                         <sourceDir>${project.basedir}/src/main/java</sourceDir>
@@ -493,12 +495,50 @@
                                 <goals>
                                     <goal>test-compile</goal>
                                 </goals>
+                                <phase>test-compile</phase>
                                 <configuration>
+                                    <jvmTarget>17</jvmTarget>
                                     <sourceDirs>
                                         <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                                         <sourceDir>${project.basedir}/src/test/java</sourceDir>
                                     </sourceDirs>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- make sure maven-compiler runs after Kotlin and only compiles Java sources -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>${version.maven-compiler-plugin}</version>
+                        <configuration>
+                            <source>${maven.compiler.source}</source>
+                            <target>${maven.compiler.target}</target>
+                        </configuration>
+                        <executions>
+                            <!-- Replacing default-compile as it is treated specially by Maven -->
+                            <execution>
+                                <id>default-compile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Replacing default-testCompile as it is treated specially by Maven -->
+                            <execution>
+                                <id>default-testCompile</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>java-compile</id>
+                                <goals>
+                                    <goal>compile</goal>
+                                </goals>
+                                <phase>compile</phase>
+                            </execution>
+                            <execution>
+                                <id>java-test-compile</id>
+                                <goals>
+                                    <goal>testCompile</goal>
+                                </goals>
+                                <phase>test-compile</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -538,6 +578,18 @@
                 <asciidoctor.skip>false</asciidoctor.skip>
                 <mvn.asciidoc.css.style>gematik</mvn.asciidoc.css.style>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+
         </profile>
         <profile>
             <id>external</id>
@@ -549,7 +601,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

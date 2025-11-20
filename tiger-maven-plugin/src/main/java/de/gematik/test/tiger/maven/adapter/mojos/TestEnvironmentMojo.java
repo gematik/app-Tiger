@@ -27,15 +27,14 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.SneakyThrows;
+import lombok.Setter;
 import lombok.val;
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
@@ -66,32 +65,33 @@ public class TestEnvironmentMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject project;
 
+  @Setter private Supplier<ClassLoader> classLoaderBuilder;
+
   public TestEnvironmentMojo() {
     super();
+    classLoaderBuilder = this::buildUpClassLoader;
   }
 
   @Override
-  public void execute() {
+  public void execute() throws MojoExecutionException {
     if (skip) {
       getLog().info("Skipping");
       return;
     }
 
-    val classLoader = buildUpClassLoader();
+    val classLoader = classLoaderBuilder.get();
     Future testEnvFuture = buildTestEnvFutureAndRun(classLoader);
 
     try {
-      testEnvFuture.get();
+      testEnvFuture.get(autoShutdownAfterSeconds, TimeUnit.SECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException cte) {
+      throw new MojoExecutionException("Error while running Tiger Testenvironment", cte);
+    } finally {
       if (TigerDirector.getTigerTestEnvMgr() != null) {
         TigerDirector.getTigerTestEnvMgr().shutDown();
-      }
-    } catch (InterruptedException | ExecutionException cte) {
-      getLog().info("Tiger Testenvironment TIMEOUT reached, shutting down...");
-      if (TigerDirector.getTigerTestEnvMgr() != null) {
-        TigerDirector.getTigerTestEnvMgr().shutDown();
+        getLog().info("Tiger standalone test environment is shut down!");
       }
     }
-    getLog().info("Tiger standalone test environment is shut down!");
   }
 
   private Future<Void> buildTestEnvFutureAndRun(ClassLoader classLoader) {
@@ -125,32 +125,28 @@ public class TestEnvironmentMojo extends AbstractMojo {
     return executor.submit(task);
   }
 
-  @SneakyThrows
-  private ClassLoader buildUpClassLoader() {
-    List<String> runtimeClasspathElements = project.getRuntimeClasspathElements();
+  public ClassLoader buildUpClassLoader() {
+    return new URLClassLoader(
+        getProjectClasspathUrls(), Thread.currentThread().getContextClassLoader());
+  }
 
-    List<URL> urls =
-        runtimeClasspathElements.stream()
-            .map(
-                path -> {
-                  try {
-                    return new File(path).toURI().toURL();
-                  } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                  }
-                })
-            .toList();
+  public URL[] getProjectClasspathUrls() {
+    List<String> runtimeClasspathElements;
+    try {
+      runtimeClasspathElements = project.getRuntimeClasspathElements();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
 
-    project.getArtifacts().stream()
-        .filter(
-            artifact -> {
-              String scope = artifact.getScope();
-              return "compile".equals(scope) || "runtime".equals(scope);
+    return runtimeClasspathElements.stream()
+        .map(
+            path -> {
+              try {
+                return new File(path).toURI().toURL();
+              } catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+              }
             })
-        .map(Artifact::getFile)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-
-    return new URLClassLoader(urls.toArray(new URL[urls.size()]));
+        .toArray(URL[]::new);
   }
 }

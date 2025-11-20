@@ -32,8 +32,10 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -242,6 +244,33 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
               RequestBuilder.get("https://localhost:" + tigerProxy.getProxyPort()).build());
 
       assertThat(response.getStatusLine().getStatusCode()).isEqualTo(555);
+    }
+  }
+
+  /**
+   * test requires -Djdk.httpclient.allowRestrictedHeaders=host flag to be set
+   *
+   * @throws UnknownHostException
+   */
+  @Test
+  void directReverseProxyShouldNotRevertToLocalHost() throws UnknownHostException {
+    var adress = InetAddress.getByName("www.example.com");
+    var ip = adress.getHostAddress();
+
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .directReverseProxy(DirectReverseProxyInfo.builder().hostname(ip).port(80).build())
+            .build());
+    try (var unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().connectTimeout(5 * 1000).requestTimeout(5 * 1000).retryAfter(false);
+
+      var response =
+          unirestInstance
+              .get("http://localhost:" + tigerProxy.getProxyPort())
+              .header("Host", "www.example.com")
+              .asString();
+      assertThat(response.getStatus()).isEqualTo(200);
+      assertThat(response.getBody()).contains("<title>Example Domain</title>");
     }
   }
 }

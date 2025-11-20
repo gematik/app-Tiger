@@ -46,7 +46,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -54,9 +53,9 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
-import org.testcontainers.shaded.org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.testcontainers.shaded.org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 
 @ConverterInfo(onlyActivateFor = "epa3-vau")
 @Slf4j
@@ -354,9 +353,9 @@ public class RbelVauEpa3Converter extends RbelConverterPlugin {
 
   @SneakyThrows
   private Key toKyberPublicKey(RbelElement element) {
-    return new BCKyberPublicKey(
-        SubjectPublicKeyInfo.getInstance(
-            new KyberPublicKeyParameters(KyberParameters.kyber768, element.getRawContent())));
+    MLKEMPublicKeyParameters pubParams =
+        new MLKEMPublicKeyParameters(MLKEMParameters.ml_kem_768, element.getRawContent());
+    return new BCKyberPublicKey(pubParams);
   }
 
   @SneakyThrows

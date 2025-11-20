@@ -23,13 +23,12 @@ package de.gematik.test.tiger.lib.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Validates a given json string against a given json schema */
@@ -53,14 +52,15 @@ public class JsonSchemaChecker extends AbstractRbelJsonChecker {
       JsonNode jsonNode = objectMapper.readTree(jsonToCheck);
       JsonNode schemaNode = objectMapper.readTree(schema);
 
-      JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
-      JsonSchema jsonSchema = factory.getSchema(schemaNode);
+      SchemaRegistry factory =
+          SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
+      Schema jsonSchema = factory.getSchema(schemaNode);
 
-      Set<ValidationMessage> errors = jsonSchema.validate(jsonNode);
+      var errors = jsonSchema.validate(jsonNode);
 
       if (!errors.isEmpty()) {
         var errorMessages =
-            errors.stream().map(ValidationMessage::toString).collect(Collectors.joining("\n  "));
+            errors.stream().map(Error::toString).collect(Collectors.joining("\n  "));
         throw new JsonSchemaAssertionError("JSON schema validation failed:\n  " + errorMessages);
       }
     } catch (JsonProcessingException e) {

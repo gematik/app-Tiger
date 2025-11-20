@@ -264,7 +264,7 @@ public class HttpActionHandler {
             && localAddress instanceof InetSocketAddress localInetSocketAddress) {
           return new InetSocketAddress(localInetSocketAddress.getAddress(), remoteSocket.getPort());
         } else {
-          return RbelInternetAddressParser.parseInetAddress(remoteSocket.toString())
+          return RbelInternetAddressParser.parseInetAddress(remoteSocket.getHostString())
               .toInetAddress()
               .map(inetAdr -> new InetSocketAddress(inetAdr, remoteSocket.getPort()))
               .orElse(remoteSocket);

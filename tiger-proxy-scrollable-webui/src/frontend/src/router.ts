@@ -19,7 +19,7 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import { createRouter, createWebHistory } from "vue-router";
+import { createMemoryHistory, createRouter, createWebHistory } from "vue-router";
 import App from "./App.vue";
 import SingleMessagePage from "./pages/SingleMessagePage.vue";
 
@@ -28,9 +28,16 @@ const routes = [
   { path: "/message/:uuid", component: SingleMessagePage },
 ];
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+const getHistory = () => {
+  if (__IS_DETACHED_MODE__) {
+    return createMemoryHistory();
+  }
+  return createWebHistory();
+};
 
-export default router;
+export function createAppRouter() {
+  return createRouter({
+    history: getHistory(),
+    routes,
+  });
+}

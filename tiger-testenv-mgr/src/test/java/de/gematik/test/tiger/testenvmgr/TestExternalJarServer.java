@@ -45,14 +45,13 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
             testExternalJarMVP:
               type: externalJar
               source:
-                - local:winstone.jar
+                - local:tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               externalJarOptions:
                 workingDir: 'target/'
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=.
+                  - -port=${free.port.0}
           """,
       skipEnvironmentSetup = true)
   void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
@@ -68,13 +67,12 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
             testExternalJarMVP:
               type: externalJar
               source:
-                - local:target/winstone.jar
+                - local:target/tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               externalJarOptions:
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=.
+                  - -port=${free.port.0}
           """,
       skipEnvironmentSetup = true)
   void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
@@ -90,14 +88,13 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
             testExternalJarMVP:
               type: externalJar
               source:
-                - local:target/winstone.jar
+                - local:target/tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               externalJarOptions:
                 workingDir: '.'
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=.
+                  - -port=${free.port.0}
 
           """,
       skipEnvironmentSetup = true)

@@ -20,13 +20,44 @@
  */
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import java.io.File;
 import net.serenitybdd.maven.plugins.SerenityCheckMojo;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-@Mojo(
-    name = "check-report",
-    requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
-    defaultPhase = LifecyclePhase.VERIFY)
-public class TigerSerenityCheckMojo extends SerenityCheckMojo {}
+@Mojo(name = "check-report", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+public class TigerSerenityCheckMojo extends SerenityCheckMojo {
+
+  /** Serenity report dir */
+  @Parameter(defaultValue = "${project.build.directory}/site/serenity", required = true)
+  public File reportDirectory;
+
+  @Override
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    if ("pom".equals(project.getPackaging())) {
+      getLog().info("Skipping execution for POM packaging");
+    } else if (!reportDirectory.exists()) {
+      // The original serenity check plugin always aggregates reports and always checks them.
+      // But our custom tiger reporter skips the aggregation if the reports folder is not existing.
+      // Therefore, we also skip the report checking, otherwise we would break builds where tests
+      // are
+      // skipped
+      getLog().info("Report directory does not exist. Skipping report check");
+    } else {
+      executeSerenityCheckMojo();
+    }
+  }
+
+  /**
+   * As a separate method, to be able to override it in the unit test
+   *
+   * @throws MojoExecutionException
+   * @throws MojoFailureException
+   */
+  protected void executeSerenityCheckMojo() throws MojoExecutionException, MojoFailureException {
+    super.execute();
+  }
+}

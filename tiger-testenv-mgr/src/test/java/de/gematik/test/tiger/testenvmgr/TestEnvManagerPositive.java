@@ -119,17 +119,18 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  externalJarServer:\n"
-              + "    type: externalJar\n"
-              + "    source:\n"
-              + "      - \"http://localhost:${wiremock.port}/download\"\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-              + "    healthcheckReturnCode: 200\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - \"--httpPort=${free.port.0}\"\n"
-              + "        - \"--webroot=.\"\n")
+          """
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - "http://localhost:${wiremock.port}/download"
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - "-port=${free.port.0}"
+          """)
   void workingDirNotSet_ShouldDefaultToOsTempDirectory(TigerTestEnvMgr envMgr) {
     final String workingDir =
         envMgr
@@ -147,18 +148,19 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  externalJarServer:\n"
-              + "    type: externalJar\n"
-              + "    source:\n"
-              + "      - \"http://localhost:${wiremock.port}/download\"\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.0}/foo/bar/wrong/url\n"
-              + "    healthcheckReturnCode: 200\n"
-              + "    startupTimeoutSec: 1\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - \"--httpPort=${free.port.0}\"\n"
-              + "        - \"--webroot=.\"\n",
+          """
+          servers:
+            externalJarServer:
+              type: externalJar
+              source:
+                - "http://localhost:${wiremock.port}/download"
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/foo/bar/wrong/url
+              healthcheckReturnCode: 200
+              startupTimeoutSec: 1
+              externalJarOptions:
+                arguments:
+                  - "-port=${free.port.0}"
+          """,
       skipEnvironmentSetup = true)
   void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(
       TigerTestEnvMgr envMgr) {
@@ -192,9 +194,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
               healthcheckReturnCode: 200
               externalJarOptions:
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
-
+                  - "-port=${free.port.0}"
           """,
       skipEnvironmentSetup = true)
   void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
@@ -219,8 +219,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
               healthcheckReturnCode: 200
               externalJarOptions:
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
+                  - "-port=${free.port.0}"
           """,
       skipEnvironmentSetup = true)
   void startLocalTigerProxyWithConfiguredPortsAndCheckPropertiesMatch() {

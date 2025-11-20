@@ -28,6 +28,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
+import io.cucumber.junit.platform.engine.Constants;
 import io.cucumber.plugin.event.*;
 import java.io.File;
 import java.io.IOException;
@@ -44,15 +45,25 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherFactory;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 /**
  * Base test support class for tests verifying forwarding of mismatch notes and env status updates.
  * Provides common tiger initialization, feature source publication and helper utilities.
  */
+@ExtendWith(SystemStubsExtension.class)
 abstract class AbstractTigerSerenityEnvStatusTest {
+
+  @SystemStub
+  protected SystemProperties systemProperties =
+      new SystemProperties(
+          Constants.PLUGIN_PROPERTY_NAME, TigerSerenityReporterPlugin.class.getName());
 
   protected static EnvStatusController envStatusController;
   protected TigerSerenityReporterPlugin listener;

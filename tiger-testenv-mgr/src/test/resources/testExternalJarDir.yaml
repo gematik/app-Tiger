@@ -9,6 +9,6 @@ tiger:
       externalJarOptions:
         workingDir: 'target/'
         arguments:
-          - --httpPort=${free.port.0}
-          - --webroot=.
+          - -port=${free.port.0}
+
 

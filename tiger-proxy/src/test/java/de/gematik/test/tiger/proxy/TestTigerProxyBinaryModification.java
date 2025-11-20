@@ -21,11 +21,11 @@
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.EmbeddedHttpbin;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
@@ -35,13 +35,16 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import kong.unirest.core.Unirest;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.junit.Test;
+import org.assertj.core.api.Assertions;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
 class TestTigerProxyBinaryModification {
@@ -65,70 +68,6 @@ class TestTigerProxyBinaryModification {
       """;
 
   @SneakyThrows
-  @Test
-  public void modifyPop3Traffic() {
-    val replayer =
-        PcapReplayer.writeReplay(
-            """
-            S: +OK POP3 server ready <1896.697170952@dbc.mtview.ca.us>
-            C: CAPA
-            S: +OK
-            S: fdsa
-            S: blubsblab
-            S: .
-            client: RETR 1
-            server: +OK body follows
-            server: MailBody
-            server: .
-            client: QUIT
-            server: +OK bye
-            """);
-    val tigerProxy =
-        replayer.replayWithDirectForwardUsing(
-            new TigerProxyConfiguration()
-                .setDirectReverseProxy(
-                    DirectReverseProxyInfo.builder()
-                        .modifierPlugins(
-                            List.of(
-                                TigerProxyModifierDescription.builder()
-                                    .name("MyBinaryModifier")
-                                    .parameters(
-                                        Map.of(
-                                            "targetString",
-                                            "1896.697170952@dbc.mtview.ca.us",
-                                            "replacementString",
-                                            "my.modified_43243434343@message"))
-                                    .build(),
-                                TigerProxyModifierDescription.builder()
-                                    .name("MyBinaryModifier")
-                                    .parameters(
-                                        Map.of(
-                                            "targetString",
-                                            "RETR 1",
-                                            "replacementString",
-                                            "retr 2"))
-                                    .build()))
-                        .build())
-                .setActivateRbelParsingFor(List.of("pop3", "mime")));
-
-    final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
-    Files.write(new File("target/pcapReplayerPop.html").toPath(), html.getBytes());
-    assertThat(replayer.getReceivedPacketsInClient().get(0))
-        .asString()
-        .contains("my.modified_43243434343@message");
-    assertThat(tigerProxy.getRbelMessages().getFirst())
-        .andPrintTree()
-        .asString()
-        .contains("my.modified_43243434343@message");
-    assertThat(replayer.getReceivedPacketsInServer().get(1)).asString().startsWith("retr 2\r\n");
-    assertThat(tigerProxy.getRbelMessagesList().get(3))
-        .andPrintTree()
-        .extractChildWithPath("$.pop3Arguments")
-        .hasStringContentEqualTo("2");
-  }
-
-  @SneakyThrows
-  @Test
   @RepeatedTest(
       5) // to test the chunking logic (java can not guarantee the segmentation of the message)
   public void modifyDirectHttpTrafficWithFragmentedChunking() {
@@ -191,41 +130,53 @@ class TestTigerProxyBinaryModification {
   @SneakyThrows
   @Test
   public void lotsOfHttpMessages() {
-    val tigerProxy =
-        new TigerProxy(
-            new TigerProxyConfiguration()
-                .setDirectReverseProxy(
-                    DirectReverseProxyInfo.builder()
-                        .hostname("localhost")
-                        .port(80)
-                        .modifierPlugins(
-                            List.of(
-                                TigerProxyModifierDescription.builder()
-                                    .name("MyBinaryModifier")
-                                    .parameters(
-                                        Map.of(
-                                            "targetString",
-                                            "GET /foo",
-                                            "replacementString",
-                                            "GET /foobar"))
-                                    .build()))
-                        .build()));
-    val unirestInstance = Unirest.spawnInstance();
-    val numMessages = 100;
-    for (int i = 0; i < numMessages; i++) {
-      unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo" + i).asEmpty();
-    }
-    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+    EmbeddedHttpbin httpbin = new EmbeddedHttpbin(0, true);
+    httpbin.start();
+    try (val tigerProxy =
+            new TigerProxy(
+                new TigerProxyConfiguration()
+                    .setDirectReverseProxy(
+                        DirectReverseProxyInfo.builder()
+                            .hostname("localhost")
+                            .port(httpbin.getPort())
+                            .modifierPlugins(
+                                List.of(
+                                    TigerProxyModifierDescription.builder()
+                                        .name("MyBinaryModifier")
+                                        .parameters(
+                                            Map.of(
+                                                "targetString",
+                                                "GET /foo",
+                                                "replacementString",
+                                                "GET /foobar"))
+                                        .build()))
+                            .build()));
+        val unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().connectTimeout(5000).requestTimeout(5000);
+      val numMessages = 100;
+      for (int i = 0; i < numMessages; i++) {
+        unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo" + i).asEmpty();
+      }
 
-    final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
-    Files.write(new File("target/pcapReplayerHttp.html").toPath(), html.getBytes());
+      Awaitility.await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(() -> tigerProxy.getRbelMessagesList().size() == numMessages * 2);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
-    for (int i = 0; i < numMessages; i++) {
-      assertThat(tigerProxy.getRbelMessagesList().get(i * 2))
-          .andPrintTree()
-          .extractChildWithPath("$.path")
-          .asString()
-          .endsWith("/foobar" + i);
+      Assertions.assertThat(tigerProxy.getRbelMessagesList()).hasSize(numMessages * 2);
+
+      final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
+      Files.write(new File("target/pcapReplayerHttp.html").toPath(), html.getBytes());
+
+      for (int i = 0; i < numMessages; i++) {
+        assertThat(tigerProxy.getRbelMessagesList().get(i * 2))
+            .andPrintTree()
+            .extractChildWithPath("$.path")
+            .asString()
+            .endsWith("/foobar" + i);
+      }
+    } finally {
+      httpbin.stop();
     }
   }
 

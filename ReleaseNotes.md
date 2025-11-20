@@ -1,10 +1,51 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.2
+
+## Features
+
+* TGR-1965: many dependency updates. See the tiger-bom project for the current versions of all dependencies.
+    * Serenity BDD 4.3.2
+    * Cucumber 7.31.0
+    * RestAssured 5.5.6
+    * Selenium 4.38.0
+    * Appium 10.0.0
+    * Spring Boot 3.5.7
+    * Logback 1.5.20
+* TGR-1950: tiger-starter-parent - we now provide a starter pom which can be used for quickly bootstrap a new tiger
+  testsuite project. By extending the tiger starter parent, you get a preconfigured maven project with the necessary
+  dependencies and preconfigured defaults.
+* TGR-1957: added OCSP request parsing when parsing for "OCSP" is activated
+
+## Bugfixes
+
+* TGR-1972: Fix issue where the TigerCucumberRunner would not correctly parse the feature file path.
+* TGR-1942: Fix empty HTML export when exporting from detached RBel log window.
+* TGR-1951: Fix classpath startup problem when running 'mvn tiger:setup-testenv' in projects depending on
+  tiger-maven-plugin.
+* TGR-1968: Tiger-Proxy: Fixed an issue where the direct reverse proxy would not properly redirect to an external IP
+  Address.
+* TGR-1961: Optimized slow IP address resolution
+
 # Release 4.1.1
 
-* Upgrade to bouncycastle 1.82
+## Features
 
-# Bugfixes
+* Upgrade to bouncycastle 1.82
+* TGR-1949: register additional Jexl namespaces via annotated classes. For example:
+
+```java
+package de.gematik.test.tiger.common.jexl;
+
+@InlineJexlMethods(namespacePrefix = "test")
+public class DummyJexlMethods {
+    public String testMethod() {
+        return "test";
+    }
+}
+```
+
+## Bugfixes
 
 * TGR-1948: Fixed SMTP messages not being processed properly by local proxy when POP3 parsing is also active.
 
@@ -989,8 +1030,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

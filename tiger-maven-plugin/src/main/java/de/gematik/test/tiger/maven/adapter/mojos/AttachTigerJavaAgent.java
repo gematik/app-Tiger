@@ -82,7 +82,6 @@ public class AttachTigerJavaAgent extends AbstractMojo {
             .filter(StringUtils::isNotBlank)
             .collect(Collectors.joining(" "));
     getProject().getProperties().setProperty("argLine", newArgLine);
-    log.info("FOOOBAR: Changing argLine from \n{}\n to \n{}", oldArgLine, newArgLine);
     getLog().info("Agent attached: " + agentAttachOption);
   }
 }

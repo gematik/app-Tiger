@@ -22,12 +22,12 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -343,7 +343,8 @@
                                     </glues>
                                     <driverClassName>Driver${ctr}ITSequencediagram</driverClassName>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram</featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram
+                                    </featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -361,7 +362,8 @@
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-sequencediagram.yaml</TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-sequencediagram.yaml
+                                </TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary-sequence.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>
@@ -458,7 +460,8 @@
                                     </glues>
                                     <driverClassName>Driver${ctr}ITTestSelector</driverClassName>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features/testselector</featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/testselector
+                                    </featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -476,7 +479,8 @@
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-testselector.yaml</TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-testselector.yaml
+                                </TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary-testselector.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>

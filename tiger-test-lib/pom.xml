@@ -22,13 +22,13 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-test-lib</artifactId>
@@ -159,15 +159,16 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-httpbin</artifactId>
+            <classifier>jar-with-dependencies</classifier>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>jakarta.activation</groupId>
             <artifactId>jakarta.activation-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -188,6 +189,11 @@
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.webcompere</groupId>
+            <artifactId>system-stubs-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -300,34 +306,6 @@
                     </tags>
                 </configuration>
             </plugin>
-            <!-- end create reusable test jar part -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.8.1</version>
-                <executions>
-                    <execution>
-                        <id>copy</id>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.jenkins-ci</groupId>
-                                    <artifactId>winstone</artifactId>
-                                    <version>${version.winstone}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <destFileName>winstone.jar</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -403,7 +381,9 @@
                                     <filtering>true</filtering>
                                 </resource>
                                 <resource>
-                                    <directory>${project.parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib</directory>
+                                    <directory>
+                                        ${project.parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib
+                                    </directory>
                                     <includes>
                                         <include>HttpGlueCodeTest.feature</include>
                                     </includes>
@@ -418,7 +398,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>detect os</id>
@@ -494,7 +474,7 @@
                     <dependency>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoctorj-pdf</artifactId>
-                        <version>2.3.19</version>
+                        <version>2.3.23</version>
                     </dependency>
                 </dependencies>
                 <executions>

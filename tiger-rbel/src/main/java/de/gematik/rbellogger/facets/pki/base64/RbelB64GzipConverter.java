@@ -51,11 +51,9 @@ public class RbelB64GzipConverter extends RbelConverterPlugin {
   private void parseB64GzippedMessage(
       final RbelElement parentElement, final RbelConversionExecutor converter) {
     try {
-      val gzipped = Base64.getDecoder().wrap(parentElement.getContent().toInputStream());
-      val gis = new GZIPInputStream(gzipped);
-
-      var unzipped = RbelContent.from(gis);
-
+      val zippedContent = Base64.getDecoder().wrap(parentElement.getContent().toInputStream());
+      val gzipInputStream = new GZIPInputStream(zippedContent);
+      val unzipped = RbelContent.from(gzipInputStream);
       val unzippedElement = converter.convertElement(unzipped, parentElement);
       val rbelB64GzipFacet = new RbelB64GzipFacet(unzippedElement);
 

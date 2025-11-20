@@ -15,7 +15,7 @@ git add "$GIT_STASH_FILE"
 git stash -k
 
 # apply spotless
-mvn spotless:apply
+ mvn spotless:apply -pl '!tiger-starter-parent,!tiger-integration-example'
 
 # run the linters
 cd tiger-testenv-mgr/src/frontend

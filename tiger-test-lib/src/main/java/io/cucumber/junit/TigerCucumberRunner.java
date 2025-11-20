@@ -35,6 +35,7 @@ import io.cucumber.core.options.RuntimeOptions;
 import io.cucumber.core.plugin.Options;
 import io.cucumber.core.plugin.TigerSerenityReporterPlugin;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -189,7 +190,7 @@ public class TigerCucumberRunner {
     if (!runtimeOptions.getFeaturePaths().isEmpty()) {
       map.put(
           FEATURES_PROPERTY_NAME,
-          commaSeparatedString(runtimeOptions.getFeaturePaths(), URI::toString));
+          commaSeparatedString(runtimeOptions.getFeaturePaths(), s -> Paths.get(s).toString()));
     }
     if (!runtimeOptions.getNameFilters().isEmpty()) {
       map.put(

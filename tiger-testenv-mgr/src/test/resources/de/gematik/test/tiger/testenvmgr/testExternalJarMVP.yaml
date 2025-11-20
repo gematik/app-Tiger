@@ -13,6 +13,5 @@ servers:
     externalJarOptions:
       workingDir: target/jarDownloadTest
       arguments:
-        - --httpPort=${free.port.0}
-        - --webroot=.
+        - -port=${free.port.0}
 

@@ -22,13 +22,13 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -169,7 +169,12 @@
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
+            <artifactId>okhttp-jvm</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-httpbin</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -229,7 +234,9 @@
                             <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist</directory>
+                                    <directory>
+                                        ${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist
+                                    </directory>
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>
@@ -301,7 +308,8 @@
                     <rerunFailingTestsCount>2</rerunFailingTestsCount>
                     <argLine>-Djdk.httpclient.allowRestrictedHeaders=host
                         -javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar
-                        ${surefireJacocoAgent}</argLine>
+                        ${surefireJacocoAgent}
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>

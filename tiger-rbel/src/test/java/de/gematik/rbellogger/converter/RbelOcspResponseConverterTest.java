@@ -41,7 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 @Slf4j
-class RbelOcspConverterTest {
+class RbelOcspResponseConverterTest {
 
   private RbelElement ocspResponse = null;
 

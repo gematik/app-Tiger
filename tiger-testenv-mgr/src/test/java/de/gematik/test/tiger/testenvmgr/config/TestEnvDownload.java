@@ -53,7 +53,7 @@ import org.junit.jupiter.api.Test;
 class TestEnvDownload {
   private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
 
-  private static byte[] winstoneBytes;
+  private static byte[] httpbinBytes;
   private static byte[] tigerProxyBytes;
 
   @BeforeEach
@@ -64,7 +64,7 @@ class TestEnvDownload {
     } else {
       FileUtils.forceMkdir(DOWNLOAD_FOLDER_PATH.toFile());
     }
-    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(winstoneBytes)));
+    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(httpbinBytes)));
     runtimeInfo
         .getWireMock()
         .register(
@@ -73,13 +73,13 @@ class TestEnvDownload {
 
   @BeforeAll
   static void loadFiles() throws IOException {
-    final File winstoneFile = new File("target/winstone.jar");
-    if (!winstoneFile.exists()) {
+    final File httpbinFile = new File("target/tiger-httpbin.jar");
+    if (!httpbinFile.exists()) {
       throw new RuntimeException(
-          "winstone.jar not found in target-folder. "
+          "tiger-httpbin.jar not found in target-folder. "
               + "Did you run mvn generate-test-resources? (It should be downloaded automatically)");
     }
-    winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
+    httpbinBytes = FileUtils.readFileToByteArray(httpbinFile);
     tigerProxyBytes =
         FileUtils.readFileToByteArray(
             Files.walk(Path.of("..", "tiger-standalone-proxy", "target"))
@@ -192,11 +192,7 @@ class TestEnvDownload {
       if (jarDownloadUrl[i].contains("tiger")) {
         yamlSource.append("        - --server.port=${free.port.").append(10 + i).append("}\n");
       } else {
-        yamlSource
-            .append("        - --httpPort=${free.port.")
-            .append(10 + i)
-            .append("}\n")
-            .append("        - --webroot=.\n");
+        yamlSource.append("        - -port=${free.port.").append(10 + i).append("}\n");
       }
     }
 

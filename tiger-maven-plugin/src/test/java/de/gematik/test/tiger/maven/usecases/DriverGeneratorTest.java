@@ -146,7 +146,6 @@ class DriverGeneratorTest {
             @IncludeEngines("cucumber")
             @SelectFile("featureFile.feature")
             @ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue")
-            @ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
             @ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME,
                                     value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
             public class Mops001IT {

@@ -27,9 +27,9 @@ import de.gematik.rbellogger.data.core.RbelListFacet;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.facets.pki.AbstractX509Converter;
 import de.gematik.rbellogger.facets.pki.OidDictionary;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Base64;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -45,21 +45,10 @@ import org.bouncycastle.util.encoders.Hex;
 @ConverterInfo(onlyActivateFor = "OCSP")
 public class RbelOcspResponseConverter extends AbstractX509Converter {
 
-  @Override
-  public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
-    if (!tryConversion(element, context, element::getRawContent)) {
-      if (!tryConversion(
-          element, context, () -> Base64.getDecoder().decode(element.getRawContent()))) {
-        tryConversion(
-            element, context, () -> Base64.getUrlDecoder().decode(element.getRawContent()));
-      }
-    }
-  }
-
-  private boolean tryConversion(
+  public boolean tryConversion(
       RbelElement element,
       RbelConversionExecutor context,
-      Supplier<byte[]> binaryContentExtractor) {
+      Supplier<InputStream> binaryContentExtractor) {
     try {
       val ocspResponse = new OCSPResp(binaryContentExtractor.get());
 

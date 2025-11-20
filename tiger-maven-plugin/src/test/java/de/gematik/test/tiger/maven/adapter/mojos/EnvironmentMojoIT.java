@@ -37,19 +37,19 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration test for the maven plugin to start up a test environment. Test setup is that in
  * tiger-integration-tests/tiger-maven-plugin-integration-tests.Jenkinsfile we do run the maven
- * plugin once with setup-testenv that starts a winstone server on free.port.0 and logs the output
- * to log.txt In parallel we do run this test as a second maven job, check for log.txt and try to
- * retrieve the health check url of the started winstone server. Finally, we check that we do get a
+ * plugin once with setup-testenv that starts a httpbin server on free.port.0 and logs the output to
+ * log.txt In parallel we do run this test as a second maven job, check for log.txt and try to
+ * retrieve the health check url of the started httpbin server. Finally, we check that we do get a
  * status 200 back and all is fine.
  */
 @Slf4j
 public class EnvironmentMojoIT {
 
-  private static String winstoneUrl;
+  private static String httpbinUrl;
 
   @BeforeAll
-  public static void parseWinstoneUrl() {
-    log.info("Waiting for setup-testenv run to log out winstone healthcheck url...");
+  public static void parseHttpbinUrl() {
+    log.info("Waiting for setup-testenv run to log out httpbin healthcheck url...");
     File f = new File("log.txt");
     await()
         .pollInterval(500, TimeUnit.MILLISECONDS)
@@ -63,20 +63,20 @@ public class EnvironmentMojoIT {
                   int start = log.indexOf("'", i);
                   int end = log.indexOf("'", start + 1);
                   if (start != -1 && end != -1) {
-                    winstoneUrl = log.substring(start + 1, end);
+                    httpbinUrl = log.substring(start + 1, end);
                     return true;
                   }
                 }
               }
               return false;
             });
-    log.info("Assuming winstone at {}", winstoneUrl);
+    log.info("Assuming httpbin at {}", httpbinUrl);
   }
 
   @SneakyThrows
   @Test
   void checkTestenvIsUp() {
-    assertThat(RestAssured.get(new URL(winstoneUrl)).getStatusCode()).isEqualTo(200);
-    log.info("Reached winstone server at {} and got return status 200", winstoneUrl);
+    assertThat(RestAssured.get(new URL(httpbinUrl)).getStatusCode()).isEqualTo(200);
+    log.info("Reached httpbin server at {} and got return status 200", httpbinUrl);
   }
 }
