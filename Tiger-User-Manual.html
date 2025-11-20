@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.1 - 2025-10-30</span>
+<span id="revdate">Version 4.1.5 - 2025-11-20</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -612,8 +612,77 @@ On Windows you can use Git Bash or Powershell
 </div>
 <div class="sect2">
 <h3 id="maven-in-a-nutshell"><a class="anchor" href="#maven-in-a-nutshell"></a>2.2. Maven in a nutshell</h3>
+<div class="sect3">
+<h4 id="using-the-tiger-starter-pom"><a class="anchor" href="#using-the-tiger-starter-pom"></a>2.2.1. Using the Tiger Starter Pom</h4>
 <div class="paragraph">
-<p>In order to use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger</p>
+<p>We provide a start pom which makes it faster to bootstrap a new test suite project.<br>
+You need to extend the tiger-starter-parent pom in your project, and you get a project with all the tiger dependencies and plugins configured to run tests with maven.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 1. Example of a minimal project using the tiger-starter-parent</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+    &lt;parent&gt;
+        &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+        &lt;artifactId&gt;tiger-starter-parent&lt;/artifactId&gt;
+        &lt;version&gt;4.1.2&lt;/version&gt;
+    &lt;/parent&gt;
+
+    &lt;artifactId&gt;tiger-demo&lt;/artifactId&gt;
+    &lt;version&gt;0.0.1-SNAPSHOT&lt;/version&gt;
+    &lt;packaging&gt;jar&lt;/packaging&gt;
+
+&lt;/project&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can execute the tests in this project by running:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">mvn verify</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will run your cucumber feature files using the Tiger Framework and generate serenity html reports.<br>
+For quick configuration we have set the following maven properties, which you can override in your project pom:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;tiger.featuresDir&gt;${basedir}/src/test/resources/features&lt;/tiger.featuresDir&gt;
+&lt;tiger.glues&gt;${project.groupId}&lt;/tiger.glues&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>More detailed configuration can still be performed directly on the tiger-maven-plugin and maven-failsafe-plugin.<br>
+See the following section for details.</p>
+</div>
+<div class="paragraph">
+<p>We also provide a maven profile which allows you to execute a test suite without the maven failsafe plugin.</p>
+</div>
+<div class="paragraph">
+<p>With</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">mvn exec:java -Ptiger-ui</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>you can start tiger as a java application without the full maven lifecycle.<br>
+This profile is pre-configured to start the Workflow UI with the interactive test selector dialog.<br>
+This means the tests will not be run automatically on start up and you can select exactly what you want to execute via the tiger ui.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="without-the-tiger-start-pom"><a class="anchor" href="#without-the-tiger-start-pom"></a>2.2.2. Without the Tiger Start Pom</h4>
+<div class="paragraph">
+<p>To use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger</p>
 </div>
 <div class="ulist">
 <ul>
@@ -654,7 +723,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 1. Simple Tiger Maven pom.xml</div>
+<div class="title">Listing 2. Simple Tiger Maven pom.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;!--
@@ -838,7 +907,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
 <p>For a successful startup you also need a minimum Tiger test environment configuration yaml file in your project root:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 2. Minimum Test environment configuration</div>
+<div class="title">Listing 3. Minimum Test environment configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># minimum viable test environment specification
 # default local Tiger Proxy
@@ -851,7 +920,7 @@ servers: {}</code></pre>
 <p>and finally a minimal feature file under src/test/resources/features:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 3. Minimum Cucumber feature file</div>
+<div class="title">Listing 4. Minimum Cucumber feature file</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Test Tiger BDD
 
@@ -866,6 +935,7 @@ servers: {}</code></pre>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">mvn verify</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -1204,60 +1274,6 @@ We do not recommend the parallel test execution with Tiger at the moment.
 <p>Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages from different threads / forked processes ending up in the wrong listening queue making it very complicated to make sure your validations are working as expected in different timing situations.</p>
 </div>
 </div>
-<div class="sect3">
-<h4 id="custom-tiger-failsafe-provider-experimental"><a class="anchor" href="#custom-tiger-failsafe-provider-experimental"></a>2.3.3. Custom Tiger Failsafe Provider - Experimental</h4>
-<div class="paragraph">
-<p>As an alternative to the driver generation with the tiger-maven-plugin, you can configure the tiger-failsafe-provider which enables the maven-failsafe-plugin to discover cucumber tests and execute them with the tiger framework.<br>
-With provider, you do not need to configure the driver generation with the tiger-maven-plugin.</p>
-</div>
-<div class="paragraph">
-<p>To activate the tiger failsafe provider you need to add it as a dependency to the failsafe configuration:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
-    &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-    &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
-    &lt;version&gt;3.5.3&lt;/version&gt;
-    &lt;configuration&gt;
-        &lt;forkedProcessExitTimeoutInSeconds&gt;18000&lt;/forkedProcessExitTimeoutInSeconds&gt;
-        &lt;!-- OPTIONAL - these properties are already set to these default values. You only need to include them if you
-        want to change the default value --&gt;
-        &lt;systemPropertyVariables&gt;
-            &lt;tiger.features&gt;src/test/resources/features&lt;/tiger.features&gt;
-            &lt;tiger.filter.tags&gt;not @Ignore&lt;/tiger.filter.tags&gt;
-            &lt;tiger.glue&gt;de.gematik.test.tiger.glue&lt;/tiger.glue&gt;
-            &lt;tiger.plugin&gt;io.cucumber.core.plugin.TigerSerenityReporterPlugin&lt;/tiger.plugin&gt;
-        &lt;/systemPropertyVariables&gt;
-    &lt;/configuration&gt;
-    &lt;dependencies&gt;
-        &lt;dependency&gt;
-            &lt;!-- by adding the failsafe provider as a dependency, it will be used when the failsafe plugin executes --&gt;
-            &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-            &lt;artifactId&gt;tiger-failsafe-provider&lt;/artifactId&gt;
-            &lt;version&gt;3.7.7-SNAPSHOT&lt;/version&gt;
-            &lt;!-- OPTIONAL if there is a dependency on your classpath bringing the groovy-xml library transitively, you need to
-            exclude it, so that there are no conflicts in the loaded versions --&gt;
-            &lt;exclusions&gt;
-                &lt;exclusion&gt;
-                    &lt;groupId&gt;org.apache.groovy&lt;/groupId&gt;
-                    &lt;artifactId&gt;groovy-xml&lt;/artifactId&gt;
-                &lt;/exclusion&gt;
-            &lt;/exclusions&gt;
-        &lt;/dependency&gt;
-    &lt;/dependencies&gt;
-    &lt;executions&gt;
-        &lt;execution&gt;
-            &lt;goals&gt;
-                &lt;goal&gt;integration-test&lt;/goal&gt;
-                &lt;goal&gt;verify&lt;/goal&gt;
-            &lt;/goals&gt;
-        &lt;/execution&gt;
-    &lt;/executions&gt;
-&lt;/plugin&gt;</code></pre>
-</div>
-</div>
-</div>
 </div>
 <div class="sect2">
 <h3 id="_example_project"><a class="anchor" href="#_example_project"></a>2.4. Example project</h3>
@@ -1521,7 +1537,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
 <p>The general properties apply to each node type.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 4. General properties</div>
+<div class="title">Listing 5. General properties</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   serverKey_xxx:
@@ -1587,7 +1603,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
 <p>Here is a little example how the server names are set and used and how there server is reachable via the Tiger Proxy.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 5. Example with three external jar servers</div>
+<div class="title">Listing 6. Example with three external jar servers</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
 # here the server name is "identityServer" and
@@ -1643,7 +1659,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
 Their meaning and format are explained in the related section.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 6. Type specific properties</div>
+<div class="title">Listing 7. Type specific properties</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  # type specific sub structure for external jar, Tiger Proxy, docker and helm chart nodes
   externalJarOptions:
@@ -1865,7 +1881,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 7. Docker container configuration</div>
+<div class="title">Listing 8. Docker container configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">dockerContainer_001:
   hostname: myDockerContainer
@@ -1945,7 +1961,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 8. Docker compose configuration</div>
+<div class="title">Listing 9. Docker compose configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  type: compose
   dependsUpon: csv string
@@ -1964,7 +1980,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 9. Demis docker compose example</div>
+<div class="title">Listing 10. Demis docker compose example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">demis_001:
   type: compose
@@ -2013,7 +2029,7 @@ Tiger will use the following order to try to find a matching file:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 10. External jar configuration</div>
+<div class="title">Listing 11. External jar configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalJar_001:
   hostname: mySpecialJar
@@ -2083,7 +2099,7 @@ If it is ever necessary to change the external URL, the test suite does not have
 <p>Given the nature of this type, the environment section has no effect and is not to be used.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 11. External URL configuration</div>
+<div class="title">Listing 12. External URL configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalUrl_001:
   hostname: myExternalServer
@@ -2136,7 +2152,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 12. Helm chart configuration</div>
+<div class="title">Listing 13. Helm chart configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   testHelmChart_Nginx:
@@ -2188,7 +2204,7 @@ The Tiger Proxy will be started as an embedded spring boot application.<br>
 This way the start-up time can be minimized, and it is always guaranteed to start the current version.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 13. Tiger Proxy configuration</div>
+<div class="title">Listing 14. Tiger Proxy configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy_001:
   hostname: myTigerProxy
@@ -2241,7 +2257,7 @@ This provides several endpoints against which you can perform all kinds of http 
 The server port on which the server starts can be configured.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. httpbin configuration</div>
+<div class="title">Listing 15. httpbin configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">httpbin:
     type: httpbin
@@ -4301,7 +4317,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Tiger response validation steps example</div>
+<div class="title">Listing 16. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger validation steps
 
@@ -4367,7 +4383,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Tiger request validation steps example</div>
+<div class="title">Listing 17. Tiger request validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger request validation steps
 
@@ -5401,7 +5417,7 @@ certain value</p>
 <div class="sect3">
 <h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.5.3. Usage examples</h4>
 <div class="listingblock">
-<div class="title">Listing 17. Tiger Rbel Builder steps example</div>
+<div class="title">Listing 18. Tiger Rbel Builder steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Tiger - RbelBuilder
 
@@ -5434,7 +5450,7 @@ certain value</p>
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Tiger response validation steps example</div>
+<div class="title">Listing 19. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -6016,7 +6032,7 @@ It will be first checked, whether the expected value is equal to the actual one,
 We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 20. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">  {
     "alg": "dir",
@@ -6651,7 +6667,7 @@ The server "B" should now use the activated server, without having to set it man
 The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Configuring using placeholders and exports</div>
+<div class="title">Listing 21. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">servers:
   serverAInternet:
@@ -6796,7 +6812,7 @@ You can simply set an environment variable to do the job for you.<br>
 Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6820,7 +6836,7 @@ Below are the relevant snippets:</p>
 This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6845,7 +6861,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. The testsuite</div>
+<div class="title">Listing 24. The testsuite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-Gherkin hljs" data-lang="Gherkin">    TGR current response with attribute "$.body.ReplyStructure.Header.Sender.url" matches "http://127.0.0.1:${backend.server.port}"</code></pre>
 </div>
@@ -6966,8 +6982,36 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 <div class="sect3">
 <h4 id="adding-custom-namespaces"><a class="anchor" href="#adding-custom-namespaces"></a>6.10.3. Adding custom namespaces</h4>
+<div class="sect4">
+<h5 id="using-code"><a class="anchor" href="#using-code"></a>Using code</h5>
 <div class="paragraph">
-<p>You can easily register additional namespaces by calling <code>TigerJexlExecutor.registerAdditionalNamespace(&lt;namespace-prefix&gt;, &lt;namespace class or object)</code>.</p>
+<p>You can register additional namespaces by calling <code>TigerJexlExecutor.registerAdditionalNamespace(&lt;namespace-prefix&gt;, &lt;namespace class or object)</code>.<br>
+Conversely, you can deregister an existing namespace with <code>TigerJexlExecutor.deregisterNamespace(&lt;namespace-prefix&gt;)</code></p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="using-annotations"><a class="anchor" href="#using-annotations"></a>Using annotations</h5>
+<div class="paragraph">
+<p>If you need to register a namespace early in the start up process you can use annotated classes.<br>
+For example, you may need the namespace to be already registered when tiger reads the tiger configuration.<br>
+To do it, create a class with the inline methods in the java package <code>de.gematik.test.tiger.common.jexl</code> and add the annotation <code>@InlineJexlMethods(namespacePrefix = &lt;namespace-prefix&gt;)</code>.<br>
+Below is an example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.gematik.test.tiger.common.jexl;
+
+@InlineJexlMethods(namespacePrefix = "test")
+public class DummyJexlMethods {
+  public String testMethod() {
+    return "test";
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Tiger will scan the classes in the package and add register all annotated classes.</p>
+</div>
 </div>
 </div>
 </div>
@@ -9222,7 +9266,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-10-30 11:25:44 +0100
+Last updated 2025-11-20 12:11:12 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
