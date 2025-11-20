@@ -5,26 +5,24 @@ tigerProxy:
     - http://localhost:${free.port.2}
 
 servers:
-  winstone:
-    hostname: winstone
+  httpbin:
+    hostname: httpbin
     source:
-      - local:target/winstone.jar
+      - local:target/tiger-httpbin.jar
     type: externalJar
     externalJarOptions:
       healthcheck: http://localhost:${free.port.0}
       arguments:
-        - --httpPort=${free.port.0}
-        - --webroot=.
-  winstone2:
-    hostname: winstone2
+        - -port=${free.port.0}
+  httpbin2:
+    hostname: httpbin2
     source:
-      - local:target/winstone2.jar
+      - local:target/httpbin2.jar
     type: externalJar
     externalJarOptions:
-      healthcheckUrl: http://localhost:${free.port.4}
+      healthcheckUrl: http://localhost:${free.port.4}/
       arguments:
-        - --httpPort=${free.port.0}
-        - --webroot=.
+        - -port=${free.port.4}
 
   remoteTigerProxy:
     type: tigerProxy
@@ -35,7 +33,7 @@ servers:
         rbelBufferSizeInMb: 0
         port: ${free.port.1}
         proxyRoutes:
-          - from: http://winstone
+          - from: http://httpbin
             to: http://localhost:${free.port.0}
 
 lib:

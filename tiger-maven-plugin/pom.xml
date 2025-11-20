@@ -22,12 +22,12 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-maven-plugin</artifactId>
@@ -83,6 +83,16 @@
             <artifactId>maven-plugin-api</artifactId>
         </dependency>
         <dependency>
+            <!-- needed by serenity-maven-plugin und maven-core.
+            previously was part of plexus-utils -->
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-maven-plugin</artifactId>
         </dependency>
@@ -116,6 +126,18 @@
             <artifactId>javaparser-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-httpbin</artifactId>
+            <classifier>jar-with-dependencies</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugin-testing</groupId>
+            <artifactId>maven-plugin-testing-harness</artifactId>
+            <version>3.3.0</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- unit test dependencies -->
         <dependency>
@@ -145,19 +167,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.9.0</version>
                 <configuration>
                     <artifactItems>
                         <artifactItem>
-                            <groupId>org.jenkins-ci</groupId>
-                            <artifactId>winstone</artifactId>
-                            <version>${version.winstone}</version>
-                            <type>jar</type>
-                            <overWrite>false</overWrite>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <destFileName>winstone.jar</destFileName>
+                            <groupId>de.gematik.test</groupId>
+                            <artifactId>tiger-httpbin</artifactId>
+                            <version>${project.version}</version>
+                            <classifier>jar-with-dependencies</classifier>
+                            <overWrite>true</overWrite>
+                            <destFileName>tiger-httpbin.jar</destFileName>
                         </artifactItem>
                     </artifactItems>
+                    <outputDirectory>${project.parent.build.directory}</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
@@ -228,7 +250,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>4.1.1</version>
+                        <version>4.1.5</version>
                         <executions>
                             <execution>
                                 <goals>

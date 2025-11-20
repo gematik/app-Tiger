@@ -29,6 +29,15 @@ import org.apache.commons.lang3.StringUtils;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelInternetAddressParser {
 
+  private static String cachedLoopbackHostname;
+
+  private static String getLoopbackHostname(InetAddress address) {
+    if (cachedLoopbackHostname == null) {
+      cachedLoopbackHostname = address.getHostName();
+    }
+    return cachedLoopbackHostname;
+  }
+
   public static RbelInternetAddress parseInetAddress(String addressString) {
     if (addressString == null || addressString.trim().isEmpty()) {
       throw new IllegalArgumentException("Address string cannot be null or empty.");
@@ -43,17 +52,35 @@ public class RbelInternetAddressParser {
     }
   }
 
+  private static boolean isLikelyIpAddress(String input) {
+    if (input == null || input.isEmpty()) return false;
+    char first = input.charAt(0);
+    return Character.isDigit(first) || input.contains(":");
+  }
+
   private static RbelInternetAddress parseRegularHostname(String addressString) {
     try {
-      final InetAddress inetAddress = InetAddress.getByName(addressString);
-      if (inetAddress.getHostName().equals(inetAddress.getHostAddress())) {
-        return new RbelInternetAddress(null, inetAddress.getAddress());
-      } else {
-        return new RbelInternetAddress(inetAddress.getHostName(), inetAddress.getAddress());
-      }
+      InetAddress inetAddress = InetAddress.getByName(addressString);
+      byte[] ipBytes = inetAddress.getAddress();
+      String hostname = computeHostname(addressString, inetAddress);
+      return new RbelInternetAddress(hostname, ipBytes);
     } catch (UnknownHostException e) {
       return new RbelInternetAddress(addressString, null);
     }
+  }
+
+  private static String computeHostname(String addressString, InetAddress inetAddress) {
+    String hostname;
+    if (isLikelyIpAddress(addressString)) {
+      if (inetAddress.isLoopbackAddress()) {
+        hostname = getLoopbackHostname(inetAddress);
+      } else {
+        hostname = null;
+      }
+    } else {
+      hostname = inetAddress.getHostName();
+    }
+    return hostname;
   }
 
   /**
@@ -67,20 +94,11 @@ public class RbelInternetAddressParser {
       String addressString, int slashIndex) {
     String hostname = addressString.substring(0, slashIndex);
     String ipAddress = addressString.substring(slashIndex + 1);
-
     try {
       byte[] ipBytes = InetAddress.getByName(ipAddress).getAddress();
-      if (StringUtils.isEmpty(hostname)) {
-        return RbelInternetAddress.fromInetAddress(InetAddress.getByAddress(ipBytes));
-      } else {
-        return new RbelInternetAddress(hostname, ipBytes);
-      }
+      return new RbelInternetAddress(StringUtils.isEmpty(hostname) ? ipAddress : hostname, ipBytes);
     } catch (UnknownHostException e) {
-      try {
-        return RbelInternetAddress.fromInetAddress(InetAddress.getByName(ipAddress));
-      } catch (UnknownHostException ex) {
-        return new RbelInternetAddress(hostname, null);
-      }
+      return new RbelInternetAddress(hostname, null);
     }
   }
 }

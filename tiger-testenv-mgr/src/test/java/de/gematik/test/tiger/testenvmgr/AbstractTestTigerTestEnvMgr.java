@@ -46,7 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 @WireMockTest(httpsEnabled = true)
 public abstract class AbstractTestTigerTestEnvMgr {
 
-  private static byte[] winstoneBytes;
+  private static byte[] httpbinBytes;
 
   @AfterAll
   public static void resetProperties() {
@@ -56,13 +56,13 @@ public abstract class AbstractTestTigerTestEnvMgr {
   @BeforeAll
   public static void startServer(WireMockRuntimeInfo runtimeInfo) throws IOException {
     log.info("Started Wiremock on port {} (http)", runtimeInfo.getHttpPort());
-    final File winstoneFile = new File("target/winstone.jar");
-    if (!winstoneFile.exists()) {
+    final File httbinFile = new File("target/tiger-httpbin.jar");
+    if (!httbinFile.exists()) {
       throw new RuntimeException(
-          "winstone.jar not found in target-folder. "
+          "tiger-httpbin.jar not found in target-folder. "
               + "Did you run mvn generate-test-resources? (It should be downloaded automatically)");
     }
-    winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
+    httpbinBytes = FileUtils.readFileToByteArray(httbinFile);
 
     System.setProperty("wiremock.port", Integer.toString(runtimeInfo.getHttpPort()));
   }
@@ -71,7 +71,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
   @BeforeEach
   public void resetConfiguration(WireMockRuntimeInfo runtimeInfo) {
     TigerGlobalConfiguration.reset();
-    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(winstoneBytes)));
+    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(httpbinBytes)));
   }
 
   // -----------------------------------------------------------------------------------------------------------------

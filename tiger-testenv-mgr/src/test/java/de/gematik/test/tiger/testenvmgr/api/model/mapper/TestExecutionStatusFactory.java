@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.val;
 import org.junit.platform.engine.ConfigurationParameters;
+import org.junit.platform.engine.OutputDirectoryCreator;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestIdentifier;
@@ -40,7 +41,12 @@ public class TestExecutionStatusFactory {
   public static ScenarioRunner.TestExecutionStatus createTestExecutionStatus() {
 
     var testDescriptors = createTestDescriptorsWithParents();
-    TestPlan testPlan = TestPlan.from(testDescriptors, mock(ConfigurationParameters.class));
+    TestPlan testPlan =
+        TestPlan.from(
+            true,
+            testDescriptors,
+            mock(ConfigurationParameters.class),
+            mock(OutputDirectoryCreator.class));
 
     return new ScenarioRunner.TestExecutionStatus(
         TEST_UUID, testPlan, createTigerSummaryListener(testPlan, testDescriptors));

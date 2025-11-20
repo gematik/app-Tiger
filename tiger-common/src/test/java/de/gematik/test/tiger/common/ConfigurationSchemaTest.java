@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -49,7 +49,7 @@ class ConfigurationSchemaTest {
 
   @Test
   void testValidConfigurations() throws Exception {
-    final JsonSchema jsonSchema = loadSchema();
+    final Schema jsonSchema = loadSchema();
     final List<String> exampleConfigurations =
         List.of(
             "src/test/resources/schema/exampleConfiguration1.yml",
@@ -58,14 +58,14 @@ class ConfigurationSchemaTest {
     for (final String exampleConfiguration : exampleConfigurations) {
       final JsonNode example = loadExample(exampleConfiguration);
 
-      final Set<ValidationMessage> validationMessages = jsonSchema.validate(example);
+      final List<Error> validationMessages = jsonSchema.validate(example);
       assertThat(validationMessages).isEmpty();
     }
   }
 
   @Test
   void testValidTestenvMgrConfigs() throws Exception {
-    final JsonSchema jsonSchema = loadSchema();
+    final Schema jsonSchema = loadSchema();
     final Path testenvMgrPath = Paths.get("../tiger-testenv-mgr/src/test/resources");
     final Set<Path> configsInTestenvMgr =
         Files.walk(testenvMgrPath)
@@ -77,26 +77,26 @@ class ConfigurationSchemaTest {
       final String filename = testenvMgrConfigPath.toAbsolutePath().toString();
       final JsonNode example = loadExample(filename);
 
-      final Set<ValidationMessage> validationMessages =
+      final Set<Error> validationMessages =
           jsonSchema.validate(example).stream()
-              .filter(message -> !message.getError().contains("string"))
+              .filter(message -> !message.getMessage().contains("string"))
               .collect(Collectors.toSet());
 
       assertThat(validationMessages).isEmpty();
     }
   }
 
-  private JsonSchema loadSchema() throws Exception {
+  private Schema loadSchema() throws Exception {
     final ObjectMapper mapper = new ObjectMapper();
     final JsonNode schema =
         mapper.readValue(
             FileUtils.readFileToString(new File(schemaFile), StandardCharsets.UTF_8),
             JsonNode.class);
 
-    final JsonSchemaFactory jsonSchemaFactory =
-        JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+    final SchemaRegistry schemaRegistry =
+        SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
-    return jsonSchemaFactory.getSchema(schema);
+    return schemaRegistry.getSchema(schema);
   }
 
   private JsonNode loadExample(final String filename) throws Exception {

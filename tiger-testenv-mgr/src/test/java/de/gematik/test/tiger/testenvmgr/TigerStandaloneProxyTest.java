@@ -73,16 +73,15 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
           servers:
-            winstoneStandaloneProxy120:
+            httpbinStandaloneProxy120:
               type: externalJar
               startupTimeoutSec: 60
               source:
-                - local:target/winstone.jar
+                - local:target/tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.120}
               externalJarOptions:
                 arguments:
-                  - --httpPort=${free.port.120}
-                  - --webroot=.
+                  - -port=${free.port.120}
           """,
       skipEnvironmentSetup = true)
   void testCreateStandaloneProxyAsExternalJarViaExternalProcess(TigerTestEnvMgr envMgr) {
@@ -121,16 +120,15 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
           servers:
-            winstoneStandaloneProxy110:
+            httpbinStandaloneProxy110:
               type: externalJar
               startupTimeoutSec: 60
               source:
-                - local:target/winstone.jar
+                - local:target/tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.110}
               externalJarOptions:
                 arguments:
-                  - --httpPort=${free.port.110}
-                  - --webroot=.
+                  - -port=${free.port.110}
             externalProxy110:
               type: externalJar
               startupTimeoutSec: 60
@@ -205,9 +203,9 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
                       + TigerGlobalConfiguration.readString("free.port." + offset + "5")
                       + "/")
               .asString();
-      // check routing to winstone works
+      // check routing to httpbin works
       if (response.isSuccess()) {
-        assertThat(response.getBody()).contains("Directory:").contains("winstone.jar");
+        assertThat(response.getBody()).contains("Hello World!!!");
         log.info(
             "connecting to proxy api:"
                 + "http://127.0.0.1:"

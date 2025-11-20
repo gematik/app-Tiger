@@ -104,8 +104,7 @@ class TestTigerDirector {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void testDirectorClearsMessagesAfterStartup(boolean clearEnvironmentStartupTraffic) {
-    System.setProperty(
-        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndHttpbin.yaml");
     System.setProperty(
         "TIGER_LIB_CLEARENVIRONMENTSTARTUPTRAFFIC", String.valueOf(clearEnvironmentStartupTraffic));
     executeWithSecureShutdown(
@@ -160,8 +159,7 @@ class TestTigerDirector {
 
   @Test
   void testDirectorConfigReadandAvailable() {
-    System.setProperty(
-        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndHttpbin.yaml");
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
@@ -180,7 +178,7 @@ class TestTigerDirector {
                       .getConfiguration()
                       .getExternalJarOptions()
                       .getArguments())
-              .hasSize(2);
+              .hasSize(1);
           assertThat(
                   TigerDirector.getTigerTestEnvMgr()
                       .getServers()
@@ -188,8 +186,8 @@ class TestTigerDirector {
                       .getConfiguration()
                       .getExternalJarOptions()
                       .getArguments()
-                      .get(1))
-              .isEqualTo("--webroot=.");
+                      .get(0))
+              .startsWith("-port=");
         });
   }
 
@@ -237,8 +235,7 @@ class TestTigerDirector {
 
   @Test
   void testRouteHasHttpsEndpointURLConnection_certificateShouldBeVerified() {
-    System.setProperty(
-        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndHttpbin.yaml");
     executeWithSecureShutdown(
         () -> {
           assertThatNoException()
@@ -283,8 +280,7 @@ class TestTigerDirector {
 
   @Test
   void testLocalProxyActiveSetByDefault() {
-    System.setProperty(
-        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndHttpbin.yaml");
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();

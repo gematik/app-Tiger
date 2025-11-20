@@ -282,7 +282,31 @@ This will immediately return the `href`-attribute of the link in question as a s
 
 ==== Adding custom namespaces
 
-You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
+===== Using code
+
+You can register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
+Conversely, you can deregister an existing namespace with `TigerJexlExecutor.deregisterNamespace(<namespace-prefix>)`
+
+===== Using annotations
+
+If you need to register a namespace early in the start up process you can use annotated classes.
+For example, you may need the namespace to be already registered when tiger reads the tiger configuration.
+To do it, create a class with the inline methods in the java package `de.gematik.test.tiger.common.jexl` and add the annotation `@InlineJexlMethods(namespacePrefix = <namespace-prefix>)`.
+Below is an example:
+
+[source,java]
+----
+package de.gematik.test.tiger.common.jexl;
+
+@InlineJexlMethods(namespacePrefix = "test")
+public class DummyJexlMethods {
+  public String testMethod() {
+    return "test";
+  }
+}
+----
+
+Tiger will scan the classes in the package and add register all annotated classes.
 
 [#_tiger_configuration_editor]
 === Configuration Editor

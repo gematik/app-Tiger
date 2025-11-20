@@ -121,7 +121,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void forwardProxyWithoutConfiguredServerName_certificateShouldContainCorrectServerName() {
     spawnTigerProxyWith(new TigerProxyConfiguration());
 
-    final HttpResponse<JsonNode> response = proxyRest.get("https://google.com").asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("https://www.gematik.de").asJson();
     assertThat(response.getStatus()).isEqualTo(200);
   }
 

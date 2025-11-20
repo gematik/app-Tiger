@@ -39,7 +39,6 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Base64;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -60,18 +59,10 @@ public class RbelX509Converter extends AbstractX509Converter {
     if (element.hasFacet(RbelX509CertificateFacet.class)) {
       return;
     }
-    if (!tryConversion(element, context, () -> element.getContent().toInputStream())) {
-      if (!tryConversion(
-          element, context, () -> Base64.getDecoder().wrap(element.getContent().toInputStream()))) {
-        tryConversion(
-            element,
-            context,
-            () -> Base64.getUrlDecoder().wrap(element.getContent().toInputStream()));
-      }
-    }
+    super.consumeElement(element, context);
   }
 
-  private boolean tryConversion(
+  public boolean tryConversion(
       RbelElement element,
       RbelConversionExecutor context,
       Supplier<InputStream> binaryContentExtractor) {

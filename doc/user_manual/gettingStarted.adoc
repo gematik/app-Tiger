@@ -25,7 +25,68 @@ TIP: On Windows you can use Git Bash or Powershell
 
 === Maven in a nutshell
 
-In order to use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger
+==== Using the Tiger Starter Pom
+
+We provide a start pom which makes it faster to bootstrap a new test suite project.
+You need to extend the tiger-starter-parent pom in your project, and you get a project with all the tiger dependencies and plugins configured to run tests with maven.
+
+.Example of a minimal project using the tiger-starter-parent
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-starter-parent</artifactId>
+        <version>4.1.2</version>
+    </parent>
+
+    <artifactId>tiger-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+</project>
+----
+
+You can execute the tests in this project by running:
+
+[source,shell]
+----
+mvn verify
+----
+
+This will run your cucumber feature files using the Tiger Framework and generate serenity html reports.
+For quick configuration we have set the following maven properties, which you can override in your project pom:
+
+[source,xml]
+----
+<tiger.featuresDir>${basedir}/src/test/resources/features</tiger.featuresDir>
+<tiger.glues>${project.groupId}</tiger.glues>
+----
+
+More detailed configuration can still be performed directly on the tiger-maven-plugin and maven-failsafe-plugin.
+See the following section for details.
+
+We also provide a maven profile which allows you to execute a test suite without the maven failsafe plugin.
+
+With
+
+[source,shell]
+----
+mvn exec:java -Ptiger-ui
+----
+
+you can start tiger as a java application without the full maven lifecycle.
+This profile is pre-configured to start the Workflow UI with the interactive test selector dialog.
+This means the tests will not be run automatically on start up and you can select exactly what you want to execute via the tiger ui.
+
+==== Without the Tiger Start Pom
+
+To use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger
 
 * Current version of Tiger-bom in your dependencyManagement section
 * Tiger test library in your dependencies section
@@ -98,57 +159,6 @@ include::../../doc/examples/tigerOnly/pom.xml[tag="failsafe-plugin"]
 TIP: We do not recommend the parallel test execution with Tiger at the moment.
 
 Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages from different threads / forked processes ending up in the wrong listening queue making it very complicated to make sure your validations are working as expected in different timing situations.
-
-==== Custom Tiger Failsafe Provider - Experimental
-
-As an alternative to the driver generation with the tiger-maven-plugin, you can configure the tiger-failsafe-provider which enables the maven-failsafe-plugin to discover cucumber tests and execute them with the tiger framework.
-With provider, you do not need to configure the driver generation with the tiger-maven-plugin.
-
-To activate the tiger failsafe provider you need to add it as a dependency to the failsafe configuration:
-
-[source,xml]
-----
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-failsafe-plugin</artifactId>
-    <version>3.5.3</version>
-    <configuration>
-        <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
-        <!-- OPTIONAL - these properties are already set to these default values. You only need to include them if you
-        want to change the default value -->
-        <systemPropertyVariables>
-            <tiger.features>src/test/resources/features</tiger.features>
-            <tiger.filter.tags>not @Ignore</tiger.filter.tags>
-            <tiger.glue>de.gematik.test.tiger.glue</tiger.glue>
-            <tiger.plugin>io.cucumber.core.plugin.TigerSerenityReporterPlugin</tiger.plugin>
-        </systemPropertyVariables>
-    </configuration>
-    <dependencies>
-        <dependency>
-            <!-- by adding the failsafe provider as a dependency, it will be used when the failsafe plugin executes -->
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-failsafe-provider</artifactId>
-            <version>3.7.7-SNAPSHOT</version>
-            <!-- OPTIONAL if there is a dependency on your classpath bringing the groovy-xml library transitively, you need to
-            exclude it, so that there are no conflicts in the loaded versions -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.groovy</groupId>
-                    <artifactId>groovy-xml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-    </dependencies>
-    <executions>
-        <execution>
-            <goals>
-                <goal>integration-test</goal>
-                <goal>verify</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
-----
 
 [#_example_project]
 === Example project

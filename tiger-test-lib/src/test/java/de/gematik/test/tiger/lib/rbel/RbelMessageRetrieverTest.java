@@ -926,8 +926,8 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
     assertThat(assertionError.getMessage())
         .containsAnyOf(
-            "$.regStat: does not have a value in the enumeration",
-            "$.regStat: hat keinen Wert in der Aufzählung")
+            "/regStat: does not have a value in the enumeration",
+            "/regStat: hat keinen Wert in der Aufzählung")
         .containsAnyOf(
             "required property 'foobar' not found",
             "erforderliche Eigenschaft 'foobar' nicht gefunden");

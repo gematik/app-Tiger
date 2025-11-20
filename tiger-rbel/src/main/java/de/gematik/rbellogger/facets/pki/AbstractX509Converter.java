@@ -40,7 +40,12 @@ import org.bouncycastle.asn1.x509.Extension;
  */
 @Slf4j
 @ConverterInfo(onlyActivateFor = "OCSP")
-public abstract class AbstractX509Converter extends RbelConverterPlugin {
+public abstract class AbstractX509Converter extends RbelConverterPlugin implements BinaryConverter {
+
+  @Override
+  public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
+    BinaryConverter.consumeElement(this, element, context);
+  }
 
   @SneakyThrows
   public RbelElement parseExtension(

@@ -20,12 +20,19 @@
  */
 package de.gematik.test.tiger.lib.httpclient;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.test.tiger.glue.TigerParameterTypeDefinitions.tigerResolvedString;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
+import com.github.tomakehurst.wiremock.common.FileSource;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.extension.Parameters;
+import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
+import com.github.tomakehurst.wiremock.http.Request;
+import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
@@ -50,18 +57,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.junit.jupiter.MockServerExtension;
 
 /**
  * Performs all tests as defined in HttpGlueCodeTest.feature as unit tests so that the coverage of
  * the glue code is also added to sonar. Cucumber does some bytebuddy instrumentation magic with the
  * glue code so by running the feature file as test, no coverage is reported for the glue code.
  */
-@ExtendWith(MockServerExtension.class)
 @Slf4j
 public class TestHttpClientSteps {
 
@@ -194,28 +197,34 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void simpleGetRequestNonBlocking(MockServerClient client) {
+  void simpleGetRequestNonBlocking() {
     AtomicBoolean blockResponse = new AtomicBoolean(true);
-    client
-        .when(request().withPath("/blockUntilRelease").withMethod("GET"))
-        .respond(
-            req -> {
-              log.info("Received request to /blockUntilRelease");
-              await().until(() -> !blockResponse.get());
-              log.info("Received release for /blockUntilRelease");
-              return response().withStatusCode(200);
-            });
-    httpGlueCode.sendEmptyRequestNonBlocking(
-        Method.GET, createAddress("http://localhost:" + client.getPort() + "/blockUntilRelease"));
-    // this method returns BEFORE response is returned, so we now can release the response in the
-    // server
-    log.info("Sent request to /blockUntilRelease, now unblocking");
-    blockResponse.set(false);
-    rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches(
-        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "GET");
-    tigerGlue.tgrAssertMatches(
-        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/blockUntilRelease");
+
+    WireMockServer server =
+        new WireMockServer(
+            WireMockConfiguration.options()
+                .dynamicPort()
+                .extensions(new CustomBlockingTransformer(blockResponse)));
+
+    try {
+      server.start();
+      server.stubFor(
+          get(urlEqualTo("/blockUntilRelease"))
+              .willReturn(aResponse().withTransformers("block-until-atomic").withStatus(200)));
+      httpGlueCode.sendEmptyRequestNonBlocking(
+          Method.GET, createAddress("http://localhost:" + server.port() + "/blockUntilRelease"));
+
+      log.info("Sent request to /blockUntilRelease, now unblocking");
+      blockResponse.set(false);
+      rbelValidatorGlueCode.findLastRequestToPath(".*");
+      rbelValidatorGlueCode.currentResponseMessageAttributeMatches("$.responseCode", "200");
+      tigerGlue.tgrAssertMatches(
+          tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "GET");
+      tigerGlue.tgrAssertMatches(
+          tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/blockUntilRelease");
+    } finally {
+      server.stop();
+    }
   }
 
   @Test
@@ -470,5 +479,34 @@ public class TestHttpClientSteps {
 
   private static URI createAddress(String urlString) {
     return URI.create(urlString);
+  }
+
+  class CustomBlockingTransformer extends ResponseDefinitionTransformer {
+    private final AtomicBoolean blockResponse;
+
+    public CustomBlockingTransformer(AtomicBoolean blockResponse) {
+      this.blockResponse = blockResponse;
+    }
+
+    @Override
+    public ResponseDefinition transform(
+        Request request,
+        ResponseDefinition responseDefinition,
+        FileSource files,
+        Parameters parameters) {
+      await().until(() -> !blockResponse.get());
+
+      return ResponseDefinitionBuilder.like(responseDefinition).build();
+    }
+
+    @Override
+    public String getName() {
+      return "block-until-atomic";
+    }
+
+    @Override
+    public boolean applyGlobally() {
+      return false;
+    }
   }
 }

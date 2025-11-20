@@ -27,6 +27,7 @@ import static io.cucumber.junit.platform.engine.Constants.JUNIT_PLATFORM_SHORT_N
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.TigerInitializer;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.platform.engine.ConfigurationParameters;
@@ -44,7 +45,11 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
 
   @Override
   public void launcherDiscoveryStarted(LauncherDiscoveryRequest request) {
-    TigerGlobalConfiguration.initialize();
+    if (!DetectTigerTestsKt.isATigerTest(request)) {
+      return;
+    }
+    var initializer = new TigerInitializer();
+    initializer.runWithSafelyInitialized(() -> {});
     backupInitialConfigParameters(request.getConfigurationParameters());
     forceDryRun();
     setExampleNamingStrategy();

@@ -30,6 +30,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.reflections.Reflections;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -45,7 +46,26 @@ public class TigerJexlExecutor {
 
   static {
     NAMESPACE_MAP.put(null, InlineJexlToolbox.class);
+    registerAdditionalInlineMethods();
     CONTEXT_DECORATORS.add(TigerJexlExecutor::tigerJexlMapDecorator);
+  }
+
+  public static void initialize() {
+    // Intentionally left empty.
+    // When called, we force the static block to be executed and initialize what it needs to be
+    // initialized.
+    // multiple calls are idempotent.
+  }
+
+  private static void registerAdditionalInlineMethods() {
+    var annotatedTypes =
+        new Reflections("de.gematik.test.tiger.common.jexl")
+            .getTypesAnnotatedWith(InlineJexlMethods.class);
+    annotatedTypes.forEach(
+        type -> {
+          var namespacePrefix = type.getAnnotation(InlineJexlMethods.class).namespacePrefix();
+          NAMESPACE_MAP.put(namespacePrefix, type);
+        });
   }
 
   public static boolean matchesAsJexlExpression(Object element, String jexlExpression) {

@@ -1,5 +1,6 @@
 ktor:
   application:
+    id: "tiger-httpbin"
     modules:
       - de.gematik.test.tiger.ApplicationKt.module
   deployment:

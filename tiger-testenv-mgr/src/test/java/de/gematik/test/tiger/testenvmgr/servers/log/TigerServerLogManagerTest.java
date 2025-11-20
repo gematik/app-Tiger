@@ -81,21 +81,20 @@ class TigerServerLogManagerTest {
             externalJarServer:
               type: externalJar
               source:
-                - local:winstone.jar
+                - local:tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               logFile: target/serverLogs/test1.log
               externalJarOptions:
                 workingDir: target
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
+                  - "-port=${free.port.0}"
           """)
   @Test
   void testCheckAddAppendersEnabledLog_OK() throws Exception {
     assertThat(new File("target/serverLogs/test1.log"))
         .content()
-        .contains("Winstone Servlet Engine ");
+        .contains("tiger-httpbin - Application started in");
   }
 
   @TigerTest(
@@ -106,7 +105,7 @@ class TigerServerLogManagerTest {
             externalJarServer:
               type: externalJar
               source:
-                - local:winstone.jar
+                - local:tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               logFile: target/serverLogs/test2.log
@@ -114,8 +113,7 @@ class TigerServerLogManagerTest {
                 activateLogs: false
                 workingDir: target
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
+                  - "-port=${free.port.0}"
           """)
   @Test
   void testCheckAddAppendersDisabledLog_OK() {
@@ -130,7 +128,7 @@ class TigerServerLogManagerTest {
             externalJarServer:
               type: externalJar
               source:
-                - local:winstone.jar
+                - local:tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               logFile: target/serverLogs/test3.log
@@ -138,14 +136,13 @@ class TigerServerLogManagerTest {
                 activateWorkflowLogs: false
                 workingDir: target
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
+                  - "-port=${free.port.0}"
           """)
   @Test
   void testCheckAddAppendersDisabledOnlyWorkflowUiLog_OK() {
     assertThat(new File("target/serverLogs/test3.log"))
         .content()
-        .contains("Winstone Servlet Engine ");
+        .contains("tiger-httpbin - Application started in");
   }
 
   @TigerTest(
@@ -156,7 +153,7 @@ class TigerServerLogManagerTest {
             externalJarServer:
               type: externalJar
               source:
-                - local:winstone.jar
+                - local:tiger-httpbin.jar
               healthcheckUrl: http://127.0.0.1:${free.port.0}
               healthcheckReturnCode: 200
               logFile: target/serverLogs/test4.log
@@ -165,8 +162,7 @@ class TigerServerLogManagerTest {
                 activateWorkflowLogs: true
                 workingDir: target
                 arguments:
-                  - "--httpPort=${free.port.0}"
-                  - "--webroot=."
+                  - "-port=${free.port.0}"
           """)
   @Test
   void testCheckAddAppendersDisabledAllButOnlyWorkflowUiLog_OK() {

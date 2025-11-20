@@ -11,13 +11,11 @@ servers:
     hostname: testExternalJarMVP
     type: externalJar
     source:
-      - local:winstone.jar
+      - local:tiger-httpbin.jar
     startupTimeoutSec: 8
-    healthcheckUrl: http://127.0.0.1:${free.port.0}
+    healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
     healthcheckReturnCode: 200
     externalJarOptions:
       workingDir: target
       arguments:
-        - --httpPort=${free.port.0}
-        - --webroot=.
-
+        - -port=${free.port.0}

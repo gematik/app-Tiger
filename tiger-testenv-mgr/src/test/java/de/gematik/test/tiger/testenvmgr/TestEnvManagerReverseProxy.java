@@ -39,7 +39,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
            servers:
-             testWinstone2:
+             testHttpbin2:
                type: externalJar
                healthcheckUrl: http://127.0.0.1:${free.port.0}
                healthcheckReturnCode: 200
@@ -47,27 +47,27 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                  - http://localhost:${wiremock.port}/download
                externalJarOptions:
                  arguments:
-                   - --httpPort=${free.port.0}
-                   - --webroot=.
+                   - -port=${free.port.0}
              reverseproxy1:
                type: tigerProxy
                tigerProxyConfiguration:
                  adminPort: ${free.port.2}
-                 proxiedServer: testWinstone2
+                 proxiedServer: testHttpbin2
                  proxyPort: ${free.port.3}
           """)
   void testReverseProxy() {
     final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
-                    + TigerGlobalConfiguration.readStringOptional("free.port.3").get())
+                    + TigerGlobalConfiguration.readStringOptional("free.port.3").get()
+                    + "/html")
             .asString();
     assertThat(httpResponse.getBody().trim())
         .withFailMessage(
             MessageFormat.format(
-                "Expected to receive folder index page from Winstone server, but got HTTP {0} with"
+                "Expected to receive index page from httpbin server, but got HTTP {0} with"
                     + " body \n"
-                    + "'{1}'",
+                    + "''{1}''",
                 httpResponse.getStatus(), httpResponse.getBody()))
         .startsWith("<!DOCTYPE html>")
         .endsWith("</html>");
@@ -82,18 +82,20 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
     final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
-                    + TigerGlobalConfiguration.readStringOptional("free.port.2").get())
+                    + TigerGlobalConfiguration.readStringOptional("free.port.2").get()
+                    + "/html")
             .asString();
+
     assertThat(httpResponse.getBody().trim())
         .withFailMessage(
             MessageFormat.format(
-                "Expected to receive folder index page from Winstone server, but got HTTP {0} with"
+                "Expected to receive folder html page from httpbin server, but got HTTP {0} with"
                     + " body \n"
-                    + "{1}",
+                    + "''{1}''",
                 httpResponse.getStatus(), httpResponse.getBody()))
         .startsWith("<!DOCTYPE html>")
         .endsWith("</html>")
-        .contains("<h1 class=\"title\">Directory:");
+        .contains("<h1>Herman Melville - Moby-Dick</h1>");
   }
 
   @Test
@@ -101,22 +103,21 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
           servers:
-            testWinstone2:
+            testHttpbin2:
               type: externalJar
               source:
                 - http://localhost:${wiremock.port}/download
-              healthcheckUrl: http://127.0.0.1:${free.port.0}/target
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
               healthcheckReturnCode: 200
               externalJarOptions:
                 workingDir: target/
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=..
+                  - -port=${free.port.0}
             reverseproxy1:
               type: tigerProxy
               tigerProxyConfiguration:
                 adminPort: ${free.port.2}
-                proxiedServer: testWinstone2
+                proxiedServer: testHttpbin2
                 proxyPort: ${free.port.3}
           """)
   void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
@@ -125,7 +126,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                 "http://127.0.0.1:"
                     + TigerGlobalConfiguration.readStringOptional("free.port.3").get())
             .asString();
-    assertThat(httpResponse.getBody()).contains("<title>Directory: /</title>");
+    assertThat(httpResponse.getBody()).contains("Hello World!!!");
   }
 
   @Test
@@ -133,7 +134,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
           servers:
-            testWinstone2:
+            testHttpbin2:
               type: externalJar
               source:
                 - http://localhost:${wiremock.port}/download
@@ -141,8 +142,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               healthcheckReturnCode: 200
               externalJarOptions:
                 arguments:
-                  - --httpPort=${free.port.0}
-                  - --webroot=..
+                  - -port=${free.port.0}
             proxykon2:
               type: tigerProxy
               active: true
