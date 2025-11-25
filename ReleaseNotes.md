@@ -1,6 +1,19 @@
 # Changelog Tiger Test platform
 
-# Release 4.1.2
+# Release 4.1.8
+
+## Features
+
+* TGR-1941: added support for defining custom callbacks that get called on specific events during the tiger framework
+  startup.
+* TGR-1978: remove unused dependency
+* TGR-1930: Added Websocket-Support to the HTTP-Proxy. Upgrade-message are correctly recognized and parsed.
+
+## Bugfixes
+
+* TGR-1973: Bugfix for slow message propagation to downstream proxies in mesh setups.
+
+# Release 4.1.7
 
 ## Features
 
@@ -39,9 +52,10 @@ package de.gematik.test.tiger.common.jexl;
 
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
-    public String testMethod() {
-        return "test";
-    }
+
+  public String testMethod() {
+    return "test";
+  }
 }
 ```
 
@@ -1030,8 +1044,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

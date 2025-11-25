@@ -22,13 +22,13 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.7</version>
+        <version>4.1.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -135,6 +135,11 @@
             <artifactId>bctls-jdk18on</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+        <dependency>
             <groupId>org.pcap4j</groupId>
             <artifactId>pcap4j-core</artifactId>
             <version>1.8.2</version>
@@ -187,7 +192,6 @@
             <artifactId>httpclient5</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- used to wait for remote tiger proxy to becom eonline -->
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
@@ -234,9 +238,7 @@
                             <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>
-                                        ${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist
-                                    </directory>
+                                    <directory>${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist</directory>
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>
@@ -308,8 +310,7 @@
                     <rerunFailingTestsCount>2</rerunFailingTestsCount>
                     <argLine>-Djdk.httpclient.allowRestrictedHeaders=host
                         -javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar
-                        ${surefireJacocoAgent}
-                    </argLine>
+                        ${surefireJacocoAgent}</argLine>
                 </configuration>
             </plugin>
         </plugins>

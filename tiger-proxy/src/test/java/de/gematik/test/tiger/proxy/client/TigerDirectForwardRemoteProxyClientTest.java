@@ -80,7 +80,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
         serverSocket -> {
           final BufferedReader reader =
               new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
-          reader.readLine();
+          log.info("Server received request: '{}'", reader.readLine());
         },
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(tigerRemoteProxyClient.get().getRbelMessages()).hasSize(1);

@@ -149,7 +149,7 @@ public abstract class AbstractNonHttpTest {
                 SocketAddress clientAddress,
                 RbelMessageKind messageKind) {
               log.info(
-                  "ports are {} and {}",
+                  "ports are server: {} and client: {}",
                   ((InetSocketAddress) serverAddress).getPort(),
                   ((InetSocketAddress) clientAddress).getPort());
               // with new direct connection to remote server, there is no longer

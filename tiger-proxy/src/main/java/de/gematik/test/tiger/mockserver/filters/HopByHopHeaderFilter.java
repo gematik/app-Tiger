@@ -26,6 +26,7 @@ import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import lombok.val;
 
 /*
  * @author jamesdbloom
@@ -44,11 +45,17 @@ public class HopByHopHeaderFilter {
           "proxy-authenticate",
           "upgrade");
 
+  private static final List<String> websocketHandshakeHeaders = List.of("connection", "upgrade");
+
   public HttpRequest onRequest(HttpRequest request) {
     if (request != null) {
+      val isWebsocketHandshakeRequest = request.isWebsocketHandshake();
       Headers headers = new Headers();
       for (Header header : request.getHeaderList()) {
-        if (!requestHeadersToRemove.contains(header.getName().toLowerCase(Locale.ENGLISH))) {
+        val lowerCaseHeaderName = header.getName().toLowerCase(Locale.ENGLISH);
+        if (!requestHeadersToRemove.contains(lowerCaseHeaderName)
+            || (isWebsocketHandshakeRequest
+                && websocketHandshakeHeaders.contains(lowerCaseHeaderName))) {
           headers.withEntry(header);
         }
       }

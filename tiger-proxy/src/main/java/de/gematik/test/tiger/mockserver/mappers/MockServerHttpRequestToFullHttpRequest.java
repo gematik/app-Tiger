@@ -22,8 +22,6 @@ package de.gematik.test.tiger.mockserver.mappers;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpHeaderValues.*;
-import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
-import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
@@ -142,11 +140,6 @@ public class MockServerHttpRequestToFullHttpRequest {
     }
     if (request.content().readableBytes() > 0) {
       request.headers().set(CONTENT_LENGTH, request.content().readableBytes());
-    }
-    if (isKeepAlive(request)) {
-      request.headers().set(CONNECTION, KEEP_ALIVE);
-    } else {
-      request.headers().set(CONNECTION, CLOSE);
     }
   }
 }

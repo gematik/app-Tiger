@@ -24,6 +24,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.Data;
+import lombok.val;
 
 /*
  * @author jamesdbloom
@@ -32,6 +33,12 @@ import lombok.Data;
 @Data
 public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonToString
     implements Message {
+
+  private static final String CONNECTION_HEADER_NAME = "connection";
+  private static final String UPGRADE_HEADER_NAME = "upgrade";
+  private static final String CONNECTION_HEADER_UPGRADE_VALUE = "upgrade";
+  private static final String UPGRADE_HEADER_WEBSOCKET_VALUE = "websocket";
+
   private byte[] body = null;
 
   private CompletableFuture<RbelElement> parsedMessageFuture;
@@ -55,4 +62,12 @@ public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonT
   public abstract String getFirstHeader(String name);
 
   public abstract T removeHeader(String name);
+
+  // compare https://datatracker.ietf.org/doc/html/rfc6455#section-1.2
+  public boolean isWebsocketHandshake() {
+    val connectionHeader = getHeaders().streamHeaderValuesForField(CONNECTION_HEADER_NAME);
+    val upgradeHeader = getHeaders().streamHeaderValuesForField(UPGRADE_HEADER_NAME);
+    return connectionHeader.anyMatch(v -> v.equalsIgnoreCase(CONNECTION_HEADER_UPGRADE_VALUE))
+        && upgradeHeader.anyMatch(v -> v.equalsIgnoreCase(UPGRADE_HEADER_WEBSOCKET_VALUE));
+  }
 }

@@ -24,7 +24,7 @@ import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.httpclient.HttpClientInitializer.CONNECTION_ERROR_HANDLER_NAME;
-import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
+import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.LOCAL_HOST_HEADERS;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
@@ -34,7 +34,6 @@ import static java.util.Collections.unmodifiableSet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
@@ -95,8 +94,8 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private void performConnectionToRemote(ChannelHandlerContext ctx) {
     var incomingChannel = ctx.channel();
     if (incomingChannel.attr(OUTGOING_CHANNEL).get() != null
-        || configuration.binaryProxyListener() == null) {
-      contextLogger.logStage(ctx, "already connected to remote server or no binary proxy listener");
+        || configuration.directForwarding() == null) {
+      contextLogger.logStage(ctx, "already connected to remote server or no direct forwarding set");
       return;
     }
     initializeTlsEnabledPromise(incomingChannel);
@@ -104,8 +103,8 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   }
 
   private void initializeTlsEnabledPromise(Channel channel) {
-    // tlsEnabled flag is only relevant for binary mode
-    if (configuration.binaryProxyListener() != null) {
+    // tlsEnabled flag is only relevant for direct forwarding mode
+    if (configuration.directForwarding() != null) {
       tlsEnabled = channel.newPromise();
     }
   }
@@ -164,14 +163,16 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
                                 .getDirectReverseProxy()
                                 .isIgnoreConnectionErrors())
                     .ifPresent(
-                        handler ->
-                            log.error("Failed to connect to {}", remoteAddress, future.cause()));
+                        handler -> {
+                          log.error("Failed to connect to {}", remoteAddress, future.cause());
+                          throw new RuntimeException(future.cause());
+                        });
               }
             });
   }
 
   public void activateSslOnOutgoingChannel(Channel outgoingChannel) {
-    var remoteAddress = outgoingChannel.attr(NettyHttpClient.REMOTE_SOCKET).get();
+    var remoteAddress = outgoingChannel.attr(REMOTE_SOCKET).get();
     SslHandler sslHandler =
         actionHandler
             .getHttpClient()
@@ -240,17 +241,20 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       contextLogger.logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
     } else {
-      if (configuration.binaryProxyListener() == null) {
+      if (configuration.directForwarding() != null) {
+        contextLogger.logStage(ctx, "adding binary decoder");
+        switchToBinary(ctx, msg);
+      } else {
         if (isHttp(msg)) {
           contextLogger.logStage(ctx, "adding HTTP decoders");
           switchToHttp(ctx, msg);
         } else if (isProxyConnected(msg)) {
           contextLogger.logStage(ctx, "setting proxy connected");
           switchToProxyConnected(ctx, msg);
+        } else {
+          contextLogger.logStage(ctx, "adding binary decoder");
+          switchToBinary(ctx, msg);
         }
-      } else {
-        contextLogger.logStage(ctx, "adding binary decoder");
-        switchToBinary(ctx, msg);
       }
     }
   }
@@ -316,6 +320,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
             isSslEnabledUpstream(ctx.channel()),
             SniHandler.retrieveClientCertificates(ctx),
             ctx.channel().localAddress()));
+    addLastIfNotPresent(pipeline, new MessagePostProcessorAdapter());
     addLastIfNotPresent(
         pipeline, new HttpRequestHandler(configuration, server, httpState, actionHandler));
     pipeline.remove(this);

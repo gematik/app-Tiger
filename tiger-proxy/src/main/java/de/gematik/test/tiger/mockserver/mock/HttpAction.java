@@ -77,7 +77,7 @@ public class HttpAction {
       final HttpForwardActionResult responseFuture =
           actionHandler
               .getHttpForwardActionHandler()
-              .sendRequest(overriddenRequest, incomingChannel, null, null);
+              .sendRequest(overriddenRequest, incomingChannel);
 
       actionHandler.executeAfterForwardActionResponse(
           responseFuture,
@@ -112,10 +112,10 @@ public class HttpAction {
   }
 
   private HttpRequest getOverridenRequest(HttpRequest request) {
-    HttpRequest overriddenRequest = request;
     if (expectationForwardAndResponseCallback != null) {
-      overriddenRequest = expectationForwardAndResponseCallback.handle(request);
+      return expectationForwardAndResponseCallback.handle(request);
+    } else {
+      return request;
     }
-    return overriddenRequest;
   }
 }

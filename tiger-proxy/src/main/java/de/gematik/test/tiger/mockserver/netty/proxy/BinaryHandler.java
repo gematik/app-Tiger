@@ -28,6 +28,7 @@ import static de.gematik.test.tiger.mockserver.netty.unification.PortUnification
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -65,7 +66,20 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
-    if (remoteAddress != null) {
+    if (ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get() != null) {
+      binaryModifierApplier
+          .applyModifierPlugins(binaryRequest, ctx, RbelMessageKind.REQUEST)
+          .forEach(
+              msg ->
+                  sendMessage(
+                      BinaryRequestInfo.builder()
+                          .incomingChannel(ctx.channel())
+                          .outgoingChannel(
+                              ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get())
+                          .remoteServerAddress(remoteAddress)
+                          .dataToSend(msg)
+                          .build()));
+    } else if (remoteAddress != null) {
       binaryModifierApplier
           .applyModifierPlugins(binaryRequest, ctx, RbelMessageKind.REQUEST)
           .forEach(msg -> sendMessage(new BinaryRequestInfo(ctx.channel(), msg, remoteAddress)));
@@ -86,29 +100,33 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   }
 
   private void sendMessage(BinaryRequestInfo binaryRequestInfo) {
-    httpClient
-        .sendRequest(
-            binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()))
-        .exceptionally(
-            throwable -> {
-              binaryExchangeCallback.propagateExceptionMessageSafe(
-                  throwable,
-                  RbelSocketAddress.create(binaryRequestInfo.getRemoteServerAddress()),
-                  RbelSocketAddress.create(binaryRequestInfo.getIncomingChannel().remoteAddress()));
-              return null;
-            });
+    /*
+     * see BinaryBridgeHandler.channelRead0
+     */
+    synchronized (binaryExchangeCallback) {
+      httpClient
+          .sendRequest(
+              binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()))
+          .exceptionally(
+              throwable -> {
+                binaryExchangeCallback.propagateExceptionMessageSafe(
+                    throwable,
+                    RbelSocketAddress.create(binaryRequestInfo.getRemoteServerAddress()),
+                    RbelSocketAddress.create(
+                        binaryRequestInfo.getIncomingChannel().remoteAddress()));
+                return null;
+              });
 
-    processNotWaitingForResponse(binaryRequestInfo);
+      processNotWaitingForResponse(binaryRequestInfo);
+    }
   }
 
   private void processNotWaitingForResponse(BinaryRequestInfo binaryRequestInfo) {
-    if (binaryExchangeCallback != null) {
-      binaryExchangeCallback.onProxy(
-          binaryRequestInfo.getDataToSend(),
-          binaryRequestInfo.getRemoteServerAddress(),
-          binaryRequestInfo.getIncomingChannel().remoteAddress(),
-          RbelMessageKind.REQUEST);
-    }
+    binaryExchangeCallback.onProxy(
+        binaryRequestInfo.getDataToSend(),
+        binaryRequestInfo.retrieveActualRemoteAddress(),
+        binaryRequestInfo.getIncomingChannel().remoteAddress(),
+        RbelMessageKind.REQUEST);
   }
 
   @Override

@@ -185,6 +185,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
     mockServerConfiguration.exceptionHandlingCallback(
         getMockServerToRbelConverter().exceptionCallback());
+    mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -206,7 +207,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private MockServer spawnDirectInverseTigerProxy(MockServerConfiguration mockServerConfiguration) {
-    mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (mockServerConfiguration.proxyConfiguration() != null) {
       throw new TigerProxyStartupException(
           "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy"

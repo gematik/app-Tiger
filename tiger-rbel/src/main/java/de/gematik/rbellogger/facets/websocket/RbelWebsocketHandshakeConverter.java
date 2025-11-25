@@ -29,9 +29,11 @@ import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.http.*;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 @ConverterInfo(onlyActivateFor = "websocket")
+@Slf4j
 public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
 
   @Override
@@ -45,6 +47,7 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
     if (httpMessageFacet.isEmpty()) {
       return;
     }
+    converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
     if (rbelElement.hasFacet(RbelHttpRequestFacet.class)
         && hasWebsocketHandshakeHeaders(httpMessageFacet)) {
       rbelElement.addFacet(new RbelWebsocketHandshakeFacet());
@@ -66,17 +69,19 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
         .map(RbelHttpMessageFacet::getHeader)
         .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
         .filter(
-            map ->
-                map.getCaseInsensitiveMatches("Upgrade")
+            headers ->
+                headers
+                    .getCaseInsensitiveMatches("upgrade")
                     .map(RbelElement::getRawStringContent)
                     .filter(Objects::nonNull)
-                    .anyMatch(header -> header.contains("websocket")))
+                    .anyMatch(header -> header.equalsIgnoreCase("websocket")))
         .filter(
-            map ->
-                map.getCaseInsensitiveMatches("Connection")
+            values ->
+                values
+                    .getCaseInsensitiveMatches("connection")
                     .map(RbelElement::getRawStringContent)
                     .filter(Objects::nonNull)
-                    .anyMatch(header -> header.contains("upgrade")))
+                    .anyMatch(header -> header.equalsIgnoreCase("upgrade")))
         .isPresent();
   }
 }

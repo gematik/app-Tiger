@@ -20,7 +20,8 @@
  */
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
-import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
+import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -39,7 +40,6 @@ import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.ExecutionException;
@@ -55,9 +55,6 @@ import lombok.val;
 @SuppressWarnings({"rawtypes", "FieldMayBeFinal"})
 @Slf4j
 public class HttpActionHandler {
-
-  public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
-      AttributeKey.valueOf("REMOTE_SOCKET");
 
   private final MockServerConfiguration configuration;
   private final HttpState httpStateHandler;
@@ -111,38 +108,46 @@ public class HttpActionHandler {
                 remoteAddress);
         scheduler.submit(
             responseFuture,
-            () -> {
-              try {
-                HttpResponse response =
-                    responseFuture
-                        .getHttpResponse()
-                        .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
-                if (response == null) {
-                  response = notFoundResponse();
-                }
-                log.debug(
-                    "returning response:{}\nfor forwarded request"
-                        + NEW_LINE
-                        + NEW_LINE
-                        + " in json:{}",
-                    request,
-                    response);
-                responseWriter.writeResponse(request, response);
-              } catch (SocketCommunicationException
-                  | InterruptedException
-                  | ExecutionException
-                  | TimeoutException e) {
-                if (e instanceof TimeoutException) {
-                  Thread.currentThread().interrupt();
-                }
-
-                closeChannelWithErrorMessage(responseWriter, request, e, remoteAddress);
-              }
-            },
+            () -> handleResponse(request, responseWriter, responseFuture, remoteAddress),
             synchronous,
             throwable -> throwable.getMessage().contains("Connection refused"));
       }
     }
+  }
+
+  private void handleResponse(
+      HttpRequest request,
+      NettyResponseWriter responseWriter,
+      HttpForwardActionResult responseFuture,
+      InetSocketAddress remoteAddress) {
+    try {
+      returnResponse(request, responseWriter, responseFuture);
+    } catch (SocketCommunicationException
+        | InterruptedException
+        | ExecutionException
+        | TimeoutException e) {
+      if (e instanceof TimeoutException) {
+        Thread.currentThread().interrupt();
+      }
+
+      closeChannelWithErrorMessage(responseWriter, request, e, remoteAddress);
+    }
+  }
+
+  private HttpResponse returnResponse(
+      HttpRequest request,
+      NettyResponseWriter responseWriter,
+      HttpForwardActionResult responseFuture)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    HttpResponse response =
+        responseFuture
+            .getHttpResponse()
+            .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
+    if (response == null) {
+      response = notFoundResponse();
+    }
+    responseWriter.writeResponse(request, response);
+    return response;
   }
 
   public void executeAfterForwardActionResponse(
@@ -162,23 +167,14 @@ public class HttpActionHandler {
         responseFuture,
         () -> {
           try {
-            HttpResponse response =
-                responseFuture
-                    .getHttpResponse()
-                    .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
-            responseWriter.writeResponse(request, response);
-            log.atDebug()
+            HttpResponse response = returnResponse(request, responseWriter, responseFuture);
+            log.atTrace()
                 .addArgument(response)
                 .addArgument(responseFuture::getHttpRequest)
                 .addArgument(action)
                 .addArgument(action::getExpectationId)
                 .log(
-                    "returning response: {} for forwarded request"
-                        + NEW_LINE
-                        + NEW_LINE
-                        + " in json: {}"
-                        + NEW_LINE
-                        + NEW_LINE
+                    "returning response: {} for forwarded request in json: {}"
                         + "\nfor action: {} from expectation: {}");
           } catch (RuntimeException
               | InterruptedException
@@ -200,10 +196,10 @@ public class HttpActionHandler {
       final HttpRequest request) {
     try {
       responseWriter.writeResponse(request, response);
-      log.debug(
-          "returning response: {} for forwarded request" + NEW_LINE + NEW_LINE + " in json:{}",
-          response,
-          request);
+      log.atDebug()
+          .addArgument(response)
+          .addArgument(request)
+          .log("returning response: {} for forwarded request in json:{}");
     } catch (Exception exception) {
       log.error("Error while returning response", exception);
       closeChannelWithErrorMessage(responseWriter, request, exception);
@@ -225,11 +221,11 @@ public class HttpActionHandler {
       HttpRequest request,
       Throwable error,
       InetSocketAddress... remoteAddress) {
-    log.debug(
-        "error: {} handling request: {} returning response: {}",
-        error,
-        request,
-        notFoundResponse());
+    log.atDebug()
+        .addArgument(error)
+        .addArgument(request)
+        .addArgument(notFoundResponse())
+        .log("error: {} handling request: {} returning response: {}");
     val ctx = responseWriter.getCtx();
     if (configuration.exceptionHandlingCallback() != null && ctx.channel().isOpen()) {
       if (error instanceof TigerProxyRoutingException routingException) {
@@ -255,10 +251,14 @@ public class HttpActionHandler {
   }
 
   public static InetSocketAddress getRemoteAddress(final ChannelHandlerContext ctx) {
-    if (ctx != null && ctx.channel() != null && ctx.channel().attr(REMOTE_SOCKET) != null) {
-      var remoteSocket = ctx.channel().attr(REMOTE_SOCKET).get();
-      final SocketAddress localAddress = ctx.channel().localAddress();
-      if (remoteSocket != null) {
+    if (ctx != null && ctx.channel() != null) {
+      val remoteSocket = ctx.channel().attr(REMOTE_SOCKET).get();
+      val outgoingChannel = ctx.channel().attr(OUTGOING_CHANNEL).get();
+      if (outgoingChannel != null
+          && outgoingChannel.remoteAddress() instanceof InetSocketAddress socketAddress) {
+        return socketAddress;
+      } else if (remoteSocket != null) {
+        final SocketAddress localAddress = ctx.channel().localAddress();
         if (remoteSocket.getAddress() != null
             && remoteSocket.getAddress().isLoopbackAddress()
             && localAddress instanceof InetSocketAddress localInetSocketAddress) {
@@ -270,9 +270,8 @@ public class HttpActionHandler {
               .orElse(remoteSocket);
         }
       }
-      return remoteSocket;
-    } else {
-      return null;
     }
+
+    return null;
   }
 }

@@ -81,7 +81,6 @@ public class TracingPushService {
         return;
       }
 
-      waitForPreviousMessageFullyProcessed(msg);
       propagateRbelMessage(msg);
     } catch (RuntimeException e) {
       log.error("Error while propagating new Rbel-Message", e);
@@ -194,9 +193,5 @@ public class TracingPushService {
               .build());
       nextPartIndex += partContent.length;
     }
-  }
-
-  private void waitForPreviousMessageFullyProcessed(RbelElement msg) {
-    tigerProxy.getRbelLogger().getRbelConverter().waitForAllElementsBeforeGivenToBeParsed(msg);
   }
 }

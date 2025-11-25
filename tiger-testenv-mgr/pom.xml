@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.7</version>
+        <version>4.1.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-testenv-mgr</artifactId>
@@ -200,7 +200,7 @@
                         <goals>
                             <goal>copy</goal>
                         </goals>
-                        <phase>generate-test-resources</phase>
+                        <phase>pre-integration-test</phase>
                     </execution>
                 </executions>
             </plugin>

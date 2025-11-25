@@ -22,12 +22,12 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>4.1.7</version>
+        <version>4.1.8</version>
         <relativePath>./tiger-bom/pom.xml</relativePath>
     </parent>
     <artifactId>tiger</artifactId>
@@ -35,8 +35,7 @@
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Tiger is a test platform. For more info check our project at GitHub
-        https://github.com/gematik/app-Tiger
-    </description>
+        https://github.com/gematik/app-Tiger</description>
 
     <url>https://github.com/gematik/app-Tiger</url>
     <inceptionYear>2021</inceptionYear>
@@ -98,9 +97,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <mycila.license-maven-plugin.version>5.0.0</mycila.license-maven-plugin.version>
         <skipSurefire>false</skipSurefire>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
@@ -243,8 +240,7 @@
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
-                        -Dfile.encoding=${project.build.sourceEncoding}
-                    </argLine>
+                        -Dfile.encoding=${project.build.sourceEncoding}</argLine>
                     <properties>
                         <property>
                             <name>listener</name>

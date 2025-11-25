@@ -22,10 +22,8 @@ package de.gematik.rbellogger.facets.websocket;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelRequestFacet;
-import de.gematik.rbellogger.data.core.RbelResponseFacet;
-import de.gematik.rbellogger.data.core.RbelRootFacet;
-import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.core.*;
+import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.ByteBuffer;
 import lombok.RequiredArgsConstructor;
@@ -42,17 +40,30 @@ public class RbelWebsocketMessageConverter {
   private int lengthOfExtendedPayloadLength;
 
   public void parseWebsocketMessage() {
-    val fin0Bit = (message.getContent().get(0) & 0b10000000) != 0;
-    val rsv1Bit = (message.getContent().get(0) & 0b01000000) != 0;
-    val rsv2Bit = (message.getContent().get(0) & 0b00100000) != 0;
-    val rsv3Bit = (message.getContent().get(0) & 0b00010000) != 0;
+    boolean fin0Bit = extractByteNumber(message.getContent().get(0), 7) != 0;
+    boolean rsv1Bit = (extractByteNumber(message.getContent().get(0), 6)) != 0;
+    boolean rsv2Bit = (extractByteNumber(message.getContent().get(0), 5)) != 0;
+    boolean rsv3Bit = (extractByteNumber(message.getContent().get(0), 4)) != 0;
     val opcode = message.getContent().get(0) & 0b00001111;
-    masked = (message.getContent().get(1) & 0b10000000) != 0;
-    val payloadLength = message.getContent().get(1) & 0b01111111;
+    masked = (extractByteNumber(message.getContent().get(1), 7)) != 0;
+    int payloadLength = message.getContent().get(1) & 0b01111111;
     lengthOfExtendedPayloadLength = calculateExtendedPayloadLength(payloadLength);
 
     val actualPayloadLength = calculateActualPayloadLength(payloadLength);
     val messageLength = 2 + lengthOfExtendedPayloadLength + (masked ? 4 : 0) + actualPayloadLength;
+    if (messageLength > message.getContent().size()) {
+      message.addFacet(
+          RbelNoteFacet.builder()
+              .value(
+                  "Websocket message length ("
+                      + messageLength
+                      + ") exceeds actual content length ("
+                      + message.getContent().size()
+                      + ")")
+              .style(NoteStyling.ERROR)
+              .build());
+      return;
+    }
     message.setUsedBytes(messageLength);
     val payloadElement = extractPayloadElement();
     val websocketFacet =
@@ -83,6 +94,10 @@ public class RbelWebsocketMessageConverter {
         websocketFacet.getOpcode().getRawContent(),
         actualPayloadLength,
         payloadElement.printTreeStructure());
+  }
+
+  private int extractByteNumber(byte value, int target) {
+    return value & ((1 << target) & 0xff);
   }
 
   private static int calculateExtendedPayloadLength(int payloadLength) {

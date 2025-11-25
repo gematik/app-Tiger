@@ -565,7 +565,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 () ->
                     parsingTasksWaitingForUuid.entries().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().size())))
-            .log("Queueing {} behind {} ({}), currently {} messages waiting ({})");
+            .log(
+                "Queueing {} behind {} ({}), currently {} messages waiting ({}) from {}",
+                remoteProxyUrl);
         parsingTasksWaitingForUuid
             .getOrPutDefault(previousMessageUuid, LinkedList::new)
             .add(parseMessageTask);
@@ -587,7 +589,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             val waitingTasks = parsingTasksWaitingForUuid.get(previousMessageUuid).orElse(null);
             if (waitingTasks != null
                 && waitingTasks.contains(task)
-                && !partiallyReceivedMessageMap.containsKey(previousMessageUuid)) {
+                && !partiallyReceivedMessageMap.containsKey(previousMessageUuid) // not yet arriving
+                && !getRbelLogger()
+                    .getRbelConverter()
+                    .getKnownMessageUuids()
+                    .contains(previousMessageUuid) // not parsing
+                && !removedMessageUuids.contains(previousMessageUuid) // not removed
+            ) {
               removeFromWaitingTasks(previousMessageUuid, task, waitingTasks);
               schedule = true;
             }
@@ -629,20 +637,20 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   private void signalNewCompletedMessage(String uuid) {
     List<Runnable> parsingTasks = new ArrayList<>();
-    log.atDebug()
-        .addArgument(uuid)
-        .addArgument(
-            () ->
-                getRbelLogger()
-                    .getRbelConverter()
-                    .findMessageByUuid(uuid)
-                    .map(RbelElement::getConversionPhase))
-        .log("Signal new completed message {} (Status is {})");
     synchronized (parsingTasksWaitingForUuid) {
       parsingTasksWaitingForUuid
           .get(uuid)
           .ifPresent(
               waitingParsingTasks -> {
+                log.atDebug()
+                    .addArgument(uuid)
+                    .addArgument(
+                        () ->
+                            getRbelLogger()
+                                .getRbelConverter()
+                                .findMessageByUuid(uuid)
+                                .map(RbelElement::getConversionPhase))
+                    .log("Signal new completed message {} (Phase {}) from {}", remoteProxyUrl);
                 if (removedMessageUuids.contains(uuid)) {
                   removedMessageUuids.remove(uuid);
                 } else {
@@ -655,8 +663,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                 parsingTasks.addAll(waitingParsingTasks);
               });
     }
-    log.trace("Submitting {} parsing tasks after completing {}", parsingTasks.size(), uuid);
-    parsingTasks.forEach(meshHandlerPool::submit);
+    if (!parsingTasks.isEmpty()) {
+      log.trace("Submitting {} parsing tasks after completing {}", parsingTasks.size(), uuid);
+      parsingTasks.forEach(meshHandlerPool::submit);
+    }
   }
 
   public void waitForAllParsingTasksToBeFinished() {
