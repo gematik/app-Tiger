@@ -28,6 +28,7 @@ import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
+import de.gematik.test.tiger.mockserver.netty.unification.WebSocketUpgradeHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.channel.*;
@@ -63,6 +64,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   private final ProxyConfiguration proxyConfiguration;
   private final NettySslContextFactory nettySslContextFactory;
   private final BinaryBridgeHandler binaryBridgeHandler;
+  private final MockServerConfiguration mockServerConfiguration;
 
   HttpClientInitializer(
       MockServerConfiguration configuration,
@@ -75,6 +77,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     this.httpClientConnectionHandler = new HttpClientConnectionErrorHandler();
     this.binaryBridgeHandler = new BinaryBridgeHandler(configuration);
     this.nettySslContextFactory = nettySslContextFactory;
+    this.mockServerConfiguration = configuration;
   }
 
   public void whenComplete(BiConsumer<? super HttpProtocol, ? super Throwable> action) {
@@ -167,10 +170,10 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   }
 
   private void configureHttp1Pipeline(ChannelPipeline pipeline) {
-    pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
     pipeline.addLast(new HttpClientCodec());
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
     pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
+    pipeline.addLast(new WebSocketUpgradeHandler(mockServerConfiguration));
     pipeline.addLast(httpClientHandler);
     protocolFuture.complete(HttpProtocol.HTTP_1_1);
   }

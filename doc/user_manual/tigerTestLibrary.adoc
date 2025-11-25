@@ -76,6 +76,57 @@ logging:
     localTigerProxy: TRACE
 ----
 
+=== Registering Lifecycle Callbacks
+When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.
+
+By implementing a Java class which implements the interface `de.gematik.test.tiger.lifecycle.LifecycleCallbacks` you can run custom code before and after each of the mentioned steps. All classes that implement this interface and are located in the package `de.gematik.test.tiger.lifecycle` are automatically registered and their methods will be called on the corresponding event.
+
+Here is an example of a class that will log messages on each callback method:
+
+.ExampleCallback.java
+[source, java]
+----
+package de.gematik.test.tiger.lifecycle;
+
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import java.util.logging.Logger;
+
+public class ExampleCallback implements LifecycleCallbacks {
+  Logger logger = Logger.getLogger(ExampleCallback.class.getName());
+
+  @Override
+  public void beforeReadConfiguration() {
+    logger.info("beforeReadConfiguration");
+  }
+
+  @Override
+  public void afterReadConfiguration() {
+    logger.info("afterReadConfiguration");
+  }
+
+  @Override
+  public void beforeServersStart() {
+    logger.info("beforeServersStart");
+  }
+
+  @Override
+  public void afterServersStart() {
+    logger.info("afterServersStart");
+  }
+
+  @Override
+  public void beforeLocalTigerProxyStart(TigerProxyConfiguration localTigerProxyConfiguration) {
+    logger.info("beforeLocalTigerProxyStart");
+  }
+
+  @Override
+  public void afterLocalTigerProxyStart(TigerProxyConfiguration localTigerProxyConfiguration) {
+    logger.info("afterLocalTigerProxyStart");
+  }
+}
+
+----
+
 [#_cucumber_hooks]
 === Cucumber and Hooks
 

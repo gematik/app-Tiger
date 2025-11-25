@@ -211,4 +211,10 @@ public class HttpResponse extends HttpMessage<HttpResponse> implements Action {
   public Multimap<String, String> getHeaderMultimap() {
     return headers.getMultimap();
   }
+
+  // compare https://datatracker.ietf.org/doc/html/rfc6455#section-1.2
+  @Override
+  public boolean isWebsocketHandshake() {
+    return super.isWebsocketHandshake() && (statusCode == 101);
+  }
 }

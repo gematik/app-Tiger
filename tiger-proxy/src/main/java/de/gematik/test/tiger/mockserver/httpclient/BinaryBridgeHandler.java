@@ -59,16 +59,24 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
-    for (val msgToSend :
-        binaryModifierApplier.applyModifierPlugins(msg, ctx, RbelMessageKind.RESPONSE)) {
-      Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
-          .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
-          .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
-      binaryProxyListener.onProxy(
-          msgToSend,
-          ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
-          ctx.channel().remoteAddress(),
-          RbelMessageKind.RESPONSE);
+    /*
+    The two steps, transmission and onProxy, have to be atomic: onProxy is determining the order of messages in the
+    message log, transmission the physical order. These have to match. Since multiple instances of binaryBridgeHandler
+    could be around we synchronize on the listener, which is unique per tigerProxy.
+    The other location is in BinaryHandler.sendMessage
+     */
+    synchronized (binaryProxyListener) {
+      for (val msgToSend :
+          binaryModifierApplier.applyModifierPlugins(msg, ctx, RbelMessageKind.RESPONSE)) {
+        Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
+            .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
+            .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
+        binaryProxyListener.onProxy(
+            msgToSend,
+            ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
+            ctx.channel().remoteAddress(),
+            RbelMessageKind.RESPONSE);
+      }
     }
   }
 

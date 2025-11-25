@@ -51,6 +51,8 @@ public class NettyHttpClient {
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");
   public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
+  public static final AttributeKey<NettyHttpClient> HTTP_CLIENT =
+      AttributeKey.valueOf("HTTP_CLIENT");
   public static final AttributeKey<CompletableFuture<Message>> RESPONSE_FUTURE =
       AttributeKey.valueOf("RESPONSE_FUTURE");
   public static final AttributeKey<Boolean> ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE =
@@ -112,6 +114,8 @@ public class NettyHttpClient {
             future -> {
               if (future.isSuccess()) {
                 future.channel().attr(INCOMING_CHANNEL).set(requestInfo.getIncomingChannel());
+                requestInfo.getIncomingChannel().attr(HTTP_CLIENT).set(this);
+
                 // ensure if HTTP2 is used then settings have been received from server
                 clientInitializer.whenComplete(
                     (protocol, throwable) -> {
@@ -213,12 +217,10 @@ public class NettyHttpClient {
           (ChannelFutureListener)
               future -> {
                 if (future.isSuccess()) {
-                  log.atDebug().log(
-                      () ->
-                          "sending bytes hex %s to %s"
-                              .formatted(
-                                  ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
-                                  future.channel().attr(REMOTE_SOCKET).get()));
+                  log.atDebug()
+                      .addArgument(() -> ByteBufUtil.hexDump(binaryRequestInfo.getBytes()))
+                      .addArgument(future.channel().attr(REMOTE_SOCKET)::get)
+                      .log(() -> "sending bytes hex {} to {}");
 
                   // send the binary request
                   future
@@ -236,7 +238,6 @@ public class NettyHttpClient {
           .responseFuture(responseFuture)
           .clientInitializer(httpClientInitializer)
           .errorIfChannelClosedWithoutResponse(false)
-          .responseFuture(responseFuture)
           .onReuseListener(onCreateAndReuseListener)
           .onCreationListener(onCreateAndReuseListener)
           .connectToChannel();

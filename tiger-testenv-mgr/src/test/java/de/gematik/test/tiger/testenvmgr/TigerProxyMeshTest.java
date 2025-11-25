@@ -145,6 +145,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .atMost(10, TimeUnit.SECONDS)
         .until(
             () -> {
+              envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
               var localSize =
                   envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size();
               var remoteSize = reverseProxyMessages.size();
@@ -162,28 +163,26 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             .toList();
     assertAndPrintIfFail(
         localTigerMessages.get(0),
-        message -> {
-          assertThat(message)
-              .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
-              .hasStringContentEqualToAtPosition(
-                  "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-              .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy")
-              .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "httpbin")
-              .hasStringContentEqualToAtPosition(
-                  "$.receiver.port", TigerGlobalConfiguration.readString("free.port.0"));
-        });
+        message ->
+            assertThat(message)
+                .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
+                .hasStringContentEqualToAtPosition(
+                    "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+                .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy")
+                .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "httpbin")
+                .hasStringContentEqualToAtPosition(
+                    "$.receiver.port", TigerGlobalConfiguration.readString("free.port.0")));
     assertAndPrintIfFail(
         localTigerMessages.get(1),
-        message -> {
-          assertThat(message)
-              .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
-              .hasStringContentEqualToAtPosition(
-                  "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-              .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseProxy")
-              .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "httpbin")
-              .hasStringContentEqualToAtPosition(
-                  "$.sender.port", TigerGlobalConfiguration.readString("free.port.0"));
-        });
+        message ->
+            assertThat(message)
+                .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
+                .hasStringContentEqualToAtPosition(
+                    "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+                .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseProxy")
+                .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "httpbin")
+                .hasStringContentEqualToAtPosition(
+                    "$.sender.port", TigerGlobalConfiguration.readString("free.port.0")));
 
     waitShortTime();
   }

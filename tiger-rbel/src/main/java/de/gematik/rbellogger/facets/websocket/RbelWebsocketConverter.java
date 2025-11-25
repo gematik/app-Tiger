@@ -51,6 +51,7 @@ public class RbelWebsocketConverter extends RbelConverterPlugin {
         || rbelElement.hasFacet(RbelHttpMessageFacet.class)) {
       return;
     }
+    converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
     // is preceding message websocket or handshake message?
     val previousMessage =
         converter

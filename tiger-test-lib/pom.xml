@@ -22,13 +22,13 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.7</version>
+        <version>4.1.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-test-lib</artifactId>
@@ -59,6 +59,10 @@
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-utils</artifactId>
         </dependency>
         <dependency>
@@ -73,6 +77,10 @@
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.oshai</groupId>
+            <artifactId>kotlin-logging-jvm</artifactId>
         </dependency>
         <dependency>
             <groupId>net.javacrumbs.json-unit</groupId>
@@ -122,6 +130,10 @@
             <artifactId>annotations</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
         </dependency>
@@ -132,6 +144,10 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-commons</artifactId>
         </dependency>
         <!-- even though we don't directly use junit4, we still need the vintage engine
                 because cucumber uses it on its PickleRunner -->
@@ -381,9 +397,7 @@
                                     <filtering>true</filtering>
                                 </resource>
                                 <resource>
-                                    <directory>
-                                        ${project.parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib
-                                    </directory>
+                                    <directory>${project.parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib</directory>
                                     <includes>
                                         <include>HttpGlueCodeTest.feature</include>
                                     </includes>

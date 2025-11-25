@@ -38,7 +38,7 @@ import lombok.experimental.SuperBuilder;
 public class BinaryRequestInfo extends RequestInfo<BinaryMessage> {
   public BinaryRequestInfo(
       Channel incomingChannel, BinaryMessage dataToSend, InetSocketAddress remoteServerAddress) {
-    super(incomingChannel, dataToSend, remoteServerAddress);
+    super(incomingChannel, dataToSend, remoteServerAddress, null);
   }
 
   public byte[] getBytes() {

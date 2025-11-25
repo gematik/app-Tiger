@@ -300,7 +300,7 @@ class ForwardProxyInfoTest {
               type: externalUrl
               dependsUpon: someProxyServer
               source:
-                - http://google.com/foobar
+                - http://badssl/foobar
           """)
   void externalSource_shouldUseForwardProxy(TigerTestEnvMgr envMgr) {
     await()

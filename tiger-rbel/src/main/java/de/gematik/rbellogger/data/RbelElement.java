@@ -43,7 +43,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
 
 @Getter
@@ -56,7 +56,8 @@ public class RbelElement extends RbelPathAble {
 
   private final String uuid;
   private final RbelContent content;
-  private WeakReference<Pair<String, Charset>> rawStringContent = new WeakReference<>(null);
+  private WeakReference<Triple<String, Charset, Integer>> rawStringContent =
+      new WeakReference<>(null);
 
   private final RbelElement parentNode;
   private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
@@ -326,10 +327,14 @@ public class RbelElement extends RbelPathAble {
       return null;
     } else {
       synchronized (content) {
-        Pair<String, Charset> cachedValue = rawStringContent.get();
+        Triple<String, Charset, Integer> cachedValue = rawStringContent.get();
         var elementCharset = getElementCharset();
-        if (cachedValue == null || !elementCharset.equals(cachedValue.getRight())) {
-          cachedValue = Pair.of(new String(getRawContent(), elementCharset), elementCharset);
+        if (cachedValue == null
+            || !elementCharset.equals(cachedValue.getMiddle())
+            || cachedValue.getRight() != content.size()) {
+          final byte[] rawContent = getRawContent();
+          cachedValue =
+              Triple.of(new String(rawContent, elementCharset), elementCharset, rawContent.length);
           rawStringContent = new WeakReference<>(cachedValue);
         }
         return cachedValue.getLeft();

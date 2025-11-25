@@ -38,6 +38,7 @@ import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
 import de.gematik.test.tiger.lib.shutdown.ShutdownReason;
+import de.gematik.test.tiger.lifecycle.LifecycleManager;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
@@ -92,6 +93,7 @@ public class TigerDirector {
 
   @Getter private static TigerLibConfig libConfig;
   private static ConfigurableApplicationContext envMgrApplicationContext;
+  private static final LifecycleManager lifecycleManager = new LifecycleManager();
 
   public static void main(String[] args) {
     start();
@@ -103,6 +105,7 @@ public class TigerDirector {
       return;
     }
     try {
+      collectLifecycleCallbacks();
       showTigerBanner();
       readConfiguration();
       registerRestAssuredFilter();
@@ -133,6 +136,11 @@ public class TigerDirector {
       quit(new ShutdownReason("Start up of Test environment failed!", true, e));
       throw e;
     }
+  }
+
+  private static void collectLifecycleCallbacks() {
+    lifecycleManager.collectLifecycleCallbacks();
+    log.trace("Collected lifecycle callbacks");
   }
 
   public static synchronized void startStandaloneTestEnvironment() {
@@ -273,18 +281,22 @@ public class TigerDirector {
   }
 
   private static void setupTestEnvironment() {
+
     if (SKIP_ENVIRONMENT_SETUP.getValueOrDefault().equals(Boolean.FALSE)) {
       log.info(
           "\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
+      tigerTestEnvMgr.setLifecycleManager(lifecycleManager);
       tigerTestEnvMgr.setUpEnvironment();
       log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
     }
   }
 
   public static synchronized void readConfiguration() {
+    lifecycleManager.beforeReadConfiguration();
     libConfig =
         TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB")
             .orElseGet(TigerLibConfig::new);
+    lifecycleManager.afterReadConfiguration();
   }
 
   private static void showTigerBanner() {

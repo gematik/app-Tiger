@@ -99,6 +99,10 @@ public class KnownUuidsContainer {
     removedMessageUuidsHandlers.clear();
   }
 
+  public boolean contains(String previousMessageUuid) {
+    return knownMessageUuids.containsKey(previousMessageUuid);
+  }
+
   private enum MessageUuidState {
     TO_BE_CONVERTED,
     CONVERTED

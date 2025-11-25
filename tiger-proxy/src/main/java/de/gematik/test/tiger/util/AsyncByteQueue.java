@@ -64,7 +64,7 @@ public class AsyncByteQueue {
   private final TcpIpConnectionIdentifier primaryDirection;
   private final AtomicReference<String> lastBufferedUuid = new AtomicReference<>(null);
 
-  public TcpConnectionEntry write(TcpConnectionEntry value) {
+  public synchronized TcpConnectionEntry write(TcpConnectionEntry value) {
     Node newNode = new Node(value);
     Node prevTail = tail.getAndSet(newNode);
     if (prevTail == null) {

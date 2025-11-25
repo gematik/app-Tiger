@@ -40,6 +40,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
+import de.gematik.test.tiger.lifecycle.ILifecycleManager;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -119,6 +120,11 @@ public class TigerTestEnvMgr
   private final org.slf4j.Logger localProxyLog;
   @Setter public ConfigurableApplicationContext context;
   private TigerProxy localTigerProxy;
+  @Setter private ILifecycleManager lifecycleManager;
+
+  Optional<ILifecycleManager> getLifecycleManager() {
+    return Optional.ofNullable(lifecycleManager);
+  }
 
   @Getter(AccessLevel.PRIVATE)
   private ServletWebServerApplicationContext localTigerProxyApplicationContext;
@@ -197,6 +203,8 @@ public class TigerTestEnvMgr
 
   public void startLocalTigerProxyIfActivated() {
     if (configuration.isLocalProxyActive()) {
+      getLifecycleManager()
+          .ifPresent(m -> m.beforeLocalTigerProxyStart(configuration.getTigerProxy()));
       try {
         TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
       } catch (NoClassDefFoundError error) {
@@ -222,7 +230,8 @@ public class TigerTestEnvMgr
                 + " activated");
       }
       proxyStatusMessage("Local Tiger Proxy started");
-
+      getLifecycleManager()
+          .ifPresent(m -> m.afterLocalTigerProxyStart(configuration.getTigerProxy()));
     } else {
       log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));
       localTigerProxy = null;
@@ -484,6 +493,7 @@ public class TigerTestEnvMgr
               getLocalTigerProxyOptional()
                   .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
 
+      getLifecycleManager().ifPresent(ILifecycleManager::beforeServersStart);
       Map<String, TigerServerStatusUpdate> activeServers =
           servers.values().stream()
               .filter(server -> server.getConfiguration().isActive())
@@ -517,7 +527,7 @@ public class TigerTestEnvMgr
           initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
 
       initialServersToBoot.parallelStream().forEach(this::startServer);
-
+      getLifecycleManager().ifPresent(ILifecycleManager::afterServersStart);
       if (isLocalTigerProxyActive()) {
         log.info("Subscribing to traffic endpoints with local tiger proxy...");
         localTigerProxy.subscribeToTrafficEndpoints();

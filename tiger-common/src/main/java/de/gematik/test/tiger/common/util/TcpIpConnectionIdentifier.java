@@ -25,7 +25,6 @@ import java.util.Arrays;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.Accessors;
-import lombok.val;
 
 @Value
 @EqualsAndHashCode(of = {"sortedAddress1", "sortedAddress2"})
@@ -39,27 +38,23 @@ public class TcpIpConnectionIdentifier {
   RbelSocketAddress sortedAddress2;
 
   public TcpIpConnectionIdentifier(RbelSocketAddress sender, RbelSocketAddress receiver) {
-    val normA = normalize(sender);
-    val normB = normalize(receiver);
-
-    if (compareAddresses(normA, normB) < 0) {
-      this.sortedAddress1 = normA;
-      this.sortedAddress2 = normB;
+    if (compareAddresses(sender, receiver) < 0) {
+      this.sortedAddress1 = sender;
+      this.sortedAddress2 = receiver;
       this.originalDirection = true;
     } else {
-      this.sortedAddress1 = normB;
-      this.sortedAddress2 = normA;
+      this.sortedAddress1 = receiver;
+      this.sortedAddress2 = sender;
       this.originalDirection = false;
     }
     this.sender = sender;
     this.receiver = receiver;
   }
 
-  private static RbelSocketAddress normalize(RbelSocketAddress address) {
-    return address;
-  }
-
   private static int compareAddresses(RbelSocketAddress a, RbelSocketAddress b) {
+    if (a == null || b == null) {
+      return 0;
+    }
     if (a.getAddress() != null
         && b.getAddress() != null
         && a.getAddress().getIpAddress() != null

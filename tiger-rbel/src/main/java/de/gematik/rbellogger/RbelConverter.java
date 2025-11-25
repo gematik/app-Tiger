@@ -21,7 +21,6 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.RbelConversionPhase.*;
-import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static de.gematik.rbellogger.util.MemoryConstants.MB;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -88,7 +87,7 @@ public class RbelConverter implements RbelConverterInterface {
           new SynchronousQueue<>(),
           new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
 
-  @Builder.Default int rbelBufferSizeInMb = KB;
+  @Builder.Default int rbelBufferSizeInMb = 1024;
   @Builder.Default boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
   @Builder.Default long messageSequenceNumber = 0;
@@ -200,7 +199,6 @@ public class RbelConverter implements RbelConverterInterface {
           .log("{} skipping parsing of message with UUID {}: UUID already known");
       return CompletableFuture.failedFuture(new RbelConversionException("UUID is already known"));
     }
-
     long seqNumber = addMessageToHistoryWithNextSequenceNumber(messageElement);
 
     // TODO extract into a metadata pre processing plugin
@@ -252,7 +250,7 @@ public class RbelConverter implements RbelConverterInterface {
           knownMessageUuids.clear();
         }
         if (rbelBufferSizeInMb > 0) {
-          long exceedingLimit = getExceedingLimit(currentBufferSize);
+          long exceedingLimit = getExceedingLimit();
           if (exceedingLimit > 0) {
             log.atTrace()
                 .addArgument(() -> ((double) currentBufferSize / MB))
@@ -272,8 +270,13 @@ public class RbelConverter implements RbelConverterInterface {
     }
   }
 
-  private long getExceedingLimit(long messageHistorySize) {
-    return messageHistorySize - ((long) rbelBufferSizeInMb * MB);
+  private long getExceedingLimit() {
+    return getRbelBufferSize() - ((long) rbelBufferSizeInMb * MB);
+  }
+
+  // DANGER: not synched, use only in synched blocks
+  private long getRbelBufferSize() {
+    return messageHistory.stream().mapToLong(RbelElement::getSize).sum();
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {

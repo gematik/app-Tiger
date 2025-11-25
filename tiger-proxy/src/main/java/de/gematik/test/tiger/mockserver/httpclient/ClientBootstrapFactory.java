@@ -90,10 +90,11 @@ public class ClientBootstrapFactory {
       existingChannel =
           channelMap.getChannelToReuse(
               requestInfo); // if there is no request info then we are opening a new channel
-      remoteAddress = requestInfo.getRemoteServerAddress();
+      remoteAddress = requestInfo.retrieveActualRemoteAddress();
       incomingChannel = requestInfo.getIncomingChannel();
     }
 
+    val incomingChannelFinal = incomingChannel;
     if (existingChannel != null) {
       log.trace("reusing already existing channel");
       existingChannel.addListener(
@@ -103,7 +104,11 @@ public class ClientBootstrapFactory {
                   // reusing the channel, but we want to get the response in our new responseFuture
                   Optional.ofNullable(future.channel().attr(RESPONSE_FUTURE).get())
                       .ifPresent(oldFuture -> oldFuture.complete(null));
+
                   future.channel().attr(RESPONSE_FUTURE).set(responseFuture);
+                  incomingChannelFinal
+                      .attr(BinaryBridgeHandler.OUTGOING_CHANNEL)
+                      .set(future.channel());
                 }
               });
       if (onReuseListener != null) {
@@ -150,9 +155,13 @@ public class ClientBootstrapFactory {
       }
       channelFuture.addListener(
           (ChannelFutureListener)
-              future ->
-                  // when the channel is closed we remove it from the channelsMap
-                  future.channel().closeFuture().addListener(f -> channelMap.remove(future)));
+              future -> {
+                // when the channel is closed we remove it from the channelsMap
+                future.channel().closeFuture().addListener(f -> channelMap.remove(future));
+                incomingChannelFinal
+                    .attr(BinaryBridgeHandler.OUTGOING_CHANNEL)
+                    .set(future.channel());
+              });
       return channelFuture;
     }
   }
@@ -180,7 +189,6 @@ public class ClientBootstrapFactory {
         Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
     public synchronized ChannelFuture getChannelToReuse(RequestInfo<?> requestInfo) {
-
       return channelMap.get(ChannelId.from(requestInfo)).stream()
           .filter(ReusableChannel::canBeReused)
           .findAny()

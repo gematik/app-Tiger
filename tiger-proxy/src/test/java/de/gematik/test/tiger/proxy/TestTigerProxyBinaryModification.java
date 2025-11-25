@@ -31,6 +31,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
 import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import java.io.File;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-class TestTigerProxyBinaryModification {
+public class TestTigerProxyBinaryModification {
 
   private static final String A_SAMPLE_HTTP_EXCHANGE =
       """
@@ -130,7 +131,7 @@ class TestTigerProxyBinaryModification {
   @SneakyThrows
   @Test
   public void lotsOfHttpMessages() {
-    EmbeddedHttpbin httpbin = new EmbeddedHttpbin(0, true);
+    EmbeddedHttpbin httpbin = new EmbeddedHttpbin(0, false);
     httpbin.start();
     try (val tigerProxy =
             new TigerProxy(
@@ -146,16 +147,22 @@ class TestTigerProxyBinaryModification {
                                         .parameters(
                                             Map.of(
                                                 "targetString",
-                                                "GET /foo",
+                                                "GET /anything/foo",
                                                 "replacementString",
-                                                "GET /foobar"))
+                                                "GET /anything/foobar"))
                                         .build()))
                             .build()));
         val unirestInstance = Unirest.spawnInstance()) {
-      unirestInstance.config().connectTimeout(5000).requestTimeout(5000);
+      unirestInstance
+          .config()
+          .connectTimeout(5000)
+          .requestTimeout(5000)
+          .version(HttpClient.Version.HTTP_1_1);
       val numMessages = 100;
       for (int i = 0; i < numMessages; i++) {
-        unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo" + i).asEmpty();
+        unirestInstance
+            .get("http://localhost:" + tigerProxy.getProxyPort() + "/anything/foo" + i)
+            .asEmpty();
       }
 
       Awaitility.await()

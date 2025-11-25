@@ -22,7 +22,7 @@ package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
-import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
+import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static java.util.Collections.singletonList;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;

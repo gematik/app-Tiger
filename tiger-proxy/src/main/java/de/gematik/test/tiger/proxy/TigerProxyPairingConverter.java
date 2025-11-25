@@ -49,6 +49,9 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
   @Override
   public synchronized void consumeElement(
       RbelElement rbelElement, RbelConversionExecutor converter) {
+    if (rbelElement.getParentNode() != null) {
+      return;
+    }
     val requestFacet = rbelElement.getFacet(MockServerRequestFacet.class);
     val responseFacet = rbelElement.getFacet(MockServerResponseFacet.class);
     if (rbelElement.hasFacet(RbelHttpRequestFacet.class) && requestFacet.isPresent()) {
@@ -56,14 +59,24 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
       rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
 
       addHostnames(rbelElement);
-    } else if (rbelElement.hasFacet(RbelHttpResponseFacet.class) && responseFacet.isPresent()) {
-      parseCertificateChainIfPresent(responseFacet.get().getHttpRequest(), rbelElement, converter);
+    } else if (rbelElement.hasFacet(RbelHttpResponseFacet.class)) {
+      if (responseFacet.isPresent()) {
+        parseCertificateChainIfPresent(
+            responseFacet.get().getHttpRequest(), rbelElement, converter);
 
-      // Critical point: here we pair the request and response, without the request being
-      // necessarily parsed completely
-      addPairingFacet(
-          rbelElement, responseFacet.get().getHttpRequest().getCorrespondingRbelMessage());
-      rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
+        // Critical point: here we pair the request and response, without the request being
+        // necessarily parsed completely
+        addPairingFacet(
+            rbelElement, responseFacet.get().getHttpRequest().getCorrespondingRbelMessage());
+        rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
+      } else {
+        // fallback: look for corresponding request manually
+        converter
+            .getPreviousMessagesInSameConnectionAs(rbelElement)
+            .findFirst()
+            .filter(req -> req.hasFacet(RbelHttpRequestFacet.class))
+            .ifPresent(req -> addPairingFacet(rbelElement, req));
+      }
       addHostnames(rbelElement);
     }
   }

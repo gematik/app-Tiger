@@ -20,9 +20,12 @@
  */
 package de.gematik.test.tiger.mockserver.httpclient;
 
+import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
+
 import de.gematik.test.tiger.mockserver.model.Message;
 import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
@@ -33,5 +36,20 @@ import lombok.experimental.SuperBuilder;
 public class RequestInfo<T extends Message> {
   private final Channel incomingChannel;
   private T dataToSend;
-  private InetSocketAddress remoteServerAddress;
+  private @Nullable InetSocketAddress remoteServerAddress;
+  private @Nullable Channel outgoingChannel;
+
+  public InetSocketAddress retrieveActualRemoteAddress() {
+    if (remoteServerAddress != null) {
+      return remoteServerAddress;
+    }
+    if (outgoingChannel != null) {
+      if (outgoingChannel.remoteAddress() instanceof InetSocketAddress remoteSocket) {
+        return remoteSocket;
+      } else {
+        return outgoingChannel.attr(REMOTE_SOCKET).get();
+      }
+    }
+    return null;
+  }
 }

@@ -34,6 +34,6 @@ import lombok.experimental.SuperBuilder;
 public class HttpRequestInfo extends RequestInfo<HttpRequest> {
   public HttpRequestInfo(
       Channel incomingChannel, HttpRequest dataToSend, InetSocketAddress remoteServerAddress) {
-    super(incomingChannel, dataToSend, remoteServerAddress);
+    super(incomingChannel, dataToSend, remoteServerAddress, null);
   }
 }

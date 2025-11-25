@@ -23,6 +23,7 @@ package de.gematik.test.tiger.mockserver.model;
 import com.google.common.collect.Multimap;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 /*
  * @author jamesdbloom
@@ -59,5 +60,12 @@ public class Headers extends KeysToMultiValues<Header, Headers> {
 
   public Headers clone() {
     return new Headers(getMultimap());
+  }
+
+  public Stream<String> streamHeaderValuesForField(String headerName) {
+    return getEntries().stream()
+        .filter(h -> h.getName().equalsIgnoreCase(headerName))
+        .map(Header::getValues)
+        .flatMap(Collection::stream);
   }
 }

@@ -121,6 +121,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void forwardProxyWithoutConfiguredServerName_certificateShouldContainCorrectServerName() {
     spawnTigerProxyWith(new TigerProxyConfiguration());
 
+    // proxyRest does check the serverName in the certificate. So if no error is thrown: all is good
     final HttpResponse<JsonNode> response = proxyRest.get("https://www.gematik.de").asJson();
     assertThat(response.getStatus()).isEqualTo(200);
   }
