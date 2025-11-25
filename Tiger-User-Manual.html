@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.7 - 2025-11-20</span>
+<span id="revdate">Version 4.1.8 - 2025-11-25</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -252,15 +252,16 @@ video {
 <li><a href="#tiger-test-library-2">5. Tiger Test library</a>
 <ul class="sectlevel2">
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
-<li><a href="#_cucumber_hooks">5.2. Cucumber and Hooks</a></li>
-<li><a href="#using-the-cucumber-tiger-validation-steps">5.3. Using the Cucumber Tiger validation steps</a></li>
-<li><a href="#writing-your-own-glue-code">5.4. Writing your own Glue code</a></li>
-<li><a href="#modifying-rbelobjects-rbelbuilder">5.5. Modifying RbelObjects (RbelBuilder)</a></li>
-<li><a href="#using-the-http-client-steps">5.6. Using the HTTP client steps</a></li>
-<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.7. Exemplaric scenario Konnektorfarm EAU validation</a></li>
-<li><a href="#using-tiger-test-lib-helper-classes">5.8. Using Tiger test lib helper classes</a></li>
-<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.9. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
-<li><a href="#junit-test-report-when-using-scenario-outlines">5.10. JUnit test report when using Scenario Outlines</a></li>
+<li><a href="#registering-lifecycle-callbacks">5.2. Registering Lifecycle Callbacks</a></li>
+<li><a href="#_cucumber_hooks">5.3. Cucumber and Hooks</a></li>
+<li><a href="#using-the-cucumber-tiger-validation-steps">5.4. Using the Cucumber Tiger validation steps</a></li>
+<li><a href="#writing-your-own-glue-code">5.5. Writing your own Glue code</a></li>
+<li><a href="#modifying-rbelobjects-rbelbuilder">5.6. Modifying RbelObjects (RbelBuilder)</a></li>
+<li><a href="#using-the-http-client-steps">5.7. Using the HTTP client steps</a></li>
+<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.8. Exemplaric scenario Konnektorfarm EAU validation</a></li>
+<li><a href="#using-tiger-test-lib-helper-classes">5.9. Using Tiger test lib helper classes</a></li>
+<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.10. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#junit-test-report-when-using-scenario-outlines">5.11. JUnit test report when using Scenario Outlines</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -4233,7 +4234,62 @@ logging:
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.2. Cucumber and Hooks</h3>
+<h3 id="registering-lifecycle-callbacks"><a class="anchor" href="#registering-lifecycle-callbacks"></a>5.2. Registering Lifecycle Callbacks</h3>
+<div class="paragraph">
+<p>When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.</p>
+</div>
+<div class="paragraph">
+<p>By implementing a Java class which implements the interface <code>de.gematik.test.tiger.lifecycle.LifecycleCallbacks</code> you can run custom code before and after each of the mentioned steps. All classes that implement this interface and are located in the package <code>de.gematik.test.tiger.lifecycle</code> are automatically registered and their methods will be called on the corresponding event.</p>
+</div>
+<div class="paragraph">
+<p>Here is an example of a class that will log messages on each callback method:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 16. ExampleCallback.java</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.gematik.test.tiger.lifecycle;
+
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import java.util.logging.Logger;
+
+public class ExampleCallback implements LifecycleCallbacks {
+  Logger logger = Logger.getLogger(ExampleCallback.class.getName());
+
+  @Override
+  public void beforeReadConfiguration() {
+    logger.info("beforeReadConfiguration");
+  }
+
+  @Override
+  public void afterReadConfiguration() {
+    logger.info("afterReadConfiguration");
+  }
+
+  @Override
+  public void beforeServersStart() {
+    logger.info("beforeServersStart");
+  }
+
+  @Override
+  public void afterServersStart() {
+    logger.info("afterServersStart");
+  }
+
+  @Override
+  public void beforeLocalTigerProxyStart(TigerProxyConfiguration localTigerProxyConfiguration) {
+    logger.info("beforeLocalTigerProxyStart");
+  }
+
+  @Override
+  public void afterLocalTigerProxyStart(TigerProxyConfiguration localTigerProxyConfiguration) {
+    logger.info("afterLocalTigerProxyStart");
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.3. Cucumber and Hooks</h3>
 <div class="paragraph">
 <p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.</p>
 </div>
@@ -4255,7 +4311,7 @@ The current test run state (success/failed rate) is logged to the console.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.3. Using the Cucumber Tiger validation steps</h3>
+<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.4. Using the Cucumber Tiger validation steps</h3>
 <div class="paragraph">
 <p>The Tiger validation steps are a set of Cucumber steps that enable you to search for requests and associated responses matching certain criteria.<br>
 All of that without need to write your own code.<br>
@@ -4263,7 +4319,7 @@ Basic knowledge about RBelPath and regular expressions are sufficient.<br>
 In order to use these steps you must ensure that the relevant traffic is routed via the local Tiger Proxy of the test suite or construct a <a href="#_mesh_setup_traffic_endpoints">Tiger Proxy mesh</a> set up.</p>
 </div>
 <div class="sect3">
-<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.3.1. Filtering requests</h4>
+<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.4.1. Filtering requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4292,7 +4348,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.3.2. Validating responses</h4>
+<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.4.2. Validating responses</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4317,7 +4373,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Tiger response validation steps example</div>
+<div class="title">Listing 17. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger validation steps
 
@@ -4358,7 +4414,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.3.3. Validating requests</h4>
+<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.4.3. Validating requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4383,7 +4439,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Tiger request validation steps example</div>
+<div class="title">Listing 18. Tiger request validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger request validation steps
 
@@ -4417,13 +4473,13 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.3.4. Regex matching</h4>
+<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.4.4. Regex matching</h4>
 <div class="paragraph">
 <p>When comparing values (e.g. in the <code>TGR current response body matches:</code>) generally the algorithms check for equality and only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.3.5. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.4.5. Complete set of steps in validation glue code</h4>
 <div class="sect4">
 <h5 id="tgr-setze-anfrage-timeout-auf-int-sekunden"><a class="anchor" href="#tgr-setze-anfrage-timeout-auf-int-sekunden"></a>TGR setze Anfrage Timeout auf {int} Sekunden</h5>
 
@@ -5187,7 +5243,7 @@ test fails.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.4. Writing your own Glue code</h3>
+<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.5. Writing your own Glue code</h3>
 <div class="paragraph">
 <p>You can define your own BDD steps and write the corresponding glue code in your own project.<br>
 You must remember to configure the packages where your glue code is defined in the <a href="#maven-plugin-generate-drivers">tiger-maven-plugin</a> configuration.</p>
@@ -5196,7 +5252,7 @@ You must remember to configure the packages where your glue code is defined in t
 <p>Additionally, you can use some tiger specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.</p>
 </div>
 <div class="sect3">
-<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.4.1. Resolving Variables</h4>
+<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.5.1. Resolving Variables</h4>
 <div class="paragraph">
 <p>When defining a glue code method, you can use the variables with the names {tigerResolvedString} and {tigerResolvedUrl}.<br>
 These will be automatically resolved by the TigerGlobalConfiguration resolver, and the result is injected directly in the java method.</p>
@@ -5252,7 +5308,7 @@ public void multilineStringExample(DataTable dataTable){
 </div>
 </div>
 <div class="sect3">
-<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.4.2. Formating Tables</h4>
+<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.5.2. Formating Tables</h4>
 <div class="paragraph">
 <p>Depending on the concrete useage, a <code>DataTable</code> may be interpreted by the glue code as a row wise argument or as a column wise argument.<br>
 To make it clearer to the user, it may be helpful to highlight the first row or the first column of the table when displaying it in the Workflow Ui.<br>
@@ -5291,9 +5347,9 @@ You can apply both annotations to the same method.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.5. Modifying RbelObjects (RbelBuilder)</h3>
+<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.6. Modifying RbelObjects (RbelBuilder)</h3>
 <div class="sect3">
-<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.5.1. Introduction</h4>
+<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.6.1. Introduction</h4>
 <div class="paragraph">
 <p>Tiger supports modifying JSON, XML and several token formats.<br>
 After loading in an object from a string or a file the RbelObject can be modified in multiple ways:</p>
@@ -5322,7 +5378,7 @@ Jexl Expressions are implemented, as for reading a file or for serializing:<br>
 </div>
 </div>
 <div class="sect3">
-<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.5.2. List of all possible Steps</h4>
+<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.6.2. List of all possible Steps</h4>
 <div class="sect4">
 <h5 id="tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"><a class="anchor" href="#tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"></a>TGR erstellt ein neues Rbel-Objekt {tigerResolvedString} mit Inhalt {tigerResolvedString}</h5>
 
@@ -5415,9 +5471,9 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.5.3. Usage examples</h4>
+<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.6.3. Usage examples</h4>
 <div class="listingblock">
-<div class="title">Listing 18. Tiger Rbel Builder steps example</div>
+<div class="title">Listing 19. Tiger Rbel Builder steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Tiger - RbelBuilder
 
@@ -5445,12 +5501,12 @@ certain value</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.6. Using the HTTP client steps</h3>
+<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.7. Using the HTTP client steps</h3>
 <div class="paragraph">
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Tiger response validation steps example</div>
+<div class="title">Listing 20. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -5642,7 +5698,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.6.1. Complete set of steps in HTTP client glue code</h4>
+<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.7.1. Complete set of steps in HTTP client glue code</h4>
 <div class="sect4">
 <h5 id="tgr-send-empty-requesttype-request-to-tigerresolvedurl"><a class="anchor" href="#tgr-send-empty-requesttype-request-to-tigerresolvedurl"></a>TGR send empty {requestType} request to {tigerResolvedUrl}</h5>
 
@@ -5957,7 +6013,7 @@ following redirects.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.6.2. XMLUnit Diff Builder</h4>
+<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.7.2. XMLUnit Diff Builder</h4>
 <div class="paragraph">
 <p>Using the validation steps <code>TGR current response at {string} matches as XML:</code> or<br>
 <code>TGR current response at {string} matches as XML and diff options {string}:</code> you are able to compare the content of any RbelPath node in the response.<br>
@@ -5988,7 +6044,7 @@ Comparison is also performed on similarity and not equal content.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.6.3. JSONChecker</h4>
+<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.7.3. JSONChecker</h4>
 <div class="paragraph">
 <p>Using the validation step <code>TGR current response at {string} matches as JSON:</code> you are able to compare the content of any RbelPath node in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.</p>
 </div>
@@ -6032,7 +6088,7 @@ It will be first checked, whether the expected value is equal to the actual one,
 We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 21. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">  {
     "alg": "dir",
@@ -6136,7 +6192,7 @@ Remember to test under JSON Schema version 2020-12.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.7. Exemplaric scenario Konnektorfarm EAU validation</h3>
+<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.8. Exemplaric scenario Konnektorfarm EAU validation</h3>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.<br>
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
@@ -6161,7 +6217,7 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.8. Using Tiger test lib helper classes</h3>
+<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.9. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -6181,7 +6237,7 @@ All classes listed here are part of the tiger-common module
 <p>For BDD feature files Tiger provides some helper steps too.</p>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.8.1. Complete set of helper steps in Tiger glue code</h4>
+<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.9.1. Complete set of helper steps in Tiger glue code</h4>
 <div class="sect4">
 <h5 id="tgr-testsuite-string-version-string"><a class="anchor" href="#tgr-testsuite-string-version-string"></a>TGR testsuite {string} version {string}</h5>
 
@@ -6433,7 +6489,7 @@ end up in the configuration.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="banner"><a class="anchor" href="#banner"></a>5.8.2. Banner</h4>
+<h4 id="banner"><a class="anchor" href="#banner"></a>5.9.2. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful.<br>
 Supports ANSI coloring and a set of different fonts.<br>
@@ -6441,21 +6497,21 @@ Furthermore, all banner messages are displayed and highlighted in the Workflow U
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.8.3. TigerSerializationUtil</h4>
+<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.9.3. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps.<br>
 If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.8.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.9.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files.<br>
 For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.8.5. Performing REST calls with Tiger</h4>
+<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.9.5. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -6476,7 +6532,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.9. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.10. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories.<br>
 To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files.<br>
@@ -6540,7 +6596,7 @@ Background blocks will be merged to each scenario before exporting its steps to 
 </div>
 </div>
 <div class="sect2">
-<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.10. JUnit test report when using Scenario Outlines</h3>
+<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.11. JUnit test report when using Scenario Outlines</h3>
 <div class="paragraph">
 <p>When using Scenario Outlines in your feature files, the JUnit test report will show each example that has run in the scenario outline as a single test case.<br>
 To create a name for each example that is referencing the scenario outline, the system property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> is set to the value <code>pickle</code> in case it is not set by the environment.</p>
@@ -6667,7 +6723,7 @@ The server "B" should now use the activated server, without having to set it man
 The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. Configuring using placeholders and exports</div>
+<div class="title">Listing 22. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">servers:
   serverAInternet:
@@ -6812,7 +6868,7 @@ You can simply set an environment variable to do the job for you.<br>
 Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6836,7 +6892,7 @@ Below are the relevant snippets:</p>
 This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 24. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6861,7 +6917,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. The testsuite</div>
+<div class="title">Listing 25. The testsuite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-Gherkin hljs" data-lang="Gherkin">    TGR current response with attribute "$.body.ReplyStructure.Header.Sender.url" matches "http://127.0.0.1:${backend.server.port}"</code></pre>
 </div>
@@ -9266,7 +9322,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-11-20 15:40:47 +0100
+Last updated 2025-11-25 11:12:29 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
