@@ -64,12 +64,23 @@ public class ConverterPluginMap {
     converterPlugins.forEach(this::put);
   }
 
+  public void remove(RbelConverterPlugin converter) {
+    if (!source.containsKey(converter.getPhase())) {
+      return;
+    }
+    source.get(converter.getPhase()).remove(converter);
+  }
+
   public static class OrderedSet implements Iterable<RbelConverterPlugin> {
     private final ConcurrentSkipListSet<Entry> set = new ConcurrentSkipListSet<>();
     private final AtomicLong insertionOrder = new AtomicLong(0);
 
     public void add(RbelConverterPlugin item) {
       set.add(new Entry(item, insertionOrder.getAndIncrement()));
+    }
+
+    public void remove(RbelConverterPlugin item) {
+      set.removeIf(entry -> entry.getValue().equals(item));
     }
 
     public void clear() {

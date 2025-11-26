@@ -29,7 +29,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-testsuite-baseimage</artifactId>
-    <version>4.0.9</version>
+    <version>4.1.4-SNAPSHOT</version>
     <name>${project.artifactId}</name>
     <description>Tiger testsuite baseimage modul of the tiger test platform.</description>
     <properties>

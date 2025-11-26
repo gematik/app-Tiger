@@ -24,6 +24,7 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.proxy.AbstractTigerProxyTest.awaitMessagesInTigerProxy;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketConverter;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeConverter;
@@ -51,6 +52,7 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,10 +65,30 @@ class TestWebsocket {
 
   @Autowired private TigerProxy tigerProxy;
 
+  private final RbelWebsocketHandshakeConverter handshakeConverter =
+      new RbelWebsocketHandshakeConverter();
+  private final RbelWebsocketConverter websocketConverter = new RbelWebsocketConverter();
+
+  private void addWebsocketConverters(RbelConverter rbelConverter) {
+    rbelConverter.addConverter(handshakeConverter);
+    rbelConverter.addConverter(websocketConverter);
+  }
+
+  private void removeWebsocketConverters(RbelConverter converter) {
+    converter.getConverterPlugins().remove(handshakeConverter);
+    converter.getConverterPlugins().remove(websocketConverter);
+  }
+
   @BeforeEach
   void init() {
     tigerProxy.clearAllMessages();
     tigerProxy.clearAllRoutes();
+    addWebsocketConverters(tigerProxy.getRbelLogger().getRbelConverter());
+  }
+
+  @AfterEach
+  void tearDown() {
+    removeWebsocketConverters(tigerProxy.getRbelLogger().getRbelConverter());
   }
 
   @SneakyThrows
@@ -90,11 +112,7 @@ class TestWebsocket {
               .build());
       val remoteClient =
           new TigerRemoteProxyClient("http://127.0.0.1:" + proxyingTigerProxy.getProxyPort());
-      remoteClient.getRbelLogger().getRbelConverter().addConverter(new RbelWebsocketConverter());
-      remoteClient
-          .getRbelLogger()
-          .getRbelConverter()
-          .addConverter(new RbelWebsocketHandshakeConverter());
+      addWebsocketConverters(remoteClient.getRbelLogger().getRbelConverter());
       remoteClient.connect();
       generateTraffic();
 
@@ -117,11 +135,6 @@ class TestWebsocket {
   void connectToANonSocksWebsocketServer() {
     CountDownLatch latch = new CountDownLatch(2);
 
-    tigerProxy.getRbelLogger().getRbelConverter().addConverter(new RbelWebsocketConverter());
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addConverter(new RbelWebsocketHandshakeConverter());
     final Integer serverPort =
         TigerGlobalConfiguration.readIntegerOptional("free.port.0").orElseThrow();
     WebSocketServer server =

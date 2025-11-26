@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.8</version>
+        <version>4.1.9</version>
     </parent>
     <artifactId>tiger-test-utils</artifactId>
     <name>${project.artifactId}</name>
@@ -83,32 +83,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${version.maven.javadoc}</version>
-                <configuration>
-                    <doclint>none</doclint>
-                    <sourcepath>${project.build.directory}/delombok</sourcepath>
-                    <tags>
-                        <tag>
-                            <name>testenv</name>
-                            <placement>a</placement>
-                            <head>Testenvironment Variables:</head>
-                        </tag>
-                        <tag>
-                            <name>gematik.context.out</name>
-                            <placement>a</placement>
-                            <head>Context OUT:</head>
-                        </tag>
-                        <tag>
-                            <name>gematik.context.in</name>
-                            <placement>a</placement>
-                            <head>Context INPUT:</head>
-                        </tag>
-                    </tags>
-                </configuration>
             </plugin>
             <!-- end create reusable test jar part -->
             <plugin>

@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.1.8</version>
+    <version>4.1.9</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -74,7 +74,7 @@
         <version.commons-lang3>3.19.0</version.commons-lang3>
         <version.commons-text>1.14.0</version.commons-text>
         <version.cucumber>7.31.0</version.cucumber>
-
+        <version.dokka-maven-plugin>2.1.0</version.dokka-maven-plugin>
         <version.font-awesome>7.0.1</version.font-awesome>
         <version.frontend-maven-plugin>1.15.4</version.frontend-maven-plugin>
         <!-- frontend -->
@@ -349,58 +349,58 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
                 <classifier>jar-with-dependencies</classifier>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>4.1.8</version>
+                <version>4.1.9</version>
             </dependency>
 
             <dependency>
@@ -1008,18 +1008,21 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${version.maven.javadoc}</version>
+                        <groupId>org.jetbrains.dokka</groupId>
+                        <artifactId>dokka-maven-plugin</artifactId>
+                        <version>${version.dokka-maven-plugin}</version>
                         <configuration>
-                            <doclint>none</doclint>
+                            <sourceDirectories>
+                                <dir>${project.basedir}/src/main/kotlin</dir>
+                                <dir>${project.build.directory}/delombok</dir>
+                            </sourceDirectories>
                         </configuration>
                         <executions>
                             <execution>
-                                <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>jar</goal>
+                                    <goal>javadocJar</goal>
                                 </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>
