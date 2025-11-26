@@ -29,6 +29,7 @@
   testsuite project. By extending the tiger starter parent, you get a preconfigured maven project with the necessary
   dependencies and preconfigured defaults.
 * TGR-1957: added OCSP request parsing when parsing for "OCSP" is activated
+* TGR-1975: Updated Docker Base Image to Java 21
 
 ## Bugfixes
 

@@ -27,7 +27,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.8</version>
+        <version>4.1.9</version>
     </parent>
 
     <artifactId>tiger-rbel</artifactId>
@@ -206,15 +206,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${version.maven.javadoc}</version>
-                <configuration>
-                    <doclint>none</doclint>
-                    <sourcepath>${project.build.directory}/delombok</sourcepath>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
