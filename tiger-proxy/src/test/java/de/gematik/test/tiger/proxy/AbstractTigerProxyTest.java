@@ -53,7 +53,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.*;
 import kong.unirest.core.Config;
-import kong.unirest.core.Unirest;
 import kong.unirest.core.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -70,24 +69,13 @@ import org.junit.jupiter.api.TestInfo;
 @WireMockTest(httpsEnabled = true)
 public abstract class AbstractTigerProxyTest {
 
-  public static boolean unirestInitialized = false;
-  public static final UnirestInstance unirestInstance =
+  public final UnirestInstance unirestInstance =
       new UnirestInstance(
           new Config().connectTimeout(5 * 1000).requestTimeout(5 * 1000).retryAfter(false));
 
-  static {
-    synchronized (AbstractTigerProxyTest.class) {
-      if (!unirestInitialized && !Unirest.config().isRunning()) {
-        Unirest.config().reset();
-        Unirest.config().connectTimeout(5 * 1000).requestTimeout(5 * 1000).retryAfter(false);
-        unirestInitialized = true;
-      }
-    }
-  }
-
-  public static int fakeBackendServerPort = 0;
-  public static int fakeBackendServerTlsPort = 0;
-  public static byte[] binaryMessageContent = new byte[100];
+  public int fakeBackendServerPort = 0;
+  public int fakeBackendServerTlsPort = 0;
+  public byte[] binaryMessageContent = new byte[100];
   public TigerProxy tigerProxy;
   public UnirestInstance proxyRest;
 

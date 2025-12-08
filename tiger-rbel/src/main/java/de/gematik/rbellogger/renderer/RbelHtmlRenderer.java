@@ -28,6 +28,8 @@ import de.gematik.rbellogger.util.BinaryClassifier;
 import de.gematik.rbellogger.util.RbelValueShader;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.*;
 import javax.annotation.Nullable;
 import lombok.Getter;
@@ -183,13 +185,28 @@ public class RbelHtmlRenderer {
   }
 
   public String doRender(final Collection<RbelElement> elements) {
-    return performRendering(elements, false);
+    final StringWriter writer = new StringWriter();
+    doRender(elements, writer);
+    return writer.toString();
+  }
+
+  @SneakyThrows
+  public void doRender(final Collection<RbelElement> elements, Writer writer) {
+    performRendering(elements, false, writer);
   }
 
   @SneakyThrows
   private String performRendering(final Collection<RbelElement> elements, boolean localRessources) {
+    final StringWriter writer = new StringWriter();
+    performRendering(elements, localRessources, writer);
+    return writer.toString();
+  }
+
+  @SneakyThrows
+  private void performRendering(
+      final Collection<RbelElement> elements, boolean localRessources, Writer writer) {
     RbelHtmlRenderingToolkit renderingToolkit = new RbelHtmlRenderingToolkit(this);
-    return renderingToolkit.renderDocument(new ArrayList<>(elements), localRessources);
+    renderingToolkit.renderDocument(new ArrayList<>(elements), localRessources, writer);
   }
 
   @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "rawtypes", "java:S3740"})

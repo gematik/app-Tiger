@@ -123,7 +123,8 @@ public class TlsFacet implements RbelFacet {
 
   public static class WriteTlsToMetadataPlugin extends RbelConverterPlugin {
 
-    private static final int SLIGHTLY_HIGHER_THEN_NORMAL_PRIORITY = 10;
+    // set high priority to run before other plugins
+    public static final int PLUGIN_PRIORITY = 10;
 
     @Override
     public RbelConversionPhase getPhase() {
@@ -132,7 +133,7 @@ public class TlsFacet implements RbelFacet {
 
     @Override
     public int getPriority() {
-      return SLIGHTLY_HIGHER_THEN_NORMAL_PRIORITY;
+      return PLUGIN_PRIORITY;
     }
 
     @Override

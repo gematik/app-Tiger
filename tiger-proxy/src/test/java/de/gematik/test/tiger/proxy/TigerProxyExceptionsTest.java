@@ -131,7 +131,8 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
 
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.sender")
-          .hasStringContentEqualTo("localhost:" + fakeBackendServerPort)
+          .matches(
+              el -> el.getRawStringContent().matches("(view-|)localhost:" + fakeBackendServerPort))
           .andTheInitialElement()
           .hasFacet(TigerRoutingErrorFacet.class)
           .extractChildWithPath("$.error.message")

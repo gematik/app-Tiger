@@ -91,13 +91,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private MockServer mockServer;
   private TigerPkiIdentity serverRootCa;
-  @Getter private final TigerProxyPairingConverter pairingConverter;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
 
-    pairingConverter = new TigerProxyPairingConverter();
-    getRbelLogger().getRbelConverter().addConverter(pairingConverter);
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
 

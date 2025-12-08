@@ -25,9 +25,8 @@ import static de.gematik.test.tiger.proxy.AbstractTigerProxyTest.awaitMessagesIn
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelConverter;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
-import de.gematik.rbellogger.facets.websocket.RbelWebsocketConverter;
-import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeConverter;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeFacet;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
@@ -52,7 +51,6 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,18 +63,9 @@ class TestWebsocket {
 
   @Autowired private TigerProxy tigerProxy;
 
-  private final RbelWebsocketHandshakeConverter handshakeConverter =
-      new RbelWebsocketHandshakeConverter();
-  private final RbelWebsocketConverter websocketConverter = new RbelWebsocketConverter();
-
   private void addWebsocketConverters(RbelConverter rbelConverter) {
-    rbelConverter.addConverter(handshakeConverter);
-    rbelConverter.addConverter(websocketConverter);
-  }
-
-  private void removeWebsocketConverters(RbelConverter converter) {
-    converter.getConverterPlugins().remove(handshakeConverter);
-    converter.getConverterPlugins().remove(websocketConverter);
+    rbelConverter.reinitializeConverters(
+        RbelConfiguration.builder().activateRbelParsingFor(List.of("websocket")).build());
   }
 
   @BeforeEach
@@ -84,11 +73,6 @@ class TestWebsocket {
     tigerProxy.clearAllMessages();
     tigerProxy.clearAllRoutes();
     addWebsocketConverters(tigerProxy.getRbelLogger().getRbelConverter());
-  }
-
-  @AfterEach
-  void tearDown() {
-    removeWebsocketConverters(tigerProxy.getRbelLogger().getRbelConverter());
   }
 
   @SneakyThrows

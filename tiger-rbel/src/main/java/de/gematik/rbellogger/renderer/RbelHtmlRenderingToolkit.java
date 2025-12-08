@@ -36,7 +36,9 @@ import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
+import j2html.Config;
 import j2html.TagCreator;
+import j2html.rendering.FlatHtml;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import j2html.tags.EmptyTag;
@@ -47,6 +49,7 @@ import j2html.tags.specialized.PTag;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -361,140 +364,142 @@ public class RbelHtmlRenderingToolkit {
         .orElse("0");
   }
 
-  public String renderDocument(List<RbelElement> elements, boolean localRessources)
+  public void renderDocument(List<RbelElement> elements, boolean localRessources, Writer writer)
       throws IOException {
-    return TagCreator.document(
-        html(
-                head(
-                    meta().attr("charset", "utf-8"),
-                    meta()
-                        .attr("name", "viewport")
-                        .attr("content", "width=device-width, initial-scale=1"),
-                    title().withText(rbelHtmlRenderer.getTitle()),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/sockjs-client/sockjs.min.js"
-                                : "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/stomp-websocket/stomp.min.js"
-                                : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/jquery/jquery.min.js"
-                                : "https://code.jquery.com/jquery-3.7.1.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/bootstrap/js/bootstrap.bundle.min.js"
-                                : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/highlightjs/highlight.min.js"
-                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/highlightjs/languages/xml.min.js"
-                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/languages/xml.min.js"),
-                    script()
-                        .withSrc(
-                            localRessources
-                                ? "../webjars/dayjs/dayjs.min.js"
-                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js"),
-                    link2CSS(
-                        localRessources
-                            ? "../webjars/bootstrap/css/bootstrap.min.css"
-                            : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"),
-                    link2CSS(
-                        localRessources
-                            ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css"
-                            : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/stackoverflow-dark.min.css"),
-                    link2CSS(
-                        localRessources
-                            ? "../webjars/font-awesome/css/all.min.css"
-                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"),
-                    link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
-                    tag("style")
-                        .withId("rbel_css")
-                        .with(
-                            new UnescapedText(
-                                IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))),
-                body()
-                    .withStyle("overflow-x: hidden;")
-                    .with(
-                        div().withId("navbardiv"),
-                        section()
-                            .withClass("main-content")
-                            .with(
-                                section()
-                                    .withClass("row header")
-                                    .with(
-                                        div()
-                                            .withClass("col-1 h-100 my-auto logo")
-                                            .with(
-                                                img()
-                                                    .withSrc(getLogoBase64Str())
-                                                    .withId("test-tiger-logo")),
-                                        div()
-                                            .withClass("col " + isSize(6))
-                                            .with(
-                                                div()
-                                                    .withClass("row my-auto")
-                                                    .with(
-                                                        div(rbelHtmlRenderer.getTitle())
-                                                            .withClass(
-                                                                "col navbar-title "
-                                                                    + isSize(3)
-                                                                    + " h-100"
-                                                                    + " my-auto"),
-                                                        span(rbelHtmlRenderer.getVersionInfo())
-                                                            .withClass(
-                                                                "col-2 "
-                                                                    + isSize(7)
-                                                                    + " navbar-version")),
-                                                div(
-                                                    new UnescapedText(
-                                                        rbelHtmlRenderer.getSubTitle()))))),
-                        section()
-                            .withClass("row is-fullheight mainsection")
-                            .withId("test-rbel-section")
-                            .with(
-                                renderMenu(),
-                                div()
-                                    .withClass("col ms-6")
-                                    .with(
-                                        div("Created "
-                                                + DateTimeFormatter.RFC_1123_DATE_TIME.format(
-                                                    ZonedDateTime.now()))
-                                            .withClass(
-                                                "created fst-italic "
-                                                    + isSize(6)
-                                                    + " float-end me-6"),
-                                        div()
-                                            .withClass("rbel-main-content")
-                                            .with(
-                                                elements.stream()
-                                                    .map(this::convertMessage)
-                                                    .toList()),
-                                        div("Created "
-                                                + DateTimeFormatter.RFC_1123_DATE_TIME.format(
-                                                    ZonedDateTime.now()))
-                                            .withClass(
-                                                "created fst-italic "
-                                                    + isSize(6)
-                                                    + " float-end me-6")))))
-            .with(
+    writer.write("<!DOCTYPE html>\n");
+    html(
+            head(
+                meta().attr("charset", "utf-8"),
+                meta()
+                    .attr("name", "viewport")
+                    .attr("content", "width=device-width, initial-scale=1"),
+                title().withText(rbelHtmlRenderer.getTitle()),
                 script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/sockjs-client/sockjs.min.js"
+                            : "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/stomp-websocket/stomp.min.js"
+                            : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/jquery/jquery.min.js"
+                            : "https://code.jquery.com/jquery-3.7.1.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/bootstrap/js/bootstrap.bundle.min.js"
+                            : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/highlightjs/highlight.min.js"
+                            : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/highlightjs/languages/xml.min.js"
+                            : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/languages/xml.min.js"),
+                script()
+                    .withSrc(
+                        localRessources
+                            ? "../webjars/dayjs/dayjs.min.js"
+                            : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js"),
+                link2CSS(
+                    localRessources
+                        ? "../webjars/bootstrap/css/bootstrap.min.css"
+                        : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"),
+                link2CSS(
+                    localRessources
+                        ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css"
+                        : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/stackoverflow-dark.min.css"),
+                link2CSS(
+                    localRessources
+                        ? "../webjars/font-awesome/css/all.min.css"
+                        : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"),
+                link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
+                tag("style")
+                    .withId("rbel_css")
                     .with(
                         new UnescapedText(
-                            IOUtils.resourceToString("/rbel.js", StandardCharsets.UTF_8)))
-                    .attr("id", "mainWebUiScript"),
-                script(elements.stream().map(this::menuTab).collect(Collectors.joining("\n")))));
+                            IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))),
+            body()
+                .withStyle("overflow-x: hidden;")
+                .with(
+                    div().withId("navbardiv"),
+                    section()
+                        .withClass("main-content")
+                        .with(
+                            section()
+                                .withClass("row header")
+                                .with(
+                                    div()
+                                        .withClass("col-1 h-100 my-auto logo")
+                                        .with(
+                                            img()
+                                                .withSrc(getLogoBase64Str())
+                                                .withId("test-tiger-logo")),
+                                    div()
+                                        .withClass("col " + isSize(6))
+                                        .with(
+                                            div()
+                                                .withClass("row my-auto")
+                                                .with(
+                                                    div(rbelHtmlRenderer.getTitle())
+                                                        .withClass(
+                                                            "col navbar-title "
+                                                                + isSize(3)
+                                                                + " h-100"
+                                                                + " my-auto"),
+                                                    span(rbelHtmlRenderer.getVersionInfo())
+                                                        .withClass(
+                                                            "col-2 "
+                                                                + isSize(7)
+                                                                + " navbar-version")),
+                                            div(
+                                                new UnescapedText(
+                                                    rbelHtmlRenderer.getSubTitle()))))),
+                    section()
+                        .withClass("row is-fullheight mainsection")
+                        .withId("test-rbel-section")
+                        .with(
+                            renderMenu(),
+                            div()
+                                .withClass("col ms-6")
+                                .with(
+                                    div("Created "
+                                            + DateTimeFormatter.RFC_1123_DATE_TIME.format(
+                                                ZonedDateTime.now()))
+                                        .withClass(
+                                            "created fst-italic " + isSize(6) + " float-end me-6"),
+                                    div()
+                                        .withClass("rbel-main-content")
+                                        .with(elements.stream().map(this::convertMessage).toList()),
+                                    div("Created "
+                                            + DateTimeFormatter.RFC_1123_DATE_TIME.format(
+                                                ZonedDateTime.now()))
+                                        .withClass(
+                                            "created fst-italic "
+                                                + isSize(6)
+                                                + " float-end me-6")))))
+        .with(
+            script()
+                .with(
+                    new UnescapedText(IOUtils.resourceToString("/rbel.js", StandardCharsets.UTF_8)))
+                .attr("id", "mainWebUiScript"),
+            script(elements.stream().map(this::menuTab).collect(Collectors.joining("\n"))))
+        .render(FlatHtml.into(writer, Config.global()));
+  }
+
+  public String renderDocument(List<RbelElement> elements, boolean localRessources)
+      throws IOException {
+    StringWriter writer = new StringWriter();
+    renderDocument(elements, localRessources, writer);
+    return writer.toString();
   }
 
   private String getLogoBase64Str() {

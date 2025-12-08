@@ -1,5 +1,18 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.11
+
+## Bugfixes
+
+* TGR-1958: Tiger-Proxy: when configured with a forward proxy, the tiger-proxy shall not resolve hostnames. Hostname
+  resolution is performed by the forward proxy.
+* TGR-1911: Tiger-Proxy: fixed an issue where checking if an address should be forward proxied, an NullPointerException
+  was being thrown.
+
+* TGR-1939: add triggering for followup pipeline for tiger-zion
+* TGR-1993: Fix out of memory error while rendering of large Rbel logs for test report generation.
+  Also optimized memory usage.
+
 # Release 4.1.8
 
 ## Features
@@ -12,6 +25,7 @@
 ## Bugfixes
 
 * TGR-1973: Bugfix for slow message propagation to downstream proxies in mesh setups.
+* TGR-1982: Harmonized websocket message handling with HTTP message handling
 
 # Release 4.1.7
 

@@ -40,6 +40,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.resolver.DefaultAddressResolverGroup;
+import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -143,6 +145,13 @@ public class ClientBootstrapFactory {
                   incomingChannel.hasAttr(LOOP_COUNTER)
                       ? incomingChannel.attr(LOOP_COUNTER).get() + 1
                       : 0)
+              // When using a forward proxy, the resolving of hostnames is responsibility of the
+              // forward proxy.
+              // we just pass request along but dont resolve hostnames.
+              .resolver(
+                  clientInitializer.usesForwardProxy()
+                      ? NoopAddressResolverGroup.INSTANCE
+                      : DefaultAddressResolverGroup.INSTANCE)
               .handler(clientInitializer);
       if (responseFuture != null) {
         bootstrap.attr(RESPONSE_FUTURE, responseFuture);

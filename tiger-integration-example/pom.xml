@@ -22,7 +22,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-starter-parent</artifactId>
-        <version>4.1.10</version>
+        <version>4.1.11</version>
         <relativePath>../tiger-starter-parent/pom.xml</relativePath>
     </parent>
 

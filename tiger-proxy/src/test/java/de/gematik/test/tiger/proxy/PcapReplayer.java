@@ -64,6 +64,7 @@ public class PcapReplayer implements AutoCloseable {
   private SSLContext sslContext;
   @Getter private final List<byte[]> receivedPacketsInClient = new ArrayList<>();
   @Getter private final List<byte[]> receivedPacketsInServer = new ArrayList<>();
+  private PcapHandle pcapFile;
 
   public static PcapReplayer writeReplay(String textBlob) {
     return writeReplay(
@@ -133,7 +134,7 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   public PcapReplayer readPcapReplay() {
-    final PcapHandle pcapFile = Pcaps.openOffline(filename);
+    pcapFile = Pcaps.openOffline(filename);
     val myListener = new MyPacketListener(filterSrcPort, filterDstPort, toBeReplayedPackets);
     pcapFile.setFilter("tcp", BpfCompileMode.OPTIMIZE);
     pcapFile.loop(-1, myListener);
@@ -348,6 +349,9 @@ public class PcapReplayer implements AutoCloseable {
     }
     if (clientSocket != null) {
       clientSocket.close();
+    }
+    if (pcapFile != null && pcapFile.isOpen()) {
+      pcapFile.close();
     }
   }
 
