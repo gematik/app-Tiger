@@ -84,6 +84,10 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     protocolFuture.whenComplete(action);
   }
 
+  public boolean usesForwardProxy() {
+    return this.proxyConfiguration != null;
+  }
+
   @Override
   public void initChannel(SocketChannel channel) {
     ChannelPipeline pipeline = channel.pipeline();

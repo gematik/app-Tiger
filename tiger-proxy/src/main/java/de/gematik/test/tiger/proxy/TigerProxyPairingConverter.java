@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
@@ -40,11 +41,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
-@ConverterInfo(addAutomatically = false)
+@ConverterInfo
 @RequiredArgsConstructor
 public class TigerProxyPairingConverter extends RbelConverterPlugin {
 
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
+
+  @Override
+  public RbelConversionPhase getPhase() {
+    return RbelConversionPhase.CONTENT_ENRICHMENT;
+  }
+
+  @Override
+  public int getPriority() {
+    // run before plugin which reads tls facet
+    return TlsFacet.WriteTlsToMetadataPlugin.PLUGIN_PRIORITY + 10;
+  }
 
   @Override
   public synchronized void consumeElement(

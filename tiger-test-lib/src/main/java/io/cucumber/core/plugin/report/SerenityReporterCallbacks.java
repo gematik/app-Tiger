@@ -60,8 +60,11 @@ import io.cucumber.plugin.event.TestStep;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
 import java.awt.*;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
@@ -92,7 +95,6 @@ import net.thucydides.model.domain.TestOutcome;
 import net.thucydides.model.screenshots.ScreenshotAndHtmlSource;
 import net.thucydides.model.steps.ExecutedStepDescription;
 import net.thucydides.model.steps.StepFailure;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
@@ -873,12 +875,15 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
       }
       var rbelRenderer = getRbelHtmlRenderer(scenarioName, scenarioUri, variantDataIndex);
 
-      String html =
-          rbelRenderer.doRender(LocalProxyRbelMessageListener.getInstance().getMessages());
-
       String name = getFileNameFor("rbel", scenarioName, variantDataIndex);
       final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
-      FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
+
+      try (var writer =
+          new BufferedWriter(
+              new OutputStreamWriter(new FileOutputStream(logFile), StandardCharsets.UTF_8))) {
+        rbelRenderer.doRender(LocalProxyRbelMessageListener.getInstance().getMessages(), writer);
+      }
+
       if (TigerDirector.isSerenityAvailable()) {
         (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (variantDataIndex + 1)))
             .downloadable()
@@ -895,7 +900,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   @NotNull
   private RbelHtmlRenderer getRbelHtmlRenderer(
       String scenarioName, URI scenarioUri, int dataVariantIndex) {
-    var rbelRenderer = new RbelHtmlRenderer().withNoMaximumEntitySize();
+    var rbelRenderer = new RbelHtmlRenderer();
     rbelRenderer.setTitle(scenarioName);
     rbelRenderer.setSubTitle(
         "<p>"

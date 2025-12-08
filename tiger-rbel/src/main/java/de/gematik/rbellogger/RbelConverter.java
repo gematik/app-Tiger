@@ -453,4 +453,13 @@ public class RbelConverter implements RbelConverterInterface {
         .filter(plugin -> plugin.isParserFor(idsToActivate))
         .forEach(RbelConverterPlugin::activate);
   }
+
+  public void reinitializeConverters(RbelConfiguration config) {
+    synchronized (converterPlugins) {
+      shallInitializeConverters = true;
+      activateRbelParsingFor = config.getActivateRbelParsingFor();
+      converterPlugins.clear();
+      initializeConverters(config);
+    }
+  }
 }

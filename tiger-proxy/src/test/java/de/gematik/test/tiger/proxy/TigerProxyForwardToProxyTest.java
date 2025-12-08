@@ -20,184 +20,121 @@
  */
 package de.gematik.test.tiger.proxy;
 
-import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrAndOut;
 
-import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
+import kong.unirest.core.UnirestException;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.test.util.TestSocketUtils;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.MountableFile;
 
-/** UnirestClient --> TigerProxy --> Squid Proxy (Docker) --> fakebackend */
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 @Slf4j
-@Disabled("The host.docker.internal is not working in the CI pipeline")
 class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
 
-  private static GenericContainer<?> squidContainer;
-  private static final int SQUID_PROXY_PORT_NO_AUTH = TestSocketUtils.findAvailableTcpPort();
-  private static final int SQUID_PROXY_PORT_AUTH_REQUIRED = TestSocketUtils.findAvailableTcpPort();
+  /**
+   * client -> local proxy -> forward proxy -> fakebackend
+   *
+   * <p>The http client sends a message to the local proxy, which is configured to use a forward
+   * proxy. Given that the local proxy does not know the hostname, it would not be able to deliver
+   * the message if not over the forward proxy.
+   *
+   * <p>The forward proxy has a route configured to deliver maHost -> localhost:
+   * fakeBackendServerPort
+   */
+  @Test
+  void sendRequestToFakebackend_WithOrWithoutTls() {
+    final String toRoute = "http://localhost:" + fakeBackendServerPort;
+    try (var forwardProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .name("last Proxy in chain before fake backend'")
+                .proxyRoutes(
+                    List.of(
+                        TigerConfigurationRoute.builder()
+                            .from("https://maHost")
+                            .to(toRoute)
+                            .build()))
+                .build())) {
 
-  public static final TigerTypedConfigurationKey<String> DOCKER_HOST =
-      new TigerTypedConfigurationKey<>("tiger.docker.host", String.class, "host.docker.internal");
+      spawnTigerProxyWithDefaultRoutesAndWith(
+          TigerProxyConfiguration.builder()
+              .tls(
+                  TigerTlsConfiguration.builder()
+                      .masterSecretsFile("target/master-secrets.txt")
+                      .build())
+              .forwardToProxy(
+                  ForwardProxyInfo.builder()
+                      .hostname("localhost")
+                      .port(forwardProxy.getProxyPort())
+                      .build())
+              .build());
 
-  @BeforeAll
-  static void setUp() {
-    MountableFile squidConfig = MountableFile.forHostPath("src/test/resources/squid.conf");
-    MountableFile squidPassword = MountableFile.forHostPath("src/test/resources/squid.htpasswd");
+      log.info("Routing traffic to {}", toRoute);
 
-    squidContainer =
-        new GenericContainer<>("elestio/squid:v6.8.0")
-            .withCopyFileToContainer(squidConfig, "/etc/squid/squid.conf")
-            .withCopyFileToContainer(squidPassword, "/etc/squid/passwd")
-            .withAccessToHost(true);
+      proxyRest.config().requestTimeout(10_000).connectTimeout(10_000).verifySsl(false);
+      proxyRest.get("https://maHost/ok").asString();
+      awaitMessagesInTigerProxy(2);
 
-    squidContainer.setPortBindings(
-        List.of(SQUID_PROXY_PORT_NO_AUTH + ":3128", SQUID_PROXY_PORT_AUTH_REQUIRED + ":3129"));
-    log.info(
-        "Starting squid container with port bindings {}:3128 and {}:3129",
-        SQUID_PROXY_PORT_NO_AUTH,
-        SQUID_PROXY_PORT_AUTH_REQUIRED);
-    squidContainer.start();
+      assertThat(tigerProxy.getRbelMessagesList().get(1))
+          .extractChildWithPath("$.responseCode")
+          .hasStringContentEqualTo("200")
+          .andTheInitialElement()
+          .extractChildWithPath("$.body.request")
+          .hasStringContentEqualTo("body");
+    }
   }
 
-  @AfterAll
-  static void tearDown() {
-    squidContainer.stop();
-  }
+  @Test
+  void sendRequestToUnresolvable_noProxyHost_shouldNotThrowNPE() throws Exception {
+    try (var forwardProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .name("last Proxy in chain before fake backend'")
+                .build())) {
 
-  static Collection<Arguments> withOrWithoutTlsParams() {
-    return List.of(
-        Arguments.of(
-            "HTTP with proxy_auth",
-            "http",
-            (Supplier<Integer>) () -> fakeBackendServerPort,
-            (Supplier<ForwardProxyInfo>)
-                TigerProxyForwardToProxyTest::createForwardProxyConfigWithAuth),
-        Arguments.of(
-            "HTTPS with proxy_auth",
-            "https",
-            (Supplier<Integer>) () -> fakeBackendServerTlsPort,
-            (Supplier<ForwardProxyInfo>)
-                TigerProxyForwardToProxyTest::createForwardProxyConfigWithAuth),
-        Arguments.of(
-            "HTTP without authorization",
-            "http",
-            (Supplier<Integer>) () -> fakeBackendServerPort,
-            (Supplier<ForwardProxyInfo>)
-                TigerProxyForwardToProxyTest::createForwardProxyConfigNoAuth),
-        Arguments.of(
-            "HTTPS without authorization",
-            "https",
-            (Supplier<Integer>) () -> fakeBackendServerTlsPort,
-            (Supplier<ForwardProxyInfo>)
-                TigerProxyForwardToProxyTest::createForwardProxyConfigNoAuth));
-  }
+      spawnTigerProxyWithDefaultRoutesAndWith(
+          TigerProxyConfiguration.builder()
+              .forwardToProxy(
+                  ForwardProxyInfo.builder()
+                      .hostname("localhost")
+                      .port(forwardProxy.getProxyPort())
+                      .noProxyHosts(
+                          List.of(
+                              "notresolvable",
+                              "www.example.com")) // we need both, because the NPE would only occur
+                      // when
+                      // comparing the notresolvable with a resolvable name. See
+                      // de.gematik.test.tiger.util.NoProxyUtils.shouldUseProxyForHost
+                      .build())
+              .build());
 
-  private static ForwardProxyInfo createForwardProxyConfigWithAuth() {
-    return ForwardProxyInfo.builder()
-        .hostname("localhost")
-        .port(SQUID_PROXY_PORT_AUTH_REQUIRED)
-        .username("admin")
-        .password("admin")
-        .build();
-  }
+      proxyRest.config().requestTimeout(10_000).connectTimeout(10_000).verifySsl(false);
+      // The unirest throws its own exception. The NullPointerException or UnknownHostException are
+      // thrown
+      // by the tiger-proxy, but here we only see them in the log, not as a return value.
+      // We still expect an UnknownHostException to be logged, because we are telling the
+      // tiger
+      // proxy to not use
+      // the forward proxy with the notresolvable hostname, and therefore it cant deliver the
+      // message to it.
+      var output =
+          tapSystemErrAndOut(
+              () ->
+                  assertThatExceptionOfType(UnirestException.class)
+                      .isThrownBy(() -> proxyRest.get("http://notresolvable").asString())
+                      .withMessageContaining(
+                          "java.io.IOException: HTTP/1.1 header parser received no bytes"));
 
-  private static ForwardProxyInfo createForwardProxyConfigNoAuth() {
-    return ForwardProxyInfo.builder().hostname("localhost").port(SQUID_PROXY_PORT_NO_AUTH).build();
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("withOrWithoutTlsParams")
-  //  @Disabled
-  void sendRequestToFakebackend_WithOrWithoutTls(
-      String description,
-      String protocol,
-      Supplier<Integer> fakeBackendPort,
-      Supplier<ForwardProxyInfo> forwardProxyInfo) {
-    final String toRoute =
-        protocol + "://" + DOCKER_HOST.getValueOrDefault() + ":" + fakeBackendPort.get();
-    spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .tls(
-                TigerTlsConfiguration.builder()
-                    .masterSecretsFile("target/master-secrets.txt")
-                    .build())
-            .proxyRoutes(
-                List.of(
-                    TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
-            .forwardToProxy(forwardProxyInfo.get())
-            .build());
-
-    log.info("Routing traffic to {}", toRoute);
-
-    proxyRest.get("https://maHost/ok").asString();
-    awaitMessagesInTigerProxy(2);
-
-    assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.responseCode")
-        .hasStringContentEqualTo("200")
-        .andTheInitialElement()
-        .extractChildWithPath("$.body.request")
-        .hasStringContentEqualTo("body");
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"http", "https"})
-  void noProxyHostInVariousSettings(String protocol) {
-    executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("localhost"));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"http", "https"})
-  void nonMatchingNoProxyHostInVariousSettings(String protocol) {
-    assertThatThrownBy(
-            () -> executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("somethingElse")))
-        .isNotNull();
-  }
-
-  void executeNoProxyTestWithProtocolAndNoProxyHosts(String protocol, List<String> noProxyHosts) {
-    final String serverPort =
-        String.valueOf(protocol.equals("http") ? fakeBackendServerPort : fakeBackendServerTlsPort);
-    final String toRoute = protocol + "://localhost:" + serverPort;
-    final ForwardProxyInfo proxyInfo =
-        ForwardProxyInfo.builder()
-            .hostname("localhost")
-            .port(SQUID_PROXY_PORT_NO_AUTH)
-            .noProxyHosts(noProxyHosts)
-            .build();
-    spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
-            .forwardToProxy(proxyInfo)
-            .build());
-
-    log.info("Routing traffic to {}", toRoute);
-
-    proxyRest.get("https://maHost/ok").asString();
-    awaitMessagesInTigerProxy(2);
-
-    assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.responseCode")
-        .hasStringContentEqualTo("200")
-        .andTheInitialElement()
-        .extractChildWithPath("$.body.request")
-        .hasStringContentEqualTo("body");
+      Assertions.assertThat(output)
+          .doesNotContain("NullPointerException")
+          .contains("Caused by: java.net.UnknownHostException: notresolvable");
+    }
   }
 }

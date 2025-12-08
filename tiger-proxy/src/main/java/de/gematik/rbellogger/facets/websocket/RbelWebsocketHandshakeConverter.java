@@ -27,12 +27,19 @@ import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.http.*;
+import de.gematik.test.tiger.proxy.TigerProxyPairingConverter;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-@ConverterInfo(onlyActivateFor = "websocket")
+@ConverterInfo(
+    onlyActivateFor = "websocket",
+    dependsOn = {
+      RbelHttpRequestConverter.class,
+      RbelHttpResponseConverter.class,
+      TigerProxyPairingConverter.class
+    })
 @Slf4j
 public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
 

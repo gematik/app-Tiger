@@ -36,7 +36,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.AttributeKey;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
@@ -264,8 +266,20 @@ public class NettyHttpClient {
     if (remoteAddress == null || proxyConfiguration == null) {
       return true;
     }
-    return NoProxyUtils.shouldUseProxyForHost(
-        remoteAddress.getAddress(), proxyConfiguration.getNoProxyHosts());
+    return Optional.ofNullable(remoteAddress.getAddress())
+        .or(
+            () ->
+                Optional.ofNullable(remoteAddress.getHostName())
+                    .map(
+                        adr -> {
+                          try {
+                            return InetAddress.getByName(adr);
+                          } catch (UnknownHostException e) {
+                            return null;
+                          }
+                        }))
+        .map(adr -> NoProxyUtils.shouldUseProxyForHost(adr, proxyConfiguration.getNoProxyHosts()))
+        .orElse(true);
   }
 
   public int queryClientPort(int port) {
