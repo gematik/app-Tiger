@@ -234,30 +234,12 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     return new ScenarioIdentifier(this.uniqueId);
   }
 
-  public getLink(featureName: string): string {
-    return encodeURIComponent(this.combineScenarioWithFeatureName(featureName));
+  public getLink(): string {
+    return encodeURIComponent(this.uniqueId);
   }
 
-  public getFailureId(featureName: string): string {
-    return (
-      this.combineScenarioWithFeatureName(featureName) +
-      "_test_step_failure_message"
-    );
-  }
-
-  public combineScenarioWithFeatureName(featureName: string): string {
-    if (this.variantIndex === -1) {
-      return featureName.trim() + "_" + this.description.trim();
-    } else {
-      return (
-        featureName.trim() +
-        "_" +
-        this.description.trim() +
-        "[" +
-        (this.variantIndex + 1) +
-        "]"
-      );
-    }
+  public getFailureId(): string {
+    return this.uniqueId + "_test_step_failure_message";
   }
 
   public toString() {

@@ -56,7 +56,7 @@ public class ExceptionHandling {
 
   /** Closes the specified channel after all queued write requests are flushed. */
   public static void closeOnFlush(Channel ch) {
-    if (ch != null && ch.isActive()) {
+    if (ch != null && ch.isActive() && !ch.eventLoop().isShuttingDown()) {
       ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
     }
   }

@@ -110,6 +110,7 @@
                     id="test-tg-config-editor-btn-close"
                     class="float-end"
                     role="button"
+                    tabindex="0"
                     @click="configEditorSidePanelIsOpened = false"
                     ><i class="fa fa-window-close" />
                   </span>
@@ -150,17 +151,25 @@
         <div class="container">
           <div class="row mb-1">
             <button
-              v-if="featureFlags.testSelection"
               class="btn btn-primary"
               type="button"
               @click="openTestSelectorDialog"
               id="open-test-selector-button"
             >
-              Select tests to execute...
+              Advanced selection...
+            </button>
+          </div>
+          <div class="row mb-1">
+            <button
+              class="btn btn-success"
+              type="button"
+              @click="executeSelectedTests"
+            >
+              Execute selected tests
             </button>
           </div>
         </div>
-        <FeatureList :feature-update-map="featuresStore.featureUpdateMap" />
+        <FeatureList />
         <!-- server status -->
         <h4>
           <i
@@ -193,12 +202,16 @@
               <a
                 id="test-execution-pane-tab"
                 class="btn active execution-pane-buttons"
+                role="button"
+                tabindex="0"
                 @click="showTab('execution_pane', $event)"
                 >Test execution</a
               >
               <a
                 id="test-server-log-tab"
                 class="btn execution-pane-buttons"
+                role="button"
+                tabindex="0"
                 @click="showTab('logs_pane', $event)"
                 >Server Logs</a
               >
@@ -206,6 +219,8 @@
                 v-if="featureFlags.trafficVisualization"
                 id="test-traffic-visualization-tab"
                 class="btn execution-pane-buttons"
+                role="button"
+                tabindex="0"
                 @click="showTab('visualization_pane', $event)"
                 >Traffic Visualization</a
               >
@@ -316,6 +331,7 @@ import { useDialog } from "primevue";
 import { useFeaturesStore } from "@/stores/features.ts";
 import debug from "@/logging/log.ts";
 import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
+import { runSelectedTests } from "@/components/replay/ScenarioRunner.ts";
 
 const { loadSubsetOfProperties } = useConfigurationLoader();
 const featureFlags = ref(new FeatureFlags());
@@ -358,6 +374,10 @@ const currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(
  */
 const featuresStore = useFeaturesStore();
 
+function executeSelectedTests() {
+  runSelectedTests();
+}
+
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
 
@@ -389,7 +409,7 @@ const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
 let hasTestRunFinished = false;
 
-async function loadFeaturesFlags() {
+async function loadFeatureFlags() {
   featureFlags.value = FeatureFlags.fromMap(
     await loadSubsetOfProperties("tiger.lib"),
   );
@@ -401,7 +421,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
-  loadFeaturesFlags().then(() => checkIfSelectorShouldOpen());
+  loadFeatureFlags();
 });
 
 const dialog = useDialog();
@@ -413,12 +433,6 @@ const openTestSelectorDialog = () => {
     },
   });
 };
-
-function checkIfSelectorShouldOpen() {
-  if (featureFlags.value.shouldOpenDialog()) {
-    openTestSelectorDialog();
-  }
-}
 
 function setTestRunFinished() {
   hasTestRunFinished = true;

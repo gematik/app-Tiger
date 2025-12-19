@@ -27,6 +27,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +35,7 @@ import java.time.ZonedDateTime;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-class RbelBearerTokenConverterTest {
+class RbelAuthorizationHeaderConverterTest {
 
   @Test
   void shouldFindJwtInBearerHeaderAttributer() throws IOException {
@@ -72,5 +73,44 @@ class RbelBearerTokenConverterTest {
         .contains("Carvalho")
         .contains("https://idp.zentral.idp.splitdns.ti-dienste.de");
     FileUtils.writeStringToFile(new File("target/bearerToken.html"), renderingOutput);
+  }
+
+  @Test
+  void shouldParseDpopAuthorizationHeader() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+                "src/test/resources/sampleMessages/bearerToken.curl")
+            .replace("Authorization: Bearer ", "Authorization: DPoP ");
+
+    final RbelLogger logger = RbelLogger.build();
+    final RbelElement convertedMessage =
+        logger
+            .getRbelConverter()
+            .parseMessage(
+                curlMessage.getBytes(StandardCharsets.UTF_8),
+                new RbelMessageMetadata().withTransmissionTime(ZonedDateTime.now()));
+
+    assertThat(convertedMessage.findRbelPathMembers("$.header.Authorization.DpopToken"))
+        .isNotEmpty();
+  }
+
+  @Test
+  void shouldParseBasicAuthorizationHeader() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+                "src/test/resources/sampleMessages/bearerToken.curl")
+            .replaceFirst("Bearer .*", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==");
+
+    final RbelLogger logger = RbelLogger.build();
+    final RbelElement convertedMessage =
+        logger
+            .getRbelConverter()
+            .parseMessage(
+                curlMessage.getBytes(StandardCharsets.UTF_8),
+                new RbelMessageMetadata().withTransmissionTime(ZonedDateTime.now()));
+
+    RbelElementAssertion.assertThat(convertedMessage)
+        .hasStringContentEqualToAtPosition("$.header.Authorization.username", "Aladdin")
+        .hasStringContentEqualToAtPosition("$.header.Authorization.password", "open sesame");
   }
 }

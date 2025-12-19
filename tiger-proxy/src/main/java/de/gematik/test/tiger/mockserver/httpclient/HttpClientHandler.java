@@ -53,7 +53,10 @@ public class HttpClientHandler extends SimpleChannelInboundHandler<Message> {
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) {
-    ctx.close();
+    // Skip close if event loop is shutting down to avoid RejectedExecutionException
+    if (!ctx.channel().eventLoop().isShuttingDown()) {
+      ctx.close();
+    }
   }
 
   @Override

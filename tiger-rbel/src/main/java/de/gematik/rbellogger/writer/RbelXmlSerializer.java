@@ -100,6 +100,10 @@ public class RbelXmlSerializer implements RbelSerializer {
       } else if (treeNode.attributes().containsKey(IS_XML_NAMESPACE_PREFIX)
           && parentBranch instanceof Element element) {
         element.addNamespace(key, treeNode.getRawStringContent());
+      } else if (parentBranch instanceof Document
+          && (key.equals("_version") || key.equals("_encoding"))) {
+        // skip version/encoding nodes
+        log.debug("Found version/encoding node in XML, skipping serialization of it.");
       } else {
         addXmlNode(treeNode, parentBranch, rbelWriter, key);
       }

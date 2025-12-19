@@ -44,9 +44,6 @@ class StaticMainContentTests extends AbstractBase {
             () ->
                 PlaywrightAssertions.assertThat(
                         page.locator("#test-sidebar-featurelistbox")
-                            .locator(".scenarioLink")
-                            .first()
-                            .locator("xpath=..")
                             .locator(".test-passed")
                             .first())
                     .isVisible());

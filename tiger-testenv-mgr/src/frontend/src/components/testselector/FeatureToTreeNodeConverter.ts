@@ -27,23 +27,39 @@ import commonPathPrefix from "common-path-prefix";
 
 function createSingleFeatureNode(featureUpdateMap: Map<string, FeatureUpdate>) {
   //when we only have one feature, we dont need to show the folder structure
-  const singleFeatureKey = featureUpdateMap.keys().next().value;
-  const singleFeatureValue = featureUpdateMap.values().next().value;
+  const singleFeatureKey = featureUpdateMap.keys().next().value!;
+  const singleFeatureValue = featureUpdateMap.values().next().value!;
 
-  return [
-    {
-      key: singleFeatureKey,
-      data: {
-        label: singleFeatureValue?.description,
-        sourcePath: singleFeatureValue?.sourcePath.substring(
-          singleFeatureValue.sourcePath.lastIndexOf("/") + 1,
-        ),
-        selected: false,
-      },
-      children: [],
-      type: "feature",
-    } as TreeNode,
-  ];
+  return [createFeatureNode(singleFeatureKey, singleFeatureValue)];
+}
+
+function createFeatureNode(
+  featureKey: string,
+  featureUpdate: FeatureUpdate,
+): TreeNode {
+  return {
+    key: featureKey,
+    label: featureUpdate.description,
+    data: {
+      label: featureUpdate.description,
+      sourcePath: fileNameFromPath(featureUpdate.sourcePath),
+      selected: false,
+    },
+    children: [],
+    type: "feature",
+  };
+}
+
+/**
+ * Builds a flat list of nodes, where each node represents a feature. Does not include parent folders
+ * @param featureUpdateMap
+ */
+function buildFlatFeatureNodes(
+  featureUpdateMap: Map<string, FeatureUpdate>,
+): TreeNode[] {
+  return Array.from(featureUpdateMap.entries()).map(([key, value]) =>
+    createFeatureNode(key, value),
+  );
 }
 
 /**
@@ -100,16 +116,7 @@ function buildFolderAndFeatureNodes(
     }
 
     // Create the feature node
-    const featureNode: TreeNode = {
-      key: featureKey,
-      data: {
-        label: featureUpdate.description,
-        //Once on the feature, we just care about the file name, not the full path
-        sourcePath: fileNameFromPath(pathRelativeToCommonPath),
-        selected: false,
-      },
-      type: "feature",
-    };
+    const featureNode: TreeNode = createFeatureNode(featureKey, featureUpdate);
 
     // Attach feature node to its parent folder, or root if no folders
     parentNode.children!.push(featureNode);
@@ -136,8 +143,11 @@ function convertScenarioListToTree(
 
 export function convertToTreeNode(
   featureUpdateMap: Map<string, FeatureUpdate>,
+  flatStructure: boolean = false,
 ): TreeNode[] {
-  const nodes: TreeNode[] = buildFolderAndFeatureNodes(featureUpdateMap);
+  const nodes: TreeNode[] = flatStructure
+    ? buildFlatFeatureNodes(featureUpdateMap)
+    : buildFolderAndFeatureNodes(featureUpdateMap);
   visitTreeNodes(nodes, (node) =>
     addScenariosAsNodeChildren(node, featureUpdateMap),
   );
@@ -257,13 +267,15 @@ function createNodeForScenario(
   testType: string,
   sourcePath: string,
 ): TreeNode {
+  const label =
+    testType === "scenarioOutline"
+      ? scenario.description
+      : scenario.getVariantDescription();
   return {
     key: key,
+    label: label,
     data: {
-      label:
-        testType === "scenarioOutline"
-          ? scenario.description
-          : scenario.getVariantDescription(),
+      label: label,
       examples:
         testType === "scenarioVariant"
           ? scenario?.getVariantExamplesAsString()

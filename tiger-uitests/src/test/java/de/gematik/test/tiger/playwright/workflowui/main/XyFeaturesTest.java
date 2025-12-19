@@ -50,9 +50,10 @@ class XyFeaturesTest extends AbstractBase {
                 .hasCount(NUMBER_OF_FEATURES),
         () ->
             assertThat(page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name"))
-                .hasCount(NUMBER_OF_SCENARIOS),
+                .hasCount(NUMBER_OF_SCENARIOS_INCLUDING_OUTLINE_NODES),
         () ->
-            assertThat(page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-index"))
+            assertThat(
+                    page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-with-index"))
                 .hasCount(11));
   }
 
@@ -77,29 +78,27 @@ class XyFeaturesTest extends AbstractBase {
    * scenario name and example index gets assigned a counter based on its position in the list.
    */
   private static Stream<Arguments> provideScenarioData() {
-    return Stream.iterate(0, i -> i < SCENARIO_DATA.length, i -> i + 1)
+    return Stream.iterate(0, i -> i < SCENARIO_DATA_WITH_OUTLINE_NODES.length, i -> i + 1)
         .map(
             i ->
                 Arguments.of(
-                    SCENARIO_DATA[i][0], // scenarioName
+                    SCENARIO_DATA_WITH_OUTLINE_NODES[i][0], // scenarioName
                     i, // counter (automatically computed from position)
-                    Integer.parseInt(SCENARIO_DATA[i][1]) // index
+                    Integer.parseInt(SCENARIO_DATA_WITH_OUTLINE_NODES[i][1]) // index
                     ));
   }
 
-  @ParameterizedTest()
+  @ParameterizedTest(name = "{0} - counter: {1} index: {2}")
   @MethodSource("provideScenarioData")
   void testScenarioNames(String scenarioName, int counter, int index) {
     openSidebar();
-    assertThat(
-            page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name").nth(counter))
-        .containsText(scenarioName);
+    var scenarioLine =
+        page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name").nth(counter);
+    assertThat(scenarioLine).containsText(scenarioName);
     if (index > 0) {
-      assertThat(
-              page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name")
-                  .nth(counter)
-                  .locator(".test-sidebar-scenario-index"))
-          .containsText("[" + index + "]");
+      var scenarioLink = scenarioLine.locator(".scenarioLink");
+      assertThat(scenarioLink).containsClass("test-sidebar-scenario-with-index");
+      assertThat(scenarioLink).containsText("[" + index + "]");
     }
   }
 

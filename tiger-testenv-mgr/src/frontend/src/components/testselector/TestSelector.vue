@@ -25,7 +25,6 @@ import { computed, inject, ref, type Ref } from "vue";
 import TreeTable, { type TreeTableFilterEvent } from "primevue/treetable";
 import Column from "primevue/column";
 import Tag from "primevue/tag";
-import SplitButton from "primevue/splitbutton";
 import InputText from "primevue/inputtext";
 import InputIcon from "primevue/inputicon";
 import IconField from "primevue/iconfield";
@@ -34,7 +33,7 @@ import { useFeaturesStore } from "@/stores/features.ts";
 import type { DynamicDialogInstance } from "primevue/dynamicdialogoptions";
 import { convertToTreeNode } from "@/components/testselector/FeatureToTreeNodeConverter.ts";
 import { visitTreeNodes } from "@/components/testselector/TreeNodeVisitor.ts";
-import { runScenarios } from "@/components/replay/ScenarioRunner.ts";
+import { runSelectedTests } from "@/components/replay/ScenarioRunner.ts";
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier.ts";
 import { useSelectedTestsStore } from "@/stores/selectedTests.ts";
 import {
@@ -46,6 +45,7 @@ import ProgressSpinner from "primevue/progressspinner";
 import { useCollapseExpandedTests } from "@/stores/collapseExpandedTests.ts";
 import Message from "primevue/message";
 import Popover from "primevue/popover";
+import TagsSelector from "@/components/testselector/TagsSelector.vue";
 
 const thisDialogInstance = inject<Ref<DynamicDialogInstance>>("dialogRef");
 
@@ -96,25 +96,9 @@ const tags = computed(() => {
 });
 
 const executeSelection = () => {
-  const selectionUniqueIds = uniqueIdsOfSelectedTests();
-  runScenarios(selectionUniqueIds);
+  runSelectedTests();
   closeDialog();
 };
-
-function uniqueIdsOfSelectedTests(): ScenarioIdentifier[] {
-  const selectedKeys = selectedTestsStore.currentlySelectedTests;
-  const selectionUniqueIds: string[] = [];
-  visitTreeNodes(testsToSelect.value, (node: TreeNode) => {
-    if (
-      (node.data.testType === "scenario" ||
-        node.data.testType === "scenarioVariant") &&
-      selectedKeys.includes(node.key)
-    ) {
-      selectionUniqueIds.push(node.key);
-    }
-  });
-  return selectionUniqueIds.map((s) => new ScenarioIdentifier(s));
-}
 
 const selectAll = () => {
   selectedTestsStore.replaceSelection(allKeys.value);
@@ -226,25 +210,12 @@ function onFilterChange(_event: TreeTableFilterEvent) {
   updateParentsCheckedStatus();
 }
 
-const createTagActions = (tag: string) => [
-  {
-    label: "Unselect",
-    icon: "fa fa-minus",
-    command: () => {
-      removeFromSelection(tag);
-    },
-  },
-  {
-    label: "Replace selection",
-    icon: "fa fa-rotate-right",
-    command: () => {
-      replaceSelection(tag);
-    },
-  },
-];
-
 async function saveSelection() {
-  const relativizedPaths = await relativizePaths(uniqueIdsOfSelectedTests());
+  const relativizedPaths = await relativizePaths(
+    selectedTestsStore.onlyScenariosAndScenarioVariants.map(
+      (s) => new ScenarioIdentifier(s),
+    ),
+  );
   const dataStr = JSON.stringify(relativizedPaths, null, 2);
   const dataBlob = new Blob([dataStr], { type: "application/json" });
   const url = URL.createObjectURL(dataBlob);
@@ -383,26 +354,15 @@ const errorMessage = ref<string[]>([]);
           </div>
         </div>
         <div class="col ps-2">
-          <div
+          <TagsSelector
             v-if="
               !testSuiteLifecycleStore.waitingForTestDiscovery && tags.size > 0
             "
-            id="testselector-tags"
-          >
-            <span class="h5 me-2">Tags</span>
-            <SplitButton
-              v-for="tag in tags"
-              class="me-1 mb-1 mt-1 tag-selection-button"
-              :key="tag"
-              :label="tag"
-              size="small"
-              icon="fa fa-plus"
-              @click="addToSelection(tag)"
-              :model="createTagActions(tag)"
-              rounded
-            >
-            </SplitButton>
-          </div>
+            :tags="tags"
+            @select-tag="addToSelection"
+            @remove-tag="removeFromSelection"
+            @replace-selection="replaceSelection"
+          />
         </div>
         <div
           class="d-flex justify-content-center align-items-center"
@@ -520,39 +480,5 @@ const errorMessage = ref<string[]>([]);
   top: 0;
   background-color: var(--p-dialog-background);
   z-index: 1055;
-}
-
-/*Following styles are to ensure the tag buttons are small.
-It is tricky because we have mix of styles from primevue with bootstrap (bootstrap styles the
-button elements even if they have no specific bootstrap class.
-*/
-/* Scoped version (Vue 3): */
-:deep(.tag-selection-button.p-splitbutton) {
-  font-size: 0.875rem;
-}
-
-:deep(.tag-selection-button.p-splitbutton .p-button),
-:deep(.tag-selection-button.p-splitbutton .p-splitbutton-menubutton) {
-  padding: 0.25rem 0.5rem;
-  line-height: 1.1;
-  gap: 0.25rem;
-  min-height: 1.75rem;
-}
-
-:deep(.tag-selection-button.p-splitbutton .p-button-label) {
-  font-size: 0.875rem;
-}
-
-:deep(.tag-selection-button.p-splitbutton .p-button-icon),
-:deep(.tag-selection-button.p-splitbutton .p-button .p-icon),
-:deep(.tag-selection-button.p-splitbutton .p-splitbutton-menubutton .p-icon) {
-  font-size: 0.875rem;
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-:deep(.tag-selection-button.p-splitbutton .p-menu .p-menuitem-link) {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
 }
 </style>

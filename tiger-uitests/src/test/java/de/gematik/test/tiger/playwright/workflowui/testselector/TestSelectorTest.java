@@ -84,6 +84,10 @@ class TestSelectorTest extends AbstractBase {
 
   void waitForModal() {
     log.info("Waiting for test selector modal...");
+    openSidebar();
+    var openModalButton = page.locator("#open-test-selector-button");
+    openModalButton.click();
+    page.pause();
     selectorModal = page.locator("#testselector-table");
     selectorModal.waitFor();
     tableRows = selectorModal.locator("tbody tr");
@@ -135,7 +139,6 @@ class TestSelectorTest extends AbstractBase {
     var splitButton =
         selectorModal.locator(".tag-selection-button").first().locator(".p-splitbutton-dropdown");
     splitButton.click();
-    page.pause();
     screenshotButtonWithTooltip(
         page,
         selectorModal.locator(".tag-selection-button").first(),

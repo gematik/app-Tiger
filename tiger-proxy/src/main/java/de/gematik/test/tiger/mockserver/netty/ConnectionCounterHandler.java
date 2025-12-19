@@ -41,6 +41,9 @@ public class ConnectionCounterHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelUnregistered(ChannelHandlerContext ctx) {
-    mockServer.removeRemoteAddress(ctx.channel().remoteAddress());
+    // Skip cleanup if event loop is shutting down to avoid RejectedExecutionException
+    if (!ctx.channel().eventLoop().isShuttingDown()) {
+      mockServer.removeRemoteAddress(ctx.channel().remoteAddress());
+    }
   }
 }

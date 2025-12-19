@@ -96,6 +96,10 @@ public class RbelElement extends RbelPathAble {
     this(uuid, RbelContent.of(rawContent), parentNode, charset);
   }
 
+  public static RbelElement create(RbelContent content, RbelElement parentNode) {
+    return new RbelElement(null, content, parentNode, Optional.empty());
+  }
+
   public RbelElement(
       @Nullable String uuid,
       RbelContent content,

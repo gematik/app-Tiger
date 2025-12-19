@@ -103,30 +103,20 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(responsePayload);
 
         // check request adresses
-        assertThat(
-                tigerProxy
-                    .getRbelMessagesList()
-                    .get(0)
-                    .findElement("$.receiver.port")
-                    .get()
-                    .getRawStringContent())
-            .isEqualTo("" + serverSocket.getLocalPort());
-        assertThat(
-                tigerProxy
-                    .getRbelMessagesList()
-                    .get(0)
-                    .findElement("$.sender.port")
-                    .get()
-                    .getRawStringContent())
-            .isEqualTo("" + clientSocket.getLocalPort());
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.receiver.port")
+            .hasStringContentEqualTo(Integer.toString(serverSocket.getLocalPort()));
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .extractChildWithPath("$.sender.port")
+            .hasStringContentEqualTo(Integer.toString(clientSocket.getLocalPort()));
 
         // check response adresses
         assertThat(tigerProxy.getRbelMessagesList().get(1))
             .extractChildWithPath("$.sender.port")
-            .hasStringContentEqualTo("" + serverSocket.getLocalPort());
+            .hasStringContentEqualTo(Integer.toString(serverSocket.getLocalPort()));
         assertThat(tigerProxy.getRbelMessagesList().get(1))
             .extractChildWithPath("$.receiver.port")
-            .hasStringContentEqualTo("" + clientSocket.getLocalPort());
+            .hasStringContentEqualTo(Integer.toString(clientSocket.getLocalPort()));
 
         // check timing
         final ZonedDateTime requestTime =

@@ -30,6 +30,7 @@ import de.gematik.test.tiger.lib.exception.ValidatorAssertionError;
 import java.util.Collection;
 import java.util.List;
 import lombok.val;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,12 @@ class ValidatorMismatchNotesTest extends AbstractRbelMessageValidatorTest {
   @BeforeEach
   void init() {
     super.setUp();
+    RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.putValue(1);
+  }
+
+  @AfterEach
+  void tearDown() {
+    RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.clearValue();
   }
 
   @Test

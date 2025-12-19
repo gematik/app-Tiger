@@ -27,7 +27,12 @@
     class="alert banner-message fade show py-5 text-danger text-center fade show test-messages-quit"
     role="alert"
   >
-    <i class="btn-banner-close fa-solid fa-xmark" @click="closeWindow"></i>
+    <i
+      class="btn-banner-close fa-solid fa-xmark"
+      role="button"
+      tabindex="0"
+      @click="closeWindow"
+    ></i>
     <h4 class="pt-3 pb-0">
       <i class="fa-2xl fa-solid fa-power-off pe-3"></i>
       {{ quitReason.message }}
@@ -44,6 +49,8 @@
     <i
       v-if="isOfType(BannerType.MESSAGE)"
       class="btn-banner-close fa-solid fa-xmark"
+      role="button"
+      tabindex="0"
       @click="closeWindow"
     ></i>
     <h4 class="pt-3 pb-0 text-center">
@@ -89,6 +96,8 @@
     <div
       v-if="isOfType(BannerType.STEP_WAIT)"
       class="btn btn-success w-100 mt-3 mb-1"
+      role="button"
+      tabindex="0"
       @click="confirmContinue"
     >
       Continue
@@ -97,10 +106,22 @@
       v-if="isOfType(BannerType.FAIL_PASS)"
       class="row justify-content-around"
     >
-      <div class="btn btn-success w-45 mt-3 mb-1" @click="confirmContinue">
+      <div
+        class="btn btn-success w-45 mt-3 mb-1"
+        role="button"
+        tabindex="0"
+        @click="confirmContinue"
+      >
         Pass
       </div>
-      <div class="btn btn-danger w-45 mt-3 mb-1" @click="confirmFail">Fail</div>
+      <div
+        class="btn btn-danger w-45 mt-3 mb-1"
+        role="button"
+        tabindex="0"
+        @click="confirmFail"
+      >
+        Fail
+      </div>
     </div>
   </div>
 </template>

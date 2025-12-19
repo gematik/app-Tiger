@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,6 +62,12 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   @BeforeEach
   public void setUp() {
     super.setUp();
+    RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.putValue(1);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.clearValue();
   }
 
   @Test

@@ -252,7 +252,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
   void printServerUpMessage() {
     String message = "External server Startup OK for '" + getServerId() + "'";
     if (getConfiguration().getSource() != null && !getConfiguration().getSource().isEmpty()) {
-      message += " downloaded from '" + getConfiguration().getSource().get(0) + "'";
+      message += " with source '" + getConfiguration().getSource().get(0) + "'";
     }
     if (log.isInfoEnabled()) {
       log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));

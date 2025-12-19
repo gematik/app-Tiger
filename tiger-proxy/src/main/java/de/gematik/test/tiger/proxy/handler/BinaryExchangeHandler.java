@@ -28,7 +28,6 @@ import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
-import java.net.SocketAddress;
 import java.time.ZoneId;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -48,12 +47,12 @@ public class BinaryExchangeHandler {
 
   public void onProxy(
       BinaryMessage binaryMessage,
-      SocketAddress serverAddress,
-      SocketAddress clientAddress,
+      RbelSocketAddress serverAddress,
+      RbelSocketAddress clientAddress,
       RbelMessageKind messageKind) {
     connectionParser.addToBuffer(
-        RbelSocketAddress.create(clientAddress),
-        RbelSocketAddress.create(serverAddress),
+        clientAddress,
+        serverAddress,
         binaryMessage.getBytes(),
         binaryMessage.getTimestamp().atZone(ZoneId.systemDefault()),
         messageKind);

@@ -472,4 +472,19 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort()).asString().getStatus())
         .isEqualTo(666); // /foobar.*
   }
+
+  @Test
+  void shouldResolveHostHeader() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("http://127.0.0.1")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    assertThat(proxyRest.get("http://localhost/foobar").asString().getStatus()).isEqualTo(666);
+  }
 }

@@ -26,7 +26,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.concurrent.TimeUnit
 
 class EmbeddedHttpbin(port: Int = 8081, val blockShutDown: Boolean = false) {
 
@@ -45,7 +44,7 @@ class EmbeddedHttpbin(port: Int = 8081, val blockShutDown: Boolean = false) {
     }
 
     fun stop() {
-        server.stop(1, 5, TimeUnit.SECONDS)
+        server.stop(gracePeriodMillis = 1000, timeoutMillis = 10000)
     }
 
     val port by lazy {

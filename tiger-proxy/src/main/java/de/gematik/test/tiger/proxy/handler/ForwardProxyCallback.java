@@ -27,6 +27,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /** Callback used for all Forward-Proxy routes in the TigerProxy. */
 @Slf4j
@@ -58,7 +59,12 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
 
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
-    return getSourceUri().getScheme() + "://" + getSourceUri().getHost();
+    val builder = new StringBuilder();
+    builder.append(getSourceUri().getScheme()).append("://").append(getSourceUri().getHost());
+    if (getSourceUri().getPort() != -1) {
+      builder.append(":").append(getSourceUri().getPort());
+    }
+    return builder.toString();
   }
 
   @Override

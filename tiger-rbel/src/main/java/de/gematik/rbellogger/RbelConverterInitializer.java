@@ -25,7 +25,7 @@ import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.exceptions.RbelInitializationException;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1Converter;
 import de.gematik.rbellogger.facets.cetp.RbelCetpConverter;
-import de.gematik.rbellogger.facets.http.RbelBearerTokenConverter;
+import de.gematik.rbellogger.facets.http.RbelAuthorizationHeaderConverter;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestConverter;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseConverter;
 import de.gematik.rbellogger.facets.http.formdata.RbelHttpFormDataConverter;
@@ -155,7 +155,7 @@ public class RbelConverterInitializer {
                 RbelJwtConverter.class,
                 RbelHttpFormDataConverter.class,
                 RbelJweConverter.class,
-                RbelBearerTokenConverter.class,
+                RbelAuthorizationHeaderConverter.class,
                 RbelXmlConverter.class,
                 RbelJsonConverter.class,
                 RbelVauEpaKeyDeriver.class,

@@ -226,17 +226,7 @@ image::screenshots/play_button.png[title="Play Buttons"]
 
 === Select a subset of tests to run
 
-A Test Selector modal window can be used to select a subset of tests to run.
-This feature must be enabled in the `tiger.yaml` configuration file:
-
-[source,yaml]
-----
-lib:
-  enableTestSelection: true
-----
-
-If the Workflow UI is started without automatic execution of tests (see xref:_runTestsOnStart[Postpone start of test scenarios]), the Test Selector modal window will open automatically in the Workflow UI.
-The Test Selector modal window can also be opened manually by clicking the "Select tests to execute..." button in the Status Bar.
+Tests can be selected in the sidebar, or an advanced selection modal can be opened by clicking the "Advanced selection..." button in the Status Bar.
 
 image::screenshots/testselector_modal.png[title="Test Selector modal window opened in the Workflow UI"]
 

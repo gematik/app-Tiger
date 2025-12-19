@@ -23,10 +23,12 @@ package de.gematik.test.tiger.lib.rbel;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
 @Getter
+@ToString
 public class RequestParameter {
 
   private String path;

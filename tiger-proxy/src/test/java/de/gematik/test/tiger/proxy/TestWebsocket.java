@@ -52,7 +52,8 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -75,9 +76,10 @@ class TestWebsocket {
     addWebsocketConverters(tigerProxy.getRbelLogger().getRbelConverter());
   }
 
+  @ValueSource(strings = {"/", "http://localhost:${free.port.0}/"})
   @SneakyThrows
-  @Test
-  void connectToTigerProxyViaAnotherTigerProxy() {
+  @ParameterizedTest
+  void connectToTigerProxyViaAnotherTigerProxy(String from) {
     try (val proxyingTigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -85,8 +87,9 @@ class TestWebsocket {
                 .proxyRoutes(
                     List.of(
                         TigerConfigurationRoute.builder()
-                            .from("/")
+                            .from(TigerGlobalConfiguration.resolvePlaceholders(from))
                             .to("http://localhost:" + tigerProxy.getAdminPort())
+                            .matchForProxyType(false)
                             .build()))
                 .build())) {
       tigerProxy.addRoute(
@@ -105,18 +108,24 @@ class TestWebsocket {
           .hasFacet(RbelWebsocketHandshakeFacet.class);
       assertThat(proxyingTigerProxy.getRbelMessagesList().get(5))
           .hasFacet(RbelWebsocketHandshakeFacet.class);
-      assertThat(proxyingTigerProxy.getRbelMessagesList().get(7))
+      val firstWebsocketMessage =
+          proxyingTigerProxy.getRbelMessagesList().stream()
+              .filter(el -> el.hasFacet(RbelWebsocketMessageFacet.class))
+              .findFirst()
+              .orElseThrow();
+      assertThat(firstWebsocketMessage)
           .extractChildWithPath("$.payload")
           .asString()
-          .startsWith("[\"CONNECT\\nheart-beat:0,0");
+          .startsWith("o");
     } finally {
       tigerProxy.clearAllRoutes();
     }
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(strings = {"/", "http://localhost:${free.port.0}"})
   @SneakyThrows
-  void connectToANonSocksWebsocketServer() {
+  void connectToANonSocksWebsocketServer(String from) {
     CountDownLatch latch = new CountDownLatch(2);
 
     final Integer serverPort =
@@ -142,7 +151,11 @@ class TestWebsocket {
         };
     server.start();
     tigerProxy.addRoute(
-        TigerProxyRoute.builder().from("/").to("http://localhost:" + serverPort).build());
+        TigerProxyRoute.builder()
+            .from(TigerGlobalConfiguration.resolvePlaceholders(from))
+            .to("http://localhost:" + serverPort)
+            .matchForProxyType(false)
+            .build());
 
     WebSocketClient client =
         new WebSocketClient(new URI("ws://localhost:" + tigerProxy.getProxyPort())) {

@@ -127,6 +127,7 @@ Feature: Playwright Test feature
     And TGR print current request as rbel-tree
     And TGR print current response as rbel-tree
 
+  @FailsOnPurpose
   Scenario: Test find last request with parameters
     Given TGR send empty GET request to "http://httpbin/classes?foobar=1"
     Then TGR send empty GET request to "http://httpbin/classes?foobar=1&xyz=4"

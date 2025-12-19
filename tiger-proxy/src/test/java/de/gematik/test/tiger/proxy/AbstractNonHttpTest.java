@@ -28,6 +28,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -145,17 +146,17 @@ public abstract class AbstractNonHttpTest {
             @Override
             public void onProxy(
                 BinaryMessage binaryMessage,
-                SocketAddress serverAddress,
-                SocketAddress clientAddress,
+                RbelSocketAddress serverAddress,
+                RbelSocketAddress clientAddress,
                 RbelMessageKind messageKind) {
               log.info(
                   "ports are server: {} and client: {}",
-                  ((InetSocketAddress) serverAddress).getPort(),
-                  ((InetSocketAddress) clientAddress).getPort());
+                  serverAddress.getPort(),
+                  clientAddress.getPort());
               // with new direct connection to remote server, there is no longer
               // pairing of request/response, so we identify it based on the direction the message
               // is going
-              if (((InetSocketAddress) serverAddress).getPort() == listenerServer.getLocalPort()) {
+              if (serverAddress.getPort() == listenerServer.getLocalPort()) {
                 handlerCalledRequest.incrementAndGet();
               } else {
                 handlerCalledResponse.incrementAndGet();

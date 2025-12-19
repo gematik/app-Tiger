@@ -18,24 +18,19 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.rbellogger.facets.http;
+package de.gematik.rbellogger.facets.xml;
 
-import de.gematik.rbellogger.RbelConversionExecutor;
-import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
-import java.nio.charset.StandardCharsets;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.core.RbelFacet;
 
-public class RbelBearerTokenConverter extends RbelConverterPlugin {
-  private static final byte[] BEARER_TOKEN_PREFIX = "Bearer ".getBytes(StandardCharsets.UTF_8);
+public record RbelXmlRootAttributeFacet(RbelElement version, RbelElement encoding)
+    implements RbelFacet {
 
   @Override
-  public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
-    var content = rbelElement.getContent();
-    if (content.startsWith(BEARER_TOKEN_PREFIX)) {
-      final RbelElement bearerTokenElement =
-          converter.convertElement(
-              content.subArray(BEARER_TOKEN_PREFIX.length, content.size()), rbelElement);
-      rbelElement.addFacet(new RbelBearerTokenFacet(bearerTokenElement));
-    }
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
+        .withSkipIfNull("_version", version)
+        .withSkipIfNull("_encoding", encoding);
   }
 }

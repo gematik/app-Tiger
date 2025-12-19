@@ -22,15 +22,15 @@ package de.gematik.test.tiger.mockserver.mock;
 
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 
+import de.gematik.rbellogger.util.RbelInternetAddressParser;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
 import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -60,6 +60,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private final List<String> hostRegexes;
   private final boolean ignorePortsInHostHeader;
   private final ExpectationCallback expectationCallback;
+  private final RbelSocketAddress virtualSocketAddress;
 
   @Builder(toBuilder = true)
   public Expectation(
@@ -86,6 +87,13 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     this.httpAction =
         HttpAction.of(new HttpOverrideForwardedRequest())
             .setExpectationForwardAndResponseCallback(expectationCallback);
+    this.virtualSocketAddress =
+        Optional.ofNullable(expectationCallback)
+            .filter(ForwardProxyCallback.class::isInstance)
+            .map(ForwardProxyCallback.class::cast)
+            .map(ForwardProxyCallback::getSourceUri)
+            .flatMap(uri -> RbelSocketAddress.generateFromUrl(uri.toString()))
+            .orElse(null);
   }
 
   public static Expectation buildReverseProxyRoute(
@@ -189,10 +197,30 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
         ignorePortsInHostHeader
             ? requestPattern.getFirstHeader("Host").split(":")[0]
             : requestPattern.getFirstHeader("Host");
-    if (StringUtils.equals(cleanedPatternHostHeader, cleanedHostHeader)) {
+    if (StringUtils.equals(cleanedPatternHostHeader, cleanedHostHeader)
+        || compareHostRegexList(cleanedHostHeader)
+        || resolveHostHeaderAndCompare(cleanedHostHeader, cleanedPatternHostHeader)) {
       return true;
     }
-    final boolean anyHostHeaderMatch =
+    log.atTrace()
+        .addArgument(() -> cleanedHostHeader)
+        .addArgument(tigerRoute::createShortDescription)
+        .addArgument(ignorePortsInHostHeader)
+        .log("host [{}] is not matching for route {} ({})");
+    return false;
+  }
+
+  private boolean resolveHostHeaderAndCompare(
+      String cleanedHostHeader, String cleanedPatternHostHeader) {
+    if (StringUtils.isEmpty(cleanedPatternHostHeader) || StringUtils.isEmpty(cleanedHostHeader)) {
+      return false;
+    }
+    return RbelInternetAddressParser.parseInetAddress(cleanedHostHeader)
+        .equals(RbelInternetAddressParser.parseInetAddress(cleanedPatternHostHeader));
+  }
+
+  private boolean compareHostRegexList(String cleanedHostHeader) {
+    final boolean anyStringHostHeaderMatch =
         hostRegexes.stream()
             .anyMatch(
                 hostMatchCriterion ->
@@ -200,14 +228,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
                         || cleanedHostHeader
                             .toLowerCase()
                             .matches(hostMatchCriterion.toLowerCase()));
-    if (!anyHostHeaderMatch) {
-      log.atTrace()
-          .addArgument(() -> cleanedHostHeader)
-          .addArgument(tigerRoute::createShortDescription)
-          .addArgument(ignorePortsInHostHeader)
-          .log("host [{}] is not matching for route {} ({})");
-    }
-    return anyHostHeaderMatch;
+    return anyStringHostHeaderMatch;
   }
 
   private boolean protocolMatches(HttpProtocol protocol, HttpProtocol otherProtocol) {
