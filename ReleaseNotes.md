@@ -1,5 +1,26 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.12
+
+## Bugfixes
+
+* TGR-1977: Integer-Values can now be used as keys in maps in the TigerGlobalConfiguration
+
+## Features
+
+* TGR-1990: Improved accessibility for Workflow UI interactive elements. Added `role="button"` and `tabindex="0"`
+  attributes to banner message buttons (Continue, Pass, Fail, Close) and tab navigation elements, enabling keyboard
+  navigation and support for browser extensions like Vimium. This enhancement improves usability for keyboard-only
+  users and those relying on assistive technologies.
+* TGR-1997: HTTP-Authorization header for DPoP and Basic-Authentication can now be parsed.
+* TGR-1995: add triggering for followup pipeline for tiger-mail-extension
+* TGR-1963: Workflow UI: Allow test selection directly in tiger sidebar. A selection modal for advanced selection can
+  also be opened.
+  The functionality is enabled and the old feature flag `enableTestSelection` is no longer needed.
+* TGR-1964: Workflow UI: improve tag based test selection in the advanced test selection modal. Tags with a prefix in
+  the form "XYZ:myTag" are grouped based on the prefix "XYZ" and take less space in the UI.
+* TGR-1945: version and encoding are now accessible in the rbel tree
+
 # Release 4.1.11
 
 ## Bugfixes
@@ -68,9 +89,9 @@ package de.gematik.test.tiger.common.jexl;
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
 
-  public String testMethod() {
-    return "test";
-  }
+    public String testMethod() {
+        return "test";
+    }
 }
 ```
 

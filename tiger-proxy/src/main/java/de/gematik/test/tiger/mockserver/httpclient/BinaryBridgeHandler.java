@@ -34,7 +34,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -48,6 +47,8 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
       AttributeKey.valueOf("OUTGOING_CHANNEL");
   public static final AttributeKey<Channel> INCOMING_CHANNEL =
       AttributeKey.valueOf("INCOMING_CHANNEL");
+  public static final AttributeKey<RbelSocketAddress> VIRTUAL_SERVER_ADDRESS =
+      AttributeKey.valueOf("VIRTUAL_SERVER_ADRESS");
   private final BinaryExchangeHandler binaryProxyListener;
   private final BinaryModifierApplier binaryModifierApplier;
   private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
@@ -68,22 +69,36 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
     synchronized (binaryProxyListener) {
       for (val msgToSend :
           binaryModifierApplier.applyModifierPlugins(msg, ctx, RbelMessageKind.RESPONSE)) {
-        Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
-            .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
-            .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
+        final Channel incomingChannel = ctx.channel().attr(INCOMING_CHANNEL).get();
+        if (incomingChannel == null) {
+          throw new IllegalStateException("Incoming channel is not set.");
+        }
+        incomingChannel.writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
+        val clientAddress = getVirtualServerAddress(ctx.channel(), incomingChannel);
+        val serverAddress = RbelSocketAddress.create(incomingChannel.remoteAddress());
         binaryProxyListener.onProxy(
-            msgToSend,
-            ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
-            ctx.channel().remoteAddress(),
-            RbelMessageKind.RESPONSE);
+            msgToSend, serverAddress, clientAddress, RbelMessageKind.RESPONSE);
       }
+    }
+  }
+
+  private static RbelSocketAddress getVirtualServerAddress(
+      Channel outgoingChannel, Channel incomingChannel) {
+    val virtualAddress = incomingChannel.attr(VIRTUAL_SERVER_ADDRESS).get();
+    if (virtualAddress != null) {
+      return virtualAddress;
+    } else {
+      return RbelSocketAddress.create(outgoingChannel.remoteAddress());
     }
   }
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) {
     contextLogger.logStage(ctx, "Outgoing channel of binary proxy is being closed");
-    ctx.close();
+    // Skip close if event loop is shutting down to avoid RejectedExecutionException
+    if (!ctx.channel().eventLoop().isShuttingDown()) {
+      ctx.close();
+    }
   }
 
   @Override

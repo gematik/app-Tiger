@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.VIRTUAL_SERVER_ADDRESS;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,6 +85,7 @@ public class HttpActionHandler {
     final Expectation expectation = httpStateHandler.firstMatchingExpectation(request);
 
     if (expectation != null && expectation.getHttpAction() != null) {
+      ctx.channel().attr(VIRTUAL_SERVER_ADDRESS).set(expectation.getVirtualSocketAddress());
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
           () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous));
@@ -94,7 +96,10 @@ public class HttpActionHandler {
             responseWriter,
             request,
             new TigerProxyRoutingException(
-                "No route found", RbelSocketAddress.create(getRemoteAddress(ctx)), null, null));
+                "No route found for  " + request.printLogLineDescription(),
+                RbelSocketAddress.create(ctx.channel().remoteAddress()),
+                null,
+                null));
       } else {
         final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
         final HttpRequest clonedRequest = hopByHopHeaderFilter.onRequest(request);

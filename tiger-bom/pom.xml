@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.1.11</version>
+    <version>4.1.12</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -127,8 +127,8 @@
         <version.mockito>5.20.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.netty>4.2.7.Final</version.netty>
-        <version.node>v22.19.0</version.node>
-        <version.npm>10.9.3</version.npm>
+        <version.node>v24.11.1</version.node>
+        <version.npm>11.6.2</version.npm>
         <version.okhttp>5.3.0</version.okhttp>
         <version.org.glassfish.jaxb>4.0.6</version.org.glassfish.jaxb>
         <version.selenium>4.38.0</version.selenium>
@@ -349,58 +349,58 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
                 <classifier>jar-with-dependencies</classifier>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>4.1.11</version>
+                <version>4.1.12</version>
             </dependency>
 
             <dependency>
@@ -679,7 +679,22 @@
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
-                <version>26.0.2-1</version>
+                <version>26.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${version.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common-jvm</artifactId>
+                <version>${version.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-test-junit</artifactId>
+                <version>${version.kotlin}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlinx</groupId>

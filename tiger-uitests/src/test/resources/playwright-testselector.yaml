@@ -3,4 +3,3 @@ lib:
   activateWorkflowUi: true
   startBrowser: false
   runTestsOnStart: false
-  enableTestSelection: true

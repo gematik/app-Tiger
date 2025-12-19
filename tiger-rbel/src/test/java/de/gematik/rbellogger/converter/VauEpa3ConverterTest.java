@@ -36,12 +36,12 @@ import lombok.val;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class VauEpa3ConverterTest {
+class VauEpa3ConverterTest {
   private static RbelLogger rbelLogger;
 
   @BeforeAll
   @SneakyThrows
-  public static void setUp() {
+  static void setUp() {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()

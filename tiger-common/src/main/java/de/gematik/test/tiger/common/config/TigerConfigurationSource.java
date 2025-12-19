@@ -96,7 +96,7 @@ public class TigerConfigurationSource implements Comparable<TigerConfigurationSo
       asMap.forEach(
           (subKey, entryValue) -> {
             var combinedKey = new TigerConfigurationKey(baseKey);
-            combinedKey.add((String) subKey);
+            combinedKey.add(subKey.toString());
             putValue(combinedKey, entryValue);
           });
     } else if (value instanceof List<?> asList) {

@@ -109,7 +109,8 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
   }
 
   @SneakyThrows
-  private void upgradeConnectionToWebSocket(ChannelHandlerContext outgoingContext, Object msg) {
+  private void upgradeConnectionToWebSocket(
+      ChannelHandlerContext outgoingContext, HttpResponse msg) {
     this.isUpgrading = true;
     val outgoingPipeline = outgoingContext.pipeline();
     log.atTrace().log("Upgrade connection to WebSocket");

@@ -626,7 +626,8 @@ public class TigerTestEnvMgr
                           }))
           .get();
     } catch (RuntimeException | ExecutionException e) {
-      throw new TigerEnvironmentStartupException("Error during server startup", e);
+      throw new TigerEnvironmentStartupException(
+          "Error during startup of server " + server.getServerId(), e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new TigerTestEnvException("Interrupt received while starting servers", e);

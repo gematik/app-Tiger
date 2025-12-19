@@ -120,8 +120,9 @@ public abstract class LifeCycle {
                 scheduler.shutdown();
 
                 // Shut down all event loops to terminate all threads.
-                bossGroup.shutdownGracefully(5, 5, MILLISECONDS);
-                workerGroup.shutdownGracefully(5, 5, MILLISECONDS);
+                // Use longer grace period to allow channels to clean up properly
+                bossGroup.shutdownGracefully(100, 2000, MILLISECONDS);
+                workerGroup.shutdownGracefully(100, 2000, MILLISECONDS);
 
                 // Wait until all threads are terminated.
                 bossGroup.terminationFuture().syncUninterruptibly();

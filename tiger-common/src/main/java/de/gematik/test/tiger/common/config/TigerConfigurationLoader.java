@@ -147,10 +147,12 @@ public class TigerConfigurationLoader {
     }
     try {
       return Optional.of(objectMapper.treeToValue(targetTree, configurationBeanClass));
-    } catch (JacksonException e) {
-      log.debug(
-          "Error while converting the following tree: {}",
-          objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(targetTree));
+    } catch (Exception e) {
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Error while converting the following tree: {}",
+            objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(targetTree));
+      }
       Throwable ex = e;
       while (ex.getCause() != null) {
         ex = ex.getCause();
@@ -160,9 +162,8 @@ public class TigerConfigurationLoader {
               + configurationBeanClass.getName()
               + " with base-keys "
               + Arrays.toString(baseKeys)
-              + " and root cause '"
-              + ex.getMessage()
-              + "'",
+              + ": "
+              + e.getMessage(),
           e);
     }
   }
@@ -372,19 +373,26 @@ public class TigerConfigurationLoader {
     if (StreamSupport.stream(stringSpliterator, false).anyMatch(s -> !NumberUtils.isParsable(s))) {
       return false;
     }
-    final List<Integer> keys =
-        StreamSupport.stream(stringSpliterator, false)
-            .mapToInt(Integer::parseInt)
-            .sorted()
-            .boxed()
-            .toList();
-    int i = 0;
-    for (Integer key : keys) {
-      if (key != i++) {
-        return false;
+    try {
+      final List<Long> keys =
+          StreamSupport.stream(
+                  Spliterators.spliteratorUnknownSize(value.fieldNames(), Spliterator.ORDERED),
+                  false)
+              .mapToLong(Long::parseLong)
+              .sorted()
+              .boxed()
+              .toList();
+      int i = 0;
+      for (Long key : keys) {
+        if (key != i++) {
+          return false;
+        }
       }
+      return true;
+    } catch (NumberFormatException e) {
+      // If we can't parse a contained number, an array is out of the question
+      return false;
     }
-    return true;
   }
 
   private ObjectNode createAndReturnDeepPath(

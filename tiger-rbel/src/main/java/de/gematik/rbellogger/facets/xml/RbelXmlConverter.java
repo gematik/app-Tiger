@@ -37,6 +37,8 @@ import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
@@ -61,9 +63,19 @@ public class RbelXmlConverter extends RbelConverterPlugin {
       return;
     }
     try {
+
       InputSource source = buildInputSource(rbel);
       final Document parsedXml = parseXml(source);
       buildXmlElementForNode(parsedXml, rbel, context);
+
+      if (rbel.getContent().startsTrimmedWith("<?".getBytes())
+          && rbel.getContent().contains("?>".getBytes())) {
+        RbelElement encoding = getEncoding(parsedXml, rbel);
+        RbelElement xmlVersion = getXmlVersion(rbel.getRawStringContent(), rbel);
+        RbelXmlRootAttributeFacet rootAttributeFacet =
+            new RbelXmlRootAttributeFacet(xmlVersion, encoding);
+        rbel.addFacet(rootAttributeFacet);
+      }
       setCharset(parsedXml, rbel);
       rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
     } catch (DocumentException e) {
@@ -144,7 +156,7 @@ public class RbelXmlConverter extends RbelConverterPlugin {
             new RbelElement(
                 abstractBranch.asXML().getBytes(parentElement.getElementCharset()), parentElement);
         buildXmlElementForNode(abstractBranch, element, converter);
-        childElements.put(((AbstractBranch) child).getName(), element);
+        childElements.put(abstractBranch.getName(), element);
       } else if (child instanceof Namespace namespace) {
         final String childXmlName = namespace.asXML().split("=")[0];
         final RbelElement namespaceAttributeElement =
@@ -211,6 +223,26 @@ public class RbelXmlConverter extends RbelConverterPlugin {
         .filter(Element.class::isInstance)
         .map(Element.class::cast)
         .map(Element::getNamespacePrefix)
+        .orElse(null);
+  }
+
+  private static RbelElement getXmlVersion(String rawXml, RbelElement parent) {
+    Pattern pattern = Pattern.compile("^\\s*<\\?xml\\s+version\\s*=\\s*[\"']([^\"']+)[\"']");
+
+    Matcher matcher = pattern.matcher(rawXml);
+
+    if (matcher.find()) {
+      return new RbelElement(matcher.group(1).getBytes(), parent);
+    }
+    return null;
+  }
+
+  private static RbelElement getEncoding(Branch branch, RbelElement parentElement) {
+    return Optional.of(branch)
+        .filter(Document.class::isInstance)
+        .map(Document.class::cast)
+        .map(Document::getXMLEncoding)
+        .map(val -> new RbelElement(val.getBytes(), parentElement))
         .orElse(null);
   }
 }

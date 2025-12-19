@@ -38,7 +38,6 @@ lib:
   trafficVisualization: true
   runTestsOnStart: true
   enableTestManagementRestApi: true
-  enableTestSelection: false
 
 additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml

@@ -20,16 +20,35 @@
 ///
 
 import { defineStore } from "pinia";
-import { type Ref, ref } from "vue";
+import { computed, type Ref, ref } from "vue";
 import FeatureUpdate, {
   type IJsonFeatures,
 } from "@/types/testsuite/FeatureUpdate.ts";
 import debug from "@/logging/log.ts";
+import type ScenarioUpdate from "@/types/testsuite/ScenarioUpdate.ts";
 
 export const useFeaturesStore = defineStore("features", () => {
   const featureUpdateMap = ref(new Map<string, FeatureUpdate>()) as Ref<
     Map<string, FeatureUpdate>
   >;
+
+  function getScenarioOrVariantById(id: string): ScenarioUpdate | undefined {
+    for (const feature of featureUpdateMap.value.values()) {
+      for (const scenario of feature.scenarios.values()) {
+        if (scenario.uniqueId === id) {
+          return scenario;
+        }
+      }
+    }
+  }
+
+  const allTestIds = computed(() => {
+    const allTestIds = new Array<string>();
+    featureUpdateMap.value.forEach((featureUpdate) =>
+      allTestIds.push(...featureUpdate.getScenarioIds()),
+    );
+    return allTestIds;
+  });
 
   function replaceFeatureMap(newFeatureMap: IJsonFeatures) {
     featureUpdateMap.value.clear();
@@ -87,7 +106,9 @@ export const useFeaturesStore = defineStore("features", () => {
 
   return {
     featureUpdateMap,
+    allTestIds,
     replaceFeatureMap,
+    getScenarioOrVariantById,
     mergeFeatureMap,
     updateFeatureMap,
     updateRemovedMessageUuids,

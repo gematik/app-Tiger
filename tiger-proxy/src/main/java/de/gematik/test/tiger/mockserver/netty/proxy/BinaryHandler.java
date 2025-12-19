@@ -124,8 +124,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private void processNotWaitingForResponse(BinaryRequestInfo binaryRequestInfo) {
     binaryExchangeCallback.onProxy(
         binaryRequestInfo.getDataToSend(),
-        binaryRequestInfo.retrieveActualRemoteAddress(),
-        binaryRequestInfo.getIncomingChannel().remoteAddress(),
+        RbelSocketAddress.create(binaryRequestInfo.retrieveActualRemoteAddress()),
+        RbelSocketAddress.create(binaryRequestInfo.getIncomingChannel().remoteAddress()),
         RbelMessageKind.REQUEST);
   }
 

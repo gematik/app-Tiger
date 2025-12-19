@@ -20,6 +20,7 @@
 ///
 
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
+import { useSelectedTestsStore } from "@/stores/selectedTests.ts";
 
 export function runScenario(scenarioIdentifier: ScenarioIdentifier) {
   fetch(import.meta.env.BASE_URL + "run", {
@@ -38,4 +39,10 @@ export function runScenarios(scenarioIdentifiers: ScenarioIdentifier[]) {
     method: "POST",
     body: JSON.stringify(scenarioIdentifiers),
   });
+}
+
+export function runSelectedTests() {
+  const selectedTests =
+    useSelectedTestsStore().onlyScenariosAndScenarioVariants;
+  runScenarios(selectedTests.map((e) => new ScenarioIdentifier(e)));
 }

@@ -776,6 +776,23 @@ public class TigerConfigurationTest { // NOSONAR
 
   @SneakyThrows
   @Test
+  void incomaptibleType_exceptionMessageShouldIncludeOffendingKey() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.readFromYaml(
+        """
+        nestedBean:
+          bar: no_integer\
+        """);
+
+    assertThatThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class))
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessageContaining(
+            "Cannot deserialize value of type `int` from String \"no_integer\": not a valid `int`"
+                + " value");
+  }
+
+  @SneakyThrows
+  @Test
   void duplicateEnvironmentVariableKeysWithSameValue_shouldProceed() {
     TigerGlobalConfiguration.reset();
     withEnvironmentVariable("foobar", "123")
@@ -905,6 +922,44 @@ public class TigerConfigurationTest { // NOSONAR
     assertThat(TigerGlobalConfiguration.readString("test.toBeResolved")).isEqualTo(booleanString);
     assertThat(TigerGlobalConfiguration.readBoolean("test.toBeResolved"))
         .isEqualTo(expectedBoolean);
+  }
+
+  @Test
+  void numbersAsKeys_shouldBeHandledCorrectly() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.readFromYaml(
+        """
+        bean:
+          directMap:
+            {
+
+              '2775293581': 'someStuff',
+             }
+        """);
+    var dummyBean =
+        TigerGlobalConfiguration.instantiateConfigurationBean(
+                EvaluationSkippingTestClass.class, "bean")
+            .get();
+    assertThat(dummyBean.getDirectMap()).containsEntry("2775293581", "someStuff");
+  }
+
+  @Test
+  void superLongNumbersAsKeys_shouldBeHandledCorrectly() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.readFromYaml(
+        """
+        bean:
+          directMap:
+            {
+              '2775293581': 'someStuff',
+              '436847832489328940832904832904': 'super Long number, which is not even a long'
+             }
+        """);
+    var dummyBean =
+        TigerGlobalConfiguration.instantiateConfigurationBean(
+                EvaluationSkippingTestClass.class, "bean")
+            .get();
+    assertThat(dummyBean.getDirectMap()).containsEntry("2775293581", "someStuff");
   }
 
   @Data

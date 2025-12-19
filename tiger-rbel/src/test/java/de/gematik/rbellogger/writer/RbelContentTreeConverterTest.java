@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.xml.RbelXmlRootAttributeFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.io.IOException;
@@ -57,6 +58,57 @@ class RbelContentTreeConverterTest {
     RbelWriter writer = new RbelWriter(rbelConverter);
     final String output = new String(writer.serialize(input, new TigerJexlContext()).getContent());
     XmlAssert.assertThat(output).and(new String(xmlInput)).ignoreWhitespace().areIdentical();
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", // Standard
+        "<?xml   version=\"1.0\" encoding=\"UTF-8\"?>", // Gemischte Groß-/Kleinschreibung
+      })
+  void simpleXml_ShouldGiveAccessVersionAndEncoding_Parameterized(String xmlDeclaration) {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            xmlDeclaration
+                + """
+                <notizbuch>
+                    <notiz>
+                        <titel>Einkaufsliste</titel>
+                        <inhalt>Milch, Eier, Brot</inhalt>
+                        <datum>2025-12-10</datum>
+                    </notiz>
+                </notizbuch>
+                """,
+            null);
+    final RbelXmlRootAttributeFacet xmlRootAttributeFacet =
+        input.getFacet(RbelXmlRootAttributeFacet.class).orElseThrow();
+
+    assertThat(xmlRootAttributeFacet.version().getRawStringContent()).isEqualTo("1.0");
+    assertThat(xmlRootAttributeFacet.encoding().getRawStringContent()).isEqualTo("UTF-8");
+  }
+
+  @SneakyThrows
+  @Test
+  void simpleXml_ShouldGiveAccessVersionAndEncoding() {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            """
+            <?xml version="1.1" encoding="utf-8"?>
+            <notizbuch>
+                <notiz>
+                    <titel>Einkaufsliste</titel>
+                    <inhalt>Milch, Eier, Brot</inhalt>
+                    <datum>2025-12-10</datum>
+                </notiz>
+            </notizbuch>
+            """,
+            null);
+    final RbelXmlRootAttributeFacet xmlRootAttributeFacet =
+        input.getFacet(RbelXmlRootAttributeFacet.class).orElseThrow();
+
+    assertThat(xmlRootAttributeFacet.version().getRawStringContent()).isEqualTo("1.1");
+    assertThat(xmlRootAttributeFacet.encoding().getRawStringContent()).isEqualTo("utf-8");
   }
 
   @SneakyThrows
@@ -155,9 +207,9 @@ class RbelContentTreeConverterTest {
   void tgrForTagWithContextInXml_shouldIterateThroughLoopAndPrintCounter() {
     final RbelElement input =
         rbelConverter.convertElement(
-            "<?xml version=\"1.0\"?>\n"
-                + "<rootNode>\n"
-                + "    <repeatedTag tgrFor=\"number : 5..7\">entry number ${number}</repeatedTag>\n"
+            "<?xml version=\"1.0\"?>"
+                + "<rootNode>"
+                + "    <repeatedTag tgrFor=\"number : 5..7\">entry number ${number}</repeatedTag>"
                 + "</rootNode>",
             null);
 

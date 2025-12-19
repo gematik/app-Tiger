@@ -87,7 +87,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
-  protected static final String[][] SCENARIO_DATA = {
+  protected static final String[][] SCENARIO_DATA_WITH_OUTLINE_NODES = {
     {"Simple Get Request", "0"},
     {"Get Request to folder", "0"},
     {"PUT Request to folder", "0"},
@@ -99,15 +99,18 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     {"Request with custom and default header", "0"},
     {"Request with DataTables Test", "0"},
     {"Request with custom and default header", "0"},
+    {"Test red with Dagmar", "0"}, // Scenario Outline parent node
     {"Test red with Dagmar", "1"},
     {"Test blue with Nils", "2"},
     {"Test green with Tim", "3"},
     {"Test yellow with Sophie", "4"},
+    {"Test green with foo again", "0"}, // Scenario Outline parent node
     {"Test green with foo again", "1"},
     {"Test red with bar again", "2"},
     {"Test Find Last Request", "0"},
     {"Test find last request with parameters", "0"},
     {"Test find last request", "0"},
+    {"JEXL Rbel Namespace Test", "0"}, // Scenario Outline parent node
     {"JEXL Rbel Namespace Test", "1"},
     {"JEXL Rbel Namespace Test", "2"},
     {"JEXL Rbel Namespace Test", "3"},
@@ -118,7 +121,19 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     {"A scenario with substeps", "0"},
     {"Test zeige HTML", "0"}
   };
-  protected static final int NUMBER_OF_SCENARIOS = SCENARIO_DATA.length;
+
+  protected static final String[][] SCENARIO_DATA_NO_OUTLINE =
+      Arrays.stream(SCENARIO_DATA_WITH_OUTLINE_NODES)
+          .filter(
+              arr ->
+                  !(arr[0].equals("Test red with Dagmar") && arr[1].equals("0")
+                      || arr[0].equals("Test green with foo again") && arr[1].equals("0")
+                      || arr[0].equals("JEXL Rbel Namespace Test") && arr[1].equals("0")))
+          .toArray(String[][]::new);
+
+  protected static final int NUMBER_OF_SCENARIOS_INCLUDING_OUTLINE_NODES =
+      SCENARIO_DATA_WITH_OUTLINE_NODES.length;
+  protected static final int NUMBER_OF_SCENARIOS = SCENARIO_DATA_NO_OUTLINE.length;
   protected static final int TOTAL_MESSAGES = 60;
   protected static final int MESSAGES_PER_PAGE = 20;
   protected static final int TOTAL_PAGES =

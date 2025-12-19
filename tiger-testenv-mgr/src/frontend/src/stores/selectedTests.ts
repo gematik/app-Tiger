@@ -21,6 +21,7 @@
 
 import { defineStore } from "pinia";
 import { computed, type Ref, ref } from "vue";
+import { useFeaturesStore } from "@/stores/features.ts";
 
 /**
  * This store main purpose is to keep the state of selected tests in the TestSelector.vue component.
@@ -37,6 +38,18 @@ export const useSelectedTestsStore = defineStore("selectedTests", () => {
       .filter((entry) => entry[1].checked)
       .map((entry) => entry[0]),
   );
+
+  /**
+   * the regular selection may include folders and features, because we want to display them in the
+   * advanced selection mode. But when sending the list of tests for execution, we want only the
+   * scenarios or scenario variants (when in scenario outlines).
+   */
+  const onlyScenariosAndScenarioVariants = computed(() => {
+    const allTestIds = useFeaturesStore().allTestIds;
+    return currentlySelectedTests.value.filter((test) =>
+      allTestIds.includes(test),
+    );
+  });
 
   function addToSelection(additionalSelectedTests: string[]) {
     const updatedKeys = { ...allTestsSelectedStatus.value };
@@ -64,6 +77,7 @@ export const useSelectedTestsStore = defineStore("selectedTests", () => {
   return {
     allTestsSelectedStatus,
     currentlySelectedTests,
+    onlyScenariosAndScenarioVariants,
     clearSelection,
     addToSelection,
     replaceSelection,

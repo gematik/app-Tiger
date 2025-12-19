@@ -156,6 +156,12 @@ export default class FeatureUpdate implements IFeatureUpdate {
     return result;
   }
 
+  public getScenarioIds(): Array<string> {
+    const ids = new Array<string>();
+    this.scenarios.forEach((scenario) => ids.push(scenario.uniqueId));
+    return ids;
+  }
+
   public getLink(featureName: string): string {
     return encodeURIComponent(featureName.trim());
   }

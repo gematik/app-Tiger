@@ -262,10 +262,10 @@ public class RbelMessageRetriever {
   protected RbelElement findMessageByDescription(final RequestParameter requestParameter) {
     final int waitsec = RBEL_REQUEST_TIMEOUT.getValueOrDefault();
 
-    Optional<RbelElement> initialElement = getInitialElement(requestParameter);
-    val startAfterMessage = new AtomicReference<RbelElement>(); // avoid double checks
+    val initialElement = getInitialElement(requestParameter);
     val mismatchNotes = new HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>>();
     val candidate = new AtomicReference<RbelElement>();
+    val checkedCandidates = new HashSet<RbelElement>(); // avoid checking same candidate twice
 
     try {
       await("Waiting for matching request")
@@ -278,7 +278,7 @@ public class RbelMessageRetriever {
                   return true;
                 }
                 final Optional<RbelElement> found =
-                    findMessage(requestParameter, initialElement, startAfterMessage, mismatchNotes);
+                    findMessage(requestParameter, initialElement, mismatchNotes, checkedCandidates);
                 found.ifPresent(candidate::set);
                 return found.isPresent();
               });
@@ -286,30 +286,43 @@ public class RbelMessageRetriever {
         throw new AssertionError("User aborted test run");
       }
     } catch (final ConditionTimeoutException cte) {
-      log.error("Didn't find any matching messages!");
-      printAllPathsOfMessages(getRbelMessages());
-      String message;
-      if (requestParameter.getPath() == null) {
-        message =
-            String.format(
-                "No request with matching rbelPath '%s%s",
-                requestParameter.getRbelPath(), FOUND_IN_MESSAGES);
-      } else if (requestParameter.getRbelPath() == null) {
-        message =
-            String.format(
-                "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES);
-      } else {
-        message =
-            String.format(
-                "No request with path '%s' and rbelPath '%s' matching '%s%s",
-                requestParameter.getPath(),
-                requestParameter.getRbelPath(),
-                StringUtils.abbreviate(requestParameter.getValue(), 300),
-                FOUND_IN_MESSAGES);
+      log.error("Didn't find any matching messages!\n  {}", requestParameter);
+      printAllPathsOfMessages(checkedCandidates);
+      var rbelMessages =
+          getRbelElementsOptionallyFromGivenMessageInclusively(initialElement, checkedCandidates);
+      if (!rbelMessages.isEmpty()) {
+        log.info(
+            "Found {} messages that were not tried as matching candidates:", rbelMessages.size());
+        printAllPathsOfMessages(rbelMessages);
       }
-      throw buildValidatorError(message, mismatchNotes);
+      reportMissingRequest(requestParameter, mismatchNotes);
     }
     return candidate.get();
+  }
+
+  private static void reportMissingRequest(
+      RequestParameter requestParameter,
+      HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    String message;
+    if (requestParameter.getPath() == null) {
+      message =
+          String.format(
+              "No request with matching rbelPath '%s%s",
+              requestParameter.getRbelPath(), FOUND_IN_MESSAGES);
+    } else if (requestParameter.getRbelPath() == null) {
+      message =
+          String.format(
+              "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES);
+    } else {
+      message =
+          String.format(
+              "No request with path '%s' and rbelPath '%s' matching '%s%s",
+              requestParameter.getPath(),
+              requestParameter.getRbelPath(),
+              StringUtils.abbreviate(requestParameter.getValue(), 300),
+              FOUND_IN_MESSAGES);
+    }
+    throw buildValidatorError(message, mismatchNotes);
   }
 
   private static @NotNull AssertionError buildValidatorError(
@@ -338,11 +351,12 @@ public class RbelMessageRetriever {
   protected Optional<RbelElement> findMessage(
       final RequestParameter requestParameter,
       Optional<RbelElement> startFromMessageInclusively,
-      AtomicReference<RbelElement> startAfterMessage,
-      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes,
+      Set<RbelElement> checkedCandidates) {
     List<RbelElement> msgs =
         getRbelElementsOptionallyFromGivenMessageInclusively(
-            startFromMessageInclusively, startAfterMessage);
+            startFromMessageInclusively, checkedCandidates);
+
     final String hostFilter = TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault();
     final String methodFilter = TigerConfigurationKeys.REQUEST_FILTER_METHOD.getValueOrDefault();
 
@@ -399,35 +413,18 @@ public class RbelMessageRetriever {
   }
 
   private List<RbelElement> getRbelElementsOptionallyFromGivenMessageInclusively(
-      Optional<RbelElement> startFromMessageExclusively, AtomicReference<RbelElement> lastChecked) {
-    List<RbelElement> msgs = getRbelMessages();
-    var lastCheckedMessage = lastChecked.get();
-    if (lastCheckedMessage != null) {
-      // we have already searched for messages before
-      for (int i = msgs.size() - 1; i >= 0; i--) { // probably few new messages, so start at the end
-        if (msgs.get(i) == lastCheckedMessage) {
-          lastChecked.set(msgs.get(msgs.size() - 1));
-          return new ArrayList<>(msgs.subList(i + 1, msgs.size()));
-        }
-      }
-      return msgs; // last checked message not found, all messages are new
-    }
-    if (startFromMessageExclusively.isPresent()) {
-      int idx = -1;
-      for (var i = 0; i < msgs.size(); i++) {
-        if (msgs.get(i) == startFromMessageExclusively.get()) {
-          idx = i;
+      Optional<RbelElement> startFromMessage, Set<RbelElement> checkedCandidates) {
+    var msgs = getRbelMessages();
+    if (startFromMessage.isPresent()) {
+      val start = startFromMessage.get();
+      for (int i = msgs.size() - 1; i >= 0; i--) {
+        if (msgs.get(i) == start) {
+          msgs = msgs.subList(i, msgs.size());
           break;
         }
       }
-      if (idx > 0) {
-        msgs = new ArrayList<>(msgs.subList(idx, msgs.size()));
-      }
     }
-    if (!msgs.isEmpty()) {
-      lastChecked.set(msgs.get(msgs.size() - 1));
-    }
-    return msgs;
+    return msgs.stream().filter(checkedCandidates::add).toList();
   }
 
   @NotNull
@@ -628,7 +625,7 @@ public class RbelMessageRetriever {
     }
   }
 
-  private void printAllPathsOfMessages(final List<RbelElement> msgs) {
+  private void printAllPathsOfMessages(final Collection<RbelElement> msgs) {
     long requests =
         msgs.stream().filter(msg -> msg.getFacet(RbelHttpRequestFacet.class).isPresent()).count();
     log.info(
