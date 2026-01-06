@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.12 - 2025-12-19</span>
+<span id="revdate">Version 4.1.13 - 2026-01-06</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -3979,6 +3979,9 @@ Currently supported are:</p>
 <li>
 <p><code>OCSP</code> for RbelOcspResponseConverter</p>
 </li>
+<li>
+<p>'websocket' for Websocket, SockJS and STOMP (various converters)</p>
+</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -4855,6 +4858,10 @@ after the current request message.</p>
 
 </div>
 <div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-stimmt-im-body-überein-mit"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-stimmt-im-body-überein-mit"></a>TGR prüfe aktuelle Anfrage stimmt im Body überein mit:</h5>
+
+</div>
+<div class="sect4">
 <h5 id="tgr-current-request-body-matches"><a class="anchor" href="#tgr-current-request-body-matches"></a>TGR current request body matches:</h5>
 <div class="paragraph indent">
 <p>assert that request body matches.</p>
@@ -4865,6 +4872,10 @@ after the current request message.</p>
 </div>
 <div class="sect4">
 <h5 id="tgr-prüfe-aktueller-request-stimmt-im-knoten-tigerresolvedstring-überein-mit-tigerresolvedstring"><a class="anchor" href="#tgr-prüfe-aktueller-request-stimmt-im-knoten-tigerresolvedstring-überein-mit-tigerresolvedstring"></a>TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit" + " {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-stimmt-im-knoten-tigerresolvedstring-überein-mit-tigerresolvedstring"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-stimmt-im-knoten-tigerresolvedstring-überein-mit-tigerresolvedstring"></a>TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} überein mit" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
@@ -4884,6 +4895,10 @@ found, each is tested and if any matches, this step succeeds.</p>
 
 </div>
 <div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-enthält-knoten-tigerresolvedstring"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-enthält-knoten-tigerresolvedstring"></a>TGR prüfe aktuelle Anfrage enthält Knoten {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
 <h5 id="tgr-current-request-contains-node-tigerresolvedstring"><a class="anchor" href="#tgr-current-request-contains-node-tigerresolvedstring"></a>TGR current request contains node {tigerResolvedString}</h5>
 <div class="paragraph indent">
 <p>assert that request contains at least 1 (or maybe more) node/attribute at given rbel path.</p>
@@ -4894,6 +4909,10 @@ found, each is tested and if any matches, this step succeeds.</p>
 </div>
 <div class="sect4">
 <h5 id="tgr-prüfe-aktueller-request-im-knoten-tigerresolvedstring-stimmt-überein-mit"><a class="anchor" href="#tgr-prüfe-aktueller-request-im-knoten-tigerresolvedstring-stimmt-überein-mit"></a>TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-im-knoten-tigerresolvedstring-stimmt-überein-mit"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-im-knoten-tigerresolvedstring-stimmt-überein-mit"></a>TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt überein mit:</h5>
 
 </div>
 <div class="sect4">
@@ -4913,6 +4932,10 @@ each is tested and if any matches, this step succeeds.</p>
 
 </div>
 <div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-im-knoten-tigerresolvedstring-stimmt-als-modetype-überein-mit"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-im-knoten-tigerresolvedstring-stimmt-als-modetype-überein-mit"></a>TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt als {modeType} überein" + " mit:</h5>
+
+</div>
+<div class="sect4">
 <h5 id="tgr-current-request-at-tigerresolvedstring-matches-as-modetype"><a class="anchor" href="#tgr-current-request-at-tigerresolvedstring-matches-as-modetype"></a>TGR current request at {tigerResolvedString} matches as {modeType}:</h5>
 <div class="paragraph indent">
 <p>assert that request matches at given rbel path node/attribute assuming it&#8217;s JSON or XML. If<br>
@@ -4927,6 +4950,10 @@ multiple nodes are found, each is tested, and if any matches, this step succeeds
 </div>
 <div class="sect4">
 <h5 id="tgr-prüfe-aktueller-request-stimmt-im-knoten-tigerresolvedstring-nicht-überein-mit-tigerresolvedstring"><a class="anchor" href="#tgr-prüfe-aktueller-request-stimmt-im-knoten-tigerresolvedstring-nicht-überein-mit-tigerresolvedstring"></a>TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit" + " {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-prüfe-aktuelle-anfrage-stimmt-im-knoten-tigerresolvedstring-nicht-überein-mit-tigerresolvedstring"><a class="anchor" href="#tgr-prüfe-aktuelle-anfrage-stimmt-im-knoten-tigerresolvedstring-nicht-überein-mit-tigerresolvedstring"></a>TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} nicht überein mit" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
@@ -5133,6 +5160,10 @@ match, this step succeeds</p>
 
 </div>
 <div class="sect4">
+<h5 id="tgr-gebe-aktuelle-antwort-als-rbel-tree-aus"><a class="anchor" href="#tgr-gebe-aktuelle-antwort-als-rbel-tree-aus"></a>TGR gebe aktuelle Antwort als Rbel-Tree aus</h5>
+
+</div>
+<div class="sect4">
 <h5 id="tgr-print-current-response-as-rbel-tree"><a class="anchor" href="#tgr-print-current-response-as-rbel-tree"></a>TGR print current response as rbel-tree</h5>
 <div class="paragraph indent">
 <p>Prints the rbel-tree of the current response to the System-out</p>
@@ -5140,6 +5171,10 @@ match, this step succeeds</p>
 </div>
 <div class="sect4">
 <h5 id="tgr-gebe-aktuelle-request-als-rbel-tree-aus"><a class="anchor" href="#tgr-gebe-aktuelle-request-als-rbel-tree-aus"></a>TGR gebe aktuelle Request als Rbel-Tree aus</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-gebe-aktuelle-anfrage-als-rbel-tree-aus"><a class="anchor" href="#tgr-gebe-aktuelle-anfrage-als-rbel-tree-aus"></a>TGR gebe aktuelle Anfrage als Rbel-Tree aus</h5>
 
 </div>
 <div class="sect4">
@@ -9311,7 +9346,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-12-19 09:33:40 +0100
+Last updated 2026-01-06 09:09:26 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
