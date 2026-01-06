@@ -232,7 +232,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   }
 
   private boolean protocolMatches(HttpProtocol protocol, HttpProtocol otherProtocol) {
-    if (protocol == null) {
+    if (protocol == null || otherProtocol == null) {
       return true;
     } else {
       if (protocol.equals(otherProtocol)) {

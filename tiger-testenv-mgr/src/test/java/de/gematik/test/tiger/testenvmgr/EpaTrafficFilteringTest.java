@@ -91,7 +91,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     Thread.sleep(1000);
 
     envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
-        .map(RbelElement::printHttpDescription)
+        .map(RbelElement::printShortDescription)
         .forEach(System.out::println);
 
     await()

@@ -22,6 +22,7 @@ package de.gematik.rbellogger.data.core;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import java.util.Optional;
 
 /**
  * Represents a possible interpretation of a RbelElement. This can be both an interpretation of the
@@ -54,4 +55,12 @@ public interface RbelFacet {
 
   /** This callback is triggered when this facet is removed from the element. Default is NOOP. */
   default void facetRemovedCallback(RbelElement element) {}
+
+  /**
+   * Print a short description of this message as a whole. Most facets will not be able to do this.
+   * Communication protocols are expected to overwrite this method.
+   */
+  default Optional<String> printShortDescription(RbelElement element) {
+    return Optional.empty();
+  }
 }

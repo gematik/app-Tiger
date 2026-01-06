@@ -24,6 +24,7 @@ doc/user_manual/HttpGlueCodeTest.feature
 tiger-uitests/mvn-playwright-log.txt
 *.xml.versionsBackup
 **/*.xml.versionsBackup
+application.yaml
 
 /.idea/
 /.vscode/

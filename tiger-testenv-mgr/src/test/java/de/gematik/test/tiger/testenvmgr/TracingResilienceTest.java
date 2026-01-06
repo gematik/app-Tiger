@@ -172,7 +172,7 @@ class TracingResilienceTest {
       } catch (ConditionTimeoutException e) {
         log.error("/////////////////////////////////////////////////////////////////////////////");
         testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
-            .map(el -> el.getUuid() + " -> " + el.printHttpDescription())
+            .map(el -> el.getUuid() + " -> " + el.printShortDescription())
             .forEach(log::info);
         log.error(
             "We sent {} message, intercepted {}, aggregating {}, receiving {}",
@@ -292,7 +292,7 @@ class TracingResilienceTest {
       log.info(
           "About to reboot aggregating proxy, currently known messages in receivingProxy: {}",
           receivingProxy.getRbelMessagesList().stream()
-              .map(msg -> msg.getUuid() + " (" + msg.printHttpDescription() + ")")
+              .map(msg -> msg.getUuid() + " (" + msg.printShortDescription() + ")")
               .collect(Collectors.joining("\n")));
     }
 

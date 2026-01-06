@@ -23,9 +23,6 @@ package de.gematik.rbellogger.data;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
-import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
-import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
-import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.util.*;
@@ -241,7 +238,8 @@ public class RbelElement extends RbelPathAble {
       for (Iterator<Entry<String, RbelElement>> childElementIterator =
               facet.getChildElements().iterator();
           childElementIterator.hasNext(); ) {
-        final RbelElement child = childElementIterator.next().getValue();
+        final Entry<?, ?> next = childElementIterator.next();
+        final RbelElement child = ((RbelElement) next.getValue());
         if (child != null) {
           result.add(child);
         }
@@ -415,6 +413,11 @@ public class RbelElement extends RbelPathAble {
     facetsToBeRemoved.forEach(facet -> facet.facetRemovedCallback(this));
   }
 
+  public void removeFacet(RbelFacet facet) {
+    facets.remove(facet);
+    facet.facetRemovedCallback(this);
+  }
+
   public Optional<RbelElement> findElement(String rbelPath) {
     final List<RbelElement> resultList = findRbelPathMembers(rbelPath);
     if (resultList.isEmpty()) {
@@ -493,22 +496,13 @@ public class RbelElement extends RbelPathAble {
         && hasFacet(RbelNestedFacet.class));
   }
 
-  public String printHttpDescription() {
-    return getFacet(RbelHttpRequestFacet.class)
-            .map(
-                req ->
-                    "HTTP " + req.getMethod().getRawStringContent() + " " + req.getPathAsString())
-            .orElse("")
-        + getFacet(RbelHttpResponseFacet.class)
-            .map(req -> "HTTP " + req.getResponseCode().getRawStringContent())
-            .orElse("")
-        + getFacet(RbelHttpMessageFacet.class)
-            .map(
-                msg ->
-                    " with body '"
-                        + StringUtils.abbreviate(msg.getBody().getRawStringContent(), 30)
-                        + "'")
-            .orElse("");
+  public String printShortDescription() {
+    return facets.stream()
+        .map(facet -> facet.printShortDescription(this))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst()
+        .orElse("");
   }
 
   public RbelElement findRootElement() {

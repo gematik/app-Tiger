@@ -20,6 +20,8 @@
  */
 package de.gematik.rbellogger.facets.websocket;
 
+import static de.gematik.rbellogger.facets.websocket.RbelWebsocketFrameType.DATA_FRAME;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.addNotes;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.t2;
@@ -30,15 +32,19 @@ import static j2html.TagCreator.span;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -85,8 +91,20 @@ public class RbelWebsocketMessageFacet implements RbelFacet {
                                         .with(
                                             toolkit.packAsInfoLine(
                                                 "Opcode",
-                                                toolkit.formatHex(messageFacet.getOpcode()))),
+                                                toolkit.formatHex(messageFacet.getOpcode())))
+                                        .with(
+                                            toolkit.packAsInfoLine(
+                                                "Frame Type",
+                                                toolkit.formatHexAlike(
+                                                    messageFacet
+                                                        .getFrameType()
+                                                        .seekValue(RbelWebsocketFrameType.class)
+                                                        .map(Object::toString)
+                                                        .orElse("?")))),
                                     childBoxNotifTitle(CLS_BODY)
+                                        .with(
+                                            showContentButtonAndDialog(
+                                                messageFacet.getPayload(), toolkit))
                                         .with(t2("Payload"))
                                         .with(addNotes(messageFacet.getPayload()))
                                         .with(toolkit.convert(messageFacet.getPayload())))));
@@ -110,6 +128,8 @@ public class RbelWebsocketMessageFacet implements RbelFacet {
   private final RbelElement masked;
   private final RbelElement payloadLength;
   private final RbelElement payload;
+  private final RbelElement extensions;
+  private final RbelElement frameType;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
@@ -121,6 +141,35 @@ public class RbelWebsocketMessageFacet implements RbelFacet {
         .with("opcode", opcode)
         .with("masked", masked)
         .with("payloadLength", payloadLength)
-        .with("payload", payload);
+        .with("payload", payload)
+        .with("extensions", extensions)
+        .with("frameType", frameType);
+  }
+
+  @Override
+  public Optional<String> printShortDescription(RbelElement element) {
+    return Optional.of(
+        "WebSocket("
+            + element
+                .getFacet(RbelTcpIpMessageFacet.class)
+                .map(RbelTcpIpMessageFacet::getTcpIpConnectionIdentifier)
+                .map(TcpIpConnectionIdentifier::printDirectionSymbol)
+                .orElse("?")
+            + "): "
+            + printPayload());
+  }
+
+  private @Nullable String printPayload() {
+    return frameType
+        .seekValue(RbelWebsocketFrameType.class)
+        .map(
+            type -> {
+              if (type == DATA_FRAME) {
+                return "'" + StringUtils.abbreviate(payload.getRawStringContent(), 60) + "'";
+              } else {
+                return type.toString();
+              }
+            })
+        .orElse("<unknown>");
   }
 }

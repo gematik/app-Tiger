@@ -899,6 +899,7 @@ Currently supported are:
 * `ldap` for RbelLdapConverter
 * `b64gzip` for RbelBase64GzipConverter
 * `OCSP` for RbelOcspResponseConverter
+* 'websocket' for Websocket, SockJS and STOMP (various converters)
 
 These optional converters can also be deactivated at runtime via glue code.
 You can deactivate parser during a specific test case.

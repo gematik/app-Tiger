@@ -960,7 +960,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                           "No TracingMessagePairFacet found for message with id '"
                               + r.getUuid()
                               + "' and http: "
-                              + r.printHttpDescription()));
+                              + r.printShortDescription()));
       var requestPath =
           tracingFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
 

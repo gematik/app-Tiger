@@ -1,5 +1,15 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.13
+
+## Features
+
+* TGR-1979: Added support for STOMP and SockJS messages
+
+## Bugfixes
+
+* TGR-1966: ensure coherent German translation for test steps
+
 # Release 4.1.12
 
 ## Bugfixes
@@ -89,9 +99,9 @@ package de.gematik.test.tiger.common.jexl;
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
 
-    public String testMethod() {
-        return "test";
-    }
+  public String testMethod() {
+    return "test";
+  }
 }
 ```
 
@@ -1080,8 +1090,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

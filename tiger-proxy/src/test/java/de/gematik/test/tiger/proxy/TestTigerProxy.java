@@ -849,7 +849,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                     Comparator.comparing(
                         el ->
                             el.getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime()))
-                .map(RbelElement::printHttpDescription)
+                .map(RbelElement::printShortDescription)
                 .toList())
         .containsExactly(
             "HTTP GET /mainserver with body ''",
@@ -858,7 +858,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
 
     assertThat(
-            tigerProxy.getRbelMessages().stream().map(RbelElement::printHttpDescription).toList())
+            tigerProxy.getRbelMessages().stream().map(RbelElement::printShortDescription).toList())
         .containsExactly(
             "HTTP GET /mainserver with body ''",
             "HTTP GET /deep/foobar/mainserver with body ''",

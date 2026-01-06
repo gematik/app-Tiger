@@ -25,9 +25,19 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseConverter;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.zip.Inflater;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -36,6 +46,9 @@ import lombok.val;
     dependsOn = {RbelHttpResponseConverter.class},
     onlyActivateFor = "websocket")
 public class RbelWebsocketConverter extends RbelConverterPlugin {
+
+  private final Map<TcpIpConnectionIdentifier, WebsocketSessionMetadata> metadataMap =
+      Collections.synchronizedMap(new HashMap<>());
 
   @Override
   public RbelConversionPhase getPhase() {
@@ -51,24 +64,70 @@ public class RbelWebsocketConverter extends RbelConverterPlugin {
         || rbelElement.hasFacet(RbelHttpMessageFacet.class)) {
       return;
     }
-    converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
-    // is preceding message websocket or handshake message?
-    val previousMessage =
-        converter
-            .getPreviousMessagesInSameConnectionAs(rbelElement)
-            .findFirst()
+    val metadata = findMetadata(rbelElement, converter);
+    if (metadata.isPresent()) {
+      try {
+        new RbelWebsocketMessageConverter(
+                rbelElement,
+                converter,
+                metadata.get().extensions,
+                metadata.get().inflater,
+                metadata.get().originalClient)
+            .parseWebsocketMessage();
+      } catch (Exception e) {
+        log.error("Error while parsing websocket message", e);
+      }
+    }
+  }
+
+  private Optional<WebsocketSessionMetadata> findMetadata(
+      RbelElement rbelElement, RbelConversionExecutor converter) {
+    val connectionIdentifier =
+        rbelElement
+            .getFacet(RbelTcpIpMessageFacet.class)
+            .map(RbelTcpIpMessageFacet::getTcpIpConnectionIdentifier)
+            .orElse(null);
+    if (connectionIdentifier != null && metadataMap.containsKey(connectionIdentifier)) {
+      return Optional.ofNullable(metadataMap.get(connectionIdentifier));
+    }
+    final var previousMessage =
+        getPreviousMessage(rbelElement, converter)
             .filter(
                 prevMessage ->
                     prevMessage.hasFacet(RbelWebsocketMessageFacet.class)
                         || prevMessage.hasFacet(RbelWebsocketHandshakeFacet.class));
     if (previousMessage.isEmpty()) {
-      return;
+      return Optional.empty();
     }
-    try {
-      new RbelWebsocketMessageConverter(rbelElement, converter, previousMessage.get())
-          .parseWebsocketMessage();
-    } catch (Exception e) {
-      log.error("Error while parsing websocket message", e);
-    }
+    val metadata =
+        new WebsocketSessionMetadata(
+            previousMessage
+                .flatMap(el -> el.getFacet(RbelTcpIpMessageFacet.class))
+                .flatMap(RbelTcpIpMessageFacet::getReceiverHostname)
+                .orElseThrow(),
+            extractExtensionMap(previousMessage.get()));
+    metadataMap.put(connectionIdentifier, metadata);
+    return Optional.of(metadata);
+  }
+
+  private RbelMultiMap extractExtensionMap(RbelElement previousMessage) {
+    return previousMessage
+        .getFacet(RbelWebsocketHandshakeFacet.class)
+        .map(RbelWebsocketHandshakeFacet::getExtensions)
+        .or(
+            () ->
+                previousMessage
+                    .getFacet(RbelWebsocketMessageFacet.class)
+                    .map(RbelWebsocketMessageFacet::getExtensions))
+        .flatMap(el -> el.getFacet(RbelMapFacet.class))
+        .map(RbelMapFacet::getChildNodes)
+        .orElseGet(RbelMultiMap::new);
+  }
+
+  @RequiredArgsConstructor
+  private class WebsocketSessionMetadata {
+    private final RbelSocketAddress originalClient;
+    private final Inflater inflater = new Inflater(true);
+    private final RbelMultiMap extensions;
   }
 }

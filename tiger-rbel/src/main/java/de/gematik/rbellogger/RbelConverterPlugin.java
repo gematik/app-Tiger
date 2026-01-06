@@ -31,6 +31,7 @@ import java.util.function.BiConsumer;
 import lombok.Getter;
 import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class RbelConverterPlugin {
   @Getter(lazy = true)
@@ -97,6 +98,12 @@ public abstract class RbelConverterPlugin {
         consumer.accept(rbelElement, converter);
       }
     };
+  }
+
+  public @NotNull Optional<RbelElement> getPreviousMessage(
+      RbelElement rbelElement, RbelConversionExecutor converter) {
+    converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement.findRootElement());
+    return converter.getPreviousMessagesInSameConnectionAs(rbelElement).findFirst();
   }
 
   public static boolean messageIsCompleteOrParsingDeactivated(RbelElement message) {

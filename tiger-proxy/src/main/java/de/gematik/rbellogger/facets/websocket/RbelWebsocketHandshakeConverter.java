@@ -25,13 +25,18 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.http.*;
 import de.gematik.test.tiger.proxy.TigerProxyPairingConverter;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 @ConverterInfo(
     onlyActivateFor = "websocket",
@@ -54,20 +59,43 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
     if (httpMessageFacet.isEmpty()) {
       return;
     }
-    converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
     if (rbelElement.hasFacet(RbelHttpRequestFacet.class)
         && hasWebsocketHandshakeHeaders(httpMessageFacet)) {
-      rbelElement.addFacet(new RbelWebsocketHandshakeFacet());
+      rbelElement.addFacet(
+          new RbelWebsocketHandshakeFacet(extractWebSocketExtensions(rbelElement)));
     } else if (rbelElement.getFacet(RbelHttpResponseFacet.class).stream()
             .anyMatch(resp -> "101".equals(resp.getResponseCode().getRawStringContent()))
-        && rbelElement
-            .getFacet(TracingMessagePairFacet.class)
-            .map(TracingMessagePairFacet::getRequest)
-            .stream()
-            .anyMatch(req -> req.hasFacet(RbelWebsocketHandshakeFacet.class))
         && hasWebsocketHandshakeHeaders(httpMessageFacet)) {
-      rbelElement.addFacet(new RbelWebsocketHandshakeFacet());
+      converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
+      val wsHandshakeRequest =
+          rbelElement
+              .getFacet(TracingMessagePairFacet.class)
+              .map(TracingMessagePairFacet::getRequest);
+      if (wsHandshakeRequest
+          .map(r -> r.hasFacet(RbelWebsocketHandshakeFacet.class))
+          .orElse(false)) {
+        rbelElement.addFacet(
+            new RbelWebsocketHandshakeFacet(extractWebSocketExtensions(rbelElement)));
+      }
     }
+  }
+
+  private static @NotNull RbelElement extractWebSocketExtensions(RbelElement rbelElement) {
+    val result = new RbelElement(rbelElement);
+    val map =
+        Optional.of(rbelElement)
+            .flatMap(r -> r.getFacet(RbelHttpMessageFacet.class))
+            .map(RbelHttpMessageFacet::getHeader)
+            .stream()
+            .map(RbelElement::getChildNodesWithKey)
+            .flatMap(m -> m.getValues().stream())
+            .filter(e -> e.getKey().equalsIgnoreCase("Sec-WebSocket-Extensions"))
+            .map(Entry::getValue)
+            .map(RbelElement::getRawStringContent)
+            .map(name -> Pair.of(name, RbelElement.wrap(result, "")))
+            .collect(RbelMultiMap.COLLECTOR);
+    result.addFacet(new RbelMapFacet(map));
+    return result;
   }
 
   private static boolean hasWebsocketHandshakeHeaders(
