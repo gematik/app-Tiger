@@ -22,29 +22,46 @@ package de.gematik.rbellogger.facets.websocket;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.zip.Inflater;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @RequiredArgsConstructor
 public class RbelWebsocketMessageConverter {
+  private static final byte[] TAIL = {0x00, 0x00, (byte) 0xFF, (byte) 0xFF};
+
   private final RbelElement message;
   private final RbelConversionExecutor converter;
-  private final RbelElement previousMessage;
+  private final RbelMultiMap<RbelElement> extensionMap;
+  private final Inflater inflater;
+  private final RbelSocketAddress originalClient;
   private boolean masked;
   private int lengthOfExtendedPayloadLength;
+  private boolean messageCompression;
+  private boolean fin0Bit;
+  private boolean rsv1Bit;
+  private boolean rsv2Bit;
+  private boolean rsv3Bit;
+  private int opcode;
 
   public void parseWebsocketMessage() {
-    boolean fin0Bit = extractByteNumber(message.getContent().get(0), 7) != 0;
-    boolean rsv1Bit = (extractByteNumber(message.getContent().get(0), 6)) != 0;
-    boolean rsv2Bit = (extractByteNumber(message.getContent().get(0), 5)) != 0;
-    boolean rsv3Bit = (extractByteNumber(message.getContent().get(0), 4)) != 0;
-    val opcode = message.getContent().get(0) & 0b00001111;
+    getUsedExtensions();
+    fin0Bit = extractByteNumber(message.getContent().get(0), 7) != 0;
+    rsv1Bit = (extractByteNumber(message.getContent().get(0), 6)) != 0;
+    rsv2Bit = (extractByteNumber(message.getContent().get(0), 5)) != 0;
+    rsv3Bit = (extractByteNumber(message.getContent().get(0), 4)) != 0;
+    opcode = message.getContent().get(0) & 0b00001111;
     masked = (extractByteNumber(message.getContent().get(1), 7)) != 0;
     int payloadLength = message.getContent().get(1) & 0b01111111;
     lengthOfExtendedPayloadLength = calculateExtendedPayloadLength(payloadLength);
@@ -72,21 +89,24 @@ public class RbelWebsocketMessageConverter {
             .rsv1Bit(RbelElement.wrap(message, rsv1Bit))
             .rsv2Bit(RbelElement.wrap(message, rsv2Bit))
             .rsv3Bit(RbelElement.wrap(message, rsv3Bit))
-            .opcode(RbelElement.wrap(message, opcode))
+            .opcode(RbelElement.wrap(new byte[] {(byte) opcode}, message, opcode))
             .masked(RbelElement.wrap(message, masked))
             .payloadLength(RbelElement.wrap(message, payloadLength))
             .payload(payloadElement)
+            .extensions(
+                RbelMapFacet.wrap(message, el -> copyExtensionMap(extensionMap, el), new byte[] {}))
+            .frameType(RbelElement.wrap(message, getFrameType(payloadElement)))
             .build();
     message.addFacet(websocketFacet);
     message.addFacet(new RbelRootFacet<>(websocketFacet));
     if (message
         .getFacet(RbelTcpIpMessageFacet.class)
-        .map(tcpFacet -> tcpFacet.isSameDirectionAs(previousMessage))
-        .filter(facet -> previousMessage.hasFacet(RbelRequestFacet.class))
-        .orElse(false)) {
-      message.addFacet(new RbelRequestFacet("Websocket", false));
-    } else {
+        .flatMap(RbelTcpIpMessageFacet::getReceiverHostname)
+        .map(originalClient::equals)
+        .orElse(true)) {
       message.addFacet(new RbelResponseFacet("Websocket"));
+    } else {
+      message.addFacet(new RbelRequestFacet("Websocket", false));
     }
     converter.convertElement(payloadElement);
     log.debug(
@@ -94,6 +114,39 @@ public class RbelWebsocketMessageConverter {
         websocketFacet.getOpcode().getRawContent(),
         actualPayloadLength,
         payloadElement.printTreeStructure());
+  }
+
+  private RbelMultiMap<RbelElement> copyExtensionMap(
+      RbelMultiMap<RbelElement> extensionMap, RbelElement parent) {
+    return extensionMap.stream()
+        .map(
+            oldEl ->
+                Pair.of(
+                    oldEl.getKey(),
+                    RbelElement.wrap(parent, oldEl.getValue().seekValue().orElse(null))))
+        .collect(RbelMultiMap.COLLECTOR);
+  }
+
+  private RbelWebsocketFrameType getFrameType(RbelElement payloadElement) {
+    if (payloadElement.getContent().size() > 125) {
+      return RbelWebsocketFrameType.DATA_FRAME;
+    }
+    if (opcode == 0x1) {
+      return RbelWebsocketFrameType.DATA_FRAME;
+    } else if (opcode == 0x8) {
+      return RbelWebsocketFrameType.CLOSE_FRAME;
+    } else if (opcode == 0x9) {
+      return RbelWebsocketFrameType.PING_FRAME;
+    } else if (opcode == 0xA) {
+      return RbelWebsocketFrameType.PONG_FRAME;
+    } else {
+      return RbelWebsocketFrameType.UNKOWN_CONTROL_FRAME;
+    }
+  }
+
+  private void getUsedExtensions() {
+    messageCompression =
+        extensionMap.keySet().stream().anyMatch("permessage-deflate"::equalsIgnoreCase);
   }
 
   private int extractByteNumber(byte value, int target) {
@@ -144,8 +197,29 @@ public class RbelWebsocketMessageConverter {
       for (int i = 0; i < unmaskedPayloadBytes.length; i++) {
         unmaskedPayloadBytes[i] = (byte) (maskedPayloadBytes[i] ^ maskingKey[i % 4]);
       }
-      return RbelElement.builder().rawContent(unmaskedPayloadBytes).parentNode(message).build();
+      rawPayloadBytes = RbelContent.of(unmaskedPayloadBytes);
+    }
+    if (messageCompression && rsv1Bit) {
+      rawPayloadBytes = decompress(rawPayloadBytes);
     }
     return RbelElement.builder().content(rawPayloadBytes).parentNode(message).build();
+  }
+
+  @SneakyThrows
+  private RbelContent decompress(RbelContent compressedData) {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    byte[] buffer = new byte[1024];
+
+    byte[] joined = new byte[compressedData.size() + TAIL.length];
+    System.arraycopy(compressedData.toByteArray(), 0, joined, 0, compressedData.size());
+    System.arraycopy(TAIL, 0, joined, compressedData.size(), TAIL.length);
+    inflater.setInput(joined);
+
+    while (!inflater.needsInput()) {
+      int count = inflater.inflate(buffer);
+      outputStream.write(buffer, 0, count);
+    }
+
+    return RbelContent.of(outputStream.toByteArray());
   }
 }

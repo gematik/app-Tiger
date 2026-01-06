@@ -20,6 +20,18 @@
  */
 package de.gematik.rbellogger.facets.websocket;
 
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import lombok.Value;
 
-public class RbelWebsocketHandshakeFacet implements RbelFacet {}
+@Value
+public class RbelWebsocketHandshakeFacet implements RbelFacet {
+
+  RbelElement extensions;
+
+  @Override
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("extensions", extensions);
+  }
+}

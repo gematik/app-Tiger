@@ -24,8 +24,6 @@ import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
-import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
-import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import java.util.Base64;
 import java.util.Optional;
@@ -64,11 +62,7 @@ public class RbelBase64JsonConverter extends RbelConverterPlugin {
     }
     context.convertElement(rawElement.get());
     if (rawElement.get().hasFacet(RbelRootFacet.class)) {
-      final RbelRootFacet<?> rootFacet = rawElement.get().getFacetOrFail(RbelRootFacet.class);
-      if (rootFacet.getRootFacet() instanceof RbelJsonFacet
-          || rootFacet.getRootFacet() instanceof RbelXmlFacet) {
-        return Optional.of(new RbelBase64Facet(rawElement.get()));
-      }
+      return Optional.of(new RbelBase64Facet(rawElement.get()));
     }
     return Optional.empty();
   }

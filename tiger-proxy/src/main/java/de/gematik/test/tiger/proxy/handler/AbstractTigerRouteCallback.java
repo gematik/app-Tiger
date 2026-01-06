@@ -390,7 +390,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
                   TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
               log.atTrace()
                   .addArgument(criterion)
-                  .addArgument(convertedRequest::printHttpDescription)
+                  .addArgument(convertedRequest::printShortDescription)
                   .addArgument(() -> matches)
                   .log("Matching {} for {}: {}");
               return matches;

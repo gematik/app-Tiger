@@ -177,7 +177,7 @@ public abstract class AbstractNonHttpTest {
                 } catch (ConditionTimeoutException cte) {
                   tigerProxy
                       .getRbelMessagesList()
-                      .forEach(msg -> log.error(msg.printHttpDescription()));
+                      .forEach(msg -> log.error(msg.printShortDescription()));
                   throw cte;
                 }
                 return null;

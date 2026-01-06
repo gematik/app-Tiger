@@ -20,12 +20,17 @@
  */
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.facets.websocket.RbelWebsocketFrameType.CLOSE_FRAME;
+import static de.gematik.rbellogger.facets.websocket.RbelWebsocketFrameType.DATA_FRAME;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.websocket.RbelSockJsFacet;
+import de.gematik.rbellogger.facets.websocket.RbelStompFacet;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeFacet;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -60,6 +65,7 @@ class WebsocketConverterTest {
   void shouldRenderCleanHtml() {
     final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
     Files.write(new File("target/websocket.html").toPath(), html.getBytes());
+    System.out.println(rbelLogger.getMessageList().get(12).printTreeStructure());
     assertThat(html)
         .isNotBlank()
         .contains("SUBSCRIBE\\ndestination:/topic/data\\nid:1")
@@ -88,14 +94,64 @@ class WebsocketConverterTest {
         .hasGivenValueAtPosition("$.opcode", 1)
         .hasGivenValueAtPosition("$.payloadLength", 1)
         .hasGivenValueAtPosition("$.masked", false)
+        .hasGivenValueAtPosition("$.frameType", DATA_FRAME)
         .hasStringContentEqualToAtPosition("$.payload", "o");
     assertThat(rbelLogger.getMessageList().get(7))
         .hasFacet(RbelWebsocketMessageFacet.class)
         .hasGivenValueAtPosition("$.opcode", 1)
         .hasGivenValueAtPosition("$.payloadLength", 61)
         .hasGivenValueAtPosition("$.masked", true)
+        .hasGivenValueAtPosition("$.frameType", DATA_FRAME)
         .extractChildWithPath("$.payload")
         .asString()
         .startsWith("[\"CONNECT\\nheart-beat:");
+    assertThat(rbelLogger.getMessageList().get(13))
+        .andPrintTree()
+        .hasFacet(RbelWebsocketMessageFacet.class)
+        .hasGivenValueAtPosition("$.opcode", 1)
+        .hasGivenValueAtPosition("$.masked", false)
+        .extractChildWithPath("$.payload")
+        .hasFacet(RbelSockJsFacet.class)
+        .extractChildWithPath("$.content.0.content")
+        .hasFacet(RbelStompFacet.class);
+  }
+
+  @SneakyThrows
+  @Test
+  void checkWebsocketExchangeWithCompression() {
+    var rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .setActivateRbelParsingFor(List.of("websocket"))
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/testhub.tgr")
+                        .build()));
+    try (final var capturer = rbelLogger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+
+    rbelLogger.getMessageList().stream().map(RbelElement::printTreeStructureWithoutColors).toList();
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    Files.write(new File("target/wsCompression.html").toPath(), html.getBytes());
+
+    assertThat(rbelLogger.getMessageList().get(17))
+        .hasGivenValueAtPosition("$.opcode", 1)
+        .hasGivenValueAtPosition("$.frameType", DATA_FRAME);
+
+    assertThat(rbelLogger.getMessageList().get(18))
+        .hasGivenValueAtPosition("$.opcode", 1)
+        .hasGivenValueAtPosition("$.frameType", DATA_FRAME);
+
+    assertThat(rbelLogger.getMessageList().get(19))
+        .hasGivenValueAtPosition("$.opcode", 8)
+        .hasGivenValueAtPosition("$.frameType", CLOSE_FRAME);
+
+    assertThat(rbelLogger.getMessageList().get(17).printShortDescription())
+        .startsWith("WebSocket(<-): '{\"type\":\"StandardScenario");
+    assertThat(rbelLogger.getMessageList().get(18).printShortDescription())
+        .startsWith("WebSocket(<-): '{\"type\":\"Token");
+    assertThat(rbelLogger.getMessageList().get(19).printShortDescription())
+        .startsWith("WebSocket(<-): CLOSE_FRAME");
   }
 }

@@ -23,9 +23,12 @@ package de.gematik.rbellogger.facets.http;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 
 @Getter
 @EqualsAndHashCode
@@ -48,5 +51,26 @@ public class RbelHttpMessageFacet implements RbelFacet {
         .with("body", body)
         .with("header", header)
         .with("httpVersion", httpVersion);
+  }
+
+  @Override
+  public Optional<String> printShortDescription(RbelElement element) {
+    val resultBuilder = new StringBuilder();
+    resultBuilder.append(
+        element
+            .getFacet(RbelHttpRequestFacet.class)
+            .map(
+                req ->
+                    "HTTP " + req.getMethod().getRawStringContent() + " " + req.getPathAsString())
+            .orElse(""));
+    resultBuilder.append(
+        element
+            .getFacet(RbelHttpResponseFacet.class)
+            .map(req -> "HTTP " + req.getResponseCode().getRawStringContent())
+            .orElse(""));
+    resultBuilder.append(" with body '");
+    resultBuilder.append(StringUtils.abbreviate(getBody().getRawStringContent(), 30));
+    resultBuilder.append("'");
+    return Optional.of(resultBuilder.toString());
   }
 }

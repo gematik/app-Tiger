@@ -178,12 +178,14 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       final var httpVersion =
           new RbelElement(
               stringContent.substring(0, stringContent.indexOf(" ")).getBytes(), targetElement);
-      targetElement.addFacet(
+      val httpMessageFacet =
           RbelHttpMessageFacet.builder()
               .header(headerElement)
               .body(bodyElement)
               .httpVersion(httpVersion)
-              .build());
+              .build();
+      targetElement.addFacet(httpMessageFacet);
+      targetElement.addFacet(new RbelRootFacet<>(httpMessageFacet));
 
       converter.convertElement(bodyElement);
     }

@@ -50,7 +50,7 @@ public class TigerProxyTestHelper {
           "Expected {} message(s) in rbel message list but found {}",
           expectedMessagesCount,
           tigerProxy.getRbelMessagesList().size());
-      tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printHttpDescription()));
+      tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printShortDescription()));
       throw cte;
     }
   }
@@ -93,7 +93,7 @@ public class TigerProxyTestHelper {
           .forEach(
               msg ->
                   log.error(
-                      msg.printHttpDescription()
+                      msg.printShortDescription()
                           + " with facets "
                           + msg.getFacets().stream()
                               .map(o -> o.getClass().getSimpleName())

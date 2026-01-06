@@ -44,6 +44,18 @@ public class RbelNoteFacet implements RbelFacet {
     this.style = NoteStyling.INFO;
   }
 
+  public static RbelFacet error(String message) {
+    return new RbelNoteFacet(message, NoteStyling.ERROR);
+  }
+
+  public static RbelFacet warn(String message) {
+    return new RbelNoteFacet(message, NoteStyling.WARN);
+  }
+
+  public static RbelFacet info(String message) {
+    return new RbelNoteFacet(message, NoteStyling.INFO);
+  }
+
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<>();

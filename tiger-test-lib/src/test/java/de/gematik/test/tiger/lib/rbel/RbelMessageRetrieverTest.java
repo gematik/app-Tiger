@@ -739,7 +739,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
         "src/test/resources/testdata/interleavedRequests.tgr");
 
     localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock().stream()
-        .map(RbelElement::printHttpDescription)
+        .map(RbelElement::printShortDescription)
         .forEach(log::info);
 
     // first request
@@ -864,7 +864,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
   private String http(RbelElement currentRequest) {
     if (currentRequest != null) {
-      return currentRequest.printHttpDescription();
+      return currentRequest.printShortDescription();
     } else {
       return "<no message>";
     }

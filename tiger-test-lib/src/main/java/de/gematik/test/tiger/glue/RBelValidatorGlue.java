@@ -526,6 +526,7 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match
    */
   @Dann("TGR prüfe aktueller Request stimmt im Body überein mit:")
+  @Dann("TGR prüfe aktuelle Anfrage stimmt im Body überein mit:")
   @Then("TGR current request body matches:")
   @ResolvableArgument
   public void currentRequestBodyMatches(final String docString) {
@@ -544,6 +545,9 @@ public class RBelValidatorGlue {
   @Dann(
       "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit"
           + " {tigerResolvedString}")
+  @Dann(
+      "TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} überein mit"
+          + " {tigerResolvedString}")
   @Then("TGR current request with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentRequestMessageAttributeMatches(final String rbelPath, final String value) {
     rbelValidator.assertAttributeOfCurrentRequestMatches(
@@ -556,6 +560,7 @@ public class RBelValidatorGlue {
    * @param rbelPath path to node/attribute
    */
   @Dann("TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Anfrage enthält Knoten {tigerResolvedString}")
   @Then("TGR current request contains node {tigerResolvedString}")
   public void currentRequestMessageContainsNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentRequest(rbelPath)).isNotEmpty();
@@ -570,6 +575,7 @@ public class RBelValidatorGlue {
    *     DotAll regex option supplied as DocString
    */
   @Dann("TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:")
+  @Dann("TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt überein mit:")
   @Then("TGR current request at {tigerResolvedString} matches:")
   @ResolvableArgument
   public void currentRequestMessageAtMatchesDocString(
@@ -589,6 +595,9 @@ public class RBelValidatorGlue {
    */
   @Dann(
       "TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein"
+          + " mit:")
+  @Dann(
+      "TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt als {modeType} überein"
           + " mit:")
   @Then("TGR current request at {tigerResolvedString} matches as {modeType}:")
   @ResolvableArgument
@@ -611,6 +620,9 @@ public class RBelValidatorGlue {
    */
   @Dann(
       "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit"
+          + " {tigerResolvedString}")
+  @Dann(
+      "TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} nicht überein mit"
           + " {tigerResolvedString}")
   @Then(
       "TGR current request with attribute {tigerResolvedString} does not match"
@@ -887,6 +899,7 @@ public class RBelValidatorGlue {
 
   /** Prints the rbel-tree of the current response to the System-out */
   @Dann("TGR gebe aktuelle Response als Rbel-Tree aus")
+  @Dann("TGR gebe aktuelle Antwort als Rbel-Tree aus")
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
@@ -895,6 +908,7 @@ public class RBelValidatorGlue {
 
   /** Prints the rbel-tree of the current request to the System-out */
   @Dann("TGR gebe aktuelle Request als Rbel-Tree aus")
+  @Dann("TGR gebe aktuelle Anfrage als Rbel-Tree aus")
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {

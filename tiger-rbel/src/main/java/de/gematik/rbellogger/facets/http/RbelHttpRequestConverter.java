@@ -25,6 +25,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
@@ -95,12 +96,14 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             .build();
     targetElement.addFacet(httpRequest);
     targetElement.addFacet(new RbelRequestFacet(method + " " + path, true));
-    targetElement.addFacet(
+    val httpMessageFacet =
         RbelHttpMessageFacet.builder()
             .header(headerElement)
             .body(bodyElement)
             .httpVersion(httpVersion)
-            .build());
+            .build();
+    targetElement.addFacet(httpMessageFacet);
+    targetElement.addFacet(new RbelRootFacet<>(httpMessageFacet));
     converter.convertElement(bodyElement);
   }
 
