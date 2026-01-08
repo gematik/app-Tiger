@@ -34,9 +34,9 @@ import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
@@ -175,8 +175,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {
     log.info("Trying to read traffic from file '{}'...", sourceFile);
     try {
-      String rbelFileContent = Files.readString(Path.of(sourceFile), StandardCharsets.UTF_8);
-      List<RbelElement> readElements = readTrafficFromString(rbelFileContent);
+      List<RbelElement> readElements = readTraffic(Path.of(sourceFile).toFile());
       log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
       return readElements;
     } catch (IOException | RuntimeException e) {
@@ -191,6 +190,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
         Optional.ofNullable(getTigerProxyConfiguration().getFileSaveInfo())
             .map(TigerFileSaveInfo::getReadFilter)
             .filter(StringUtils::isNotBlank));
+  }
+
+  public synchronized List<RbelElement> readTraffic(File tgrFileContent) throws IOException {
+    return rbelFileWriter.convertFromRbelFile(
+        new FileReader(tgrFileContent),
+        Optional.ofNullable(getTigerProxyConfiguration().getFileSaveInfo())
+            .map(TigerFileSaveInfo::getReadFilter)
+            .filter(StringUtils::isNotBlank),
+        null);
   }
 
   private void addFixVauKey() {

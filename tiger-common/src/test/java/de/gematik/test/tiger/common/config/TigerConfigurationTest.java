@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.IOException;
@@ -960,6 +962,34 @@ public class TigerConfigurationTest { // NOSONAR
                 EvaluationSkippingTestClass.class, "bean")
             .get();
     assertThat(dummyBean.getDirectMap()).containsEntry("2775293581", "someStuff");
+  }
+
+  @Nested
+  class ConfigurationBeanWithJavaType {
+    @Test
+    void thatJavaTypeCanBeUsedToParseArbitraryData() {
+      TigerGlobalConfiguration.readFromYaml("strings: [hello, world]");
+
+      final CollectionType type =
+          TigerGlobalConfiguration.getObjectMapper()
+              .getTypeFactory()
+              .constructCollectionType(List.class, String.class);
+      final List<String> actual =
+          TigerGlobalConfiguration.instantiateConfigurationBean(type, "strings");
+      assertThat(actual).containsExactlyInAnyOrder("hello", "world");
+    }
+
+    @Test
+    void thatJavaTypeThrowsException() {
+      TigerGlobalConfiguration.readFromYaml("strings: [hello, world]");
+
+      final CollectionType type =
+          TigerGlobalConfiguration.getObjectMapper()
+              .getTypeFactory()
+              .constructCollectionType(List.class, Integer.class);
+      assertThatExceptionOfType(TigerConfigurationException.class)
+          .isThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(type, "strings"));
+    }
   }
 
   @Data

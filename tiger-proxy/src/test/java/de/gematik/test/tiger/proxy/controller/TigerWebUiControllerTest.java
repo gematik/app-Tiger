@@ -531,6 +531,113 @@ class TigerWebUiControllerTest {
 
   @Test
   @ResourceLock(value = "TigerWebUiController")
+  void downloadTraffic_usingInputStream_shouldProduceCorrectFormat() {
+    final HttpResponse<java.io.InputStream> response =
+        Unirest.get(getWebUiUrl() + "/trafficLog.tgr").asObject(RawResponse::getContent);
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getHeaders().getFirst("available-messages"))
+        .isEqualTo(String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES));
+
+    // Read from InputStream lazily using BufferedReader
+    try (var inputStream = response.getBody();
+        var reader =
+            new java.io.BufferedReader(
+                new java.io.InputStreamReader(
+                    inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
+
+      List<String> jsonLines = reader.lines().filter(line -> !line.isBlank()).toList();
+
+      log.info("Downloaded {} lines via InputStream", jsonLines.size());
+
+      // Should have exactly 4 messages (no version header in downloads)
+      assertThat(jsonLines).hasSize(TOTAL_OF_EXCHANGED_MESSAGES);
+
+      // Each line should be valid JSON
+      for (String line : jsonLines) {
+        assertThat(line).isNotBlank();
+        JSONObject json = new JSONObject(line);
+        assertThat(json.has(MESSAGE_UUID)).isTrue();
+        assertThat(json.getString(MESSAGE_UUID)).isNotEmpty();
+      }
+
+      // Verify each message UUID matches the proxy's message list
+      var downloadedUuids =
+          jsonLines.stream()
+              .map(JSONObject::new)
+              .map(json -> json.getString(MESSAGE_UUID))
+              .toList();
+
+      var expectedUuids =
+          tigerProxy.getRbelMessagesList().stream()
+              .map(de.gematik.rbellogger.data.RbelElement::getUuid)
+              .toList();
+
+      assertThat(downloadedUuids).containsExactlyElementsOf(expectedUuids);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to read from InputStream", e);
+    }
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void downloadTraffic_multipleMessages_shouldHaveCorrectDelimiters() {
+    // Download traffic and get raw bytes to verify exact formatting
+    final HttpResponse<byte[]> response = Unirest.get(getWebUiUrl() + "/trafficLog.tgr").asBytes();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    String content = new String(response.getBody(), java.nio.charset.StandardCharsets.UTF_8);
+
+    // Count double newlines - should be (number of messages - 1)
+    int doubleNewlineCount = 0;
+    int index = 0;
+    while ((index = content.indexOf("\n\n", index)) != -1) {
+      doubleNewlineCount++;
+      index += 2;
+    }
+
+    assertThat(doubleNewlineCount)
+        .as("Should have delimiters only between messages, not after last")
+        .isEqualTo(TOTAL_OF_EXCHANGED_MESSAGES - 1);
+
+    // Verify content ends with a single newline (from last JSON object), not double
+    assertThat(content).endsWith("}\n");
+    assertThat(content).doesNotEndWith("\n\n");
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void downloadTraffic_withFilter_shouldStreamCorrectly() {
+    String filterRbelPath = "$.method == 'POST'";
+
+    final HttpResponse<String> response =
+        Unirest.get(getWebUiUrl() + "/trafficLog.tgr")
+            .queryString("filterRbelPath", filterRbelPath)
+            .asString();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getHeaders().getFirst("available-messages")).isEqualTo("2");
+
+    String body = response.getBody();
+    String[] jsonLines = body.split("\n\n");
+
+    // Should have exactly 2 filtered messages
+    assertThat(jsonLines).hasSize(2);
+
+    // Verify each is valid JSON with UUID
+    for (String line : jsonLines) {
+      JSONObject json = new JSONObject(line);
+      assertThat(json.has(MESSAGE_UUID)).isTrue();
+    }
+
+    // Verify only one delimiter between the two messages
+    assertThat(body).contains("\n\n");
+    assertThat(body.split("\n\n")).hasSize(2);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
   void getFullHtmlMessage_validUuid_shouldReturnHtmlContent() {
     final var uuid = tigerProxy.getRbelMessagesList().get(0).getUuid();
 

@@ -34,23 +34,28 @@ import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.test.tiger.common.util.TigerVersionProvider;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
-@AllArgsConstructor
 @Slf4j
 public class RbelFileWriter {
   private static final String FILE_DIVIDER = "\n";
@@ -58,8 +63,36 @@ public class RbelFileWriter {
   public static final String SEQUENCE_NUMBER = "sequenceNumber";
   public static final String MESSAGE_TIME = "timestamp";
   public static final String MESSAGE_UUID = "uuid";
+  public static final String TIGER_VERSION_KEY = "tigerVersion";
 
   private final RbelConverter rbelConverter;
+  private final AtomicBoolean versionHeaderWritten = new AtomicBoolean();
+  private final AtomicReference<String> lastReadTigerVersion = new AtomicReference<>();
+  private boolean writeVersionHeader = true;
+
+  public RbelFileWriter(RbelConverter rbelConverter) {
+    this.rbelConverter = rbelConverter;
+  }
+
+  /**
+   * Sets whether the version header should be written. Default is true. Set to false to skip
+   * version header generation (e.g., for downloads).
+   *
+   * @param writeVersionHeader true to write version header, false to skip
+   * @return this RbelFileWriter for method chaining
+   */
+  public RbelFileWriter setWriteVersionHeader(boolean writeVersionHeader) {
+    this.writeVersionHeader = writeVersionHeader;
+    return this;
+  }
+
+  /**
+   * Returns the Tiger version string that was read from the last log file. Returns empty if no
+   * version was found.
+   */
+  public Optional<String> getLastReadTigerVersion() {
+    return Optional.ofNullable(lastReadTigerVersion.get());
+  }
 
   public String convertToRbelFileString(RbelElement rbelElement) {
     return convertToRbelFileString(rbelElement, Long.MAX_VALUE);
@@ -74,6 +107,13 @@ public class RbelFileWriter {
     rbelElement
         .getFacet(RbelMessageMetadata.class)
         .ifPresent(metadata -> metadata.forEach(jsonObject::put));
+
+    if (writeVersionHeader && versionHeaderWritten.compareAndSet(false, true)) {
+      if (!jsonObject.has(SEQUENCE_NUMBER)) {
+        jsonObject.put(SEQUENCE_NUMBER, -1);
+      }
+      jsonObject.put(TIGER_VERSION_KEY, TigerVersionProvider.getTigerVersionString());
+    }
 
     return jsonObject + FILE_DIVIDER;
   }
@@ -95,33 +135,56 @@ public class RbelFileWriter {
     return convertRbelFileEntries(rbelFileContent.lines(), readFilter, null);
   }
 
+  public List<RbelElement> convertFromRbelFile(
+      Reader rbelFileContent,
+      Optional<String> readFilter,
+      Function<String, RbelContent> contentProvider) {
+    return convertRbelFileEntries(
+        new BufferedReader(rbelFileContent).lines(), readFilter, contentProvider);
+  }
+
   public List<RbelElement> convertRbelFileEntries(
       Stream<String> rbelFileLines,
       Optional<String> readFilter,
       Function<String, RbelContent> contentProvider) {
-    final List<String> rawMessageStrings = rbelFileLines.filter(StringUtils::isNotBlank).toList();
-    log.info("Found {} messages in file, starting parsing...", rawMessageStrings.size());
+    log.info("Starting parsing...");
     AtomicInteger numberOfParsedMessages = new AtomicInteger(0);
     final List<RbelElement> list =
-        rawMessageStrings.stream()
-            .peek( // NOSONAR
-                str -> {
+        getRbelElementStream(
+                rbelFileLines,
+                readFilter,
+                contentProvider,
+                element -> {
                   if (numberOfParsedMessages.get() > 0
                       && (numberOfParsedMessages.getAndIncrement() % 500) == 0) {
                     log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
                   }
                 })
-            .map(JSONObject::new)
-            .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
-            .map(messageObject -> parseFileObject(messageObject, readFilter, contentProvider))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
             .toList();
-    log.info(
-        "Parsing complete, parsed {} messages of {} available",
-        list.size(),
-        rawMessageStrings.size());
+    log.info("Parsing complete, parsed {} messages", list.size());
     return list;
+  }
+
+  public @NotNull Stream<RbelElement> getRbelElementStream(
+      Stream<String> rbelFileLines,
+      Optional<String> readFilter,
+      Function<String, RbelContent> contentProvider,
+      Consumer<? super Optional<RbelElement>> onEveryMessageParsed) {
+    return rbelFileLines
+        .filter(StringUtils::isNotBlank)
+        .map(JSONObject::new)
+        .filter(this::isMessageObject)
+        .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
+        .map(messageObject -> parseFileObject(messageObject, readFilter, contentProvider))
+        .filter(Optional::isPresent)
+        .peek(onEveryMessageParsed)
+        .map(Optional::get);
+  }
+
+  private boolean isMessageObject(JSONObject messageObject) {
+    return messageObject.has(RAW_MESSAGE_CONTENT)
+        || messageObject.has(SEQUENCE_NUMBER)
+        || messageObject.has(MESSAGE_UUID);
   }
 
   private Optional<RbelElement> parseFileObject(
@@ -129,6 +192,12 @@ public class RbelFileWriter {
       Optional<String> readFilter,
       Function<String, RbelContent> contentProvider) {
     try {
+      if (messageObject.has(TIGER_VERSION_KEY)) {
+        var version = messageObject.getString(TIGER_VERSION_KEY);
+        lastReadTigerVersion.set(version);
+        log.info("Detected Tiger version '{}' in log file.", version);
+      }
+
       final String msgUuid = messageObject.optString(MESSAGE_UUID);
 
       if (rbelConverter.getKnownMessageUuids().add(msgUuid)) {

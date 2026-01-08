@@ -56,6 +56,8 @@ public class TigerProxyRoute implements Serializable {
    */
   @Builder.Default private boolean matchForProxyType = true;
 
+  @Builder.Default private boolean preserveHostHeader = false;
+
   public static TigerProxyRoute convertFromTigerConfigurationRoute(
       TigerConfigurationRoute tigerRoute, ForwardProxyInfo forwardProxyInfo) {
     return TigerProxyRoute.builder()
@@ -68,6 +70,7 @@ public class TigerProxyRoute implements Serializable {
         .criterions(tigerRoute.getCriterions())
         .disableRbelLogging(tigerRoute.isDisableRbelLogging())
         .matchForProxyType(tigerRoute.isMatchForProxyType())
+        .preserveHostHeader(tigerRoute.isPreserveHostHeader())
         .build();
   }
 

@@ -23,6 +23,7 @@ package de.gematik.test.tiger.common.config;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalConfigurationFileProperty;
@@ -190,6 +191,25 @@ public class TigerGlobalConfiguration {
   @SneakyThrows
   public static synchronized <T> T instantiateConfigurationBean(
       TypeReference<T> configurationBeanType, String... baseKeys) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
+  }
+
+  /**
+   * Retrieve data for a custom type.
+   *
+   * <p><strong>Example: parse a List of CustomType</strong> <code>
+   * <pre>
+   * final CollectionType type = TigerGlobalConfiguration.getObjectMapper()
+   *                                 .getTypeFactory()
+   *                                 .constructCollectionType(List.class, CustomType.class);
+   * final List<CustomType> o = TigerGlobalConfiguration.instantiateConfigurationBean(type, "path.to.my.data");
+   * </pre>
+   * </code>
+   */
+  @SneakyThrows
+  public static synchronized <T> T instantiateConfigurationBean(
+      JavaType configurationBeanType, String... baseKeys) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.instantiateConfigurationBean(configurationBeanType, baseKeys);
   }

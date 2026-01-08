@@ -206,10 +206,10 @@ class RbelCborConverterTest {
   }
 
   @Test
-  void avoidEmptyCborFragments() {
+  void convertEmptyCborFragments() {
     final RbelElement convertMessage =
         rbelLogger.getRbelConverter().convertElement(Base64.getDecoder().decode("oA=="), null);
 
-    assertThat(convertMessage).andPrintTree().doesNotHaveFacet(RbelCborFacet.class);
+    assertThat(convertMessage).andPrintTree().hasFacet(RbelCborFacet.class);
   }
 }

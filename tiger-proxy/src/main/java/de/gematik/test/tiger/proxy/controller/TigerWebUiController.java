@@ -31,6 +31,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
+import de.gematik.rbellogger.util.RbelStringUtils;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
@@ -44,7 +45,6 @@ import de.gematik.test.tiger.proxy.data.MetaMessageScrollableDto;
 import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.AbstractMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,7 +63,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -441,33 +443,39 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public String downloadTraffic(
+  public ResponseEntity<InputStreamResource> downloadTraffic(
       @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
       @RequestParam(name = "filterRbelPath", required = false) final String filterCriterion,
-      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
-      HttpServletResponse response) {
+      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize) {
     int actualPageSize =
         pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
     final List<RbelElement> filteredMessages =
         loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
     final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
-    response.addHeader("available-messages", String.valueOf(filteredMessages.size()));
-    response.addHeader("returned-messages", String.valueOf(returnedMessages));
 
-    final String result =
-        filteredMessages.stream()
-            .limit(actualPageSize)
-            .map(this::convertToRbelFileString)
-            .collect(Collectors.joining("\n\n"));
+    var headers = new HttpHeaders();
+    headers.add("available-messages", String.valueOf(filteredMessages.size()));
+    headers.add("returned-messages", String.valueOf(returnedMessages));
 
-    if (!result.isEmpty()) {
-      response.addHeader("last-uuid", filteredMessages.get(returnedMessages - 1).getUuid());
+    if (returnedMessages > 0) {
+      headers.add("last-uuid", filteredMessages.get(returnedMessages - 1).getUuid());
     }
-    return result;
+
+    var inputStream =
+        RbelStringUtils.mapAndJoinAsInputStream(
+            filteredMessages.subList(0, returnedMessages), this::convertToRbelFileString, "\n\n");
+
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .body(new InputStreamResource(inputStream));
   }
 
   private String convertToRbelFileString(RbelElement element) {
-    return tigerProxy.getRbelFileWriter().convertToRbelFileString(element, SKIP_CONTENT_THRESHOLD);
+    return new de.gematik.rbellogger.file.RbelFileWriter(
+            tigerProxy.getRbelLogger().getRbelConverter())
+        .setWriteVersionHeader(false)
+        .convertToRbelFileString(element, SKIP_CONTENT_THRESHOLD);
   }
 
   @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
