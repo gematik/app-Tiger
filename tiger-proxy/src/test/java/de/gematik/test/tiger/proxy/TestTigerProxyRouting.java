@@ -474,17 +474,40 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
   }
 
   @Test
-  void shouldResolveHostHeader() {
+  void shouldPreserveHostHeaderForForwardRouteIfSoInstructed(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
                         .from("http://127.0.0.1")
-                        .to("http://localhost:" + fakeBackendServerPort)
+                        .to("http://127.0.0.1:" + fakeBackendServerPort)
+                        .preserveHostHeader(true)
                         .build()))
             .build());
 
-    assertThat(proxyRest.get("http://localhost/foobar").asString().getStatus()).isEqualTo(666);
+    proxyRest.get("http://localhost/foobar").asString();
+
+    assertThat(runtimeInfo.getWireMock().getServeEvents().get(0).getRequest().getHeader("Host"))
+        .isEqualTo("localhost");
+  }
+
+  @Test
+  void shouldPreserveHostHeaderForReverseRouteIfSoInstructed(WireMockRuntimeInfo runtimeInfo) {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://127.0.0.1:" + fakeBackendServerPort)
+                        .preserveHostHeader(true)
+                        .build()))
+            .build());
+
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+
+    assertThat(runtimeInfo.getWireMock().getServeEvents().get(0).getRequest().getHeader("Host"))
+        .isEqualTo("localhost:" + tigerProxy.getProxyPort());
   }
 }

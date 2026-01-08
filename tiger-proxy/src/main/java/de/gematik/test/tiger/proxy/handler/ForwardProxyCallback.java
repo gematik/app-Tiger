@@ -43,7 +43,9 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   @SuppressWarnings("java:S1075")
   public HttpRequest handleRequest(HttpRequest req) {
     applyModifications(req);
-    req.replaceHeader(header("Host", getTargetUrl().getHost() + ":" + getPort()));
+    if (!getTigerRoute().isPreserveHostHeader()) {
+      req.replaceHeader(header("Host", getTargetUrl().getHost() + ":" + getPort()));
+    }
     if (getTigerRoute().getAuthentication() != null) {
       getTigerRoute()
           .getAuthentication()
@@ -52,6 +54,8 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
     }
     final String path = patchPath(req.getPath());
     return cloneRequest(req)
+        .setReceiverAddress(
+            getTargetUrl().getProtocol().equals("https"), getTargetUrl().getHost(), getPort())
         .setPath(path)
         .setSecure(getTigerRoute().getTo().startsWith("https://"))
         .setQueryStringParameters(req.getQueryStringParameters());

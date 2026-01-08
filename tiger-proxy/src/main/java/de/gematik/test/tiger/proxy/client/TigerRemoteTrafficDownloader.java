@@ -25,8 +25,10 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,15 +68,16 @@ public class TigerRemoteTrafficDownloader {
   }
 
   @SneakyThrows
-  private void parseTrafficChunk(String rawTraffic) {
+  private void parseTrafficChunk(InputStream rawTraffic) {
     final List<RbelElement> convertedMessages =
         tigerRemoteProxyClient
             .getRbelFileWriter()
             .convertRbelFileEntries(
-                rawTraffic.lines(), Optional.empty(), this::downloadMessageContent);
-    final long expectedNumberOfMessages = rawTraffic.lines().count();
+                new BufferedReader(new InputStreamReader(rawTraffic)).lines(),
+                Optional.empty(),
+                this::downloadMessageContent);
 
-    doMessageBatchPostProcessing(convertedMessages, expectedNumberOfMessages);
+    doMessageBatchPostProcessing(convertedMessages);
   }
 
   @SneakyThrows
@@ -106,7 +109,7 @@ public class TigerRemoteTrafficDownloader {
     }
   }
 
-  private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages, long count) {
+  private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages) {
     convertedMessages.forEach(
         msg -> {
           msg.addFacet(new TigerDownloadedMessageFacet());
@@ -114,11 +117,8 @@ public class TigerRemoteTrafficDownloader {
         });
     if (log.isTraceEnabled()) {
       log.trace(
-          "Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was"
-              + " filtered). Now standing at {} messages overall",
-          count,
+          "Just parsed another traffic batch, got {} messages. Now standing at {} messages overall",
           convertedMessages.size(),
-          (count + 2) / 3,
           getRbelLogger().getMessageHistory().size());
     }
     if (!convertedMessages.isEmpty()) {
@@ -185,13 +185,12 @@ public class TigerRemoteTrafficDownloader {
     currentLastUuid.ifPresent(uuid -> parameters.put("lastMsgUuid", uuid));
 
     try {
-      final HttpResponse<String> response =
-          Unirest.get(downloadUrl).queryString(parameters).asString();
+      final HttpResponse<InputStream> response =
+          Unirest.get(downloadUrl).queryString(parameters).asObject(RawResponse::getContent);
       log.atTrace()
           .addArgument(downloadUrl)
           .addArgument(response::getStatus)
-          .addArgument(() -> response.getBody().length())
-          .log("Downloaded traffic from remote '{}', status: {}, size: {}");
+          .log("Downloaded traffic from remote '{}', status: {}");
       if (response.getStatus() != 200) {
         throw new TigerRemoteProxyClientException(
             "Error while downloading message from remote '"
@@ -226,14 +225,14 @@ public class TigerRemoteTrafficDownloader {
     private final int availableMessages;
     private final String lastUuid;
 
-    public static PaginationInfo of(HttpResponse<String> response) {
+    public static PaginationInfo of(HttpResponse<?> response) {
       return PaginationInfo.builder()
           .availableMessages(convertHeaderFieldToInt(response, "available-messages"))
           .lastUuid(response.getHeaders().getFirst("last-uuid"))
           .build();
     }
 
-    private static Integer convertHeaderFieldToInt(HttpResponse<String> response, String key) {
+    private static Integer convertHeaderFieldToInt(HttpResponse<?> response, String key) {
       return java.util.Optional.ofNullable(response.getHeaders().getFirst(key))
           .filter(StringUtils::isNotEmpty)
           .map(Integer::parseInt)

@@ -50,7 +50,7 @@ class JsonConverterTest {
   }
 
   @Test
-  void convertTrivialJsons_shouldNotAddFacet() {
+  void convertTrivialJsons_shouldAddFacet() {
     final String myMessage = "<html><head>[]</head><body>{}</body></html>";
 
     final RbelElement convertedMessage =
@@ -58,10 +58,10 @@ class JsonConverterTest {
 
     assertThat(convertedMessage)
         .extractChildWithPath("$.html.head.text")
-        .doesNotHaveFacet(RbelJsonFacet.class)
+        .hasFacet(RbelJsonFacet.class)
         .andTheInitialElement()
         .extractChildWithPath("$.html.body.text")
-        .doesNotHaveFacet(RbelJsonFacet.class);
+        .hasFacet(RbelJsonFacet.class);
   }
 
   @Test
@@ -98,5 +98,21 @@ class JsonConverterTest {
                 .filter(el -> el.hasFacet(RbelJwtFacet.class))
                 .findAny())
         .isPresent();
+  }
+
+  @Test
+  void testEmptyJsonBody() {
+    String json = "{}";
+    RbelElement element = RbelLogger.build().getRbelConverter().convertElement(json, null);
+
+    assertThat(element).hasFacet(RbelJsonFacet.class);
+  }
+
+  @Test
+  void testEmptyJsonArray() {
+    String json = "[]";
+    RbelElement element = RbelLogger.build().getRbelConverter().convertElement(json, null);
+
+    assertThat(element).hasFacet(RbelJsonFacet.class);
   }
 }

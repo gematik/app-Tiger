@@ -49,7 +49,8 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
             .setSecure(getTigerRoute().getTo().startsWith("https"))
             .setPath(patchPath(httpRequest.getPath()));
 
-    if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
+    if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()
+        && !getTigerRoute().isPreserveHostHeader()) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());
     }
     if (getTigerRoute().getAuthentication() != null) {

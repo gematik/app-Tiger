@@ -41,6 +41,7 @@ public class TigerConfigurationRoute {
   private List<String> to = new ArrayList<>();
 
   private boolean disableRbelLogging;
+  private boolean preserveHostHeader;
   private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();

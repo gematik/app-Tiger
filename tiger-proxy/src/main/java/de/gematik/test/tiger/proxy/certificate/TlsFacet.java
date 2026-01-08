@@ -36,15 +36,16 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Value;
 import lombok.val;
+import org.jetbrains.annotations.Nullable;
 
 @Value
 public class TlsFacet implements RbelFacet {
 
-  private static final RbelMetadataValue<String> TLS_VERSION =
+  static final RbelMetadataValue<String> TLS_VERSION =
       new RbelMetadataValue<>("tlsVersion", String.class);
-  private static final RbelMetadataValue<String> CIPHER_SUITE =
+  static final RbelMetadataValue<String> CIPHER_SUITE =
       new RbelMetadataValue<>("cipherSuite", String.class);
-  private static final RbelMetadataValue<String[]> CLIENT_TLS_CERTIFICATE_CHAIN =
+  static final RbelMetadataValue<String[]> CLIENT_TLS_CERTIFICATE_CHAIN =
       new RbelMetadataValue<>("clientTlsCertificateChain", String[].class);
 
   RbelElement tlsVersion;
@@ -78,46 +79,95 @@ public class TlsFacet implements RbelFacet {
         return;
       }
 
-      val tlsVersionValue = TLS_VERSION.getValue(metadataFacet.get());
-      val cipherSuiteValue = CIPHER_SUITE.getValue(metadataFacet.get());
-      if (tlsVersionValue.isPresent() && cipherSuiteValue.isPresent()) {
-        msg.addOrReplaceFacet(
-            new TlsFacet(
-                RbelElement.wrap(msg, tlsVersionValue.get()),
-                RbelElement.wrap(msg, cipherSuiteValue.get()),
-                null));
-        msg.getFacet(TracingMessagePairFacet.class)
-            .filter(pair -> pair.getResponse() == msg)
-            .map(TracingMessagePairFacet::getRequest)
-            .ifPresent(
-                req ->
-                    req.addOrReplaceFacet(
-                        new TlsFacet(
-                            RbelElement.wrap(req, tlsVersionValue.get()),
-                            RbelElement.wrap(req, cipherSuiteValue.get()),
-                            null)));
-      }
+      converter
+          .findPreviousMessageInSameConnectionAs(msg, m -> m.hasFacet(TlsFacet.class))
+          .ifPresentOrElse(
+              previousMessage -> {
+                val previousTlsFacet = previousMessage.getFacet(TlsFacet.class).orElseThrow();
+                val tlsVersionValue = previousTlsFacet.getTlsVersion().seekValue(String.class);
+                val cipherSuiteValue = previousTlsFacet.getCipherSuite().seekValue(String.class);
+                val clientCertificateChainValue =
+                    Optional.ofNullable(previousTlsFacet.getClientCertificateChain())
+                        .map(
+                            s ->
+                                s.getChildNodes().stream().map(RbelElement::getRawContent).toList())
+                        .orElse(null);
 
-      CLIENT_TLS_CERTIFICATE_CHAIN
-          .getValue(metadataFacet.get())
-          .ifPresent(
-              clientCertificates -> {
-                val chain = new RbelElement(null, msg);
-                chain.addFacet(
-                    RbelListFacet.builder()
-                        .childNodes(
-                            unpackageClientCertificateChain(clientCertificates)
-                                .map(certData -> new RbelElement(certData, chain))
-                                .map(converter::convertElement)
-                                .toList())
-                        .build());
+                if (tlsVersionValue.isPresent() && cipherSuiteValue.isPresent()) {
+                  addTlsFacets(
+                      msg,
+                      converter,
+                      tlsVersionValue.get(),
+                      cipherSuiteValue.get(),
+                      clientCertificateChainValue);
+                }
+              },
+              () -> {
+                val tlsVersionValue = TLS_VERSION.getValue(metadataFacet.get());
+                val cipherSuiteValue = CIPHER_SUITE.getValue(metadataFacet.get());
+                val clientCertificateChainValue =
+                    CLIENT_TLS_CERTIFICATE_CHAIN
+                        .getValue(metadataFacet.get())
+                        .map(TlsFacet::unpackageClientCertificateChain)
+                        .map(Stream::toList)
+                        .orElse(null);
 
-                msg.addOrReplaceFacet(
-                    new TlsFacet(
-                        msg.getFacet(TlsFacet.class).orElseThrow().getTlsVersion(),
-                        msg.getFacet(TlsFacet.class).orElseThrow().getCipherSuite(),
-                        chain));
+                if (tlsVersionValue.isPresent() && cipherSuiteValue.isPresent()) {
+                  addTlsFacets(
+                      msg,
+                      converter,
+                      tlsVersionValue.get(),
+                      cipherSuiteValue.get(),
+                      clientCertificateChainValue);
+                }
               });
+    }
+
+    private static void addTlsFacets(
+        RbelElement msg,
+        RbelConversionExecutor converter,
+        String tlsVersion,
+        String cipherSuite,
+        List<byte[]> clientCertificateChainValue) {
+      addTlsFacet(msg, converter, tlsVersion, cipherSuite, clientCertificateChainValue);
+      msg.getFacet(TracingMessagePairFacet.class)
+          .filter(pair -> pair.getResponse() == msg)
+          .map(TracingMessagePairFacet::getRequest)
+          .ifPresent(
+              req ->
+                  addTlsFacet(
+                      req, converter, tlsVersion, cipherSuite, clientCertificateChainValue));
+    }
+
+    private static void addTlsFacet(
+        RbelElement msg,
+        RbelConversionExecutor converter,
+        String tlsVersionValue,
+        String cipherSuiteValue,
+        List<byte[]> clientCertificateChainValue) {
+      msg.addOrReplaceFacet(
+          new TlsFacet(
+              RbelElement.wrap(msg, tlsVersionValue),
+              RbelElement.wrap(msg, cipherSuiteValue),
+              buildCertificateChain(msg, converter, clientCertificateChainValue)));
+    }
+
+    private static @Nullable RbelElement buildCertificateChain(
+        RbelElement msg,
+        RbelConversionExecutor converter,
+        List<byte[]> clientCertificateChainValue) {
+      if (clientCertificateChainValue != null) {
+        val chain = new RbelElement(null, msg);
+        return chain.addFacet(
+            RbelListFacet.builder()
+                .childNodes(
+                    clientCertificateChainValue.stream()
+                        .map(certData -> new RbelElement(certData, chain))
+                        .map(converter::convertElement)
+                        .toList())
+                .build());
+      }
+      return null;
     }
   }
 
@@ -143,18 +193,23 @@ public class TlsFacet implements RbelFacet {
         return;
       }
 
-      msg.getFacet(TlsFacet.class)
-          .flatMap(facet -> facet.getTlsVersion().seekValue(String.class))
-          .ifPresent(tlsVersion -> TLS_VERSION.putValue(metadataFacet.get(), tlsVersion));
-      msg.getFacet(TlsFacet.class)
-          .flatMap(facet -> facet.getCipherSuite().seekValue(String.class))
-          .ifPresent(cipherSuite -> CIPHER_SUITE.putValue(metadataFacet.get(), cipherSuite));
-      // TODO only write if previous message did not already store it
-      msg.getFacet(TlsFacet.class)
-          .map(TlsFacet::packageClientCertificateChain)
-          .ifPresent(
-              clientCertificates ->
-                  CLIENT_TLS_CERTIFICATE_CHAIN.putValue(metadataFacet.get(), clientCertificates));
+      if (converter
+          .findPreviousMessageInSameConnectionAs(msg, m -> m.hasFacet(TlsFacet.class))
+          .isEmpty()) {
+        val tlsFacet = msg.getFacet(TlsFacet.class);
+        val metadata = metadataFacet.get();
+        tlsFacet
+            .flatMap(facet -> facet.getTlsVersion().seekValue(String.class))
+            .ifPresent(tlsVersion -> TLS_VERSION.putValue(metadata, tlsVersion));
+        tlsFacet
+            .flatMap(facet -> facet.getCipherSuite().seekValue(String.class))
+            .ifPresent(cipherSuite -> CIPHER_SUITE.putValue(metadata, cipherSuite));
+        tlsFacet
+            .map(TlsFacet::packageClientCertificateChain)
+            .ifPresent(
+                clientCertificates ->
+                    CLIENT_TLS_CERTIFICATE_CHAIN.putValue(metadata, clientCertificates));
+      }
     }
   }
 

@@ -20,10 +20,10 @@
  */
 package de.gematik.test.tiger.common.config;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
@@ -42,6 +43,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -177,30 +179,55 @@ public class TigerConfigurationLoader {
         .map(node::get);
   }
 
-  @SneakyThrows
   public <T> T instantiateConfigurationBean(
       TypeReference<T> configurationBeanType, String... baseKeys) {
+    return deserializeType(
+        (final TreeNode node) -> {
+          try (JsonParser jsonParser = objectMapper.treeAsTokens(node)) {
+            return objectMapper.readValue(jsonParser, configurationBeanType);
+          }
+        },
+        configurationBeanType.getType().getTypeName(),
+        baseKeys);
+  }
+
+  public <T> T instantiateConfigurationBean(JavaType configurationBeanType, String... baseKeys) {
+    return deserializeType(
+        (final TreeNode node) -> {
+          try (JsonParser jsonParser = objectMapper.treeAsTokens(node)) {
+            return objectMapper.readValue(jsonParser, configurationBeanType);
+          }
+        },
+        configurationBeanType.getTypeName(),
+        baseKeys);
+  }
+
+  @SneakyThrows
+  private <T> T deserializeType(
+      final FailableFunction<TreeNode, T, IOException> deserializer,
+      final String typeName,
+      final String... baseKeys) {
     initialize();
 
     TreeNode targetTree = convertToTreeUnresolved();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
       if (targetTree.get(key.getValue()) == null) {
-        return objectMapper.readValue("[]", configurationBeanType);
+        // Return empty Array if we find nothing
+        targetTree = objectMapper.createArrayNode();
+        break;
       }
       targetTree = targetTree.get(key.getValue());
     }
-    try (JsonParser jsonParser = objectMapper.treeAsTokens(targetTree)) {
-      return jsonParser.readValueAs(configurationBeanType);
-    } catch (JacksonException e) {
+    try {
+      return deserializer.apply(targetTree);
+    } catch (final Exception e) {
       log.debug(
           "Error while converting the following tree: {}",
           objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(targetTree));
       throw new TigerConfigurationException(
-          "Error while reading configuration for class "
-              + configurationBeanType.getType().getTypeName()
-              + " with base-keys "
-              + Arrays.toString(baseKeys),
+          "Error while reading configuration for class %s with base-keys %s"
+              .formatted(typeName, Arrays.toString(baseKeys)),
           e);
     }
   }

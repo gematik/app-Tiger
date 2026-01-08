@@ -79,7 +79,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
       return;
     }
     convertToJacksonNode(rbelElement)
-        .filter(json -> json.isContainerNode() && !json.isEmpty())
+        .filter(JsonNode::isContainerNode)
         .ifPresent(
             json -> {
               augmentRbelElementWithFacet(json, converter, rbelElement);

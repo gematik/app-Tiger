@@ -20,6 +20,15 @@
  */
 package de.gematik.rbellogger.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -35,5 +44,36 @@ public class RbelStringUtils {
         .replace("\r\n", "<CRLF>")
         .replace("\n", "<LF>")
         .replace("\r", "<CR>");
+  }
+
+  public static <T> InputStream mapAndJoinAsInputStream(
+      Collection<T> elements, Function<T, String> converter, String delimiter) {
+    var streams =
+        elements.stream()
+            .map(converter)
+            .flatMap(s -> Stream.of(s, delimiter))
+            .limit(Math.max(elements.size() * 2L - 1, 0)) // avoid trailing delimiter
+            .map(s -> s.getBytes(StandardCharsets.UTF_8))
+            .map(ByteArrayInputStream::new);
+
+    return new SequenceInputStream(iteratorToEnumeration(streams.iterator()));
+  }
+
+  /**
+   * Generic utility method to convert an Iterator to an Enumeration. Useful for legacy APIs that
+   * require Enumeration (like SequenceInputStream).
+   */
+  public static <T> Enumeration<T> iteratorToEnumeration(Iterator<T> iterator) {
+    return new Enumeration<>() {
+      @Override
+      public boolean hasMoreElements() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T nextElement() {
+        return iterator.next();
+      }
+    };
   }
 }

@@ -26,14 +26,13 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInf
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -273,73 +272,109 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   private Socket replayPackets(Socket clientSocket, ServerSocket serverSocket) {
-    Socket serverConnectionSocket = null;
-    int bytesSendFromClientCount = 0;
-    int bytesSendFromServerCount = 0;
-    serverConnectionSocket = serverSocket.accept();
+    val bytesSendFromClientCount = new AtomicInteger();
+    val bytesSendFromServerCount = new AtomicInteger();
+    val serverConnectionSocket = serverSocket.accept();
     serverConnectionSocket.setTcpNoDelay(true);
     for (val packet : toBeReplayedPackets) {
       if (packet.isServerRequest) {
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// CLIENT
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromServerCount, clientSocket, "client")
-            .thenAccept(result -> result.ifPresent(receivedPacketsInClient::add));
-        bytesSendFromServerCount = 0;
-        log.atInfo()
-            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
-            .log("Sending packet to server.... ({})");
-        clientSocket.getOutputStream().write(packet.payload);
-        bytesSendFromClientCount += packet.payload.length;
-        clientSocket.getOutputStream().flush();
+        sendPacketAndReadResponse(
+            clientSocket,
+            bytesSendFromServerCount,
+            bytesSendFromClientCount,
+            receivedPacketsInClient,
+            packet,
+            "server");
       } else {
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// SERVER
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromClientCount, serverConnectionSocket, "server")
-            .thenAccept(result -> result.ifPresent(receivedPacketsInServer::add));
-        bytesSendFromClientCount = 0;
-        log.atInfo()
-            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
-            .log("Sending packet to client.... ({})");
-        serverConnectionSocket.getOutputStream().write(packet.payload);
-        bytesSendFromServerCount += packet.payload.length;
-        serverConnectionSocket.getOutputStream().flush();
+        sendPacketAndReadResponse(
+            serverConnectionSocket,
+            bytesSendFromClientCount,
+            bytesSendFromServerCount,
+            receivedPacketsInServer,
+            packet,
+            "client");
       }
     }
+    readNumberOfBytesFromSocket(bytesSendFromServerCount.get(), clientSocket, "client")
+        .thenAccept(result -> result.ifPresent(receivedPacketsInClient::add))
+        .join();
+    readNumberOfBytesFromSocket(bytesSendFromClientCount.get(), serverConnectionSocket, "server")
+        .thenAccept(result -> result.ifPresent(receivedPacketsInServer::add))
+        .join();
     return serverConnectionSocket;
+  }
+
+  private void sendPacketAndReadResponse(
+      Socket socket,
+      AtomicInteger bytesToReadCounter,
+      AtomicInteger bytesSentCounter,
+      List<byte[]> receivedPackets,
+      TigerTestReplayPacket packet,
+      String direction)
+      throws IOException {
+    readNumberOfBytesFromSocket(bytesToReadCounter.get(), socket, direction)
+        .thenAccept(
+            result ->
+                result.ifPresent(
+                    bytes -> {
+                      receivedPackets.add(bytes);
+                      bytesToReadCounter.addAndGet(-bytes.length);
+                    }))
+        .join();
+    log.atInfo()
+        .addArgument(() -> new String(packet.payload).lines().findFirst().get())
+        .log("Sending packet to " + direction + ".... ({})");
+    socket.getOutputStream().write(packet.payload);
+    bytesSentCounter.addAndGet(packet.payload.length);
+    socket.getOutputStream().flush();
   }
 
   private CompletableFuture<Optional<byte[]>> readNumberOfBytesFromSocket(
       int bytesCount, Socket socket, String message) {
     if (bytesCount > 0) {
-      try {
-        val result =
-            CompletableFuture.supplyAsync(() -> readBytesFromSocket(bytesCount, socket, message))
-                .get(2000, TimeUnit.MILLISECONDS);
-        return CompletableFuture.completedFuture(result);
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      } catch (TimeoutException e) {
-        return CompletableFuture.supplyAsync(
-            () -> readBytesFromSocket(bytesCount, socket, message));
-      }
+      return CompletableFuture.supplyAsync(
+          () -> readBytesWithTimeout(bytesCount, socket, 5000, message));
     } else {
       log.info("No bytes to read in {} ...", message);
       return CompletableFuture.completedFuture(Optional.empty());
     }
   }
 
-  @SneakyThrows
-  private static Optional<byte[]> readBytesFromSocket(
-      int bytesCount, Socket socket, String message) {
+  /**
+   * Reads up to bytesCount bytes from the socket's InputStream within the given timeout. If the
+   * timeout is reached before bytesCount bytes are read, returns the bytes read so far.
+   */
+  public static Optional<byte[]> readBytesWithTimeout(
+      int bytesCount, Socket socket, long timeoutMillis, String message) {
+    byte[] buffer = new byte[bytesCount];
+    int bytesRead = 0;
     log.info("Awaiting {} bytes in {} ...", bytesCount, message);
-    val read = socket.getInputStream().readNBytes(bytesCount);
-    log.info(
-        "Read {} bytes from socket: {}",
-        read.length,
-        new String(read).lines().findFirst().orElse("<no data>"));
-    return Optional.of(read);
+    try {
+      InputStream in = socket.getInputStream();
+      long startTime = System.currentTimeMillis();
+      while (bytesRead < bytesCount && (System.currentTimeMillis() - startTime) < timeoutMillis) {
+        int available = in.available();
+        if (available > 0) {
+          int toRead = Math.min(available, bytesCount - bytesRead);
+          int read = in.read(buffer, bytesRead, toRead);
+          if (read == -1) break; // End of stream
+          bytesRead += read;
+          log.info("Read {} bytes so far in {} ...", bytesRead, message);
+        } else {
+          try {
+            Thread.sleep(10); // Small delay to avoid busy waiting
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            break;
+          }
+        }
+      }
+    } catch (IOException e) {
+      log.error("Exception during reading in {}", message, e);
+    }
+    return bytesRead == 0
+        ? Optional.empty()
+        : Optional.of(bytesRead == bytesCount ? buffer : Arrays.copyOf(buffer, bytesRead));
   }
 
   @Override

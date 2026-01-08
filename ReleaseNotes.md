@@ -1,10 +1,33 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.14
+
+## Features
+
+* TGR-2001: Optimized TLS metadata handling - TLS information (version, cipher suite, client certificates) is now only
+  stored in metadata for the first message of each connection.
+  Subsequent messages on the same connection reuse the TLS data.
+* TGR-1945: version and encoding are now accessable in the rbel tree
+  Tiger log files (.tgr) now include a version header as the first entry, enabling version tracking across file appends.
+  Version headers are automatically filtered during import and can be queried via
+  `rbelFileWriter.getLastReadTigerVersion()`.
+* TGR-1992: Tiger log files (.tgr) now include a `tigerVersion` field in the first entry, enabling version tracking
+  across file appends.
+  Version headers can be queried via `rbelFileWriter.getLastReadTigerVersion()`.
+
+## Bugfixes
+
+* TGR-1962: Map empty JSON/CBOR objects/arrays to JSON/CBOR facets
+
 # Release 4.1.13
 
 ## Features
 
+* TGR-2005: Tiger-Proxy: Added option 'preserveHostHeader' to proxy routes to keep the original Host header when
+  forwarding requests to the target server.
 * TGR-1979: Added support for STOMP and SockJS messages
+* TGR-1945: XML version and encoding are now accessible in the rbel tree
+* TESTHUB-9: added support for Jacksons `JavaType`.
 
 ## Bugfixes
 
@@ -29,7 +52,7 @@
   The functionality is enabled and the old feature flag `enableTestSelection` is no longer needed.
 * TGR-1964: Workflow UI: improve tag based test selection in the advanced test selection modal. Tags with a prefix in
   the form "XYZ:myTag" are grouped based on the prefix "XYZ" and take less space in the UI.
-* TGR-1945: version and encoding are now accessible in the rbel tree
+* TGR-1945: xml version and encoding are now accessible in the rbel tree
 
 # Release 4.1.11
 

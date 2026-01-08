@@ -108,7 +108,7 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
         && !httpRequest.getClientCertificateChain().isEmpty()) {
       certificateChainElement = parseCertificateChain(httpRequest, message, rbelConverter);
     }
-    message.addFacet(
+    message.addOrReplaceFacet(
         new TlsFacet(
             RbelElement.wrap(message, httpRequest.getTlsVersion()),
             RbelElement.wrap(message, httpRequest.getCipherSuite()),
