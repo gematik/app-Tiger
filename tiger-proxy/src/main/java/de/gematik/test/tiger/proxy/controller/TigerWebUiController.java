@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.exceptions.RbelPathException;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
@@ -57,6 +58,7 @@ import java.util.stream.Stream;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.jexl3.JexlException;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
@@ -446,7 +448,11 @@ public class TigerWebUiController implements ApplicationContextAware {
   public ResponseEntity<InputStreamResource> downloadTraffic(
       @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
       @RequestParam(name = "filterRbelPath", required = false) final String filterCriterion,
-      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize) {
+      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
+      @RequestParam(name = "includeVersion", required = false, defaultValue = "true")
+          final boolean includeVersion,
+      @RequestParam(name = "skipContentThreshold", required = false, defaultValue = "-1")
+          final int skipContentThreshold) {
     int actualPageSize =
         pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
     final List<RbelElement> filteredMessages =
@@ -461,21 +467,22 @@ public class TigerWebUiController implements ApplicationContextAware {
       headers.add("last-uuid", filteredMessages.get(returnedMessages - 1).getUuid());
     }
 
+    val writer =
+        new RbelFileWriter(tigerProxy.getRbelLogger().getRbelConverter())
+            .setWriteVersionHeader(includeVersion);
+    val finalSkipContentThreshold =
+        skipContentThreshold >= 0 ? skipContentThreshold : Integer.MAX_VALUE;
+
     var inputStream =
         RbelStringUtils.mapAndJoinAsInputStream(
-            filteredMessages.subList(0, returnedMessages), this::convertToRbelFileString, "\n\n");
+            filteredMessages.subList(0, returnedMessages),
+            el -> writer.convertToRbelFileString(el, finalSkipContentThreshold),
+            "\n\n");
 
     return ResponseEntity.ok()
         .headers(headers)
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .body(new InputStreamResource(inputStream));
-  }
-
-  private String convertToRbelFileString(RbelElement element) {
-    return new de.gematik.rbellogger.file.RbelFileWriter(
-            tigerProxy.getRbelLogger().getRbelConverter())
-        .setWriteVersionHeader(false)
-        .convertToRbelFileString(element, SKIP_CONTENT_THRESHOLD);
   }
 
   @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)

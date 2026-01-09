@@ -69,6 +69,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 @WireMockTest
 class TigerWebUiControllerTest {
 
+  private static final int SKIP_CONTENT_THRESHOLD = 2000;
+
   @Autowired private TigerProxy tigerProxy;
   @LocalServerPort private int adminPort;
   private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
@@ -466,7 +468,7 @@ class TigerWebUiControllerTest {
 
       proxyRest
           .post("http://localhost:" + fakeBackendServerPort + "/foobar")
-          .body("A".repeat(TigerWebUiController.SKIP_CONTENT_THRESHOLD))
+          .body("A".repeat(SKIP_CONTENT_THRESHOLD))
           .asEmpty();
     }
 
@@ -513,6 +515,8 @@ class TigerWebUiControllerTest {
   private @NotNull List<JSONObject> downloadTrafficFollowing(String lastMsgUuid) {
     final String downloadUrl = getWebUiUrl() + "/trafficLog.tgr";
     final Map<String, Object> parameters = new HashMap<>();
+
+    parameters.put("skipContentThreshold", SKIP_CONTENT_THRESHOLD);
     if (lastMsgUuid != null) {
       parameters.put("lastMsgUuid", lastMsgUuid);
     }

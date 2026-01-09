@@ -23,20 +23,27 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class RbelModifier {
 
   private final RbelKeyManager rbelKeyManager;
   private final RbelConverter rbelConverter;
   private final List<RbelElementWriter> elementWriterList;
   private final Map<String, RbelModificationDescription> modificationsMap = new LinkedHashMap<>();
+  private static final Pattern HEADER_NAME_PATTERN = Pattern.compile("^\\['(.+)'\\]");
 
   @Builder
   public RbelModifier(RbelKeyManager rbelKeyManager, RbelConverter rbelConverter) {
@@ -59,17 +66,25 @@ public class RbelModifier {
 
   public RbelElement applyModifications(final RbelElement message) {
     RbelElement modifiedMessage = message;
+    final TigerJexlContext jexlContext = new TigerJexlContext().withRootElement(message);
     for (RbelModificationDescription modification : modificationsMap.values()) {
       if (shouldBeApplied(modification, message)) {
         final Optional<RbelElement> targetOptional =
             modifiedMessage.findElement(modification.getTargetElement());
         if (targetOptional.isEmpty()) {
+          if (isHeaderModification(modification)) {
+            var withNewHeader = createHeader(modifiedMessage, modification, jexlContext);
+            if (withNewHeader.isPresent()) {
+              modifiedMessage = withNewHeader.get();
+            }
+          }
           continue;
         }
 
         var target = targetOptional.get();
 
-        final Optional<byte[]> input = applyModification(modification, target);
+        final Optional<byte[]> input =
+            applyModification(modification, target, jexlContext.withCurrentElement(target));
         reduceTtl(modification);
         if (input.isPresent()) {
           modifiedMessage = rbelConverter.convertElement(input.get(), null);
@@ -80,14 +95,62 @@ public class RbelModifier {
     return modifiedMessage;
   }
 
-  private void deleteOutdatedModifications() {
-    for (Iterator<RbelModificationDescription> ks = modificationsMap.values().iterator();
-        ks.hasNext(); ) {
-      RbelModificationDescription next = ks.next();
-      if (next.getDeleteAfterNExecutions() != null && next.getDeleteAfterNExecutions() <= 0) {
-        ks.remove();
-      }
+  private Optional<RbelElement> createHeader(
+      RbelElement modifiedMessage,
+      RbelModificationDescription modification,
+      TigerJexlContext jexlContext) {
+    var target = modification.getTargetElement();
+
+    if (!target.startsWith("$.header.")) {
+      throw new IllegalArgumentException(
+          "Trying to add header, but modification description does not target header");
     }
+    var httpHeaderElement = modifiedMessage.findElement("$.header");
+    if (httpHeaderElement.isEmpty()) {
+      throw new IllegalArgumentException("Trying to add header, but no header element found!");
+    }
+    var headerName = extractHeaderName(target);
+    var rawHeader = httpHeaderElement.get().getRawContent();
+    var newHeader =
+        "\r\n"
+            + headerName
+            + ": "
+            + TigerGlobalConfiguration.resolvePlaceholdersWithContext(
+                modification.getReplaceWith(), jexlContext);
+    var newHeaderBytes = newHeader.getBytes(modifiedMessage.getElementCharset());
+    var newContent = Arrays.copyOf(rawHeader, rawHeader.length + newHeaderBytes.length);
+    System.arraycopy(newHeaderBytes, 0, newContent, rawHeader.length, newHeaderBytes.length);
+
+    return propagateChangesToParents(httpHeaderElement.get(), newContent)
+        .map(bytes -> rbelConverter.convertElement(bytes, null));
+  }
+
+  private String extractHeaderName(String target) {
+    var keys = RbelPathExecutor.splitRbelPathIntoKeys(target);
+    if (keys.size() != 2) // header.header-name
+    {
+      throw new IllegalArgumentException("Could not extract header name from target " + target);
+    }
+    // Handle case where key is inside ['my-key'] or ["my-key"]
+    var key = keys.get(1);
+    var matcher = HEADER_NAME_PATTERN.matcher(key);
+    if (matcher.find()) {
+      return matcher.group(1) == null ? matcher.group(2) : matcher.group(1);
+    } else {
+      return key;
+    }
+  }
+
+  public boolean isHeaderModification(final RbelModificationDescription modification) {
+    return modification.getTargetElement().startsWith("$.header");
+  }
+
+  private void deleteOutdatedModifications() {
+    modificationsMap
+        .values()
+        .removeIf(
+            next ->
+                next.getDeleteAfterNExecutions() != null && next.getDeleteAfterNExecutions() <= 0);
   }
 
   private void reduceTtl(RbelModificationDescription modification) {
@@ -104,17 +167,33 @@ public class RbelModifier {
     if (StringUtils.isEmpty(modification.getCondition())) {
       return true;
     }
-    return TigerJexlExecutor.matchesAsJexlExpression(message, modification.getCondition());
+    try {
+      return TigerJexlExecutor.matchesAsJexlExpression(message, modification.getCondition());
+    } catch (Exception e) {
+      log.warn(
+          String.format(
+              "Error while evaluating condition '%s' for modification '%s': %s,",
+              modification.getCondition(), modification.getName(), e.getMessage()));
+      return false;
+    }
   }
 
   private Optional<byte[]> applyModification(
-      RbelModificationDescription modification, RbelElement targetElement) {
-    RbelElement currentParent = targetElement.getParentNode();
-    RbelElement currentChildToBeModified = targetElement;
-    byte[] newContent = applyRegexAndReturnNewContent(targetElement, modification);
+      RbelModificationDescription modification,
+      RbelElement targetElement,
+      TigerJexlContext tigerJexlContext) {
+
+    byte[] newContent =
+        applyRegexAndReturnNewContent(targetElement, modification, tigerJexlContext);
     if (Arrays.equals(newContent, targetElement.getRawContent())) {
       return Optional.empty();
     }
+    return propagateChangesToParents(targetElement, newContent);
+  }
+
+  private Optional<byte[]> propagateChangesToParents(RbelElement targetElement, byte[] newContent) {
+    RbelElement currentParent = targetElement.getParentNode();
+    RbelElement currentChildToBeModified = targetElement;
     while (currentParent != null) {
       Optional<byte[]> found = Optional.empty();
       for (RbelElementWriter writer : elementWriterList) {
@@ -140,12 +219,17 @@ public class RbelModifier {
   }
 
   private byte[] applyRegexAndReturnNewContent(
-      RbelElement targetElement, RbelModificationDescription modification) {
+      RbelElement targetElement,
+      RbelModificationDescription modification,
+      TigerJexlContext tigerJexlContext) {
     if (StringUtils.isEmpty(modification.getRegexFilter())) {
       if (modification.getReplaceWith() == null) {
         return "".getBytes(targetElement.getElementCharset());
       }
-      return modification.getReplaceWith().getBytes(targetElement.getElementCharset());
+      val resolvedReplacement =
+          TigerGlobalConfiguration.resolvePlaceholdersWithContext(
+              modification.getReplaceWith(), tigerJexlContext);
+      return resolvedReplacement.getBytes(targetElement.getElementCharset());
     } else {
       return targetElement
           .getRawStringContent()
@@ -169,7 +253,7 @@ public class RbelModifier {
   }
 
   public List<RbelModificationDescription> getModifications() {
-    return modificationsMap.entrySet().stream().map(Entry::getValue).toList();
+    return modificationsMap.values().stream().toList();
   }
 
   public void deleteModification(String modificationsId) {

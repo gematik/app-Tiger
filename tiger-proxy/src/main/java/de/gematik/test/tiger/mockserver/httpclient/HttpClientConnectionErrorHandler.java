@@ -44,7 +44,8 @@ public class HttpClientConnectionErrorHandler extends ChannelDuplexHandler {
       if (ctx.channel().attr(ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE).get()) {
         responseFuture.completeExceptionally(
             new SocketConnectionException(
-                "Channel handler removed before valid response has been received"));
+                "Channel handler removed before valid response has been received from remote host "
+                    + ctx.channel().remoteAddress()));
       } else {
         responseFuture.complete(null);
       }

@@ -49,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Abstract super type handling the parsing logic for messages. It is the essential hook which
@@ -421,7 +422,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
   public Action handleException(Throwable exception, HttpRequest request) {
     final TigerProxyRoutingException routingException =
         new TigerProxyRoutingException(
-            "Exception during handling of HTTP request: " + exception.getMessage(),
+            "Exception during handling of HTTP request: " + ExceptionUtils.getMessage(exception),
             // sender and receiver are switched here, because the exception acts as a response
             Optional.ofNullable(request.getReceiverAddress())
                 .map(SocketAddress::toRbelHostname)

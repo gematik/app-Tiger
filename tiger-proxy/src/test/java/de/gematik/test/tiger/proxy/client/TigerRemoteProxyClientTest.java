@@ -540,7 +540,12 @@ class TigerRemoteProxyClientTest {
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
       Mockito.verify(tigerWebUiController)
-          .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any());
+          .downloadTraffic(
+              Mockito.isNull(),
+              Mockito.any(),
+              Mockito.any(),
+              Mockito.anyBoolean(),
+              Mockito.anyInt());
 
       assertThat(
               newlyConnectedRemoteClient
@@ -599,7 +604,12 @@ class TigerRemoteProxyClientTest {
         tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
         Mockito.verify(tigerWebUiController)
-            .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any());
+            .downloadTraffic(
+                Mockito.isNull(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.anyBoolean(),
+                Mockito.anyInt());
 
         assertThat(
                 ((AtomicReference<?>)

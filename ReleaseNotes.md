@@ -1,5 +1,33 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.15
+
+## Features
+
+* TGR-1953: Tiger-Proxy: when performing modifications on http headers, it is now possible to add a new header.
+  Previously, only replacing existing headers was possible. E.g.:
+
+```yaml
+Proxy:
+  type: tigerProxy
+  tigerProxyConfiguration:
+    modifications:
+      - condition: "isResponse"
+        targetElement: "$.header.some-new-header"
+        replaceWith: "my new header value"
+```
+
+* TGR-1953: Tiger-Proxy: modifications now also support referencing other parts of the message via RbelPath
+  expressions. (E.g.: `replaceWith: ?{$.header.[~'foo']}-suffix`)
+* TGR-1992: Also add tigerVersion field when exporting from web UI
+
+## Bugfixes
+
+* TGR-1953: Fixed rare 'null-compare' issue when trying to resolve placeholders in JEXL-expressions.
+* TGR-1953: Added more error-details for Socket-Connection issues in Tiger-Proxy.
+
+# Changelog Tiger Test platform
+
 # Release 4.1.14
 
 ## Features
@@ -7,10 +35,6 @@
 * TGR-2001: Optimized TLS metadata handling - TLS information (version, cipher suite, client certificates) is now only
   stored in metadata for the first message of each connection.
   Subsequent messages on the same connection reuse the TLS data.
-* TGR-1945: version and encoding are now accessable in the rbel tree
-  Tiger log files (.tgr) now include a version header as the first entry, enabling version tracking across file appends.
-  Version headers are automatically filtered during import and can be queried via
-  `rbelFileWriter.getLastReadTigerVersion()`.
 * TGR-1992: Tiger log files (.tgr) now include a `tigerVersion` field in the first entry, enabling version tracking
   across file appends.
   Version headers can be queried via `rbelFileWriter.getLastReadTigerVersion()`.

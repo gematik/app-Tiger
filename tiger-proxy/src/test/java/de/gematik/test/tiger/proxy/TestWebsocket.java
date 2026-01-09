@@ -32,7 +32,6 @@ import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
@@ -85,8 +84,6 @@ class TestWebsocket {
         new TigerProxy(
             TigerProxyConfiguration.builder()
                 .activateRbelParsingFor(List.of("websocket"))
-                .fileSaveInfo(
-                    TigerFileSaveInfo.builder().writeToFile(true).filename("stomp.tgr").build())
                 .proxyRoutes(
                     List.of(
                         TigerConfigurationRoute.builder()

@@ -33,7 +33,7 @@ class TigerConfigurationRbelObjectTest {
   private final TigerConfigurationLoader conf = new TigerConfigurationLoader();
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     conf.putValue("myMap.anotherLevel.key1.value", "value1");
   }
 

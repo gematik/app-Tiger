@@ -43,7 +43,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @RequiredArgsConstructor
 @ResetTigerConfiguration
-class TigerProxyModificationTest {
+class TigerProxyModificationControllerTest {
 
   @Autowired private TigerProxy tigerProxy;
   private TigerRemoteProxyClient tigerRemoteProxyClient;
@@ -51,7 +51,7 @@ class TigerProxyModificationTest {
   private UnirestInstance unirestInstance;
 
   @BeforeEach
-  public void beforeEachLifecyleMethod() {
+  void beforeEachLifecyleMethod() {
     tigerProxy.getModifications().stream()
         .map(RbelModificationDescription::getName)
         .forEach(tigerProxy::removeModification);
@@ -69,7 +69,7 @@ class TigerProxyModificationTest {
   }
 
   @AfterEach
-  public void reset() {
+  void reset() {
     tigerRemoteProxyClient.close();
     tigerRemoteProxyClient.getRbelLogger().getRbelModifier().deleteAllModifications();
     tigerProxy.getRbelLogger().getRbelModifier().deleteAllModifications();

@@ -71,7 +71,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .hasFacet(TigerRoutingErrorFacet.class)
         .extractChildWithPath("$.error.message")
         .asString()
-        .contains("Exception during handling of HTTP request: Connection reset");
+        .contains("Exception during handling of HTTP request: SocketException: Connection reset");
   }
 
   @SneakyThrows
@@ -100,7 +100,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .hasFacet(TigerRoutingErrorFacet.class)
         .extractChildWithPath("$.error.message")
         .asString()
-        .contains("Exception during handling of HTTP request: Connection reset");
+        .contains("Exception during handling of HTTP request: SocketException: Connection reset");
   }
 
   @SneakyThrows
@@ -129,15 +129,30 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
 
       awaitMessagesInTigerProxy(2);
 
+      final String localhostRegex = "(view-|)localhost:" + fakeBackendServerPort;
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.sender")
           .matches(
-              el -> el.getRawStringContent().matches("(view-|)localhost:" + fakeBackendServerPort))
+              el -> el.getRawStringContent().matches(localhostRegex),
+              "sender matches '" + localhostRegex + "'")
           .andTheInitialElement()
           .hasFacet(TigerRoutingErrorFacet.class)
           .extractChildWithPath("$.error.message")
           .asString()
           .contains("Exception during handling of HTTP request: Connection reset");
     }
+  }
+
+  @SneakyThrows
+  @Test
+  void unknownHost_shouldGiveErrorDetails() {
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
+
+    proxyRest.config().retryAfter(false);
+    assertThatThrownBy(() -> proxyRest.get("http://xyzDoesNotExistXyz").asString())
+        .isInstanceOf(UnirestException.class)
+        .hasCauseInstanceOf(IOException.class);
+
+    awaitMessagesInTigerProxy(2);
   }
 }
