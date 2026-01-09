@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.14 - 2026-01-08</span>
+<span id="revdate">Version 4.1.15 - 2026-01-09</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1893,7 +1893,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
   # MANDATORY URL from where to download the docker image.
   source:
     - dockerhubrepo.somewhere.org/repo/project/docker.image
-  # OPTIONAL version of the docker image to download.
+  # MANDATORY version of the docker image to download.
   version: 0.1.2
   # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
   # specified a default name will be used
@@ -3355,8 +3355,18 @@ You can add, modify and remove reason phrases.</p>
         targetElement: "$.body"
         regexFilter: "ErrorSeverityType:((Error)|(Warning))"
         # The given regex will be used to target only parts of targeted element.
-        replaceWith: "ErrorSeverityType:Error"</code></pre>
+        replaceWith: "ErrorSeverityType:Error"
+
+        # Here we take the value of one header and copy it into another header
+      -
+        # Check if the header 'foo' is actually present in the request
+        condition: "isRequest &amp;&amp; $.header.[~'foo'] != null"
+        targetElement: "$.header.copy-of-foo"
+        replaceWith: "?{$.header.[~'foo']}-modified"</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>When targeting http headers, if the header is not present, it will be added to the request.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4036,7 +4046,15 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.11.4. rewriteHostHeader</h4>
+<h4 id="preservehostheader"><a class="anchor" href="#preservehostheader"></a>4.11.4. preserveHostHeader</h4>
+<div class="paragraph">
+<p>This option will disable the rewrite of the Host-header in the forwarded request.<br>
+This will lead to inconsistent Host-headers in the proxied requests, which might lead to unexpected behavior on the target server. (e.g. when forwarding from <a href="http://my.domain/" class="bare">http://my.domain/</a> to <a href="http://orf.at/" class="bare">http://orf.at/</a> the Host-header will still contain "my.domain" instead of "orf.at").<br>
+Default is false.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.11.5. rewriteHostHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the host-header.<br>
 If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).<br>
@@ -4044,7 +4062,7 @@ Default is false.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.5. rewriteLocationHeader</h4>
+<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.6. rewriteLocationHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the location-header for 3xx responses.<br>
 If activated the location-header will be modified so the client will still use the proxy to reach the new location.<br>
@@ -4052,7 +4070,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.6. maxLoopCounter</h4>
+<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.7. maxLoopCounter</h4>
 <div class="paragraph">
 <p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself).<br>
 If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
@@ -9346,7 +9364,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-08 14:21:00 +0100
+Last updated 2026-01-09 10:48:57 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
