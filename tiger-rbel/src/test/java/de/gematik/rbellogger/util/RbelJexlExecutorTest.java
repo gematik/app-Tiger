@@ -48,7 +48,7 @@ class RbelJexlExecutorTest {
   private RbelElement request;
 
   @BeforeEach
-  public void setUp() throws IOException {
+  void setUp() throws IOException {
     final RbelLogger rbelLogger = RbelLogger.build();
     final RbelSocketAddress serverHostname = RbelSocketAddress.fromString("server:1234").get();
     final RbelSocketAddress clientHostname = RbelSocketAddress.fromString("client:54321").get();
@@ -256,5 +256,12 @@ class RbelJexlExecutorTest {
         .hasMessageContaining(
             "Evaluated '$.. == 'test'' and got more then one result. Expected one ore zero"
                 + " results.");
+  }
+
+  @Test
+  void nullValueReplacement_shouldNotThrowException() {
+    assertThat(
+            TigerJexlExecutor.matchesAsJexlExpression(request, "$.not.existing.element =^ 'fdsa'"))
+        .isFalse();
   }
 }

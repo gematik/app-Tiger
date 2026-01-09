@@ -146,11 +146,15 @@ public class RbelJexlExecutor {
       pathResults.add(null);
     }
     for (String pathResult : pathResults) {
-      final String id =
-          "replacedPath_"
-              + RandomStringUtils.insecure().nextAlphabetic(20).toLowerCase(); // NOSONAR
-      mapContext.put(id, pathResult);
-      newPaths.add(expression.replace(potentialPath, id));
+      if (pathResult == null) {
+        newPaths.add(expression.replace(potentialPath, "null"));
+      } else {
+        final String id =
+            "replacedPath_"
+                + RandomStringUtils.insecure().nextAlphabetic(20).toLowerCase(); // NOSONAR
+        mapContext.put(id, pathResult);
+        newPaths.add(expression.replace(potentialPath, id));
+      }
     }
   }
 

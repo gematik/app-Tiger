@@ -482,7 +482,16 @@ tigerProxy:
         regexFilter: "ErrorSeverityType:((Error)|(Warning))"
         # The given regex will be used to target only parts of targeted element.
         replaceWith: "ErrorSeverityType:Error"
+
+        # Here we take the value of one header and copy it into another header
+      -
+        # Check if the header 'foo' is actually present in the request
+        condition: "isRequest && $.header.[~'foo'] != null"
+        targetElement: "$.header.copy-of-foo"
+        replaceWith: "?{$.header.[~'foo']}-modified"
 ----
+
+When targeting http headers, if the header is not present, it will be added to the request.
 
 [#_mesh_setup_traffic_endpoints]
 === Mesh set up
@@ -941,6 +950,12 @@ If activated every request and response is noted in the log.
 This can lead to a verbose and bloated log.
 If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag.
 Default is true.
+
+==== preserveHostHeader
+
+This option will disable the rewrite of the Host-header in the forwarded request.
+This will lead to inconsistent Host-headers in the proxied requests, which might lead to unexpected behavior on the target server. (e.g. when forwarding from http://my.domain/ to http://orf.at/ the Host-header will still contain "my.domain" instead of "orf.at").
+Default is false.
 
 ==== rewriteHostHeader
 

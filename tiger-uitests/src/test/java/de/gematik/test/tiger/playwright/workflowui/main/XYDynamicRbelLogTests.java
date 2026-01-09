@@ -28,9 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.Locator.FilterOptions;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -261,6 +264,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
   }
 
   @Test
+  @SneakyThrows
   void testASaveModalDownloadTgr() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
@@ -274,6 +278,21 @@ class XYDynamicRbelLogTests extends AbstractBase {
         .pollDelay(100, TimeUnit.MILLISECONDS)
         .atMost(10, TimeUnit.SECONDS)
         .until(() -> download.page().locator("#test-tiger-logo").isVisible());
+
+    Path path = download.path();
+    String firstJsonLine;
+    try (var lines = java.nio.file.Files.lines(path)) {
+      firstJsonLine =
+          lines
+              .filter(line -> line.trim().startsWith("{"))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("No JSON line found in downloaded TGR file"));
+    }
+
+    JSONObject jsonObject = new JSONObject(firstJsonLine);
+    Assertions.assertThat(jsonObject.has("tigerVersion")).isTrue();
+    Assertions.assertThat(jsonObject.getString("tigerVersion")).isNotEmpty();
+
     assertAll(
         () -> assertThat(download.page().locator("#test-tiger-logo")).isVisible(),
         () ->

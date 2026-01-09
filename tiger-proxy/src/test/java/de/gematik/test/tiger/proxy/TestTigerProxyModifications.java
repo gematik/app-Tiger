@@ -42,6 +42,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -281,7 +283,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyWithModifiedQueryParameters(WireMockRuntimeInfo runtimeInfo) {
-    String specialCaseParameter = "blub" + RandomStringUtils.insecure().nextPrint(300);
+    String specialCaseParameter = "blub" + RandomStringUtils.insecure().nextAlphanumeric(300);
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -424,5 +426,134 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
 
     assertThat(response.getStatusText()).isEmpty();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "$.header.my-new-header, my-new-header",
+    "$.header.['X-this-another-header'], X-this-another-header",
+  })
+  void modificationWithAddingHeader_shouldWork(String newHeaderTarget, String newHeaderName) {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isResponse")
+                        .targetElement(newHeaderTarget)
+                        .replaceWith("my new header value")
+                        .build()))
+            .build());
+    HttpResponse<JsonNode> response =
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
+    assertThat(response.getHeaders().get(newHeaderName).get(0)).isEqualTo("my new header value");
+  }
+
+  @Test
+  void addingHeaderWithContent_shouldWork() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("$.method =^ 'POST'")
+                        .targetElement("$.header.foobar")
+                        .replaceWith("my new header value")
+                        .build()))
+            .build());
+    final String body = "{\"someKey\": \"some Value\"}";
+    HttpResponse<String> response =
+        Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/echo")
+            .body(body)
+            .asString();
+    assertThat(response.getBody()).isEqualTo(body);
+  }
+
+  @Test
+  void selfReferentialHeaderAddedModification() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header.extra-foo")
+                        .replaceWith("?{$.header.[~'foo']}-modified")
+                        .build()))
+            .build());
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/echo")
+        .header("FOO", "bar")
+        .asString();
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.extra-foo")
+        .hasStringContentEqualTo("bar-modified");
+  }
+
+  @Test
+  void defunctModification_shouldStillTrasmit() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("thisDoesNot('exist')")
+                        .targetElement("$.header.user-agent")
+                        .replaceWith("Something")
+                        .build()))
+            .build());
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/echo").asString();
+    assertThat(tigerProxy.getRbelMessagesList()).hasSize(2);
+  }
+
+  @Test
+  void selfReferentialModification() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header.user-agent")
+                        .replaceWith("?{$.header.[~'foo']}-modified")
+                        .build()))
+            .build());
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/echo")
+        .header("FOO", "bar")
+        .asString();
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.[~'user-agent']")
+        .hasStringContentEqualTo("bar-modified");
+  }
+
+  @Test
+  void selfReferentialModificationWithLocalRbelSelector() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header.json-header")
+                        .replaceWith("?{$.foo}-modified")
+                        .build()))
+            .build());
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/echo")
+        .header("json-header", "{'foo':'bar'}")
+        .asString();
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.[~'json-header']")
+        .hasStringContentEqualTo("bar-modified");
   }
 }

@@ -24,6 +24,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -182,6 +183,8 @@ public class TigerRemoteTrafficDownloader {
 
     final Map<String, Object> parameters = new HashMap<>();
     parameters.put("pageSize", pageSize);
+    parameters.put("includeVersion", false);
+    parameters.put("skipContentThreshold", TigerWebUiController.SKIP_CONTENT_THRESHOLD);
     currentLastUuid.ifPresent(uuid -> parameters.put("lastMsgUuid", uuid));
 
     try {

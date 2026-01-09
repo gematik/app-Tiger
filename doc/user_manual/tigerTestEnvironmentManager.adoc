@@ -343,7 +343,7 @@ dockerContainer_001:
   # MANDATORY URL from where to download the docker image.
   source:
     - dockerhubrepo.somewhere.org/repo/project/docker.image
-  # OPTIONAL version of the docker image to download.
+  # MANDATORY version of the docker image to download.
   version: 0.1.2
   # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
   # specified a default name will be used
