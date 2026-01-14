@@ -47,6 +47,8 @@ import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -513,8 +515,27 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
-    var dropCriterion = messageIsBefore(lastMsgUuid);
     var rbelLogger = getTigerProxy().getRbelLogger();
+    var matchesFilter = matchesFilter(filterCriterion);
+    if (StringUtils.hasText(lastMsgUuid)
+        && rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
+      // Iterate from newest to oldest to avoid scanning the full history on incremental downloads.
+      var filtered = new ArrayList<RbelElement>();
+      var iterator = rbelLogger.getMessageHistory().descendingIterator();
+      while (iterator.hasNext()) {
+        var msg = iterator.next();
+        if (msg.getUuid().equals(lastMsgUuid)) {
+          break;
+        }
+        if (matchesFilter.test(msg)) {
+          filtered.add(msg);
+        }
+      }
+      Collections.reverse(filtered);
+      return filtered;
+    }
+
+    var dropCriterion = messageIsBefore(lastMsgUuid);
     if (!rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
       log.trace("Last message UUID '{}' is not known anymore", lastMsgUuid);
       dropCriterion = msg -> false; // do not drop any messages
@@ -522,7 +543,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     return rbelLogger.getMessageHistory().stream()
         .dropWhile(dropCriterion)
         .filter(lastMsgUuid != null ? messageDoesNotHaveUuid(lastMsgUuid) : msg -> true)
-        .filter(matchesFilter(filterCriterion))
+        .filter(matchesFilter)
         .toList();
   }
 
