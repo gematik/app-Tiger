@@ -63,6 +63,17 @@ public class AsyncByteQueue {
   private final AtomicReference<Node> tail = new AtomicReference<>(null);
   private final TcpIpConnectionIdentifier primaryDirection;
   private final AtomicReference<String> lastBufferedUuid = new AtomicReference<>(null);
+  // Track per-direction availability to avoid O(n) scans in availableBytes().
+  private long availableBytesPrimary = 0;
+  private long availableBytesSecondary = 0;
+
+  private void adjustAvailableBytes(Node node, long delta) {
+    if (node.isPrimaryDirection) {
+      availableBytesPrimary += delta;
+    } else {
+      availableBytesSecondary += delta;
+    }
+  }
 
   public synchronized TcpConnectionEntry write(TcpConnectionEntry value) {
     Node newNode = new Node(value);
@@ -73,6 +84,7 @@ public class AsyncByteQueue {
       prevTail.next = newNode;
       newNode.previous = prevTail;
     }
+    adjustAvailableBytes(newNode, newNode.availableBytes());
     var previousUuid = lastBufferedUuid.getAndSet(value.getUuid());
     if (value.getPreviousUuid() != null) {
       previousUuid = value.getPreviousUuid();
@@ -129,9 +141,11 @@ public class AsyncByteQueue {
         if (count >= available) {
           // Consume entire node
           count -= available;
+          adjustAvailableBytes(currentNode, -available);
           removeNode(currentNode);
         } else {
           // Partially consume the node
+          adjustAvailableBytes(currentNode, -count);
           currentNode.readPos += (int) count;
           count = 0;
         }
@@ -162,14 +176,12 @@ public class AsyncByteQueue {
   }
 
   public synchronized int availableBytes() {
-    int total = 0;
-
-    for (Node headNode = head.get(), current = headNode; current != null; current = current.next) {
-      if (current.isPrimaryDirection == headNode.isPrimaryDirection) {
-        total += current.availableBytes();
-      }
+    Node headNode = head.get();
+    if (headNode == null) {
+      return 0;
     }
-
-    return total;
+    long total =
+        headNode.isPrimaryDirection ? availableBytesPrimary : availableBytesSecondary;
+    return total > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) total;
   }
 }
