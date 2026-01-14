@@ -337,13 +337,16 @@ public class TigerDirector {
     properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
     properties.put("spring.mustache.check-template-location", false);
     properties.putAll(TigerTestEnvMgr.getTigerLibConfiguration());
+    // Avoid starting the embedded web server when UI/REST features are off to cut startup time.
+    WebApplicationType webApplicationType =
+        requiresTestEnvMgrWebServer() ? WebApplicationType.SERVLET : WebApplicationType.NONE;
 
     envMgrApplicationContext =
         new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
-            .web(WebApplicationType.SERVLET)
+            .web(webApplicationType)
             .registerShutdownHook(false)
             .initializers()
             .run();
@@ -361,6 +364,13 @@ public class TigerDirector {
 
     testExecutionController.setPauseListener(
         () -> SerenityReporterCallbacks.setPauseMode(!SerenityReporterCallbacks.isPauseMode()));
+  }
+
+  private static boolean requiresTestEnvMgrWebServer() {
+    return libConfig.activateWorkflowUi
+        || libConfig.trafficVisualization
+        || libConfig.enableTestManagementRestApi
+        || libConfig.enableTestSelector;
   }
 
   private static synchronized void startWorkflowUi() {

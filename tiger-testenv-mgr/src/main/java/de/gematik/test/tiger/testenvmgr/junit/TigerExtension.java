@@ -145,13 +145,15 @@ public class TigerExtension
     properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
     properties.put("spring.mustache.check-template-location", false);
     properties.putAll(TigerTestEnvMgr.getTigerLibConfiguration());
+    // Skip the embedded web server unless UI/REST features need it, to improve startup time.
+    WebApplicationType webApplicationType = resolveWebApplicationType(properties);
     log.info("Starting with port {}", properties.get("server.port"));
     envMgrApplicationContext =
         new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(properties)
             .sources(TigerTestEnvMgrApplication.class)
-            .web(WebApplicationType.SERVLET)
+            .web(webApplicationType)
             .run();
 
     tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
@@ -163,5 +165,26 @@ public class TigerExtension
         Ansi.colorize(
             "TigerTest initialized, commencing actual test " + extensionContext.getDisplayName(),
             RbelAnsiColors.YELLOW_BOLD));
+  }
+
+  private static WebApplicationType resolveWebApplicationType(Map<String, Object> properties) {
+    return requiresTestEnvMgrWebServer(properties)
+        ? WebApplicationType.SERVLET
+        : WebApplicationType.NONE;
+  }
+
+  private static boolean requiresTestEnvMgrWebServer(Map<String, Object> properties) {
+    return isEnabled(properties, "tiger.lib.activateWorkflowUi")
+        || isEnabled(properties, "tiger.lib.trafficVisualization")
+        || isEnabled(properties, "tiger.lib.enableTestManagementRestApi")
+        || isEnabled(properties, "tiger.lib.enableTestSelector");
+  }
+
+  private static boolean isEnabled(Map<String, Object> properties, String key) {
+    Object value = properties.get(key);
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    }
+    return value != null && Boolean.parseBoolean(value.toString());
   }
 }

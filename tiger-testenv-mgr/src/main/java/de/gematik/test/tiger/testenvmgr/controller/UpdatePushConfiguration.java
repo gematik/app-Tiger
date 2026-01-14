@@ -21,6 +21,8 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -33,6 +35,9 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnExpression(
+    "${tiger.lib.activateWorkflowUi:false} || ${tiger.lib.trafficVisualization:false}")
 @RequiredArgsConstructor
 public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer {
 
