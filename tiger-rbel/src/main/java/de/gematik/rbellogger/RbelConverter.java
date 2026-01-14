@@ -271,12 +271,7 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   private long getExceedingLimit() {
-    return getRbelBufferSize() - ((long) rbelBufferSizeInMb * MB);
-  }
-
-  // DANGER: not synched, use only in synched blocks
-  private long getRbelBufferSize() {
-    return messageHistory.stream().mapToLong(RbelElement::getSize).sum();
+    return currentBufferSize - ((long) rbelBufferSizeInMb * MB);
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
