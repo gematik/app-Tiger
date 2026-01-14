@@ -114,6 +114,10 @@ public class RbelHtmlRenderingToolkit {
         false);
   }
 
+  public void resetForNewMessage() {
+    noteTags.clear();
+  }
+
   public RbelHtmlRenderingToolkit withInShortenedRenderingMode(boolean inShortenedRenderingMode) {
     if (this.inShortenedRenderingMode == inShortenedRenderingMode) {
       return this;
@@ -478,7 +482,14 @@ public class RbelHtmlRenderingToolkit {
                                             "created fst-italic " + isSize(6) + " float-end me-6"),
                                     div()
                                         .withClass("rbel-main-content")
-                                        .with(elements.stream().map(this::convertMessage).toList()),
+                                        .with(
+                                            elements.stream()
+                                                .map(
+                                                    element -> {
+                                                      resetForNewMessage();
+                                                      return convertMessage(element);
+                                                    })
+                                                .toList()),
                                     div("Created "
                                             + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                 ZonedDateTime.now()))
