@@ -44,13 +44,19 @@ public class RbelPathExecutor<T extends RbelPathAble> {
   private final String rbelPath;
 
   private static List<RbelPathAble> findAllChildrenRecursive(final RbelPathAble content) {
-    final List<? extends RbelPathAble> childNodes = content.getChildNodes();
-    List<RbelPathAble> result = new ArrayList<>(childNodes);
-    childNodes.stream()
-        .map(RbelPathExecutor::findAllChildrenRecursive)
-        .flatMap(List::stream)
-        .forEach(result::add);
+    final List<RbelPathAble> result = new ArrayList<>();
+    collectChildrenRecursive(content, result);
     return result;
+  }
+
+  private static void collectChildrenRecursive(
+      final RbelPathAble content, final List<RbelPathAble> result) {
+    final List<? extends RbelPathAble> childNodes = content.getChildNodes();
+    for (int i = 0; i < childNodes.size(); i++) {
+      final RbelPathAble child = childNodes.get(i);
+      result.add(child);
+      collectChildrenRecursive(child, result);
+    }
   }
 
   @VisibleForTesting
