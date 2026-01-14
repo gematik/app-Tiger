@@ -250,7 +250,8 @@ public class RbelConverter implements RbelConverterInterface {
           knownMessageUuids.clear();
         }
         if (rbelBufferSizeInMb > 0) {
-          long exceedingLimit = getExceedingLimit();
+          // Use the tracked buffer size to avoid scanning messageHistory.
+          long exceedingLimit = currentBufferSize - ((long) rbelBufferSizeInMb * MB);
           if (exceedingLimit > 0) {
             log.atTrace()
                 .addArgument(() -> ((double) currentBufferSize / MB))
@@ -268,10 +269,6 @@ public class RbelConverter implements RbelConverterInterface {
         }
       }
     }
-  }
-
-  private long getExceedingLimit() {
-    return currentBufferSize - ((long) rbelBufferSizeInMb * MB);
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
