@@ -914,6 +914,26 @@ These optional converters can also be deactivated at runtime via glue code.
 You can deactivate parser during a specific test case.
 See the xref:tigerTestLibrary.adoc#_complete_set_of_steps_in_validation_glue_code[Complete set of steps in validation glue code].
 
+===== OTLP gRPC over HTTP/2
+
+Tiger can parse OTLP payloads sent via gRPC over HTTP/2 when `activateRbelParsing` is enabled.
+Supported content types are:
+
+* `application/grpc`
+* `application/grpc+proto`
+* `application/grpc+json` (best-effort, payload must still be a valid OTLP JSON payload)
+
+Supported OTLP export RPC paths:
+
+* `/opentelemetry.proto.collector.trace.v1.TraceService/Export`
+* `/opentelemetry.proto.collector.metrics.v1.MetricsService/Export`
+* `/opentelemetry.proto.collector.logs.v1.LogsService/Export`
+
+Limitations:
+
+* Compressed gRPC payloads are detected but not decompressed.
+* OTLP parsing only runs for the listed Export RPCs.
+
 ===== parsingShouldBlockCommunication
 
 If blocking is enabled the Tiger Proxy will only return the response when message parsing is completed.
