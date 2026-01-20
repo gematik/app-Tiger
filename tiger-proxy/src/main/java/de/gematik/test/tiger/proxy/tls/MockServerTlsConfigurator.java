@@ -36,12 +36,21 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ApplicationProtocolConfig.Protocol;
 import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
 import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import javax.net.ssl.SSLException;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
@@ -53,10 +62,11 @@ public class MockServerTlsConfigurator {
   private static final String NAMED_GROUPS = "jdk.tls.namedGroups";
   private final MockServerConfiguration mockServerConfiguration;
   private final TigerProxyConfiguration tigerProxyConfiguration;
-  private Optional<TigerTlsConfiguration> tlsConfiguration;
-  @Getter private TigerPkiIdentity serverRootCa;
   private final Optional<String> tigerProxyName;
   private final List<KeyAndCertificateFactory> tlsFactories = new ArrayList<>();
+  private Optional<TigerTlsConfiguration> tlsConfiguration;
+  @Getter
+  private TigerPkiIdentity serverRootCa;
   private boolean usingGenericCa;
 
   public void execute() {
@@ -210,7 +220,7 @@ public class MockServerTlsConfigurator {
                             Protocol.ALPN,
                             SelectorFailureBehavior.NO_ADVERTISE,
                             SelectedListenerFailureBehavior.ACCEPT,
-                            List.of("http/1.1")));
+                            List.of(ApplicationProtocolNames.HTTP_1_1)));
                   });
 
           return builder;

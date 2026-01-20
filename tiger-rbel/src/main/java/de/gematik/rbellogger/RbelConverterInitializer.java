@@ -33,6 +33,7 @@ import de.gematik.rbellogger.facets.jackson.RbelCborConverter;
 import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
 import de.gematik.rbellogger.facets.jose.RbelJweConverter;
 import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
+import de.gematik.rbellogger.facets.otlp.RbelOtlpConverter;
 import de.gematik.rbellogger.facets.pki.RbelX500Converter;
 import de.gematik.rbellogger.facets.pki.RbelX509Converter;
 import de.gematik.rbellogger.facets.sicct.RbelSicctCommandConverter;
@@ -158,6 +159,7 @@ public class RbelConverterInitializer {
                 RbelAuthorizationHeaderConverter.class,
                 RbelXmlConverter.class,
                 RbelJsonConverter.class,
+                RbelOtlpConverter.class,
                 RbelVauEpaKeyDeriver.class,
                 RbelMtomConverter.class,
                 RbelX509Converter.class,

@@ -93,6 +93,7 @@
         <version.jacoco-maven-plugin>0.8.13</version.jacoco-maven-plugin>
         <version.jakarta.xml.bind>4.0.4</version.jakarta.xml.bind>
         <version.javaparser>3.27.1</version.javaparser>
+        <version.j2objc-annotations>3.1</version.j2objc-annotations>
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>11.0.15</version.jetty>
         <version.jfiglet>1.0.1</version.jfiglet>
@@ -130,7 +131,9 @@
         <version.node>v24.11.1</version.node>
         <version.npm>11.6.2</version.npm>
         <version.okhttp>5.3.0</version.okhttp>
+        <version.opentelemetry-proto>1.9.0-alpha</version.opentelemetry-proto>
         <version.org.glassfish.jaxb>4.0.6</version.org.glassfish.jaxb>
+        <version.protobuf>4.33.4</version.protobuf>
         <version.selenium>4.38.0</version.selenium>
         <version.serenity.core>4.3.2</version.serenity.core>
         <version.serenity.maven.plugin>4.3.2</version.serenity.maven.plugin>
@@ -295,9 +298,24 @@
                 <version>2.43.0</version>
             </dependency>
             <dependency>
+                <groupId>com.google.j2objc</groupId>
+                <artifactId>j2objc-annotations</artifactId>
+                <version>${version.j2objc-annotations}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>33.5.0-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${version.protobuf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>${version.protobuf}</version>
             </dependency>
             <dependency>
                 <groupId>com.j2html</groupId>
@@ -330,6 +348,11 @@
                 <groupId>com.unboundid</groupId>
                 <artifactId>unboundid-ldapsdk</artifactId>
                 <version>7.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.proto</groupId>
+                <artifactId>opentelemetry-proto</artifactId>
+                <version>${version.opentelemetry-proto}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>

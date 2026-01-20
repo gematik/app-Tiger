@@ -50,6 +50,10 @@
             <artifactId>guava</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.j2html</groupId>
             <artifactId>j2html</artifactId>
         </dependency>
@@ -64,6 +68,10 @@
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.proto</groupId>
+            <artifactId>opentelemetry-proto</artifactId>
         </dependency>
         <dependency>
             <groupId>jaxen</groupId>
