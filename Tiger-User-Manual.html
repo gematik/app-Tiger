@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.15 - 2026-01-09</span>
+<span id="revdate">Version 4.1.16 - 2026-01-21</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1457,6 +1457,10 @@ If none of these files exist it will fail the start-up.</p>
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).</p>
 </li>
 <li>
+<p><code>tiger-${profile}.yaml</code> is read if the system property <code>PROFILE</code> or the environment variable <code>PROFILE</code> is set.<br>
+The file needs to be located in the same folder as the <code>tiger.yaml</code> file.</p>
+</li>
+<li>
 <p>The list given under <code>tiger.additionalYamls</code> is read.<br>
 Each list-entry has two properties:</p>
 <div class="ulist">
@@ -1618,7 +1622,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port=${tiger.ports.identity}
         - --services.shopping=http://myShoppingServer
@@ -1634,7 +1638,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port = ${tiger.ports.shopping}
         - --services.identity=http://identityServer
@@ -1647,7 +1651,7 @@ There is a JSON schema that can be included in your IDE for editing the tiger.ya
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port=${tiger.ports.client}
         # here are the examples how the servers are reachable
@@ -1884,52 +1888,53 @@ To use this server type you must include the tiger-cloud-extension dependency!
 <div class="listingblock">
 <div class="title">Listing 8. Docker container configuration</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">dockerContainer_001:
-  hostname: myDockerContainer
-  type: docker
-  dependsUpon: csv string
-  startupTimeoutSec: int
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    dockerContainer_001:
+      hostname: myDockerContainer
+      type: docker
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY URL from where to download the docker image.
-  source:
-    - dockerhubrepo.somewhere.org/repo/project/docker.image
-  # MANDATORY version of the docker image to download.
-  version: 0.1.2
-  # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/dockerContainer_001.log
+      # MANDATORY URL from where to download the docker image.
+      source:
+        - dockerhubrepo.somewhere.org/repo/project/docker.image
+      # MANDATORY version of the docker image to download.
+      version: 0.1.2
+      # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/dockerContainer_001.log
 
-  dockerOptions:
-    # OPTIONAL Flag whether the container shall be modified by
-    # o adding the Tiger Proxy certificate to the container operating system.
-    # o adding docker.host.internal to the container's /etc/hosts file.
-    # Default value is true.
-    proxied: true
-    # OPTIONAL Flag whether the container is a one shot container or not.
-    # One shot meaning it will execute a command and then stop.
-    # Default value is false.
-    oneShot: false
-    # OPTIONAL The entry point command line to be used to start up this container
-    # overwriting any configured entry point in the docker image.
-    # Default value is empty meaning to use the configured entry point command line.
-    entryPoint: chmod a+x /startup.sh &amp;&amp; /startup.sh
-    # OPTIONAL list of files to be copied to the container
-    copyFiles:
-      # path to the file or the folder to copy inside the container
-      - sourcePath: ./example/path/file_to_copy.txt
-      # path inside the container where the file should be copied to
-        destinationPath: /path/in/container/file_to_copy.txt
-      # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
-        fileMode: 0633
-      # a complete folder can also be copied instead of a single file
-      - sourcePath: ./example/copy_folder
-        destinationPath: /path/in/container/copy_folder
+      dockerOptions:
+        # OPTIONAL Flag whether the container shall be modified by
+        # o adding the Tiger Proxy certificate to the container operating system.
+        # o adding docker.host.internal to the container's /etc/hosts file.
+        # Default value is true.
+        proxied: true
+        # OPTIONAL Flag whether the container is a one shot container or not.
+        # One shot meaning it will execute a command and then stop.
+        # Default value is false.
+        oneShot: false
+        # OPTIONAL The entry point command line to be used to start up this container
+        # overwriting any configured entry point in the docker image.
+        # Default value is empty meaning to use the configured entry point command line.
+        entryPoint: chmod a+x /startup.sh &amp;&amp; /startup.sh
+        # OPTIONAL list of files to be copied to the container
+        copyFiles:
+          # path to the file or the folder to copy inside the container
+          - sourcePath: ./example/path/file_to_copy.txt
+          # path inside the container where the file should be copied to
+            destinationPath: /path/in/container/file_to_copy.txt
+          # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
+            fileMode: 0633
+          # a complete folder can also be copied instead of a single file
+          - sourcePath: ./example/copy_folder
+            destinationPath: /path/in/container/copy_folder
 
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []</code></pre>
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
 </div>
 </div>
 </div>
@@ -1964,7 +1969,8 @@ To use this server type you must include the tiger-cloud-extension dependency!
 <div class="listingblock">
 <div class="title">Listing 9. Docker compose configuration</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  type: compose
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  type: compose
   dependsUpon: csv string
   startupTimeoutSec: int
   # OPTIONAL the logs of the docker compose are also written to a file, if no logFile is
@@ -1983,11 +1989,12 @@ To use this server type you must include the tiger-cloud-extension dependency!
 <div class="listingblock">
 <div class="title">Listing 10. Demis docker compose example</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">demis_001:
-  type: compose
-  source:
-    - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
-  startupTimeoutSec: 180</code></pre>
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  demis_001:
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180</code></pre>
 </div>
 </div>
 </div>
@@ -2032,53 +2039,54 @@ Tiger will use the following order to try to find a matching file:</p>
 <div class="listingblock">
 <div class="title">Listing 11. External jar configuration</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalJar_001:
-  hostname: mySpecialJar
-  type: externalJar
-  dependsUpon: csv string
-  startupTimeoutSec: int
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    externalJar_001:
+      hostname: mySpecialJar
+      type: externalJar
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
-  # If the entry starts with "local:" followed by a file path the jar archive
-  # is expected to be available at that location and no download is performed.
-  # Only one entry is expected for this node type. Additional entries are silently ignored.
-  source:
-    - http://myjars.download.org/myproject/myjar.jar
-  # MANDATORY URL to check for the successful startup of this node.
-  # A successful start is indicated by ANY answer on this URL.
-  # Any status is accepted as long as there is an answer.
-  # If set to "NONE" no check is performed and
-  # the test environment manager will wait for the startup timeout.
-  healthcheckUrl: http://127.0.0.1:8080
-  # OPTIONAL only declare the server healthy once the specified return code
-  # is given
-  healthcheckReturnCode: int
-  # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/externalJar_001.log
+      # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
+      # If the entry starts with "local:" followed by a file path the jar archive
+      # is expected to be available at that location and no download is performed.
+      # Only one entry is expected for this node type. Additional entries are silently ignored.
+      source:
+        - http://myjars.download.org/myproject/myjar.jar
+      # MANDATORY URL to check for the successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If set to "NONE" no check is performed and
+      # the test environment manager will wait for the startup timeout.
+      healthcheckUrl: http://127.0.0.1:8080
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalJar_001.log
 
-  externalJarOptions:
-    # OPTIONAL folder from where to start the external jar.
-    # The downloaded jar file will be stored and executed from here
-    # The default value is empty, which means that the operating-system-specific
-    # temporary folder will be used.
-    # hint: when the jar file is taken from a local directory and is set in source
-    # and the workingDir is set then the workingDir has to be the directory where
-    # the jar file is located
-    workingDir: /home/user/test/myspecificjar
-    # OPTIONAL Options to pass in to the java executable call.
-    options: []
-    # OPTIONAL provide additional arguments to the jar archive call.
-    # Default value is empty.
-    arguments:
-      - --testarg1
-      - -singledasharg2
-      - --paramarg3=testvalue1
+      externalJarOptions:
+        # OPTIONAL folder from where to start the external jar.
+        # The downloaded jar file will be stored and executed from here
+        # The default value is empty, which means that the operating-system-specific
+        # temporary folder will be used.
+        # hint: when the jar file is taken from a local directory and is set in source
+        # and the workingDir is set then the workingDir has to be the directory where
+        # the jar file is located
+        workingDir: /home/user/test/myspecificjar
+        # OPTIONAL Options to pass in to the java executable call.
+        options: []
+        # OPTIONAL provide additional arguments to the jar archive call.
+        # Default value is empty.
+        arguments:
+          - --testarg1
+          - -singledasharg2
+          - --paramarg3=testvalue1
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []</code></pre>
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2102,35 +2110,36 @@ If it is ever necessary to change the external URL, the test suite does not have
 <div class="listingblock">
 <div class="title">Listing 12. External URL configuration</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalUrl_001:
-  hostname: myExternalServer
-  type: externalUrl
-  dependsUpon: csv string
-  startupTimeoutSec: int
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  externalUrl_001:
+      hostname: myExternalServer
+      type: externalUrl
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY URL of the external server
-  source:
-    - https://www.medizin.de
+      # MANDATORY URL of the external server
+      source:
+        - https://www.medizin.de
 
-  # OPTIONAL URL to check for successful startup of this node.
-  # A successful start is indicated by ANY answer on this URL.
-  # Any status is accepted as long as there is an answer.
-  # If the value is not set, then no health check is carried out
-  # in the startup phase, instead the startupTimeout is waited for.
-  # After this timeout it is assumed that the server is up.
-  healthcheckUrl: https://www.medizin.de/healthyState.jsp
-  # OPTIONAL only declare the server healthy once the specified return code
-  # is given
-  healthcheckReturnCode: int
-  # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/externalUrl_001.log
+      # OPTIONAL URL to check for successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If the value is not set, then no health check is carried out
+      # in the startup phase, instead the startupTimeout is waited for.
+      # After this timeout it is assumed that the server is up.
+      healthcheckUrl: https://www.medizin.de/healthyState.jsp
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalUrl_001.log
 
-  # The following properties are explained in the General properties section above
-  # IGNORE for this type as it has no effect
-  environment: []
-  urlMappings: []
-  exports: []</code></pre>
+      # The following properties are explained in the General properties section above
+      # IGNORE for this type as it has no effect
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
 </div>
 </div>
 </div>
@@ -2207,43 +2216,44 @@ This way the start-up time can be minimized, and it is always guaranteed to star
 <div class="listingblock">
 <div class="title">Listing 14. Tiger Proxy configuration</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy_001:
-  hostname: myTigerProxy
-  type: tigerProxy
-  dependsUpon: csv string
-  startupTimeoutSec: int
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    tigerProxy_001:
+      hostname: myTigerProxy
+      type: tigerProxy
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  tigerProxyConfiguration:
-    # OPTIONAL port of the web user interface and the proxy management
-    # (e.g. rbel-message forwarding)
-    # Default value is empty, which means a random port will be used.
-    # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
-    # the TigerGlobalConfiguration
-    adminPort: 8080
-    # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
-    # If set the routes will be configured appropriately.
-    # Default value is empty.
-    proxiedServer: externalJar_001
-    # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
-    # Default value is empty, which means a random port will be used.
-    proxyPort: 3128
-    # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
-    # Default value is http
-    proxiedServerProtocol: http
-    # configures the proxy itself. For more details
-    # please check the chapter about the local test suite Tiger Proxy below
-    ...
-    proxyRoutes:
-      - from: http://foobar
-        # defines a forward-proxy-route from this server...
-        to: https://cryptic.backend/server/with/path
-        # to this server
-    ...
+      tigerProxyConfiguration:
+        # OPTIONAL port of the web user interface and the proxy management
+        # (e.g. rbel-message forwarding)
+        # Default value is empty, which means a random port will be used.
+        # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
+        # the TigerGlobalConfiguration
+        adminPort: 8080
+        # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
+        # If set the routes will be configured appropriately.
+        # Default value is empty.
+        proxiedServer: externalJar_001
+        # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
+        # Default value is empty, which means a random port will be used.
+        proxyPort: 3128
+        # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
+        # Default value is http
+        proxiedServerProtocol: http
+        # configures the proxy itself. For more details
+        # please check the chapter about the local test suite Tiger Proxy below
+        ...
+        proxyRoutes:
+          - from: http://foobar
+            # defines a forward-proxy-route from this server...
+            to: https://cryptic.backend/server/with/path
+            # to this server
+        ...
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []</code></pre>
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -2767,7 +2777,8 @@ The test environment manager boots the main tiger proxy (local tiger proxy) and 
 <div class="paragraph">
 <p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>), which supports both http- and https-traffic, (so you do not have to differentiate between the two).<br>
 Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>).<br>
-This provides the Tiger Proxy Log to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
+This provides the Tiger Proxy Log to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a<br>
+rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4652,6 +4663,32 @@ instead.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-finde-anfrage-mit-host-tigerresolvedstring-und-port-tigerresolvedstring"><a class="anchor" href="#tgr-finde-anfrage-mit-host-tigerresolvedstring-und-port-tigerresolvedstring"></a>TGR finde Anfrage mit Host {tigerResolvedString} und Port {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-find-request-with-host-tigerresolvedstring-and-port-tigerresolvedstring"><a class="anchor" href="#tgr-find-request-with-host-tigerresolvedstring-and-port-tigerresolvedstring"></a>TGR find request with host {tigerResolvedString} and port {tigerResolvedString}</h5>
+<div class="paragraph indent">
+<p>find the first request where host and port equal the given values and memorize it in the {<strong>link</strong><br>
+#rbelMessageRetriever} instance.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> host host to match<br>
+<strong>param</strong> port port to match</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-finde-die-nächste-anfrage-auf-derselben-verbindung"><a class="anchor" href="#tgr-finde-die-nächste-anfrage-auf-derselben-verbindung"></a>TGR finde die nächste Anfrage auf derselben Verbindung</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-find-next-request-on-same-connection"><a class="anchor" href="#tgr-find-next-request-on-same-connection"></a>TGR find next request on same connection</h5>
+<div class="paragraph indent">
+<p>find the NEXT request on the same connection as the last found request and memorize it in the<br>
+{<strong>link</strong> #rbelMessageRetriever} instance</p>
 </div>
 </div>
 <div class="sect4">
@@ -6711,13 +6748,16 @@ It is therefore recommended reusing this system for your own testsuite as well.<
 <p>Additional YAML-Files (<code>additionalConfigurationFiles:</code>)</p>
 </li>
 <li>
+<p>Profile YAML-file (<code>tiger-&lt;profile&gt;.yaml</code>)</p>
+</li>
+<li>
 <p>Host YAML-File (<code>tiger-&lt;hostname&gt;.yaml</code>)</p>
 </li>
 <li>
 <p>Main YAML-File (<code>tiger.yaml</code>)</p>
 </li>
 <li>
-<p>Interne Defaults</p>
+<p>Internal Defaults</p>
 </li>
 </ul>
 </div>
@@ -7695,7 +7735,7 @@ Otherwise, we cannot unambiguously identify the tests.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-http request hljs" data-lang="http request">http://127.0.0.1:${SERVERPORT}/webui</code></pre>
+<pre class="highlightjs highlight"><code class="language-http request hljs" data-lang="http request">http://127.0.0.1:${ADMINPORT}/webui</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9364,7 +9404,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-09 10:48:57 +0100
+Last updated 2026-01-21 12:35:20 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
