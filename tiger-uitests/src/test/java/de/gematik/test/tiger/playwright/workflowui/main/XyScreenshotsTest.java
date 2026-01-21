@@ -329,44 +329,28 @@ class XyScreenshotsTest extends AbstractBase {
 
   private void ensureRbelLogClosed() {
     Locator slider = page.locator("#test-webui-slider");
-    // Correct pane id is 'rbellog_details_pane' (see Vue component RbelLogDetailsPane.vue)
-    boolean isOpen =
-        Boolean.TRUE.equals(
-            page.evaluate(
-                "() => { const e = document.getElementById('rbellog_details_pane'); if(!e) return"
-                    + " false; return !e.classList.contains('d-none'); }"));
-    if (isOpen) {
+
+    if (isRbelLogOpen()) {
       slider.click();
-      await()
-          .atMost(Duration.ofSeconds(2))
-          .until(
-              () ->
-                  Boolean.TRUE.equals(
-                      page.evaluate(
-                          "() => { const e = document.getElementById('rbellog_details_pane');"
-                              + " if(!e) return true; return e.classList.contains('d-none'); }")));
+      await().atMost(Duration.ofSeconds(2)).until(this::isRbelLogClosed);
     }
   }
 
   private void ensureRbelLogOpen() {
     Locator slider = page.locator("#test-webui-slider");
-    boolean isClosed =
-        Boolean.TRUE.equals(
-            page.evaluate(
-                "() => { const e = document.getElementById('rbellog_details_pane'); if(!e) return"
-                    + " true; return e.classList.contains('d-none'); }"));
-    if (isClosed) {
+
+    if (isRbelLogClosed()) {
       slider.click();
-      await()
-          .atMost(Duration.ofSeconds(3))
-          .until(
-              () ->
-                  Boolean.TRUE.equals(
-                      page.evaluate(
-                          "() => { const e = document.getElementById('rbellog_details_pane');"
-                              + " if(!e) return false; return !e.classList.contains('d-none');"
-                              + " }")));
+      await().atMost(Duration.ofSeconds(3)).until(this::isRbelLogOpen);
     }
+  }
+
+  private boolean isRbelLogOpen() {
+    return page.locator("#test-rbel-logo").isVisible();
+  }
+
+  private boolean isRbelLogClosed() {
+    return !isRbelLogOpen();
   }
 
   private String readFirstRbelMessageText() {

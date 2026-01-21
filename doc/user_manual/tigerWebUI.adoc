@@ -5,7 +5,7 @@ To watch the recorded messages and to be able to analyze issues at test run time
 
 [source,http request]
 ----
-http://127.0.0.1:${SERVERPORT}/webui
+http://127.0.0.1:${ADMINPORT}/webui
 ----
 
 With `ADMINPORT` being the configured server port of the Tiger Proxy.

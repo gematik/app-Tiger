@@ -42,6 +42,9 @@ export interface UseProxyControllerReturn {
   getProxyRoutes: (options?: ControllerCallOptions) => Promise<RouteDto[] | void>;
   deleteProxyRoute: ControllerCall<ProxyRepository["fetchDeleteProxyRoute"]>;
   addProxyRoute: ControllerCall<ProxyRepository["fetchAddProxyRoute"]>;
+  tigerVersion: (
+    options?: ControllerCallOptions,
+  ) => Promise<{ version: string; buildDate: string } | void>;
 }
 
 export interface UseProxyControllerOptions {
@@ -111,5 +114,6 @@ export function useProxyController(props: UseProxyControllerOptions): UseProxyCo
     deleteProxyRoute: (props, options) =>
       makeCall(() => proxyRepo.fetchDeleteProxyRoute(props), options),
     addProxyRoute: (props, options) => makeCall(() => proxyRepo.fetchAddProxyRoute(props), options),
+    tigerVersion: (options) => makeCall(() => proxyRepo.fetchVersionInfo(), options),
   };
 }

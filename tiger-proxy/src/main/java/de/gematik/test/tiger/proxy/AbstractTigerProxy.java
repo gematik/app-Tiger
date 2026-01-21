@@ -349,6 +349,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
         return true;
       }
     } catch (RuntimeException e) {
+      log.debug("Tiger-proxy at '{}' is not online yet: {}", url, e.getMessage());
       return false;
     }
   }

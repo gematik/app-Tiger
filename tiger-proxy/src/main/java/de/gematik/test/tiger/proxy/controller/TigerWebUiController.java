@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.controller;
 
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
@@ -46,11 +47,14 @@ import de.gematik.test.tiger.proxy.data.MetaMessageScrollableDto;
 import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -60,6 +64,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.jexl3.JexlException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -101,6 +106,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
 
   public static final int SKIP_CONTENT_THRESHOLD = 100 * KB;
+  private final TigerBuildPropertiesService versionService;
 
   private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
@@ -422,12 +428,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         filterRbelPath != null && filterRbelPath.isBlank() ? null : filterRbelPath;
 
     return actualFilterRbelPath != null
-        ? stream.filter(
-            msg ->
-                TigerJexlExecutor.matchesAsJexlExpression(
-                        msg, actualFilterRbelPath, Optional.empty())
-                    || TigerJexlExecutor.matchesAsJexlExpression(
-                        findPartner(msg), actualFilterRbelPath, Optional.empty()))
+        ? stream.filter(matchesFilter(actualFilterRbelPath))
         : stream;
   }
 
@@ -453,18 +454,21 @@ public class TigerWebUiController implements ApplicationContextAware {
           final boolean includeVersion,
       @RequestParam(name = "skipContentThreshold", required = false, defaultValue = "-1")
           final int skipContentThreshold) {
-    int actualPageSize =
+    val actualPageSize =
         pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
-    final List<RbelElement> filteredMessages =
-        loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
-    final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
 
-    var headers = new HttpHeaders();
-    headers.add("available-messages", String.valueOf(filteredMessages.size()));
-    headers.add("returned-messages", String.valueOf(returnedMessages));
+    val filterResult = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion, actualPageSize);
+    val resultMessages = filterResult.matching();
+    val resultMessageCount = resultMessages.size();
 
-    if (returnedMessages > 0) {
-      headers.add("last-uuid", filteredMessages.get(returnedMessages - 1).getUuid());
+    val headers = new HttpHeaders();
+    headers.add(
+        "available-messages",
+        String.valueOf(Math.max(0, resultMessageCount + filterResult.uncheckedMessageCount())));
+    headers.add("returned-messages", String.valueOf(resultMessageCount));
+
+    if (resultMessageCount > 0) {
+      headers.add("last-uuid", resultMessages.get(resultMessageCount - 1).getUuid());
     }
 
     val writer =
@@ -473,9 +477,9 @@ public class TigerWebUiController implements ApplicationContextAware {
     val finalSkipContentThreshold =
         skipContentThreshold >= 0 ? skipContentThreshold : Integer.MAX_VALUE;
 
-    var inputStream =
+    val inputStream =
         RbelStringUtils.mapAndJoinAsInputStream(
-            filteredMessages.subList(0, returnedMessages),
+            resultMessages,
             el -> writer.convertToRbelFileString(el, finalSkipContentThreshold),
             "\n\n");
 
@@ -484,6 +488,23 @@ public class TigerWebUiController implements ApplicationContextAware {
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .body(new InputStreamResource(inputStream));
   }
+
+  private @NotNull MatchingMessages loadMessagesMatchingFilter(
+      String lastMsgUuid, String filterCriterion, int maxCount) {
+    val candidates = getMessagesAfterUuid(lastMsgUuid, getTigerProxy().getRbelLogger());
+    val checkedCount = new AtomicInteger(0);
+    val matchingMessages =
+        candidates.stream()
+            .peek(msg -> checkedCount.getAndIncrement())
+            .filter(matchesFilter(filterCriterion))
+            .limit(maxCount)
+            .toList();
+
+    int uncheckedMessageCount = candidates.size() - checkedCount.get();
+    return new MatchingMessages(matchingMessages, uncheckedMessageCount);
+  }
+
+  private record MatchingMessages(List<RbelElement> matching, int uncheckedMessageCount) {}
 
   @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public RbelContent downloadMessageContent(@PathVariable(name = "uuid") final String uuid) {
@@ -512,24 +533,32 @@ public class TigerWebUiController implements ApplicationContextAware {
                     HttpStatus.NOT_FOUND, "Message with UUID " + uuid + " not found"));
   }
 
-  private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
-    var dropCriterion = messageIsBefore(lastMsgUuid);
-    var rbelLogger = getTigerProxy().getRbelLogger();
-    if (!rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
-      log.trace("Last message UUID '{}' is not known anymore", lastMsgUuid);
-      dropCriterion = msg -> false; // do not drop any messages
+  private Collection<RbelElement> getMessagesAfterUuid(String lastMsgUuid, RbelLogger rbelLogger) {
+    if (lastMsgUuid != null
+        && rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
+      var history = rbelLogger.getMessageHistory();
+      var iterator = history.descendingIterator();
+      var newMessages = new LinkedList<RbelElement>();
+
+      while (iterator.hasNext()) {
+        var msg = iterator.next();
+        if (msg.getUuid().equals(lastMsgUuid)) {
+          break;
+        }
+        newMessages.addFirst(msg);
+      }
+
+      return newMessages;
+    } else {
+      return rbelLogger.getMessageHistory();
     }
-    return rbelLogger.getMessageHistory().stream()
-        .dropWhile(dropCriterion)
-        .filter(lastMsgUuid != null ? messageDoesNotHaveUuid(lastMsgUuid) : msg -> true)
-        .filter(matchesFilter(filterCriterion))
-        .toList();
   }
 
-  private static Predicate<RbelElement> matchesFilter(String filterCriterion) {
+  private Predicate<RbelElement> matchesFilter(String filterCriterion) {
     if (!StringUtils.hasText(filterCriterion)) {
       return msg -> true;
     }
+
     if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
       final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
       return msg ->
@@ -541,20 +570,6 @@ public class TigerWebUiController implements ApplicationContextAware {
               || TigerJexlExecutor.matchesAsJexlExpression(
                   findPartner(msg), filterCriterion, Optional.empty());
     }
-  }
-
-  private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
-    return msg -> {
-      if (StringUtils.hasText(lastMsgUuid)) {
-        return messageDoesNotHaveUuid(lastMsgUuid).test(msg);
-      } else {
-        return false;
-      }
-    };
-  }
-
-  private static Predicate<RbelElement> messageDoesNotHaveUuid(String lastMsgUuid) {
-    return msg -> !msg.getUuid().equals(lastMsgUuid);
   }
 
   @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -592,4 +607,13 @@ public class TigerWebUiController implements ApplicationContextAware {
   public ResponseEntity<Resource> forwardMessageRoute(@PathVariable("uuid") String uuid) {
     return getIndex();
   }
+
+  @GetMapping(value = "/version", produces = MediaType.APPLICATION_JSON_VALUE)
+  public TigerVersionResponse getVersion() {
+    String version = versionService.tigerVersionAsString();
+    String buildDate = versionService.tigerBuildDateAsString();
+    return new TigerVersionResponse(version, buildDate);
+  }
+
+  public record TigerVersionResponse(String version, String buildDate) {}
 }

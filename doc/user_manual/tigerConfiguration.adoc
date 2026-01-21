@@ -24,9 +24,10 @@ The following inlets are considered in the TigerGlobalConfiguration (ordered fro
 * Environment-Variables (export "FOO_BAR" = 42)
 * Full-text YAML file (value of `tiger.yaml` configuration key)
 * Additional YAML-Files (`additionalConfigurationFiles:`)
+* Profile YAML-file (`tiger-<profile>.yaml`)
 * Host YAML-File (`tiger-<hostname>.yaml`)
 * Main YAML-File (`tiger.yaml`)
-* Interne Defaults
+* Internal Defaults
 
 === Key-translation
 

@@ -1,5 +1,62 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.16
+
+## Features
+
+* TGR-1952: an additional configuration yaml can be loaded by setting the environment variable or system property
+  `PROFILE`.
+  E.g.: Setting PROFILE = "local" will automatically load `tiger-local.yaml`.
+* TGR-1969: Tiger Test Lib - new glue code allows searching for messages by the host and port of the connection.
+  Additionally, one can find messages on the same connection of the currently selected message.
+
+```java
+ /*
+ * find the first request where host and port equal the given values and memorize it in the {@link #rbelMessageRetriever} instance.
+ */
+@Wenn("TGR finde Anfrage mit Host {tigerResolvedString} und Port {tigerResolvedString}")
+@When("TGR find request with host {string} and port {string}")
+
+/**
+ * find the NEXT request on the same connection as the last found request and memorize it in the {@link #rbelMessageRetriever} instance
+ */
+@Wenn("TGR finde die nächste Anfrage auf derselben Verbindung")
+@When("TGR find next request on same connection")
+```
+* TGR-1758: Proxy Web UI - Toggle for Help Texts
+* TGR-2016: Tiger-Proxy: display tiger version on the tiger proxy web ui
+
+## Bugfixes
+
+* TGR-2015: Tiger-Proxy: fixed an issue where VAU traffic was not correctly decrypted when the `VAU-nonPU-Tracing` header had a different case.
+* TGR-2008: Performance enhancement when managing rbel log buffer (avoid linear re-computation of buffer size)
+* TGR-2014: Improved performance of iteration over AsyncByteQueue for stream-based protocol handling (e.g. POP3/SMTP)
+  in case of high throughput.
+
+## Bugfixes
+
+* TGR-2013: Downloading messages from tiger proxies doesn't apply filters to more elements than necessary.
+
+  This changes the semantics of the 'available-messages' result property to number-of-found-messages +
+  number-of-unchecked-messages.
+
+  Thus, in case that 'available-messages' is greater than the number of messages in the downloaded log,
+  there are only **potentially** more messages to download.
+  If you want to download **all** matching messages, you need to repeat until the number of 'availble-messages' is <=
+  the given page size.
+
+## Bugfixes
+
+* TGR-2013: Downloading messages from tiger proxies doesn't apply filters to more elements than necessary.
+
+  This changes the semantics of the 'available-messages' result property to number-of-found-messages +
+  number-of-unchecked-messages.
+
+  Thus, in case that 'available-messages' is greater than the number of messages in the downloaded log, there are only *
+  *potentially** more messages to download.
+  If you want to download **all** matching messages, you need to repeat until the number of 'availble-messages' is <=
+  the given page size.
+
 # Release 4.1.15
 
 ## Features
@@ -25,6 +82,7 @@ Proxy:
 
 * TGR-1953: Fixed rare 'null-compare' issue when trying to resolve placeholders in JEXL-expressions.
 * TGR-1953: Added more error-details for Socket-Connection issues in Tiger-Proxy.
+* TESTHUB-9: fix case-sensitivity issue in TigerConfigurationLoader
 
 # Changelog Tiger Test platform
 
@@ -1137,8 +1195,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

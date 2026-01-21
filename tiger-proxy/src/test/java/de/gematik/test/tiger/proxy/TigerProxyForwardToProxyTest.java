@@ -137,4 +137,51 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
           .contains("Caused by: java.net.UnknownHostException: notresolvable");
     }
   }
+
+  @Test
+  void sendRequestViaProxyWithUserNameAndPassword_shouldHaveCredentialsInRequest() {
+    try (var forwardProxy = new TigerProxy(TigerProxyConfiguration.builder().build())) {
+
+      spawnTigerProxyWithDefaultRoutesAndWith(
+          TigerProxyConfiguration.builder()
+              .forwardToProxy(
+                  ForwardProxyInfo.builder()
+                      .hostname("localhost")
+                      .port(forwardProxy.getProxyPort())
+                      .username("testUsername")
+                      .password("testPassword")
+                      .build())
+              .build());
+      proxyRest.get("http://www.example.com").asString();
+      awaitMessagesInTigerProxy(2);
+
+      var request = tigerProxy.getRbelMessagesList().get(0);
+      var requestSeenByForwardProxy = forwardProxy.getRbelMessagesList().get(0);
+      var response = tigerProxy.getRbelMessagesList().get(1);
+      var responseSeenByForwardProxy = forwardProxy.getRbelMessagesList().get(1);
+
+      assertThat(request).doesNotHaveChildWithPath("$.header.proxy-authorization");
+      assertThat(requestSeenByForwardProxy)
+          .extractChildWithPath("$.header.proxy-authorization")
+          .hasStringContentEqualTo("Basic " + encodeBasicAuth("testUsername", "testPassword"));
+      assertThat(responseSeenByForwardProxy)
+          .extractChildWithPath("$.responseCode")
+          .hasStringContentEqualTo("200")
+          .andTheInitialElement()
+          .extractChildWithPath("$.body.html.head.title.text")
+          .hasStringContentEqualTo("Example Domain");
+      assertThat(response)
+          .extractChildWithPath("$.responseCode")
+          .hasStringContentEqualTo("200")
+          .andTheInitialElement()
+          .extractChildWithPath("$.body.html.head.title.text")
+          .hasStringContentEqualTo("Example Domain");
+    }
+  }
+
+  public static String encodeBasicAuth(String username, String password) {
+    String credentials = username + ":" + password;
+    return java.util.Base64.getEncoder()
+        .encodeToString(credentials.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+  }
 }

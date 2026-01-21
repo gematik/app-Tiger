@@ -185,6 +185,42 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
+  void testHostPortMatch_OK() {
+    assertThat(
+            rbelMessageRetriever.areHostAndPortEqual(
+                localProxyRbelMessageListenerTestAdapter
+                    .buildElementsFromTgrFile("simpleHttpRequests.tgr")
+                    .get(0),
+                "localhost",
+                "8080"))
+        .isTrue();
+  }
+
+  @Test
+  void testHostPortMatch_wrongPort() {
+    assertThat(
+            rbelMessageRetriever.areHostAndPortEqual(
+                localProxyRbelMessageListenerTestAdapter
+                    .buildElementsFromTgrFile("simpleHttpRequests.tgr")
+                    .get(0),
+                "localhost",
+                "8181"))
+        .isFalse();
+  }
+
+  @Test
+  void testHostPortMatch_wrongHost() {
+    assertThat(
+            rbelMessageRetriever.areHostAndPortEqual(
+                localProxyRbelMessageListenerTestAdapter
+                    .buildElementsFromTgrFile("simpleHttpRequests.tgr")
+                    .get(0),
+                "example.com",
+                "8080"))
+        .isFalse();
+  }
+
+  @Test
   void testMethodMatching_OK() {
     assertThat(
             rbelMessageRetriever.doesMethodMatch(
@@ -245,7 +281,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
 
     validator.filterRequestsAndStoreInContext(
-        RequestParameter.builder().path(".*").startFromLastMessage(true).build());
+        RequestParameter.builder().path(".*").startFromPreviouslyFoundMessage(true).build());
     RbelElement request = rbelMessageRetriever.currentRequest;
 
     assertTrue(validator.doesHostMatch(request, "eitzen.at"));
@@ -653,18 +689,27 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   @Test
   void testThatWaitForNonPairedMessageToBePresentFindsTargetMessage()
       throws ExecutionException, InterruptedException {
-    final RequestParameter messageParameters =
-        RequestParameter.builder().rbelPath("$..Topic.text").value("CT/CONNECTED").build();
-    CompletableFuture<RbelElement> waitForMessageFuture =
-        CompletableFuture.supplyAsync(
-            () -> rbelMessageRetriever.waitForMessageToBePresent(messageParameters));
+    RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.putValue(
+        10); // loading the traffic file might take longer than 1sec!
+    try {
+      final RequestParameter messageParameters =
+          RequestParameter.builder().rbelPath("$..Topic.text").value("CT/CONNECTED").build();
 
-    readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
+      RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.putValue(5);
 
-    waitForMessageFuture.get();
-    assertThat(rbelMessageRetriever.findMessageByDescription(messageParameters))
-        .extractChildWithPath("$..Topic.text")
-        .hasStringContentEqualTo("CT/CONNECTED");
+      CompletableFuture<RbelElement> waitForMessageFuture =
+          CompletableFuture.supplyAsync(
+              () -> rbelMessageRetriever.waitForMessageToBePresent(messageParameters));
+
+      readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+      waitForMessageFuture.get();
+      assertThat(rbelMessageRetriever.findMessageByDescription(messageParameters))
+          .extractChildWithPath("$..Topic.text")
+          .hasStringContentEqualTo("CT/CONNECTED");
+    } finally {
+      RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.clearValue();
+    }
   }
 
   @Test
@@ -752,7 +797,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(".*")
-            .startFromLastMessage(true)
+            .startFromPreviouslyFoundMessage(true)
             .build()
             .resolvePlaceholders());
 
@@ -900,7 +945,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
         RequestParameter.builder()
             .rbelPath("$.body.regStat")
             .requireRequestMessage(false)
-            .startFromLastMessage(false)
+            .startFromPreviouslyFoundMessage(false)
             .build();
     rbelMessageRetriever.filterRequestsAndStoreInContext(rootElementRequest);
     assertThat(rbelMessageRetriever.getCurrentResponse()).isNotNull();

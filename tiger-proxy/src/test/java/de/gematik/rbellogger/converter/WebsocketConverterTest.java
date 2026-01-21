@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.websocket.RbelSockJsFacet;
 import de.gematik.rbellogger.facets.websocket.RbelStompFacet;
 import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeFacet;
@@ -131,7 +130,6 @@ class WebsocketConverterTest {
       capturer.initialize();
     }
 
-    rbelLogger.getMessageList().stream().map(RbelElement::printTreeStructureWithoutColors).toList();
     final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
     Files.write(new File("target/wsCompression.html").toPath(), html.getBytes());
 

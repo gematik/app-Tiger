@@ -28,6 +28,7 @@ import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
@@ -62,11 +63,14 @@ public class AsyncByteQueue {
   private final AtomicReference<Node> head = new AtomicReference<>(null);
   private final AtomicReference<Node> tail = new AtomicReference<>(null);
   private final TcpIpConnectionIdentifier primaryDirection;
+  private final AtomicLong availableBytesPrimary = new AtomicLong(0);
+  private final AtomicLong availableBytesSecondary = new AtomicLong(0);
   private final AtomicReference<String> lastBufferedUuid = new AtomicReference<>(null);
 
   public synchronized TcpConnectionEntry write(TcpConnectionEntry value) {
     Node newNode = new Node(value);
     Node prevTail = tail.getAndSet(newNode);
+    getAvailableBytes(newNode.isPrimaryDirection).addAndGet(newNode.availableBytes());
     if (prevTail == null) {
       head.set(newNode);
     } else {
@@ -129,10 +133,12 @@ public class AsyncByteQueue {
         if (count >= available) {
           // Consume entire node
           count -= available;
+          getAvailableBytes(currentNode.isPrimaryDirection).addAndGet(-available);
           removeNode(currentNode);
         } else {
           // Partially consume the node
           currentNode.readPos += (int) count;
+          getAvailableBytes(currentNode.isPrimaryDirection).addAndGet(-count);
           count = 0;
         }
       }
@@ -158,18 +164,19 @@ public class AsyncByteQueue {
   }
 
   public synchronized boolean isEmpty() {
-    return head.get() == null || availableBytes() == 0;
+    return availableBytes() == 0;
   }
 
-  public synchronized int availableBytes() {
-    int total = 0;
-
-    for (Node headNode = head.get(), current = headNode; current != null; current = current.next) {
-      if (current.isPrimaryDirection == headNode.isPrimaryDirection) {
-        total += current.availableBytes();
-      }
+  private AtomicLong getAvailableBytes(boolean primary) {
+    if (primary) {
+      return availableBytesPrimary;
+    } else {
+      return availableBytesSecondary;
     }
+  }
 
-    return total;
+  public synchronized long availableBytes() {
+    var currentHead = this.head.get();
+    return currentHead == null ? 0 : getAvailableBytes(currentHead.isPrimaryDirection).get();
   }
 }

@@ -20,9 +20,7 @@
  */
 package de.gematik.test.tiger.testenvmgr;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.createInstanceUnchecked;
 import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.findConstructor;
 
@@ -444,7 +442,7 @@ public class TigerTestEnvMgr
                             log.warn(
                                 "Using DEPRECATED constructor for server {}! "
                                     + "Using (TigerTestenvMg, String, CfgServer), "
-                                    + "plase change constructor to match param order:"
+                                    + "please change constructor to match param order:"
                                     + " (String, CfgServer, TigerTestenvMgr)!",
                                 serverId);
                             return createInstanceUnchecked(constructor, this, serverId, config);
@@ -644,7 +642,8 @@ public class TigerTestEnvMgr
     }
     isShuttingDown = true;
     log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
-    servers.values().stream()
+    servers
+        .values()
         .forEach(
             server -> {
               try {

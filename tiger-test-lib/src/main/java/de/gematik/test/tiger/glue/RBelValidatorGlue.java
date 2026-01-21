@@ -251,7 +251,41 @@ public class RBelValidatorGlue {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
-            .startFromLastMessage(true)
+            .startFromPreviouslyFoundMessage(true)
+            .build()
+            .resolvePlaceholders());
+  }
+
+  /**
+   * find the first request where host and port equal the given values and memorize it in the {@link
+   * #rbelMessageRetriever} instance.
+   *
+   * @param host host to match
+   * @param port port to match
+   */
+  @Wenn("TGR finde Anfrage mit Host {tigerResolvedString} und Port {tigerResolvedString}")
+  @When("TGR find request with host {tigerResolvedString} and port {tigerResolvedString}")
+  public void findRequestToPathWithHostAndPort(final String host, final String port) {
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .host(host)
+            .port(port)
+            .startFromPreviouslyFoundMessage(false)
+            .build()
+            .resolvePlaceholders());
+  }
+
+  /**
+   * find the NEXT request on the same connection as the last found request and memorize it in the
+   * {@link #rbelMessageRetriever} instance
+   */
+  @Wenn("TGR finde die nächste Anfrage auf derselben Verbindung")
+  @When("TGR find next request on same connection")
+  public void findNextMessageOnSameConnection() {
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .startFromPreviouslyFoundMessage(true)
+            .sameConnection(true)
             .build()
             .resolvePlaceholders());
   }
@@ -275,7 +309,7 @@ public class RBelValidatorGlue {
             .path(path)
             .rbelPath(rbelPath)
             .value(value)
-            .startFromLastMessage(true)
+            .startFromPreviouslyFoundMessage(true)
             .build()
             .resolvePlaceholders());
   }
@@ -318,7 +352,7 @@ public class RBelValidatorGlue {
   public void findNextRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
-            .startFromLastMessage(true)
+            .startFromPreviouslyFoundMessage(true)
             .path(path)
             .rbelPath(rbelPath)
             .build()
@@ -462,7 +496,7 @@ public class RBelValidatorGlue {
             .rbelPath(rbelPath)
             .value(value)
             .requireRequestMessage(false)
-            .startFromLastMessage(true)
+            .startFromPreviouslyFoundMessage(true)
             .build()
             .resolvePlaceholders());
   }

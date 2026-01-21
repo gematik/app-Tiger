@@ -414,4 +414,52 @@ class XYDynamicRbelLogTests extends AbstractBase {
     singleMessagePage.close();
     externalPage.close();
   }
+
+  @Test
+  void testIRbelQueryModalHelpToggle() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    var frameLocator = page.frameLocator("#rbellog-details-iframe");
+
+    // Open first message details if not already open (click on card header)
+    frameLocator.locator(".test-card").first().click();
+
+    // Click inspect button in the details view
+    frameLocator.locator(".test-btn-inspect").first().click();
+
+    var modalLocator = frameLocator.locator("#jexlQueryModal");
+    assertThat(modalLocator).isVisible();
+
+    var toggleButton = modalLocator.locator(".msg-toggle");
+    assertThat(toggleButton).isVisible();
+
+    // Help content specific text
+    var helpContent = modalLocator.locator("text=RBeL-Path is an expression language");
+
+    // Store initial state
+    boolean wasVisible = helpContent.isVisible();
+
+    // Toggle
+    toggleButton.click();
+
+    // Check for state change
+    if (wasVisible) {
+      assertThat(helpContent).not().isVisible();
+    } else {
+      assertThat(helpContent).isVisible();
+    }
+
+    // Toggle back
+    toggleButton.click();
+
+    // Check for restoration
+    if (wasVisible) {
+      assertThat(helpContent).isVisible();
+    } else {
+      assertThat(helpContent).not().isVisible();
+    }
+
+    // Close modal
+    modalLocator.locator(".btn-close").click();
+  }
 }

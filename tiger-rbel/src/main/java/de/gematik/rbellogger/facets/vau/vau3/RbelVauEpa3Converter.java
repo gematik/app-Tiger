@@ -184,7 +184,7 @@ public class RbelVauEpa3Converter extends RbelConverterPlugin {
     Optional.ofNullable(element.getParentNode())
         .flatMap(el -> el.getFacet(RbelHttpMessageFacet.class))
         .map(RbelHttpMessageFacet::getHeader)
-        .flatMap(header -> header.getFirst("VAU-nonPU-Tracing"))
+        .flatMap(header -> header.getFirstIgnoringCase("VAU-nonPU-Tracing"))
         .map(RbelElement::getRawStringContent)
         .map(keyString -> keyString.split(" "))
         .stream()

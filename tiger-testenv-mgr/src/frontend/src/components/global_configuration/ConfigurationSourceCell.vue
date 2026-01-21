@@ -31,6 +31,8 @@ function mapSourceToIcon(sourceName: string) {
       return "fa-file";
     case "HOST_YAML":
       return "fa-file";
+    case "PROFILE_YAML":
+      return "fa-file";
     case "ADDITIONAL_YAML":
       return "fa-file";
     case "TEST_YAML":

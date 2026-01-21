@@ -170,7 +170,9 @@ public class RbelConversionExecutor {
             Spliterators.spliteratorUnknownSize(
                 messageHistoryAsync.descendingIterator(), Spliterator.ORDERED),
             false)
-        .filter(msg -> msg != targetElement)
+        // we assume that targetElement is in the history!
+        .dropWhile(msg -> msg != targetElement)
+        .skip(1)
         .filter(msg -> RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement));
   }
 

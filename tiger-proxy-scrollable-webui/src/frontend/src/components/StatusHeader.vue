@@ -27,6 +27,17 @@ import { inject } from "vue";
 import { faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
+
+function knownTigerVersion(tigerVersion: { version: string; buildDate: string }): boolean {
+  return tigerVersion != null && !tigerVersion.version.includes("unknown");
+}
+
+defineProps<{
+  tigerVersion: {
+    version: string;
+    buildDate: string;
+  } | void;
+}>();
 </script>
 
 <template>
@@ -65,6 +76,14 @@ const rbelFilter = inject(rbelFilterSymbol)!;
     >
       <FontAwesomeIcon :icon="faSearch" />&nbsp;Search
     </button>
+    <div
+      v-if="tigerVersion && knownTigerVersion(tigerVersion)"
+      class="align-self-center text-start lh-1 small ms-auto font-monospace"
+    >
+      <p>
+        {{ tigerVersion.version }}<br /><em>Build date: {{ tigerVersion.buildDate }}</em>
+      </p>
+    </div>
   </div>
 </template>
 

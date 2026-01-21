@@ -99,8 +99,43 @@ public class TigerGlobalConfiguration {
     addHostnameVariable();
     readMainYamlFile();
     readHostYamlFile();
+    readProfileYamlFile();
     readAdditionalConfigurationFiles();
     addFixedPortVariables(fixedPorts);
+  }
+
+  private static void readProfileYamlFile() {
+    // environment variables and system properties should have already been loaded in the tiger
+    // global configuration
+
+    val profileFile =
+        globalConfigurationLoader
+            .readStringOptional("PROFILE")
+            .map(p -> findBasePathOfMainTigerYaml() + "tiger-" + p + ".yaml")
+            .map(File::new);
+    if (profileFile.isEmpty()) {
+      return;
+    }
+
+    if (!profileFile.get().exists()) {
+      throw new TigerConfigurationException(
+          "Could not find profile configuration-file '"
+              + profileFile.get().getAbsolutePath()
+              + "'.");
+    }
+    profileFile.ifPresent(
+        file ->
+            readYamlFile(
+                file, Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.PROFILE_YAML));
+  }
+
+  private static String findBasePathOfMainTigerYaml() {
+    return TIGER_TESTENV_CFGFILE_LOCATION
+        .getValue()
+        .map(File::new)
+        .map(File::getParentFile)
+        .map(f -> f.getAbsolutePath() + "/")
+        .orElse("");
   }
 
   private static void addFixedPortVariables(List<Integer> fixedPorts) {

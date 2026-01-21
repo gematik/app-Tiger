@@ -194,76 +194,103 @@
         id="main-content"
         :class="`${sideBarCollapsed ? 'col-md-11' : 'col-md-9'}`"
       >
-        <!-- execution pane buttons -->
-        <nav class="navbar navbar-expand-lg">
-          <div class="container-fluid">
-            <div class="navbar-nav justify-content-start"></div>
-            <div class="navbar-nav execution-pane-nav justify-content-between">
-              <a
-                id="test-execution-pane-tab"
-                class="btn active execution-pane-buttons"
-                role="button"
-                tabindex="0"
-                @click="showTab('execution_pane', $event)"
-                >Test execution</a
-              >
-              <a
-                id="test-server-log-tab"
-                class="btn execution-pane-buttons"
-                role="button"
-                tabindex="0"
-                @click="showTab('logs_pane', $event)"
-                >Server Logs</a
-              >
-              <a
-                v-if="featureFlags.trafficVisualization"
-                id="test-traffic-visualization-tab"
-                class="btn execution-pane-buttons"
-                role="button"
-                tabindex="0"
-                @click="showTab('visualization_pane', $event)"
-                >Traffic Visualization</a
-              >
-            </div>
-            <div class="navbar-nav justify-content-end px-5">
-              <img
-                id="test-gematik-logo"
-                alt="gematik logo"
-                class="gematik-logo"
-                src="/img/gematik.svg"
-              />
-            </div>
-          </div>
-        </nav>
+        <Tabs v-model:value="selectedTab">
+          <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+              <div class="navbar-nav justify-content-start"></div>
 
-        <!-- tabs -->
-        <div class="tab-content">
-          <execution-pane
-            :feature-update-map="featuresStore.featureUpdateMap"
-            :banner-message="
-              bannerData.length ? bannerData[bannerData.length - 1] : false
-            "
-            :local-proxy-web-ui-url="localProxyWebUiUrl"
-            :ui="ui"
-            :started="started"
-            :quit-testrun-ongoing="quitTestrunOngoing"
-            :quit-reason="quitReason"
-          />
-          <ServerLog
-            :server-logs="serverLogList"
-            :log-servers="logServers"
-            :selected-servers="selectedServers"
-            :selected-loglevel="LogLevel.ALL.toString()"
-            :selected-text="''"
-          />
-          <traffic-visualization
-            v-if="featureFlags.trafficVisualization"
-            :feature-update-map="featuresStore.featureUpdateMap"
-            :ui="ui"
-          />
-        </div>
+              <TabList
+                unstyled
+                class="navbar-nav execution-pane-nav justify-content-between"
+              >
+                <Tab
+                  unstyled
+                  value="execution-pane-tab"
+                  as="a"
+                  id="test-execution-pane-tab"
+                  :class="[
+                    'btn',
+                    'execution-pane-buttons',
+                    { active: selectedTab === 'execution-pane-tab' },
+                  ]"
+                  role="button"
+                  tabindex="0"
+                >
+                  Test execution</Tab
+                >
+                <Tab
+                  unstyled
+                  value="server-logs-tab"
+                  as="a"
+                  id="test-server-log-tab"
+                  :class="[
+                    'btn',
+                    'execution-pane-buttons',
+                    { active: selectedTab === 'server-logs-tab' },
+                  ]"
+                  role="button"
+                  tabindex="0"
+                >
+                  Server Logs</Tab
+                >
+                <Tab
+                  unstyled
+                  value="traffic-visualization-tab"
+                  as="a"
+                  id="test-traffic-visualization-tab"
+                  :class="[
+                    'btn',
+                    'execution-pane-buttons',
+                    { active: selectedTab === 'traffic-visualization-tab' },
+                  ]"
+                  role="button"
+                  tabindex="0"
+                  v-if="featureFlags.trafficVisualization"
+                  >Traffic Visualization
+                </Tab>
+              </TabList>
+              <div class="navbar-nav justify-content-end px-5">
+                <img
+                  id="test-gematik-logo"
+                  alt="gematik logo"
+                  class="gematik-logo"
+                  src="/img/gematik.svg"
+                />
+              </div>
+            </div>
+          </nav>
+          <TabPanels>
+            <TabPanel value="execution-pane-tab">
+              <execution-pane
+                :feature-update-map="featuresStore.featureUpdateMap"
+                :banner-message="bannerData.at(-1) ?? false"
+                :collapsed-sidebar="sideBarCollapsed"
+                :local-proxy-web-ui-url="localProxyWebUiUrl"
+                :started="started"
+                :quit-testrun-ongoing="quitTestrunOngoing"
+                :quit-reason="quitReason"
+              />
+            </TabPanel>
+            <TabPanel unstyled value="server-logs-tab">
+              <ServerLog
+                :server-logs="serverLogList"
+                :log-servers="logServers"
+              />
+            </TabPanel>
+            <TabPanel
+              value="traffic-visualization-tab"
+              v-if="featureFlags.trafficVisualization"
+            >
+              <traffic-visualization
+                v-if="featureFlags.trafficVisualization"
+                :feature-update-map="featuresStore.featureUpdateMap"
+              />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+        <!-- execution pane buttons -->
         <rbel-log-details-pane
-          :ui="ui"
+          ref="rbel-log-details-pane"
           :local-proxy-web-ui-url="localProxyWebUiUrl"
         ></rbel-log-details-pane>
       </div>
@@ -298,7 +325,7 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-import { onMounted, provide, ref, type Ref } from "vue";
+import { computed, onMounted, provide, ref, type Ref } from "vue";
 import SockJS from "sockjs-client";
 import Stomp, { Client, Frame, type Message } from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
@@ -313,10 +340,8 @@ import TestStatus from "@/components/testsuite/TestStatus.vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import { currentOverallServerStatus } from "@/types/TigerServerStatus";
 import { currentOverallTestRunStatus } from "@/types/testsuite/TestResult";
-import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
-import LogLevel from "@/types/LogLevel";
 import mitt, { type Emitter } from "mitt";
 import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
 import "vue3-side-panel/dist/vue3-side-panel.css";
@@ -324,7 +349,7 @@ import { VueSidePanel } from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
 import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
 import { FeatureFlags } from "@/types/FeatureFlags.ts";
-import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
+import RbelLogDetailsPane from "@/components/rbellog/RbelLogDetailsPane.vue";
 import type QuitReason from "@/types/QuitReason";
 import TestSelector from "@/components/testselector/TestSelector.vue";
 import { useDialog } from "primevue";
@@ -332,19 +357,27 @@ import { useFeaturesStore } from "@/stores/features.ts";
 import debug from "@/logging/log.ts";
 import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
 import { runSelectedTests } from "@/components/replay/ScenarioRunner.ts";
+import Tabs from "primevue/tabs";
+import TabList from "primevue/tablist";
+import Tab from "primevue/tab";
+import TabPanels from "primevue/tabpanels";
+import TabPanel from "primevue/tabpanel";
 
 const { loadSubsetOfProperties } = useConfigurationLoader();
 const featureFlags = ref(new FeatureFlags());
-
 const baseURL = import.meta.env.BASE_URL;
 let socket: WebSocket;
 let stompClient: Client;
 
+const selectedTab = ref("execution-pane-tab");
 const started = ref(new Date());
 
 let fetchedInitialStatus = false;
 
 const bannerData: Ref<BannerMessage[]> = ref([]);
+const hasTestRunFinished = computed(
+  () => bannerData.value.at(-1)?.type === BannerType.TESTRUN_ENDED,
+);
 
 /** array to collect any subscription messages coming in while the initial fetch has not completed. */
 let preFetchMessageList: Array<TestEnvStatusDto> =
@@ -387,14 +420,10 @@ const serverLogList: Ref<Array<TigerServerLogDto>> = ref(
 
 const logServers: Ref<Array<string>> = ref(new Array<string>());
 
-const selectedServers: Ref<Array<string>> = ref(new Array<string>("__all__"));
-
 const localProxyWebUiUrl: Ref<string> = ref("");
 
 const version: Ref<string> = ref("");
 const build: Ref<string> = ref("");
-
-let ui = ref();
 
 const quitTestrunOngoing: Ref<boolean> = ref(false);
 const pauseTestrunOngoing: Ref<boolean> = ref(false);
@@ -407,8 +436,6 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
-let hasTestRunFinished = false;
-
 async function loadFeatureFlags() {
   featureFlags.value = FeatureFlags.fromMap(
     await loadSubsetOfProperties("tiger.lib"),
@@ -416,7 +443,6 @@ async function loadFeatureFlags() {
 }
 
 onMounted(() => {
-  ui = ref(new Ui());
   connectToWebSocket();
   fetchInitialServerStatus();
   fetchTigerVersion();
@@ -433,22 +459,6 @@ const openTestSelectorDialog = () => {
     },
   });
 };
-
-function setTestRunFinished() {
-  hasTestRunFinished = true;
-}
-
-function showTab(tabid: string, event: MouseEvent) {
-  event.preventDefault();
-  const buttons = document.getElementsByClassName("execution-pane-buttons");
-  const tabs = document.getElementsByClassName("execution-pane-tabs");
-  for (let i = 0; i < buttons.length; i++) {
-    buttons[i].classList.toggle("active", false);
-    tabs[i].classList.toggle("active", false);
-  }
-  document.getElementById(tabid)?.classList.toggle("active", true);
-  (event.target as HTMLElement)?.classList?.toggle("active", true);
-}
 
 let reloadTimeoutHandle: number;
 
@@ -523,7 +533,6 @@ function connectToWebSocket() {
 
         if (json.bannerType) {
           if (json.bannerType === BannerType.TESTRUN_ENDED) {
-            setTestRunFinished();
             if (sideBarCollapsed.value) {
               toggleLeftSideBar();
             }
@@ -786,8 +795,6 @@ function updateServerStatus(
 }
 
 function toggleLeftSideBar() {
-  document.getElementById("execution_table")?.style.removeProperty("width");
-  document.getElementById("workflow-messages")?.style.removeProperty("width");
   sideBarCollapsed.value = !sideBarCollapsed.value;
 }
 

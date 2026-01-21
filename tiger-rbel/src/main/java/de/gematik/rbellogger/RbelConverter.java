@@ -250,12 +250,12 @@ public class RbelConverter implements RbelConverterInterface {
           knownMessageUuids.clear();
         }
         if (rbelBufferSizeInMb > 0) {
-          long exceedingLimit = getExceedingLimit();
+          long exceedingLimit = currentBufferSize - ((long) rbelBufferSizeInMb * MB);
           if (exceedingLimit > 0) {
             log.atTrace()
                 .addArgument(() -> ((double) currentBufferSize / MB))
                 .addArgument(rbelBufferSizeInMb)
-                .log("Buffer is currently at {} Mb which exceeds the limit of {} Mb");
+                .log("Buffer is currently at {} MB which exceeds the limit of {} MB");
           }
           while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
@@ -268,15 +268,6 @@ public class RbelConverter implements RbelConverterInterface {
         }
       }
     }
-  }
-
-  private long getExceedingLimit() {
-    return getRbelBufferSize() - ((long) rbelBufferSizeInMb * MB);
-  }
-
-  // DANGER: not synched, use only in synched blocks
-  private long getRbelBufferSize() {
-    return messageHistory.stream().mapToLong(RbelElement::getSize).sum();
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
@@ -365,6 +356,9 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessages) {
+    if (unfinishedMessages.isEmpty()) {
+      return;
+    }
     // register callbacks
     final List<Pair<CompletableFuture<RbelElement>, RbelElement>> callbacks;
     synchronized (messagesWaitingForCompletion) {

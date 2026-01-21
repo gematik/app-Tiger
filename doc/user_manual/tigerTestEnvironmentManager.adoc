@@ -17,6 +17,8 @@ It then loads further yaml-files:
 
 * `tiger-$+{hostname}+.yaml` and `tiger-$+{hostname}+.yml` are read and give the possibility to make computer-dependent configuration.
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).
+* `tiger-$+{profile}+.yaml` is read if the system property `PROFILE` or the environment variable `PROFILE` is set.
+The file needs to be located in the same folder as the `tiger.yaml` file.
 * The list given under `tiger.additionalYamls` is read.
 Each list-entry has two properties:
 ** `filename` pointing to the file to be read.
@@ -137,7 +139,7 @@ servers:
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port=${tiger.ports.identity}
         - --services.shopping=http://myShoppingServer
@@ -153,7 +155,7 @@ servers:
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port = ${tiger.ports.shopping}
         - --services.identity=http://identityServer
@@ -166,7 +168,7 @@ servers:
     externalJarOptions:
       options:
         - -Dhttp.proxyHost=127.0.0.1
-        - -Dhttp.proxyPort=${tiger.ports.proxyPort}
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
       arguments:
         - --server.port=${tiger.ports.client}
         # here are the examples how the servers are reachable
@@ -334,52 +336,53 @@ NOTE: To use this server type you must include the tiger-cloud-extension depende
 
 [source,yaml,title="Docker container configuration"]
 ----
-dockerContainer_001:
-  hostname: myDockerContainer
-  type: docker
-  dependsUpon: csv string
-  startupTimeoutSec: int
+servers:
+    dockerContainer_001:
+      hostname: myDockerContainer
+      type: docker
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY URL from where to download the docker image.
-  source:
-    - dockerhubrepo.somewhere.org/repo/project/docker.image
-  # MANDATORY version of the docker image to download.
-  version: 0.1.2
-  # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/dockerContainer_001.log
+      # MANDATORY URL from where to download the docker image.
+      source:
+        - dockerhubrepo.somewhere.org/repo/project/docker.image
+      # MANDATORY version of the docker image to download.
+      version: 0.1.2
+      # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/dockerContainer_001.log
 
-  dockerOptions:
-    # OPTIONAL Flag whether the container shall be modified by
-    # o adding the Tiger Proxy certificate to the container operating system.
-    # o adding docker.host.internal to the container's /etc/hosts file.
-    # Default value is true.
-    proxied: true
-    # OPTIONAL Flag whether the container is a one shot container or not.
-    # One shot meaning it will execute a command and then stop.
-    # Default value is false.
-    oneShot: false
-    # OPTIONAL The entry point command line to be used to start up this container
-    # overwriting any configured entry point in the docker image.
-    # Default value is empty meaning to use the configured entry point command line.
-    entryPoint: chmod a+x /startup.sh && /startup.sh
-    # OPTIONAL list of files to be copied to the container
-    copyFiles:
-      # path to the file or the folder to copy inside the container
-      - sourcePath: ./example/path/file_to_copy.txt
-      # path inside the container where the file should be copied to
-        destinationPath: /path/in/container/file_to_copy.txt
-      # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
-        fileMode: 0633
-      # a complete folder can also be copied instead of a single file
-      - sourcePath: ./example/copy_folder
-        destinationPath: /path/in/container/copy_folder
+      dockerOptions:
+        # OPTIONAL Flag whether the container shall be modified by
+        # o adding the Tiger Proxy certificate to the container operating system.
+        # o adding docker.host.internal to the container's /etc/hosts file.
+        # Default value is true.
+        proxied: true
+        # OPTIONAL Flag whether the container is a one shot container or not.
+        # One shot meaning it will execute a command and then stop.
+        # Default value is false.
+        oneShot: false
+        # OPTIONAL The entry point command line to be used to start up this container
+        # overwriting any configured entry point in the docker image.
+        # Default value is empty meaning to use the configured entry point command line.
+        entryPoint: chmod a+x /startup.sh && /startup.sh
+        # OPTIONAL list of files to be copied to the container
+        copyFiles:
+          # path to the file or the folder to copy inside the container
+          - sourcePath: ./example/path/file_to_copy.txt
+          # path inside the container where the file should be copied to
+            destinationPath: /path/in/container/file_to_copy.txt
+          # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
+            fileMode: 0633
+          # a complete folder can also be copied instead of a single file
+          - sourcePath: ./example/copy_folder
+            destinationPath: /path/in/container/copy_folder
 
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []
 ----
 
 ==== Docker Compose node
@@ -398,6 +401,7 @@ NOTE: To use this server type you must include the tiger-cloud-extension depende
 
 [source,yaml,title="Docker compose configuration"]
 ----
+servers:
   type: compose
   dependsUpon: csv string
   startupTimeoutSec: int
@@ -416,11 +420,12 @@ NOTE: To use this server type you must include the tiger-cloud-extension depende
 
 [source,yaml,title="Demis docker compose example"]
 ----
-demis_001:
-  type: compose
-  source:
-    - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
-  startupTimeoutSec: 180
+servers:
+  demis_001:
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180
 ----
 
 ==== External Jar node
@@ -448,53 +453,54 @@ java ${options} -jar externalJar.jar ${arguments}
 
 [source,yaml,title="External jar configuration"]
 ----
-externalJar_001:
-  hostname: mySpecialJar
-  type: externalJar
-  dependsUpon: csv string
-  startupTimeoutSec: int
+servers:
+    externalJar_001:
+      hostname: mySpecialJar
+      type: externalJar
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
-  # If the entry starts with "local:" followed by a file path the jar archive
-  # is expected to be available at that location and no download is performed.
-  # Only one entry is expected for this node type. Additional entries are silently ignored.
-  source:
-    - http://myjars.download.org/myproject/myjar.jar
-  # MANDATORY URL to check for the successful startup of this node.
-  # A successful start is indicated by ANY answer on this URL.
-  # Any status is accepted as long as there is an answer.
-  # If set to "NONE" no check is performed and
-  # the test environment manager will wait for the startup timeout.
-  healthcheckUrl: http://127.0.0.1:8080
-  # OPTIONAL only declare the server healthy once the specified return code
-  # is given
-  healthcheckReturnCode: int
-  # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/externalJar_001.log
+      # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
+      # If the entry starts with "local:" followed by a file path the jar archive
+      # is expected to be available at that location and no download is performed.
+      # Only one entry is expected for this node type. Additional entries are silently ignored.
+      source:
+        - http://myjars.download.org/myproject/myjar.jar
+      # MANDATORY URL to check for the successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If set to "NONE" no check is performed and
+      # the test environment manager will wait for the startup timeout.
+      healthcheckUrl: http://127.0.0.1:8080
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalJar_001.log
 
-  externalJarOptions:
-    # OPTIONAL folder from where to start the external jar.
-    # The downloaded jar file will be stored and executed from here
-    # The default value is empty, which means that the operating-system-specific
-    # temporary folder will be used.
-    # hint: when the jar file is taken from a local directory and is set in source
-    # and the workingDir is set then the workingDir has to be the directory where
-    # the jar file is located
-    workingDir: /home/user/test/myspecificjar
-    # OPTIONAL Options to pass in to the java executable call.
-    options: []
-    # OPTIONAL provide additional arguments to the jar archive call.
-    # Default value is empty.
-    arguments:
-      - --testarg1
-      - -singledasharg2
-      - --paramarg3=testvalue1
+      externalJarOptions:
+        # OPTIONAL folder from where to start the external jar.
+        # The downloaded jar file will be stored and executed from here
+        # The default value is empty, which means that the operating-system-specific
+        # temporary folder will be used.
+        # hint: when the jar file is taken from a local directory and is set in source
+        # and the workingDir is set then the workingDir has to be the directory where
+        # the jar file is located
+        workingDir: /home/user/test/myspecificjar
+        # OPTIONAL Options to pass in to the java executable call.
+        options: []
+        # OPTIONAL provide additional arguments to the jar archive call.
+        # Default value is empty.
+        arguments:
+          - --testarg1
+          - -singledasharg2
+          - --paramarg3=testvalue1
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []
 ----
 
 By default, the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started.
@@ -512,35 +518,36 @@ Given the nature of this type, the environment section has no effect and is not 
 
 [source,yaml,title="External URL configuration"]
 ----
-externalUrl_001:
-  hostname: myExternalServer
-  type: externalUrl
-  dependsUpon: csv string
-  startupTimeoutSec: int
+servers:
+  externalUrl_001:
+      hostname: myExternalServer
+      type: externalUrl
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  # MANDATORY URL of the external server
-  source:
-    - https://www.medizin.de
+      # MANDATORY URL of the external server
+      source:
+        - https://www.medizin.de
 
-  # OPTIONAL URL to check for successful startup of this node.
-  # A successful start is indicated by ANY answer on this URL.
-  # Any status is accepted as long as there is an answer.
-  # If the value is not set, then no health check is carried out
-  # in the startup phase, instead the startupTimeout is waited for.
-  # After this timeout it is assumed that the server is up.
-  healthcheckUrl: https://www.medizin.de/healthyState.jsp
-  # OPTIONAL only declare the server healthy once the specified return code
-  # is given
-  healthcheckReturnCode: int
-  # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
-  # specified a default name will be used
-  logFile: ./target/serverLogs/externalUrl_001.log
+      # OPTIONAL URL to check for successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If the value is not set, then no health check is carried out
+      # in the startup phase, instead the startupTimeout is waited for.
+      # After this timeout it is assumed that the server is up.
+      healthcheckUrl: https://www.medizin.de/healthyState.jsp
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalUrl_001.log
 
-  # The following properties are explained in the General properties section above
-  # IGNORE for this type as it has no effect
-  environment: []
-  urlMappings: []
-  exports: []
+      # The following properties are explained in the General properties section above
+      # IGNORE for this type as it has no effect
+      environment: []
+      urlMappings: []
+      exports: []
 ----
 
 ==== Helm Chart node
@@ -602,43 +609,44 @@ This way the start-up time can be minimized, and it is always guaranteed to star
 
 [source,yaml,title="Tiger Proxy configuration"]
 ----
-tigerProxy_001:
-  hostname: myTigerProxy
-  type: tigerProxy
-  dependsUpon: csv string
-  startupTimeoutSec: int
+servers:
+    tigerProxy_001:
+      hostname: myTigerProxy
+      type: tigerProxy
+      dependsUpon: csv string
+      startupTimeoutSec: int
 
-  tigerProxyConfiguration:
-    # OPTIONAL port of the web user interface and the proxy management
-    # (e.g. rbel-message forwarding)
-    # Default value is empty, which means a random port will be used.
-    # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
-    # the TigerGlobalConfiguration
-    adminPort: 8080
-    # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
-    # If set the routes will be configured appropriately.
-    # Default value is empty.
-    proxiedServer: externalJar_001
-    # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
-    # Default value is empty, which means a random port will be used.
-    proxyPort: 3128
-    # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
-    # Default value is http
-    proxiedServerProtocol: http
-    # configures the proxy itself. For more details
-    # please check the chapter about the local test suite Tiger Proxy below
-    ...
-    proxyRoutes:
-      - from: http://foobar
-        # defines a forward-proxy-route from this server...
-        to: https://cryptic.backend/server/with/path
-        # to this server
-    ...
+      tigerProxyConfiguration:
+        # OPTIONAL port of the web user interface and the proxy management
+        # (e.g. rbel-message forwarding)
+        # Default value is empty, which means a random port will be used.
+        # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
+        # the TigerGlobalConfiguration
+        adminPort: 8080
+        # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
+        # If set the routes will be configured appropriately.
+        # Default value is empty.
+        proxiedServer: externalJar_001
+        # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
+        # Default value is empty, which means a random port will be used.
+        proxyPort: 3128
+        # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
+        # Default value is http
+        proxiedServerProtocol: http
+        # configures the proxy itself. For more details
+        # please check the chapter about the local test suite Tiger Proxy below
+        ...
+        proxyRoutes:
+          - from: http://foobar
+            # defines a forward-proxy-route from this server...
+            to: https://cryptic.backend/server/with/path
+            # to this server
+        ...
 
-  # The following properties are explained in the General properties section above
-  environment: []
-  urlMappings: []
-  exports: []
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []
 ----
 
 The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]

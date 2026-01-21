@@ -21,7 +21,6 @@
 
 -->
 <script setup lang="ts">
-import type Ui from "@/types/ui/Ui.ts";
 import type { IStep } from "@/types/testsuite/StepUpdate.ts";
 import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
@@ -31,7 +30,6 @@ import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
 
 const props = defineProps<{
   step: IStep;
-  ui: Ui;
   ariaLabel: string;
   allRbelMetaData: MessageMetaDataDto[];
 }>();
@@ -91,7 +89,6 @@ function toggleTable() {
           <td>
             <Step
               :step="subStep"
-              :ui="ui"
               :all-rbel-meta-data="props.allRbelMetaData"
               ariaLabel="Sub-steps performed when executing this test step"
             />

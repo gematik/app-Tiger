@@ -24,6 +24,8 @@ import FailureMessage from "../components/testsuite/FailureMessage.vue";
 import type { IMismatchNote } from "@/types/testsuite/MismatchNote.ts";
 import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto.ts";
 
+const fakeEmitter = { emit: vi.fn(), on: vi.fn(), off: vi.fn() };
+
 // Simple stub component for PrimeVue Dropdown
 const DropdownStub = {
   name: "Dropdown",
@@ -43,7 +45,6 @@ const defaultProps = {
   stacktrace: "Error at line 1",
   mismatchNotes: [] as IMismatchNote[],
   allRbelMetaData: [] as MessageMetaDataDto[],
-  ui: { showRbelLogDetails: vi.fn() } as any,
 };
 
 // Helper mount function to avoid repetition.
@@ -54,6 +55,7 @@ function mountFailureMessage(extraProps = {}) {
       stubs: {
         Dropdown: DropdownStub,
       },
+      provide: { emitter: fakeEmitter },
     },
   });
 }
@@ -83,11 +85,9 @@ describe("FailureMessage.vue", () => {
       { sequenceNumber: 1, uuid: "uuid-1" },
       { sequenceNumber: 2, uuid: "uuid-2" },
     ];
-    const uiMock = { showRbelLogDetails: vi.fn() };
     const wrapper = mountFailureMessage({
       mismatchNotes: notes,
       allRbelMetaData: metas,
-      ui: uiMock,
     });
 
     const select = wrapper.find("select");
@@ -100,9 +100,9 @@ describe("FailureMessage.vue", () => {
 
     // Simulate selecting the second note
     await select.setValue("1");
-    expect(uiMock.showRbelLogDetails).toHaveBeenCalledWith(
+    expect(fakeEmitter.emit).toHaveBeenCalledWith(
+      "scrollToRbelLogMessage",
       "uuid-2",
-      expect.anything(),
     );
   });
 
@@ -125,26 +125,24 @@ describe("FailureMessage.vue", () => {
       { sequenceNumber: 10, uuid: "u1" },
       { sequenceNumber: 20, uuid: "u2" },
     ];
-    const uiMock = { showRbelLogDetails: vi.fn() };
     const wrapper = mountFailureMessage({
       mismatchNotes: notes,
       allRbelMetaData: metas,
-      ui: uiMock,
     });
 
     const select = wrapper.find("select");
     // Select first note (index 0)
     await select.setValue("0");
-    expect(uiMock.showRbelLogDetails).toHaveBeenCalledWith(
+    expect(fakeEmitter.emit).toHaveBeenCalledWith(
+      "scrollToRbelLogMessage",
       "u1",
-      expect.anything(),
     );
 
     // Select second note (index 1)
     await select.setValue("1");
-    expect(uiMock.showRbelLogDetails).toHaveBeenCalledWith(
+    expect(fakeEmitter.emit).toHaveBeenCalledWith(
+      "scrollToRbelLogMessage",
       "u2",
-      expect.anything(),
     );
   });
 });

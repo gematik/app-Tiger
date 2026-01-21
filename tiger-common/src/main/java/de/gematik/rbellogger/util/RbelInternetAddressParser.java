@@ -22,12 +22,16 @@ package de.gematik.rbellogger.util;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelInternetAddressParser {
+
+  private static final Map<String, RbelInternetAddress> CACHE = new ConcurrentHashMap<>();
 
   private static String cachedLoopbackHostname;
 
@@ -43,6 +47,11 @@ public class RbelInternetAddressParser {
       throw new IllegalArgumentException("Address string cannot be null or empty.");
     }
 
+    return CACHE.computeIfAbsent(
+        addressString, RbelInternetAddressParser::parseInetAddressUncached);
+  }
+
+  private static RbelInternetAddress parseInetAddressUncached(String addressString) {
     int slashIndex = addressString.indexOf('/');
 
     if (slashIndex != -1) {

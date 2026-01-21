@@ -170,6 +170,10 @@ public class TigerConfigurationLoader {
     }
   }
 
+  /**
+   * Search tree for key using {@link TigerConfigurationKeyString#equals(Object)}. Use this if you
+   * need case-insensitive comparisons.
+   */
   private Optional<TreeNode> findByKey(TreeNode node, TigerConfigurationKeyString key) {
     var fields = node.fieldNames();
     return Stream.iterate(fields, Iterator::hasNext, UnaryOperator.identity())
@@ -211,14 +215,15 @@ public class TigerConfigurationLoader {
 
     TreeNode targetTree = convertToTreeUnresolved();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
-    for (TigerConfigurationKeyString key : configurationKey) {
-      if (targetTree.get(key.getValue()) == null) {
-        // Return empty Array if we find nothing
+    for (TigerConfigurationKeyString search : configurationKey) {
+      final Optional<TreeNode> byKey = findByKey(targetTree, search);
+      if (byKey.isEmpty()) {
         targetTree = objectMapper.createArrayNode();
         break;
       }
-      targetTree = targetTree.get(key.getValue());
+      targetTree = byKey.get();
     }
+
     try {
       return deserializer.apply(targetTree);
     } catch (final Exception e) {
