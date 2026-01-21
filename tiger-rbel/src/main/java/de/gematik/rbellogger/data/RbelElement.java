@@ -309,6 +309,13 @@ public class RbelElement extends RbelPathAble {
         .findFirst();
   }
 
+  public Optional<RbelElement> getFirstIgnoringCase(String key) {
+    return getChildNodesWithKey().stream()
+        .filter(entry -> entry.getKey().equalsIgnoreCase(key))
+        .map(Map.Entry::getValue)
+        .findFirst();
+  }
+
   @Override
   public List<RbelElement> getAll(String key) {
     return getChildNodesWithKey().stream()

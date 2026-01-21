@@ -110,6 +110,33 @@ class VauEpa3ConverterTest {
                 "49117871460386101168058772883563639427765135898532450228055942387686676034354"));
   }
 
+  @SneakyThrows
+  @Test
+  void testDecryptionRiseWithLowercaseHeaders() {
+    val rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .activateConversionFor("epa3-vau")
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/rise-short.tgr")
+                        .build()));
+
+    try (final var capturer = rbelLogger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+
+    assertThat(rbelLogger.getMessageHistory()).hasSize(2);
+    val request = rbelLogger.getMessageHistory().getFirst();
+    assertThat(request)
+        .extractChildWithPath("$.body.decrypted.method")
+        .hasStringContentEqualTo("GET");
+    val response = rbelLogger.getMessageHistory().getLast();
+    assertThat(response)
+        .extractChildWithPath("$.body.decrypted.responseCode")
+        .hasStringContentEqualTo("200");
+  }
+
   @Test
   void nestedPathProblems() throws Exception {
     var logger =

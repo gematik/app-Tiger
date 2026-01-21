@@ -80,10 +80,8 @@
                   "
                   :highlight-text="false"
                   :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
-                  :link="scenario[1].getLink(feature[1].description)"
-                  :failure-link="
-                    '#' + scenario[1].getFailureId(feature[1].description)
-                  "
+                  :link="scenario[1].getLink()"
+                  :failure-link="'#' + scenario[1].getFailureId()"
                 >
                 </TestStatusBadge>
                 <large-play-button
@@ -164,7 +162,6 @@
                       />
                       <Step
                         :step="step[1]"
-                        :ui="ui"
                         :all-rbel-meta-data="globalRbelMetaData"
                         ariaLabel=""
                       />
@@ -177,7 +174,12 @@
                             v-if="!rbelmsg.removed"
                             href="#"
                             class="badge rbelDetailsBadge test-rbel-link"
-                            @click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
+                            @click.prevent="
+                              emitter.emit(
+                                'scrollToRbelLogMessage',
+                                rbelmsg.uuid,
+                              )
+                            "
                           >
                             {{ rbelmsg.sequenceNumber + 1 }}
                           </a>
@@ -220,24 +222,25 @@ import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import BannerMessage from "@/types/BannerMessage";
 import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
-import Ui from "@/types/ui/Ui";
 import LargePlayButton from "@/components/replay/LargePlayButton.vue";
 import type QuitReason from "@/types/QuitReason";
 import Step from "@/components/testsuite/Step.vue";
 import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
 import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
-import { ref, watch } from "vue";
+import { inject, ref, watch } from "vue";
 import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto.ts";
+import type { Emitter } from "mitt";
 
 const props = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
   bannerMessage: BannerMessage | boolean;
   localProxyWebUiUrl: string;
-  ui: Ui;
   started: Date;
   quitTestrunOngoing: boolean;
   quitReason: QuitReason;
 }>();
+
+const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 
 // Maintain a global list of all RBEL metadata across the run
 const globalRbelMetaData = ref<MessageMetaDataDto[]>([]);
@@ -392,9 +395,5 @@ h4.scenariotitle {
 
 .blue {
   color: darkblue;
-}
-
-.waiting-spinner {
-  z-index: -1;
 }
 </style>

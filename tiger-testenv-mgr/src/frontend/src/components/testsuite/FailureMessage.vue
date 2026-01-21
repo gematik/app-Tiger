@@ -102,11 +102,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref, watch } from "vue";
+import { computed, defineProps, inject, ref, watch } from "vue";
 import Dropdown from "primevue/dropdown";
 import type { IMismatchNote } from "@/types/testsuite/MismatchNote";
 import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
-import type Ui from "@/types/ui/Ui";
+import type { Emitter } from "mitt";
 
 // define props
 type Props = {
@@ -114,11 +114,10 @@ type Props = {
   stacktrace: string;
   mismatchNotes: IMismatchNote[];
   allRbelMetaData: MessageMetaDataDto[];
-  ui: Ui;
 };
 const props = defineProps<Props>();
-const { message, stacktrace, mismatchNotes, allRbelMetaData, ui } = props;
-
+const { message, stacktrace, mismatchNotes, allRbelMetaData } = props;
+const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 const stackTraceVisible = ref(false);
 const activeMismatchNoteIndex = ref<number>(-1);
 const mismatchDropdownOptions = computed(() =>
@@ -152,7 +151,7 @@ function navigateToMismatch() {
       (m: MessageMetaDataDto) => m.sequenceNumber === note.sequenceNumber,
     );
     if (meta) {
-      ui.showRbelLogDetails(meta.uuid, new MouseEvent("click"));
+      emitter.emit("scrollToRbelLogMessage", meta.uuid);
     }
   }
 }

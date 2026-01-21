@@ -34,10 +34,13 @@ public class RequestParameter {
   private String path;
   private String rbelPath;
   private String value;
-  private final boolean startFromLastMessage;
+  private String host;
+  private String port;
+  private final boolean startFromPreviouslyFoundMessage;
   private final boolean filterPreviousRequest;
   private final boolean requireNewMessage;
   @Builder.Default private final boolean requireRequestMessage = true;
+  @Builder.Default private final boolean sameConnection = false;
 
   public RequestParameter resolvePlaceholders() {
     if (StringUtils.isNotEmpty(path)) {

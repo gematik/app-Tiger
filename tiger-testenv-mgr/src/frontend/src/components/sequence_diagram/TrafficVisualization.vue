@@ -34,15 +34,16 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, ref, watchEffect } from "vue";
+import { inject, type Ref, ref, watchEffect } from "vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
-import Ui from "@/types/ui/Ui";
 import SequenceDiagram from "@/components/sequence_diagram/SequenceDiagram.vue";
+import type { Emitter } from "mitt";
 
 const prop = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
-  ui: Ui;
 }>();
+
+const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 
 const diagramSteps: Ref<string[]> = ref([]);
 
@@ -105,7 +106,7 @@ function handleClickOnSequenceNumber(sequenceNumber: number) {
     (m) => m.sequenceNumber === sequenceNumber,
   );
   if (metadata) {
-    prop.ui.showRbelLogDetails(metadata?.uuid, new MouseEvent("ignore"));
+    emitter.emit("scrollToRbelLogMessage", metadata.uuid);
   }
 }
 </script>

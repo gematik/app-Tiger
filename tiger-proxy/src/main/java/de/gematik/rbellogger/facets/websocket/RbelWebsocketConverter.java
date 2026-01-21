@@ -29,6 +29,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestConverter;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseConverter;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
@@ -43,7 +44,11 @@ import lombok.val;
 
 @Slf4j
 @ConverterInfo(
-    dependsOn = {RbelHttpResponseConverter.class},
+    dependsOn = {
+      RbelHttpResponseConverter.class,
+      RbelHttpRequestConverter.class,
+      RbelWebsocketHandshakeConverter.class
+    },
     onlyActivateFor = "websocket")
 public class RbelWebsocketConverter extends RbelConverterPlugin {
 

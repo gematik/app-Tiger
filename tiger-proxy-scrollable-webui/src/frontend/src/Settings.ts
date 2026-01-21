@@ -28,16 +28,19 @@ export interface SettingsReturn {
   reverseMessageQueue: Ref<boolean>;
   hideMessageHeaders: Ref<boolean>;
   hideMessageDetails: Ref<boolean>;
+  hideRbelHelp: Ref<boolean>;
 }
 
 export function useSettings(): SettingsReturn {
   const reverseMessageQueue = useStorage("reverseMessageQueue", false);
   const hideMessageHeaders = useStorage("hideMessageHeaders", false);
   const hideMessageDetails = useStorage("hideMessageDetails", false);
+  const hideRbelHelp = useStorage("hideRbelHelp", false);
 
   return {
     reverseMessageQueue,
     hideMessageHeaders,
     hideMessageDetails,
+    hideRbelHelp,
   };
 }

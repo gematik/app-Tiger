@@ -30,6 +30,7 @@ public enum ConfigurationValuePrecedence {
   DEFAULTS(110),
   MAIN_YAML(105),
   HOST_YAML(100),
+  PROFILE_YAML(98),
   ADDITIONAL_YAML(95),
   TEST_YAML(90),
   ENV(80),

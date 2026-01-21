@@ -29,6 +29,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.RbelLoggerWriter;
@@ -41,8 +42,10 @@ import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.exception.ValidatorAssertionError;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +60,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
@@ -304,7 +308,13 @@ public class RbelMessageRetriever {
       RequestParameter requestParameter,
       HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     String message;
-    if (requestParameter.getPath() == null) {
+    if (noPathNoRbelPath(requestParameter) && hostAndPortSpecified(requestParameter)) {
+      message =
+          String.format(
+              "No request with host '%s' and port '%s'%s",
+              requestParameter.getHost(), requestParameter.getPort(), FOUND_IN_MESSAGES);
+      throw buildValidatorError(message, mismatchNotes);
+    } else if (requestParameter.getPath() == null) {
       message =
           String.format(
               "No request with matching rbelPath '%s%s",
@@ -325,6 +335,14 @@ public class RbelMessageRetriever {
     throw buildValidatorError(message, mismatchNotes);
   }
 
+  private static boolean noPathNoRbelPath(RequestParameter requestParameter) {
+    return requestParameter.getPath() == null && requestParameter.getRbelPath() == null;
+  }
+
+  private static boolean hostAndPortSpecified(RequestParameter requestParameter) {
+    return requestParameter.getHost() != null && requestParameter.getPort() != null;
+  }
+
   private static @NotNull AssertionError buildValidatorError(
       String message, Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     return mismatchNotes.isEmpty()
@@ -334,7 +352,7 @@ public class RbelMessageRetriever {
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
     var validatableRbelMessages = localProxyRbelMessageListener.getValidatableRbelMessages();
-    if (requestParameter.isStartFromLastMessage()) {
+    if (requestParameter.isStartFromPreviouslyFoundMessage()) {
       var markerMessage =
           requestParameter.isRequireRequestMessage() ? currentRequest : lastFoundMessage;
       return validatableRbelMessages.stream()
@@ -439,9 +457,69 @@ public class RbelMessageRetriever {
             el ->
                 !requestParameter.isRequireRequestMessage() || el.hasFacet(RbelRequestFacet.class))
         .filter(req -> pathMatches(req, requestParameter.getPath(), mismatchNotes))
+        .filter(req -> hostAndPortMatch(req, requestParameter, mismatchNotes))
+        .filter(req -> filterSameConnection(req, requestParameter))
         .filter(req -> hostFilterMatches(req, hostFilter, mismatchNotes))
         .filter(req -> methodFilterMatches(req, methodFilter, mismatchNotes))
         .toList();
+  }
+
+  public boolean hostAndPortMatch(
+      RbelElement req,
+      RequestParameter requestParameter,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    if (requestParameter.getHost() == null && requestParameter.getPort() == null) {
+      return true;
+    }
+    if (areHostAndPortEqual(req, requestParameter.getHost(), requestParameter.getPort())) {
+      return true;
+    } else {
+      addMismatchNote(
+          mismatchNotes,
+          req,
+          FILTER_MISMATCH,
+          String.format(
+              "Host and port '%s:%s' didn't match!",
+              requestParameter.getHost(), requestParameter.getPort()));
+      return false;
+    }
+  }
+
+  public boolean areHostAndPortEqual(RbelElement req, String host, String port) {
+    val tcpIpFacet = req.getFacet(RbelTcpIpMessageFacet.class);
+    val reqHost =
+        tcpIpFacet
+            .flatMap(e -> RbelHostnameFacet.tryToExtractServerName(e.getReceiver()))
+            .orElse("");
+    val reqPort =
+        tcpIpFacet
+            .flatMap(e -> e.getReceiverHostname().map(RbelSocketAddress::getPort))
+            .orElse(null);
+
+    return isSameHostPort(host, Integer.parseInt(port), reqHost, reqPort);
+  }
+
+  private boolean isSameHostPort(String host1, Integer port1, String host2, Integer port2) {
+    if (!Objects.equals(port1, port2)) {
+      return false;
+    }
+
+    try {
+      InetAddress addr1 = InetAddress.getByName(host1);
+      InetAddress addr2 = InetAddress.getByName(host2);
+      return Objects.equals(addr1.getHostAddress(), addr2.getHostAddress());
+    } catch (UnknownHostException e) {
+      // Fallback to string comparison if resolution fails
+      return host1.equalsIgnoreCase(host2);
+    }
+  }
+
+  private boolean filterSameConnection(RbelElement req, RequestParameter requestParameter) {
+    if (currentRequest != null && requestParameter.isSameConnection()) {
+      return RbelTcpIpMessageFacet.haveSameConnection(currentRequest, req);
+    } else {
+      return true;
+    }
   }
 
   private boolean pathMatches(
@@ -580,13 +658,11 @@ public class RbelMessageRetriever {
   }
 
   private static @NotNull URI getHttpRequestPath(RbelElement req) throws URISyntaxException {
-    final URI uri =
-        new URI(
-            req.getFacet(RbelHttpRequestFacet.class)
-                .map(RbelHttpRequestFacet::getPath)
-                .map(RbelMessageRetriever::getValueOrContentString)
-                .orElse(""));
-    return uri;
+    return new URI(
+        req.getFacet(RbelHttpRequestFacet.class)
+            .map(RbelHttpRequestFacet::getPath)
+            .map(RbelMessageRetriever::getValueOrContentString)
+            .orElse(""));
   }
 
   private boolean doesPathOfMessageMatch(String pathValue, String pathExpression) {
@@ -618,7 +694,7 @@ public class RbelMessageRetriever {
 
   private boolean doesItMatch(final String toTest, String matchingString) {
     try {
-      return StringUtils.equals(toTest, matchingString) || toTest.matches(matchingString);
+      return Strings.CS.equals(toTest, matchingString) || toTest.matches(matchingString);
     } catch (PatternSyntaxException rte) {
       log.error("Probable error while parsing regex!", rte);
       return false;

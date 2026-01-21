@@ -80,16 +80,21 @@ class TestWebsocket {
   @SneakyThrows
   @ParameterizedTest
   void connectToTigerProxyViaAnotherTigerProxy(String from) {
+    val resolvedFrom = TigerGlobalConfiguration.resolvePlaceholders(from);
+    val uri = URI.create(resolvedFrom);
+    val port = uri.getPort();
+    val path = uri.getPath();
+
     try (val proxyingTigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
+                .proxyPort(port == -1 ? 0 : port)
                 .activateRbelParsingFor(List.of("websocket"))
                 .proxyRoutes(
                     List.of(
                         TigerConfigurationRoute.builder()
-                            .from(TigerGlobalConfiguration.resolvePlaceholders(from))
+                            .from(path)
                             .to("http://localhost:" + tigerProxy.getAdminPort())
-                            .matchForProxyType(false)
                             .build()))
                 .build())) {
       tigerProxy.addRoute(

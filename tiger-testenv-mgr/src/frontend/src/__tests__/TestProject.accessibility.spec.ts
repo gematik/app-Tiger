@@ -59,6 +59,17 @@ vi.mock("sockjs-client", () => {
 describe("TestProject.vue - Tab Navigation Accessibility Tests", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+
+
+    // Mock ResizeObserver as a proper constructor
+    class MockResizeObserver {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+
+    global.ResizeObserver = MockResizeObserver as any;
+
     global.fetch = vi.fn(() =>
       Promise.resolve({
         text: () => Promise.resolve("{}"),

@@ -179,8 +179,8 @@ class AsyncByteQueueTest {
 
   @Test
   void testConcurrency() throws InterruptedException {
-    int threadCount = 10;
-    int writesPerThread = 100;
+    int threadCount = 500;
+    int writesPerThread = 500;
     RbelContent data = RbelContent.of("X".getBytes(StandardCharsets.UTF_8));
 
     ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -192,13 +192,27 @@ class AsyncByteQueueTest {
               addClientMessage(data.toReadableString());
             }
           });
+      executor.execute(
+          () -> {
+            for (int j = 0; j < writesPerThread; j++) {
+              addServerMessage(data.toReadableString());
+            }
+          });
     }
 
-    executor.awaitTermination(5, TimeUnit.SECONDS);
     executor.shutdown();
+    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+      executor.shutdownNow();
+    }
 
-    assertThat(queue.peek().getData().size())
-        .isEqualTo(threadCount * writesPerThread * data.size());
+    int expectedSize = threadCount * writesPerThread * data.size();
+    assertThat(queue.peek().getData().size()).isEqualTo(expectedSize);
+    assertThat(queue.availableBytes()).isEqualTo(expectedSize);
+
+    queue.consume(expectedSize);
+
+    assertThat(queue.peek().getData().size()).isEqualTo(expectedSize);
+    assertThat(queue.availableBytes()).isEqualTo(expectedSize);
   }
 
   @Test

@@ -27,11 +27,13 @@ import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
 import "simple-syntax-highlighter/dist/sshpre.css";
 import RbelTreeContent from "@/components/RbelTreeContent.vue";
 import RbelJexlContent from "@/components/RbelJexlContent.vue";
+import { settingsSymbol } from "../Settings.ts";
 
 const RbelTreeTab = "RbelTreeTab";
 const RbelJexlTab = "RbelJexlTab";
 
 const rbelQuery = inject(rbelQueryModalSymbol)!;
+const rbelHelp = inject(settingsSymbol)!;
 const selectedMessage = computed(() => rbelQuery.selectedMessage.value ?? ({} as Message));
 
 const selectedTab = ref(RbelTreeTab);
@@ -44,9 +46,16 @@ onMounted(() => {
     modalRef.value.addEventListener("show.bs.modal", () => {
       treeContentRef.value?.reset();
       jexlContentRef.value?.reset();
+      showHelpSection.value = !rbelHelp.hideRbelHelp.value;
     });
   }
 });
+
+const showHelpSection = ref(false);
+function toggleHelpSection() {
+  showHelpSection.value = !showHelpSection.value;
+  rbelHelp.hideRbelHelp.value = !showHelpSection.value;
+}
 </script>
 
 <template>
@@ -100,14 +109,53 @@ onMounted(() => {
           ></button>
         </div>
         <div class="modal-body d-flex flex-row">
-          <div class="pe-3 flex-5">
+          <div
+            class="pe-3"
+            :class="{ 'w-100': !showHelpSection }"
+            :style="{ flex: showHelpSection ? 5 : 1 }"
+          >
             <RbelTreeContent v-if="selectedTab === RbelTreeTab" ref="treeContentRef" />
             <RbelJexlContent v-if="selectedTab === RbelJexlTab" ref="jexlContentRef" />
           </div>
-          <div class="sticky-top ps-3 border-1 border-start flex-2 f-caption">
+          <div
+            class="sticky-top ps-3 border-1 border-start f-caption"
+            :style="{
+              flex: showHelpSection ? 2 : 0,
+              'min-width': showHelpSection ? '260px' : '48px',
+            }"
+          >
             <div v-if="selectedTab === RbelTreeTab">
-              <span class="fw-semibold">RBeL-Path Quick Help</span>
-              <div>
+              <div
+                :class="{
+                  'd-flex align-items-center justify-content-between': showHelpSection,
+                  'text-center': !showHelpSection,
+                }"
+              >
+                <span class="fw-semibold" v-if="showHelpSection">RBeL-Path Quick Help</span>
+                <span class="fw-semibold" v-else>Help</span>
+                <button
+                  type="button"
+                  :class="[
+                    'fa-solid',
+                    'toggle-icon',
+                    'msg-toggle',
+                    'has-text-link',
+                    showHelpSection ? 'fa-toggle-on' : 'fa-toggle-off',
+                  ]"
+                  aria-label="Hilfe ein-/ausblenden"
+                  @click="toggleHelpSection"
+                  :style="{
+                    'font-size': '1.3rem',
+                    border: 'none',
+                    background: 'transparent',
+                    padding: '0',
+                    cursor: 'pointer',
+                    'margin-left': showHelpSection ? '1rem' : '0',
+                    'margin-top': showHelpSection ? '0' : '0.5rem',
+                  }"
+                ></button>
+              </div>
+              <div v-if="showHelpSection">
                 <p>
                   RBeL-Path is an expression language inspired by XPath and JSON-Path, enabling
                   quick traversal of captured RBeL-Traffic (RbelElement-tree). For detailed
@@ -144,59 +192,90 @@ onMounted(() => {
                 </ul>
               </div>
             </div>
-
             <div v-if="selectedTab === RbelJexlTab">
-              <span class="fw-semibold">JEXL Quick Help</span>
-              <p>
-                JEXL syntax is a powerful expression language used for evaluating conditions and
-                extracting data. For detailed documentation, visit
-                <a
-                  href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html"
-                  target="_blank"
-                  >this page</a
-                >. In addition, you can use <strong>RbelPath</strong> expressions, which are
-                described
-                <a
-                  href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_rbel_path_details"
-                  target="_blank"
-                  >here</a
-                >.
-              </p>
-              <span class="fw-semibold">Examples:</span>
-              <ul class="list-group">
-                <li class="list-group-item">
-                  <code>"RbelHttpMessageFacet" =~ facets</code> <br />
-                  <small
-                    >Checks if the message has the <strong>RbelHttpMessageFacet</strong> facet.
-                    <code>facets</code> is an array containing all recognized facets.</small
-                  >
-                </li>
-                <li class="list-group-item">
-                  <code>isRequest</code> <br />
-                  <small>Checks if the message is a request.</small>
-                </li>
-                <li class="list-group-item">
-                  <code>$.body.recordId == "X12349035"</code> <br />
-                  <small
-                    >Checks for the <strong>recordId</strong> in a decrypted EPA-VAU message.</small
-                  >
-                </li>
-                <li class="list-group-item">
-                  <code>$.header.Content-Type == "application/json"</code> <br />
-                  <small>Checks if the message is a JSON message.</small>
-                </li>
-                <li class="list-group-item">
-                  <code>charset =~ "UTF-.*"</code> <br />
-                  <small>Checks the <strong>charset</strong> using a regex pattern.</small>
-                </li>
-                <li class="list-group-item">
-                  <code>$.body.recordId == "Y243631459" && charset == "UTF-8"</code> <br />
-                  <small
-                    >Combines multiple conditions to check both <strong>recordId</strong> and
-                    <strong>charset</strong>.</small
-                  >
-                </li>
-              </ul>
+              <div
+                :class="{
+                  'd-flex align-items-center justify-content-between': showHelpSection,
+                  'text-center': !showHelpSection,
+                }"
+              >
+                <span class="fw-semibold" v-if="showHelpSection">JEXL Quick Help</span>
+                <span class="fw-semibold" v-else>Help</span>
+                <button
+                  type="button"
+                  :class="[
+                    'fa-solid',
+                    'toggle-icon',
+                    'msg-toggle',
+                    'has-text-link',
+                    showHelpSection ? 'fa-toggle-on' : 'fa-toggle-off',
+                  ]"
+                  aria-label="switch help on/off"
+                  @click="toggleHelpSection"
+                  :style="{
+                    'font-size': '1.3rem',
+                    border: 'none',
+                    background: 'transparent',
+                    padding: '0',
+                    cursor: 'pointer',
+                    'margin-left': showHelpSection ? '1rem' : '0',
+                    'margin-top': showHelpSection ? '0' : '0.5rem',
+                  }"
+                ></button>
+              </div>
+              <div v-if="showHelpSection">
+                <p>
+                  JEXL syntax is a powerful expression language used for evaluating conditions and
+                  extracting data. For detailed documentation, visit
+                  <a
+                    href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html"
+                    target="_blank"
+                    >this page</a
+                  >. In addition, you can use <strong>RbelPath</strong> expressions, which are
+                  described
+                  <a
+                    href="https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_rbel_path_details"
+                    target="_blank"
+                    >here</a
+                  >.
+                </p>
+                <span class="fw-semibold">Examples:</span>
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <code>"RbelHttpMessageFacet" =~ facets</code> <br />
+                    <small
+                      >Checks if the message has the <strong>RbelHttpMessageFacet</strong> facet.
+                      <code>facets</code> is an array containing all recognized facets.</small
+                    >
+                  </li>
+                  <li class="list-group-item">
+                    <code>isRequest</code> <br />
+                    <small>Checks if the message is a request.</small>
+                  </li>
+                  <li class="list-group-item">
+                    <code>$.body.recordId == "X12349035"</code> <br />
+                    <small
+                      >Checks for the <strong>recordId</strong> in a decrypted EPA-VAU
+                      message.</small
+                    >
+                  </li>
+                  <li class="list-group-item">
+                    <code>$.header.Content-Type == "application/json"</code> <br />
+                    <small>Checks if the message is a JSON message.</small>
+                  </li>
+                  <li class="list-group-item">
+                    <code>charset =~ "UTF-.*"</code> <br />
+                    <small>Checks the <strong>charset</strong> using a regex pattern.</small>
+                  </li>
+                  <li class="list-group-item">
+                    <code>$.body.recordId == "Y243631459" && charset == "UTF-8"</code> <br />
+                    <small
+                      >Combines multiple conditions to check both <strong>recordId</strong> and
+                      <strong>charset</strong>.</small
+                    >
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -205,20 +284,4 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-.flex-2 {
-  flex: 2;
-}
-
-.flex-3 {
-  flex: 3;
-}
-
-.flex-4 {
-  flex: 4;
-}
-
-.flex-5 {
-  flex: 5;
-}
-</style>
+<style scoped></style>

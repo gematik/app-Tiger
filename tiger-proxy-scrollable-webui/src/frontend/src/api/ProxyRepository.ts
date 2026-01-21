@@ -87,6 +87,8 @@ export type ProxyRepository = {
   fetchAddProxyRoute(props: { route: RouteDto }): Promise<RouteDto>;
 
   fetchDeleteProxyRoute(props: { id: string }): Promise<void>;
+
+  fetchVersionInfo(): Promise<{ version: string; buildDate: string }>;
 };
 
 function throwNotImplemented(): never {
@@ -163,6 +165,9 @@ const ProxyRepositoryLocal: ProxyRepository = {
     throwNotImplemented();
   },
   fetchFullyRenderedMessage(): Promise<{ content: string; uuid: string; sequenceNumber: number }> {
+    throwNotImplemented();
+  },
+  fetchVersionInfo(): Promise<{ version: string; buildDate: string }> {
     throwNotImplemented();
   },
 };
@@ -329,5 +334,9 @@ const ProxyRepositoryRemote: ProxyRepository = {
       `/webui/fullyRenderedMessage/${uuid}`,
       { signal },
     );
+  },
+
+  fetchVersionInfo: async (): Promise<{ version: string; buildDate: string }> => {
+    return createFetchRequest<{ version: string; buildDate: string }>("/webui/version");
   },
 };

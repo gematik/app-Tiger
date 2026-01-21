@@ -24,7 +24,8 @@
   <div
     v-if="quitTestrunOngoing"
     id="workflow-messages"
-    class="alert banner-message fade show py-5 text-danger text-center fade show test-messages-quit"
+    v-show="!windowClosed"
+    class="alert banner-message py-5 text-danger text-center test-messages-quit"
     role="alert"
   >
     <i
@@ -43,7 +44,8 @@
   <div
     v-else
     id="workflow-messages"
-    :class="`alert banner-message fade ${bannerMessage ? 'show' : ''}`"
+    v-show="showMessage"
+    class="alert banner-message"
     role="alert"
   >
     <i
@@ -130,14 +132,17 @@
 import BannerMessage from "@/types/BannerMessage";
 import BannerType from "@/types/BannerType";
 
-import { onUpdated } from "vue";
-import QuitReason from "@/types/QuitReason";
+import { computed, ref, watch } from "vue";
+import type QuitReason from "@/types/QuitReason";
 
 const props = defineProps<{
   bannerMessage: BannerMessage | boolean;
   quitTestrunOngoing: boolean;
   quitReason: QuitReason;
 }>();
+
+const windowClosed = ref(false);
+const showMessage = computed(() => !windowClosed.value && props.bannerMessage);
 
 function isOfType(bannerType: BannerType): boolean {
   return (
@@ -146,13 +151,16 @@ function isOfType(bannerType: BannerType): boolean {
   );
 }
 
-// after close via clicking on button we need to show it again if new data is sent
-onUpdated(() => {
-  document.getElementById("workflow-messages")!.classList.toggle("show", true);
-});
+// Reset windowClosed only when bannerMessage prop changes
+watch(
+  () => props.bannerMessage,
+  () => {
+    windowClosed.value = false;
+  },
+);
 
 function closeWindow() {
-  document.getElementById("workflow-messages")!.classList.remove("show");
+  windowClosed.value = true;
 }
 
 function confirmContinue() {

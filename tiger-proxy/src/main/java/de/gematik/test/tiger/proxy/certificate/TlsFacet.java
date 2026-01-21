@@ -79,8 +79,8 @@ public class TlsFacet implements RbelFacet {
         return;
       }
 
-      converter
-          .findPreviousMessageInSameConnectionAs(msg, m -> m.hasFacet(TlsFacet.class))
+      getPreviousMessage(msg, converter)
+          .filter(m -> m.hasFacet(TlsFacet.class))
           .ifPresentOrElse(
               previousMessage -> {
                 val previousTlsFacet = previousMessage.getFacet(TlsFacet.class).orElseThrow();
@@ -193,9 +193,7 @@ public class TlsFacet implements RbelFacet {
         return;
       }
 
-      if (converter
-          .findPreviousMessageInSameConnectionAs(msg, m -> m.hasFacet(TlsFacet.class))
-          .isEmpty()) {
+      if (getPreviousMessage(msg, converter).filter(m -> m.hasFacet(TlsFacet.class)).isEmpty()) {
         val tlsFacet = msg.getFacet(TlsFacet.class);
         val metadata = metadataFacet.get();
         tlsFacet

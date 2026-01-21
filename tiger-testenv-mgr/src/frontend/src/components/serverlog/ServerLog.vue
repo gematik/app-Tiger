@@ -42,8 +42,11 @@
                 >
                   <div
                     id="test-server-log-pane-server-all"
-                    class="btn active server-buttons"
-                    @click="setServer(selectedServers, '__all__', $event)"
+                    :class="[
+                      'btn server-buttons',
+                      isServerSelected(ALL) ? 'active' : '',
+                    ]"
+                    @click.prevent="toggleServer(ALL)"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -64,8 +67,11 @@
                   >
                     <div
                       :id="`test-server-log-pane-server-${serverName}`"
-                      class="btn server-buttons"
-                      @click="setServer(selectedServers, serverName, $event)"
+                      :class="[
+                        'btn server-buttons',
+                        isServerSelected(serverName) ? 'active' : '',
+                      ]"
+                      @click.prevent="toggleServer(serverName)"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -150,16 +156,15 @@ import LogLevel from "@/types/LogLevel";
 import { DateTimeFormatter, LocalDateTime } from "@js-joda/core";
 import { ref } from "vue";
 
-const props = defineProps<{
+defineProps<{
   serverLogs: Array<TigerServerLogDto>;
   logServers: Array<string>;
-  selectedServers: Array<string>;
-  selectedLoglevel: string;
-  selectedText: string;
 }>();
 
-const selectedText = ref(props.selectedText);
-const selectedLoglevel = ref(props.selectedLoglevel);
+const ALL: string = "__all__";
+const selectedText = ref("");
+const selectedLoglevel = ref(LogLevel.ALL.toString());
+const selectedServers = ref<Set<string>>(new Set([ALL]));
 
 const formatter: DateTimeFormatter = DateTimeFormatter.ofPattern(
   "MM/dd/yyyy HH:mm:ss.SSS",
@@ -172,44 +177,24 @@ function getReadableTime(localDateTime: LocalDateTime): string {
   return "";
 }
 
-const ALL: string = "__all__";
+function isServerSelected(serverId: string): boolean {
+  return selectedServers.value.has(serverId);
+}
 
-function setServer(
-  selectedServers: Array<string>,
-  serverId: string,
-  event: MouseEvent,
-) {
-  event.preventDefault();
-  const buttons = document.getElementsByClassName("server-buttons");
+function toggleServer(serverId: string) {
   if (serverId === ALL) {
-    for (const button of buttons) {
-      button.classList.toggle("active", false);
-    }
-    if (selectedServers.length > 0) {
-      selectedServers.splice(0, selectedServers.length);
-    }
-  }
-  for (const button of buttons) {
-    if (button.textContent.trim() === "Show all logs") {
-      button.classList.toggle("active", false);
-      const index = selectedServers.findIndex((server) => server === ALL);
-      if (index > -1) {
-        selectedServers.splice(index, 1);
-      }
-    }
-  }
-  if (selectedServers.includes(serverId)) {
-    const index = selectedServers.findIndex((server) => server === serverId);
-    selectedServers.splice(index, 1);
-    (event.target as HTMLElement)?.classList?.toggle("active", false);
-    // check if all server were deactived -> automatically activate all-server-button
-    if (selectedServers.length == 0) {
-      selectedServers.push(ALL);
-      buttons[0].classList?.toggle("active", true);
-    }
+    selectedServers.value = new Set([ALL]);
   } else {
-    selectedServers.push(serverId);
-    (event.target as HTMLElement)?.classList?.toggle("active", true);
+    selectedServers.value.delete(ALL);
+    if (selectedServers.value.has(serverId)) {
+      selectedServers.value.delete(serverId);
+    } else {
+      selectedServers.value.add(serverId);
+    }
+  }
+  // check if all server were deactived -> automatically activate all-server-button
+  if (selectedServers.value.size === 0) {
+    toggleServer(ALL);
   }
 }
 
@@ -224,17 +209,17 @@ function getLogLevel(): Array<string> {
 
 function filteredLogs(
   serverLogs: Array<TigerServerLogDto>,
-  selectedServers: Array<string>,
+  selectedServers: Set<string>,
   selectedText: string,
   selectedLoglevel: string,
 ) {
   if (
     selectedServers &&
-    selectedServers.length > 0 &&
-    selectedServers.indexOf(ALL) === -1
+    selectedServers.size > 0 &&
+    !selectedServers.has(ALL)
   ) {
     return serverLogs.filter((log) => {
-      return selectedServers.some((selectedServer) => {
+      return Array.from(selectedServers).some((selectedServer) => {
         const filteredLog = filterLogLevel(log, selectedText, selectedLoglevel);
         if (selectedServer === (log.serverName as string)) {
           return filteredLog;

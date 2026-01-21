@@ -39,16 +39,21 @@ import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
@@ -989,6 +994,40 @@ public class TigerConfigurationTest { // NOSONAR
               .constructCollectionType(List.class, Integer.class);
       assertThatExceptionOfType(TigerConfigurationException.class)
           .isThrownBy(() -> TigerGlobalConfiguration.instantiateConfigurationBean(type, "strings"));
+    }
+
+    @MethodSource("caseSensitivityCombinations")
+    @ParameterizedTest
+    void thatKeysAreCaseInsensitive(final String data, final String baseKeys) {
+      TigerGlobalConfiguration.reset();
+      TigerGlobalConfiguration.readFromYaml(data);
+
+      final CollectionType type =
+          TigerGlobalConfiguration.getObjectMapper()
+              .getTypeFactory()
+              .constructCollectionType(List.class, String.class);
+      final List<String> actual =
+          TigerGlobalConfiguration.instantiateConfigurationBean(type, baseKeys);
+      assertThat(actual).containsExactlyInAnyOrder("hello", "world");
+    }
+
+    /**
+     * Generates all possible combinations of case-sensitive data and keys to retrieve the data.
+     * Verify that we don't just convert the initial character etc.
+     */
+    static Stream<Arguments> caseSensitivityCombinations() {
+      final String dataTemplate = "%s: [hello, world]";
+      final Set<String> keys = Set.of("Strings", "strings", "sTRiNgs", "STRINGS");
+
+      List<Arguments> arguments = new ArrayList<>(keys.size() * keys.size());
+      for (final String templateKey : keys) {
+        for (final String getKey : keys) {
+          final String data = dataTemplate.formatted(templateKey);
+          arguments.add(Arguments.of(data, getKey));
+        }
+      }
+
+      return arguments.stream();
     }
   }
 

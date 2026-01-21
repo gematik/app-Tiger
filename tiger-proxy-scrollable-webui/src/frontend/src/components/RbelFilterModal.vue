@@ -27,10 +27,12 @@ import { toastSymbol } from "../Toast.ts";
 import { messageQueueSymbol } from "@/api/MessageQueue.ts";
 import { computedWithControl, refWithControl } from "@vueuse/core";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { settingsSymbol } from "../Settings.ts";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
 const messageQueue = inject(messageQueueSymbol)!;
 const toast = inject(toastSymbol)!;
+const rbelHelp = inject(settingsSymbol)!;
 
 const isRbelPathInvalid = ref(false);
 const filter = useRbelTestFilter({
@@ -55,6 +57,7 @@ onMounted(() => {
     modalRef.value.addEventListener("show.bs.modal", () => {
       rbelPath.value = rbelFilter.rbelPath.value;
       filter.testRbel(rbelPath.value);
+      showHelpSection.value = !rbelHelp.hideRbelHelp.value;
     });
   }
 });
@@ -91,6 +94,13 @@ function appendSender(sender: string) {
 
 function appendReceiver(receiver: string) {
   rbelPath.value += `$.receiver == "${receiver}"`;
+}
+
+const showHelpSection = ref(false);
+
+function toggleHelpSection() {
+  showHelpSection.value = !showHelpSection.value;
+  rbelHelp.hideRbelHelp.value = !showHelpSection.value;
 }
 </script>
 
@@ -160,8 +170,30 @@ function appendReceiver(receiver: string) {
             </div>
           </div>
           <div class="mt-4 f-caption">
-            <span class="fw-semibold">RBeL-Path Quick Help</span>
-            <div>
+            <div class="d-flex align-items-center justify-content-between">
+              <span class="fw-semibold">RBeL-Path Quick Help</span>
+              <button
+                type="button"
+                :class="[
+                  'fa-solid',
+                  'toggle-icon',
+                  'msg-toggle',
+                  'has-text-link',
+                  showHelpSection ? 'fa-toggle-on' : 'fa-toggle-off',
+                ]"
+                aria-label="switch help on/off"
+                @click="toggleHelpSection"
+                style="
+                  font-size: 1rem;
+                  border: none;
+                  background: transparent;
+                  padding: 0;
+                  margin-left: 1rem;
+                  cursor: pointer;
+                "
+              ></button>
+            </div>
+            <div v-if="showHelpSection">
               <p>
                 RBeL-Path is a powerful expression language inspired by XPath and JSON-Path,
                 designed for quick navigation of captured RBeL-Traffic (RbelElement-tree). For
