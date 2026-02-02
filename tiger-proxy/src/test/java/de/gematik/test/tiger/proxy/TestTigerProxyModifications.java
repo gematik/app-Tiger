@@ -241,6 +241,41 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
   }
 
   @Test
+  void regexModificationRemovesPoppHeaderLine() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header")
+                        .regexFilter("(?m)^popp:\\s*[^\\n]*\\n?")
+                        .replaceWith("")
+                        .build()))
+            .build());
+
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+        .header("abc", "dummy-value")
+        .header("popp", "dummy-token")
+        .header("zyx", "value")
+        .asString();
+    awaitMessagesInTigerProxy(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .doesNotHaveChildWithPath("$.header.popp");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .hasChildWithPath("$.header.abc");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .hasChildWithPath("$.header.zyx");
+  }
+
+  @Test
   void noModificationsForwardProxy_shouldLeaveBinaryContentUntouched() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 

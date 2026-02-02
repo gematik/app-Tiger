@@ -38,11 +38,15 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +112,18 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
       return;
     }
     request.withBody(extractSafe(modifiedRequest, "$.body").getRawContent());
-    for (RbelElement modifiedHeader : modifiedRequest.findRbelPathMembers("$.header.*")) {
+    final List<RbelElement> modifiedHeaders = modifiedRequest.findRbelPathMembers("$.header.*");
+    final Set<String> modifiedHeaderNames =
+        modifiedHeaders.stream()
+            .map(header -> header.getKey().orElseThrow())
+            .map(name -> name.toLowerCase(Locale.ROOT))
+            .collect(Collectors.toSet());
+    for (String existingHeader : new ArrayList<>(request.getHeaders().keySet())) {
+      if (!modifiedHeaderNames.contains(existingHeader.toLowerCase(Locale.ROOT))) {
+        request.removeHeader(existingHeader);
+      }
+    }
+    for (RbelElement modifiedHeader : modifiedHeaders) {
       request =
           request.replaceHeader(
               header(modifiedHeader.getKey().orElseThrow(), modifiedHeader.getRawStringContent()));
