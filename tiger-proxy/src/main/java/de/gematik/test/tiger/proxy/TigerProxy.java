@@ -280,6 +280,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                             getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                         .requireHealthyTrafficEndpoints(
                             getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints())
+                        .enableLegacyTraffic(getTigerProxyConfiguration().isEnableLegacyTraffic())
                         .build(),
                     this))
         .forEach(remoteProxyClients::add);
@@ -585,9 +586,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     remoteProxyClients.forEach(TigerRemoteProxyClient::waitForAllParsingTasksToBeFinished);
     mockServer.waitForAllParsingTasksToBeFinished();
 
-    if (!getRbelLogger().getMessageHistory().isEmpty()) {
-      getRbelLogger().getRbelConverter().waitForAllCurrentMessagesToBeParsed();
-    }
+    getRbelLogger().getRbelConverter().waitForAllCurrentMessagesToBeParsed();
   }
 
   private static class TigerProxyTrustManagerBuildingException extends RuntimeException {

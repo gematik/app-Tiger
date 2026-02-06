@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
@@ -28,6 +29,7 @@ import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.IRbelMessageListener;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -37,13 +39,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyPair;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -175,7 +176,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {
     log.info("Trying to read traffic from file '{}'...", sourceFile);
     try {
-      List<RbelElement> readElements = readTraffic(Path.of(sourceFile).toFile());
+      List<RbelElement> readElements =
+          readTraffic(TigerGlobalConfiguration.resolveRelativePathToTigerYaml(sourceFile).toFile());
       log.info("Successfully read and parsed traffic from file '{}'!", sourceFile);
       return readElements;
     } catch (IOException | RuntimeException e) {
@@ -362,8 +364,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     getRbelLogger().getRbelConverter().clearAllMessages();
   }
 
-  public Deque<RbelElement> getRbelMessages() {
-    return getRbelLogger().getMessageHistory();
+  public RbelMessageHistory.Facade getMessageHistory() {
+    return getRbelLogger().getRbelConverter().getMessageHistory();
+  }
+
+  public Collection<RbelElement> getMessages() {
+    return getMessageHistory().getMessages();
   }
 
   /*

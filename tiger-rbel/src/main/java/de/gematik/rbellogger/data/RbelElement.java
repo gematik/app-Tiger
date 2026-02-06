@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.util.*;
+import de.gematik.test.tiger.common.util.RecursiveTreeIterator;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
@@ -42,6 +43,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 @Slf4j
@@ -52,6 +54,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   private final String uuid;
+  public Optional<Long> sequenceNumber = Optional.empty();
   private final RbelContent content;
   private WeakReference<Triple<String, Charset, Integer>> rawStringContent =
       new WeakReference<>(null);
@@ -123,6 +126,17 @@ public class RbelElement extends RbelPathAble {
         .content(content)
         .parentNode(parentNode)
         .charset(charset.orElse(null));
+  }
+
+  public Optional<Long> getSequenceNumber() {
+    if (parentNode != null) {
+      return parentNode.getSequenceNumber();
+    }
+    return sequenceNumber;
+  }
+
+  public void setSequenceNumber(Long sequenceNumber) {
+    this.sequenceNumber = Optional.of(sequenceNumber);
   }
 
   public void setUsedBytes(int usedBytes) {
@@ -225,92 +239,61 @@ public class RbelElement extends RbelPathAble {
     return this;
   }
 
+  public @NotNull Stream<Entry<String, RbelElement>> getChildNodesWithKeyStream() {
+    return facets.stream()
+        .flatMap(facet -> facet.getChildElements().stream())
+        .filter(e -> e.getValue() != null);
+  }
+
   @Override
   public List<RbelElement> getChildNodes() {
-    // please do not convert into for-each: highly performance critical method both for rendering
-    // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
-    // verification.
-    val result = new LinkedList<RbelElement>();
-    for (Iterator<RbelFacet> facetIterator = facets.iterator();
-        facetIterator.hasNext(); ) { // NOSONAR
-      var facet = facetIterator.next();
-      for (Iterator<Entry<String, RbelElement>> childElementIterator =
-              facet.getChildElements().iterator();
-          childElementIterator.hasNext(); ) {
-        final Entry<?, ?> next = childElementIterator.next();
-        final RbelElement child = ((RbelElement) next.getValue());
-        if (child != null) {
-          result.add(child);
-        }
-      }
-    }
-    return result;
+    return super.getChildNodes();
+  }
+
+  @Override
+  public Stream<RbelElement> getChildNodesStream() {
+    return super.getChildNodesStream();
   }
 
   @Override
   public RbelMultiMap<RbelElement> getChildNodesWithKey() {
-    // please do not convert into for-each: highly performance critical method both for rendering
-    // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
-    // verification.
-    val result = new RbelMultiMap<RbelElement>();
-    for (Iterator<RbelFacet> facetIterator = facets.iterator();
-        facetIterator.hasNext(); ) { // NOSONAR
-      val facet = facetIterator.next();
-      for (Iterator<Entry<String, RbelElement>> childElementIterator =
-              facet.getChildElements().iterator();
-          childElementIterator.hasNext(); ) {
-        final Entry<String, RbelElement> childElement = childElementIterator.next();
-        if (childElement.getValue() != null) {
-          result.put(childElement);
-        }
-      }
-    }
-    return result;
+    return getChildNodesWithKeyStream().collect(RbelMultiMap.COLLECTOR);
+  }
+
+  public Stream<RbelElement> traverseNestedMembers() {
+    return new RecursiveTreeIterator<RbelElement>(
+            getChildNodes().iterator(),
+            el -> {
+              log.atTrace()
+                  .addArgument(el::findNodePath)
+                  .addArgument(
+                      () ->
+                          el.facets.stream()
+                              .map(Object::getClass)
+                              .map(Class::getSimpleName)
+                              .toList())
+                  .log("Traversing into {}: facets are {}");
+              return el.hasFacet(RbelRootFacet.class)
+                  ? Collections.emptyIterator()
+                  : el.getChildNodes().iterator();
+            })
+        .stream().filter(el -> el.hasFacet(RbelRootFacet.class));
   }
 
   public List<RbelElement> traverseAndReturnNestedMembers() {
-    val result = new ArrayList<RbelElement>();
-    traverseAndReturnNestedMembers(result);
-    return result;
-  }
-
-  public void traverseAndReturnNestedMembers(List<RbelElement> result) {
-    // please do not convert into for-each: highly performance critical method both for rendering
-    // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
-    // verification.
-    for (Iterator<RbelElement> iterator = getChildNodes().iterator(); iterator.hasNext(); ) {
-      RbelElement element = iterator.next();
-      if (element != null) {
-        element.traverseAndReturnNestedMembersInternal(result);
-      }
-    }
-  }
-
-  private void traverseAndReturnNestedMembersInternal(List<RbelElement> result) {
-    log.atTrace()
-        .addArgument(this::findNodePath)
-        .addArgument(() -> facets.stream().map(Object::getClass).map(Class::getSimpleName).toList())
-        .log("Traversing into {}: facets are {}");
-    if (hasFacet(RbelRootFacet.class)) {
-      result.add(this);
-    } else {
-      traverseAndReturnNestedMembers(result);
-    }
+    return traverseNestedMembers().toList();
   }
 
   @Override
   public Optional<RbelElement> getFirst(String key) {
-    return getChildNodesWithKey().stream()
+    return getChildNodesWithKeyStream()
         .filter(entry -> entry.getKey().equals(key))
         .map(Map.Entry::getValue)
         .findFirst();
   }
 
   public Optional<RbelElement> getFirstIgnoringCase(String key) {
-    return getChildNodesWithKey().stream()
+    return getChildNodesWithKeyStream()
         .filter(entry -> entry.getKey().equalsIgnoreCase(key))
         .map(Map.Entry::getValue)
         .findFirst();
@@ -318,7 +301,7 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelElement> getAll(String key) {
-    return getChildNodesWithKey().stream()
+    return getChildNodesWithKeyStream()
         .filter(entry -> entry.getKey().equals(key))
         .map(Map.Entry::getValue)
         .toList();
@@ -530,27 +513,22 @@ public class RbelElement extends RbelPathAble {
   }
 
   public <F extends RbelFacet> List<F> findAllNestedFacets(Class<F> rbelFacetClass) {
-    return getChildNodes().stream()
-        .map(child -> findAllNestedElementsWithFacet(child, rbelFacetClass))
-        .flatMap(List::stream)
+    return findAllNestedFacetsStream(rbelFacetClass).toList();
+  }
+
+  public <F extends RbelFacet> Stream<F> findAllNestedFacetsStream(Class<F> rbelFacetClass) {
+    return getChildNodesStream()
+        .flatMap(child -> findAllNestedElementsWithFacet(child, rbelFacetClass))
         .map(RbelElement::getFacets)
         .flatMap(Queue::stream)
         .filter(rbelFacetClass::isInstance)
-        .map(rbelFacetClass::cast)
-        .toList();
+        .map(rbelFacetClass::cast);
   }
 
-  private static List<RbelElement> findAllNestedElementsWithFacet(
+  private static Stream<RbelElement> findAllNestedElementsWithFacet(
       RbelElement target, Class<? extends RbelFacet> rbelFacetClass) {
-    List<RbelElement> result = new ArrayList<>();
-    if (target.hasFacet(rbelFacetClass)) {
-      result.add(target);
-    }
-    target
-        .getChildNodes()
-        .forEach(child -> result.addAll(findAllNestedElementsWithFacet(child, rbelFacetClass)));
-
-    return result;
+    return new RecursiveTreeIterator<>(target, e -> e.getChildNodes().iterator())
+        .stream().filter(e -> e.hasFacet(rbelFacetClass));
   }
 
   public RbelConversionPhase getConversionPhase() {

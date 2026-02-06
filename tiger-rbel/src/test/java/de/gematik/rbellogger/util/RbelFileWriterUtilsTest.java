@@ -78,10 +78,10 @@ class RbelFileWriterUtilsTest {
         FileUtils.readFileToString(new File("src/test/resources/trafficLog.tgr"));
     rbelFileWriter.convertFromRbelFile(rawSavedVauMessages, Optional.empty());
 
-    int initialNumberOfMessage = rbelLogger.getMessageHistory().size();
+    int initialNumberOfMessage = rbelLogger.getMessages().size();
     rbelFileWriter.convertFromRbelFile(rawSavedVauMessages, Optional.empty());
 
-    assertThat(rbelLogger.getMessageHistory()).hasSize(initialNumberOfMessage);
+    assertThat(rbelLogger.getMessages()).hasSize(initialNumberOfMessage);
   }
 
   @Test

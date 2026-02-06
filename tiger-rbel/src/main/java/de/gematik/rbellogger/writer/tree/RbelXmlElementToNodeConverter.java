@@ -53,7 +53,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
   public RbelContentTreeNode convert(
       RbelElement el, TigerConfigurationLoader context, RbelContentTreeConverter converter) {
     final RbelMultiMap<RbelContentTreeNode> map =
-        el.getChildNodesWithKey().stream()
+        el.getChildNodesWithKeyStream()
             .flatMap(
                 entry ->
                     convertNode(context, converter, entry).stream()
@@ -89,9 +89,7 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
       // manage pulling up/down of text-nodes in mode-switches
       if (entry.getValue().hasFacet(RbelXmlFacet.class)) {
         final List<RbelContentTreeNode> childNodes = new ArrayList<>();
-        for (RbelContentTreeNode childNode : node.getChildNodes()) {
-          addChildNode(node, childNode, childNodes);
-        }
+        node.getChildNodesStream().forEach(childNode -> addChildNode(node, childNode, childNodes));
         node.setupChildNodes(childNodes);
         entry
             .getValue()

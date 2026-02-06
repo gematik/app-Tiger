@@ -124,9 +124,9 @@ class MismatchNotesForwardingTest extends AbstractTigerSerenityEnvStatusTest {
   private Pair<RbelElement, RbelMismatchNoteFacet> buildMismatchPair(
       RbelMismatchNoteFacet.MismatchType type, long sequence, String message) {
     RbelElement root = new RbelElement();
+    root.setSequenceNumber(sequence);
     root.addFacet(
         RbelTcpIpMessageFacet.builder()
-            .sequenceNumber(sequence)
             .sender(new RbelElement())
             .receiver(new RbelElement())
             .receivedFromRemoteWithUrl(null)

@@ -43,19 +43,9 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
     RbelHtmlRenderer.registerFacetRenderer(new RbelMessageRenderer());
   }
 
-  private final Long sequenceNumber;
   private final String receivedFromRemoteWithUrl;
   private final RbelElement sender;
   private final RbelElement receiver;
-
-  public static Long getSequenceNumber(RbelElement msg) {
-    while (msg.getParentNode() != null) {
-      msg = msg.getParentNode();
-    }
-    return msg.getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-        .orElse(-1L);
-  }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

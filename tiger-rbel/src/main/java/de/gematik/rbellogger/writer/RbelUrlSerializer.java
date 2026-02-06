@@ -22,7 +22,6 @@ package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -48,8 +47,8 @@ public class RbelUrlSerializer implements RbelSerializer {
   private Optional<String> getQueryString(
       Optional<RbelContentTreeNode> headers, RbelWriterInstance rbelWriter) {
     return Optional.of(
-            headers.map(RbelContentTreeNode::getChildNodes).stream()
-                .flatMap(Collection::stream)
+            headers.stream()
+                .flatMap(RbelContentTreeNode::getChildNodesStream)
                 .map(
                     header ->
                         header.getKey().orElseThrow()

@@ -246,7 +246,7 @@ public abstract class AbstractTigerProxyTest {
           .atMost(20, TimeUnit.SECONDS)
           .until(
               () ->
-                  proxyToCheck.getRbelLogger().getMessageHistory().stream()
+                  proxyToCheck.getRbelLogger().getMessages().stream()
                           .filter(el -> el.getConversionPhase().isFinished())
                           .count()
                       >= numberOfMessagesExpected);
@@ -254,7 +254,7 @@ public abstract class AbstractTigerProxyTest {
       log.error("Timed out waiting for tiger to receive {} messages", numberOfMessagesExpected);
       proxyToCheck
           .getRbelLogger()
-          .getMessageHistory()
+          .getMessages()
           .forEach(el -> log.error("Message {}: {}", el.getUuid(), el.printTreeStructure()));
       throw e;
     }

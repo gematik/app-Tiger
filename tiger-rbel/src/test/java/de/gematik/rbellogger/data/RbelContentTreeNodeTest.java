@@ -21,6 +21,7 @@
 package de.gematik.rbellogger.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 import de.gematik.rbellogger.RbelConverter;
@@ -28,6 +29,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.nio.charset.StandardCharsets;
@@ -213,5 +215,121 @@ class RbelContentTreeNodeTest {
     RbelElementAssertion.assertThat(converter.convertElement(builder.serialize(), null))
         .hasStringContentEqualToAtPosition("$.foo", "bar")
         .doesNotHaveChildWithPath("$.alice");
+  }
+
+  @Test
+  void testUpdateContentUpdatesParentChildrenMap() {
+    // 1. Setup Parent and Child
+    RbelContentTreeNode parent =
+        new RbelContentTreeNode(new RbelMultiMap<>(), "parent".getBytes(StandardCharsets.UTF_8));
+    RbelContentTreeNode child =
+        new RbelContentTreeNode(new RbelMultiMap<>(), "<child/>".getBytes(StandardCharsets.UTF_8));
+
+    child.setType(RbelContentType.XML);
+    child.setKey("child");
+    child.setParentNode(parent); // Link parent, but do NOT add to parent's children map
+
+    // Validate precondition: Child is NOT known to parent
+    assertThat(parent.getChildNodesWithKey().get("child")).isNull();
+
+    // 2. Trigger updateContent
+    // we change the child to trigger updateAncestorContent -> updateContent
+    child.setChildNodes(new RbelMultiMap<>());
+
+    // 3. Verify that the parent map was updated
+    assertThat(parent.getChildNodesWithKey().get("child"))
+        .as("Child SHOULD be added to parent map after updateContent()")
+        .isNotNull()
+        .isEqualTo(child);
+  }
+
+  @Test
+  void shouldReplaceExistingChildCorrectly() {
+    // START: Create a simple tree
+    // root -> { "child1": "value1", "child2": "value2" }
+    RbelContentTreeNode child1 =
+        new RbelContentTreeNode(null, "value1".getBytes(StandardCharsets.UTF_8));
+    RbelContentTreeNode child2 =
+        new RbelContentTreeNode(null, "value2".getBytes(StandardCharsets.UTF_8));
+
+    RbelMultiMap<RbelContentTreeNode> initialChildren = new RbelMultiMap<>();
+    initialChildren.put("child1", child1);
+    initialChildren.put("child2", child2);
+
+    RbelContentTreeNode root =
+        new RbelContentTreeNode(initialChildren, "root".getBytes(StandardCharsets.UTF_8));
+
+    // Ensure initial state
+    assertThat(root.getChildNodesWithKey().getAll("child1")).hasSize(1).contains(child1);
+    assertThat(root.getChildNodesWithKey().getAll("child2")).hasSize(1).contains(child2);
+    assertThat(child1.getParentNode()).isEqualTo(root);
+
+    // START: Replacement
+    RbelContentTreeNode newChild1 =
+        new RbelContentTreeNode(null, "newValue1".getBytes(StandardCharsets.UTF_8));
+    root.addOrReplaceChild("child1", newChild1);
+
+    // VERIFY: Old child is gone, new child is present
+    assertThat(root.getChildNodesWithKey().getAll("child1"))
+        .hasSize(1)
+        .contains(newChild1)
+        .doesNotContain(child1);
+
+    // VERIFY: Sibling is unaffected
+    assertThat(root.getChildNodesWithKey().getAll("child2")).hasSize(1).contains(child2);
+
+    // VERIFY: Parent linkage
+    assertThat(newChild1.getParentNode()).isEqualTo(root);
+    assertThat(newChild1.getKey()).hasValue("child1");
+
+    // VERIFY: updateContent() was called and worked (serialization updated)
+    // Note: Since we constructed the tree manually and didn't set a specific type (XML/JSON),
+    // serialization might depend on defaults or need explicit type setting for exact format check.
+    // But it should at least contain the new value.
+    assertThat(root.getChildNodesWithKey().getAll("child1").get(0).getRawStringContent())
+        .as("Root content should be updated via updateContent()")
+        .contains("newValue1")
+        .doesNotContain("value1");
+  }
+
+  @Test
+  void shouldAddNewChildIfKeyMissing() {
+    RbelContentTreeNode root =
+        new RbelContentTreeNode(new RbelMultiMap<>(), "root".getBytes(StandardCharsets.UTF_8));
+
+    RbelContentTreeNode newChild =
+        new RbelContentTreeNode(null, "value".getBytes(StandardCharsets.UTF_8));
+    root.addOrReplaceChild("newKey", newChild);
+
+    assertThat(root.getChildNodesWithKey().getAll("newKey")).hasSize(1).contains(newChild);
+
+    assertThat(newChild.getParentNode()).isEqualTo(root);
+    assertThat(newChild.getKey()).hasValue("newKey");
+
+    assertThat(root.getChildNodesWithKey().getAll("newKey").get(0).getRawStringContent())
+        .as("Root content should be updated via updateContent()")
+        .contains("value");
+  }
+
+  @Test
+  void shouldThrowOnDuplicateKeyReplacement() {
+    RbelContentTreeNode child1a =
+        new RbelContentTreeNode(null, "v1".getBytes(StandardCharsets.UTF_8));
+    RbelContentTreeNode child1b =
+        new RbelContentTreeNode(null, "v2".getBytes(StandardCharsets.UTF_8));
+
+    RbelMultiMap<RbelContentTreeNode> children = new RbelMultiMap<>();
+    children.put("duplicateKey", child1a);
+    children.put("duplicateKey", child1b);
+
+    RbelContentTreeNode root =
+        new RbelContentTreeNode(children, "root".getBytes(StandardCharsets.UTF_8));
+
+    RbelContentTreeNode replacement =
+        new RbelContentTreeNode(null, "replacement".getBytes(StandardCharsets.UTF_8));
+
+    assertThatThrownBy(() -> root.addOrReplaceChild("duplicateKey", replacement))
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("multiple entries with that key existed");
   }
 }

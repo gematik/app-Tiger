@@ -76,7 +76,7 @@ public class MetaMessageScrollableDto {
                 .map(RbelMessageInfoFacet::getMenuInfoString)
                 .orElse("<noMenuInfoString>"))
         .additionalInfoStrings(
-            el.findAllNestedFacets(RbelMessageInfoFacet.class).stream()
+            el.findAllNestedFacetsStream(RbelMessageInfoFacet.class)
                 .map(RbelMessageInfoFacet::getMenuInfoString)
                 .toList())
         .isRequest(el.hasFacet(RbelRequestFacet.class))
@@ -88,9 +88,6 @@ public class MetaMessageScrollableDto {
   }
 
   public static long getElementSequenceNumber(RbelElement rbelElement) {
-    return rbelElement
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-        .orElse(-1L);
+    return rbelElement.getSequenceNumber().orElse(-1L);
   }
 }

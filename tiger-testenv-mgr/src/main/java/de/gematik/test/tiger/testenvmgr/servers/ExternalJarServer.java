@@ -94,7 +94,11 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
               getServerId());
         } else {
           folder =
-              Path.of(System.getProperty("java.io.tmpdir"), "tiger_ls").toFile().getAbsolutePath();
+              TigerGlobalConfiguration.resolveRelativePathToTigerYaml(
+                      System.getProperty("java.io.tmpdir"))
+                  .resolve("tiger_ls")
+                  .toFile()
+                  .getAbsolutePath();
           log.info(
               "Defaulting to temp folder '{}' as working directory for server {}",
               folder,
@@ -112,12 +116,18 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
   @Override
   public void performStartup() {
-    final String workingDir;
+    final Path workingDir;
     final CfgExternalJarOptions externalJarOptions = getConfiguration().getExternalJarOptions();
     if (externalJarOptions != null) {
-      workingDir = getConfiguration().getExternalJarOptions().getWorkingDir();
+      String workingDirStr = getConfiguration().getExternalJarOptions().getWorkingDir();
+      Path workingDirPath = Paths.get(workingDirStr);
+      if (!workingDirPath.isAbsolute()) {
+        workingDir = TigerGlobalConfiguration.resolveRelativePathToTigerYaml(workingDirStr);
+      } else {
+        workingDir = workingDirPath;
+      }
     } else {
-      workingDir = new File(".").getAbsolutePath();
+      workingDir = TigerGlobalConfiguration.resolveRelativePathToTigerYaml(".");
     }
     setStatus(
         TigerServerStatus.STARTING,
@@ -147,7 +157,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
         "Running '"
             + String.join(" ", options)
             + "' in folder '"
-            + new File(workingDir).getAbsolutePath()
+            + workingDir.toAbsolutePath()
             + "'");
     processStartTime = now();
     getTigerTestEnvMgr()
@@ -159,7 +169,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                 final ProcessBuilder processBuilder =
                     new ProcessBuilder()
                         .command(options.toArray(String[]::new))
-                        .directory(new File(workingDir))
+                        .directory(workingDir.toFile())
                         .redirectErrorStream(true);
                 applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());

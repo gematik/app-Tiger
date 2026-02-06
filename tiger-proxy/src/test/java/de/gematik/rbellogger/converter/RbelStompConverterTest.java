@@ -53,7 +53,7 @@ class RbelStompConverterTest {
   @Test
   void shouldRecognizeStompConnectMessage() {
     final RbelElement stompConnectMessage =
-        rbelLogger.getMessageHistory().stream().skip(7).findFirst().get();
+        rbelLogger.getMessages().stream().skip(7).findFirst().get();
 
     assertThat(stompConnectMessage)
         .hasGivenFacetAtPosition("$.payload.0.content", RbelStompFacet.class)
@@ -66,7 +66,7 @@ class RbelStompConverterTest {
   @Test
   void shouldRecognizeStompConnectedMessage() {
     final RbelElement stompConnectedMessage =
-        rbelLogger.getMessageHistory().stream().skip(8).findFirst().get();
+        rbelLogger.getMessages().stream().skip(8).findFirst().get();
 
     assertThat(stompConnectedMessage)
         .hasGivenFacetAtPosition("$.payload.content.0.content", RbelStompFacet.class)
@@ -79,7 +79,7 @@ class RbelStompConverterTest {
   @Test
   void shouldRecognizeStompSubscribeMessage() {
     final RbelElement stompSubscribeMessage =
-        rbelLogger.getMessageHistory().stream().skip(9).findFirst().get();
+        rbelLogger.getMessages().stream().skip(9).findFirst().get();
 
     assertThat(stompSubscribeMessage)
         .hasGivenFacetAtPosition("$.payload.0.content", RbelStompFacet.class)
@@ -95,7 +95,7 @@ class RbelStompConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtmlIncludingHeaders() {
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
 
     Assertions.assertThat(html)
         .contains("<h1 class=\"font-monospace title\">STOMP<span>(CONNECT)</span>")

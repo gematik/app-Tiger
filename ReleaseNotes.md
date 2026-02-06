@@ -1,5 +1,59 @@
 # Changelog Tiger Test platform
 
+# Release 4.1.17
+
+## Breaking Changes
+
+* TGR-2028: Tiger now resolves file paths more strictly relative to the tiger.yaml location. So if your tiger.yaml
+  location is different from the working directory where the tiger process is started, you need to adjust all file paths
+  in the configuration to be relative to the tiger.yaml location or use absolute paths.
+
+* TGR-2019: Refactored message history to be more scalable for large message volumes, especially for finding messages
+  by sequence number or uuid and navigate through messages forwards and backwards.
+
+## Features
+
+* TGR-2030: LDAP converter now adds missing structures for protocol Op, as well as control structures,
+  both for the rbel tree as well as the html rendering.
+* TGR-2028: Added a new property `tiger.rootFolder` that will automatically be set to the parent folder of the
+  tiger.yaml configuration file. This allows to reference files relative to the tiger.yaml location.
+* TGR-1971: Tiger-Proxy: add support for subscribing to traffic of old tiger-proxy versions ( version < 3.8.0 ) with
+  current tiger-proxy.
+  When a remote proxy is running in a old version, we can start a local tiger proxy with the option
+  `enableLegacyTraffic` and we can read the traffic from the old proxy. Example configuration for the local proxy:
+
+```yaml
+tigerProxy:
+  adminPort: 8181
+  proxyPort: 9191
+  trafficEndpoints:
+    - http://myremote.proxy.address:38181 # example address where the old tiger-proxy is running
+  enableLegacyTraffic: true
+ ```
+
+* TGR-2018: Tiger-Proxy: a single proxy can now listen on multiple ports for incoming traffic. E.g.:
+
+```yaml
+tigerProxy:
+  adminPort: 8181
+  proxyPort: 9191
+  additionalProxyPorts:
+    - 9292
+```
+
+* TGR-2035: step added to unset variable
+
+## Bugfixes
+
+* TGR-2029: When message can't be decoded as LDAP, we don't throw an exception.
+* TGR-2046: Make sure that the request of a response being handled is already fully parsed to
+  avoid failing JEXL expressions referencing parts of the request, e.g. for modification conditions.
+* TGR-1988: Fixed an issue where routing from root ("/") to a target with a trailing slash caused missing
+  leading slashes in forwarded paths for relative requests (e.g. "VAU/bla").
+* TGR-2010: Avoid unnecessary stream-to-list conversions when evaluating rbel paths.
+* TGR-2026: Tiger-Proxy: Fixed an issue where the modification of POP3 messages in directReverseProxy did not work as
+  expected.
+
 # Release 4.1.16
 
 ## Features
@@ -18,23 +72,31 @@
 @When("TGR find request with host {string} and port {string}")
 
 /**
+ * filter all subsequent findRequest steps for port. To reset set port to empty string
+ * "".
+ *
+ * @param port to filter for
+ */
+@Wenn("TGR filtere Anfragen nach Port {tigerResolvedString}")
+@When("TGR filter requests based on port {tigerResolvedString}")
+
+/**
  * find the NEXT request on the same connection as the last found request and memorize it in the {@link #rbelMessageRetriever} instance
  */
 @Wenn("TGR finde die nächste Anfrage auf derselben Verbindung")
 @When("TGR find next request on same connection")
 ```
+
 * TGR-1758: Proxy Web UI - Toggle for Help Texts
 * TGR-2016: Tiger-Proxy: display tiger version on the tiger proxy web ui
 
 ## Bugfixes
 
-* TGR-2015: Tiger-Proxy: fixed an issue where VAU traffic was not correctly decrypted when the `VAU-nonPU-Tracing` header had a different case.
+* TGR-2015: Tiger-Proxy: fixed an issue where VAU traffic was not correctly decrypted when the `VAU-nonPU-Tracing`
+  header had a different case.
 * TGR-2008: Performance enhancement when managing rbel log buffer (avoid linear re-computation of buffer size)
 * TGR-2014: Improved performance of iteration over AsyncByteQueue for stream-based protocol handling (e.g. POP3/SMTP)
   in case of high throughput.
-
-## Bugfixes
-
 * TGR-2013: Downloading messages from tiger proxies doesn't apply filters to more elements than necessary.
 
   This changes the semantics of the 'available-messages' result property to number-of-found-messages +
@@ -42,18 +104,6 @@
 
   Thus, in case that 'available-messages' is greater than the number of messages in the downloaded log,
   there are only **potentially** more messages to download.
-  If you want to download **all** matching messages, you need to repeat until the number of 'availble-messages' is <=
-  the given page size.
-
-## Bugfixes
-
-* TGR-2013: Downloading messages from tiger proxies doesn't apply filters to more elements than necessary.
-
-  This changes the semantics of the 'available-messages' result property to number-of-found-messages +
-  number-of-unchecked-messages.
-
-  Thus, in case that 'available-messages' is greater than the number of messages in the downloaded log, there are only *
-  *potentially** more messages to download.
   If you want to download **all** matching messages, you need to repeat until the number of 'availble-messages' is <=
   the given page size.
 
@@ -83,8 +133,6 @@ Proxy:
 * TGR-1953: Fixed rare 'null-compare' issue when trying to resolve placeholders in JEXL-expressions.
 * TGR-1953: Added more error-details for Socket-Connection issues in Tiger-Proxy.
 * TESTHUB-9: fix case-sensitivity issue in TigerConfigurationLoader
-
-# Changelog Tiger Test platform
 
 # Release 4.1.14
 

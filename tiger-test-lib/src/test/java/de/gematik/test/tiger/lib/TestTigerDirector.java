@@ -27,9 +27,7 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.util.IRbelMessageListener;
-import de.gematik.rbellogger.util.RbelMessagesSupplier;
+import de.gematik.test.tiger.DoNothingSupplier;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -45,8 +43,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import kong.unirest.core.Unirest;
@@ -138,16 +134,7 @@ class TestTigerDirector {
   private static AtomicInteger addLocalProxyRbelMessageListenerMock() {
     AtomicInteger listenerClearCalled = new AtomicInteger();
     LocalProxyRbelMessageListener.setTestingInstance(
-        new LocalProxyRbelMessageListener(
-            new RbelMessagesSupplier() {
-              @Override
-              public void addRbelMessageListener(IRbelMessageListener listener) {}
-
-              @Override
-              public Deque<RbelElement> getRbelMessages() {
-                return new ArrayDeque<>();
-              }
-            }) {
+        new LocalProxyRbelMessageListener(new DoNothingSupplier()) {
           @Override
           public void clearAllMessages() {
             listenerClearCalled.incrementAndGet();

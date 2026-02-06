@@ -61,7 +61,7 @@ public class VauErpConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
-    assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory())).isNotBlank();
+    assertThat(RbelHtmlRenderer.render(rbelLogger.getMessages())).isNotBlank();
   }
 
   @Test

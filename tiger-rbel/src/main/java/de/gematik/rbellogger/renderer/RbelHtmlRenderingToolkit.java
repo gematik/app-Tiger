@@ -357,8 +357,7 @@ public class RbelHtmlRenderingToolkit {
 
   private String getElementSequenceNumber(RbelElement rbelElement) {
     return rbelElement
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getSequenceNumber)
+        .getSequenceNumber()
         .map(zeroBased -> zeroBased + 1)
         .map(Object::toString)
         .orElse("0");
@@ -408,7 +407,7 @@ public class RbelHtmlRenderingToolkit {
                     .withSrc(
                         localRessources
                             ? "../webjars/dayjs/dayjs.min.js"
-                            : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.18/dayjs.min.js"),
+                            : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.9/dayjs.min.js"),
                 link2CSS(
                     localRessources
                         ? "../webjars/bootstrap/css/bootstrap.min.css"
@@ -651,7 +650,7 @@ public class RbelHtmlRenderingToolkit {
   }
 
   public List<DomContent> convertNested(final RbelElement el) {
-    return el.traverseAndReturnNestedMembers().stream()
+    return el.traverseNestedMembers()
         .filter(entry -> !entry.getFacets().isEmpty())
         .map(
             child ->

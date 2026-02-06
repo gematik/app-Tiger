@@ -49,7 +49,7 @@ public class RbelMismatchNoteFacet extends RbelNoteFacet
       MismatchType mismatchType, String value, RbelElement mismatchedNode) {
     super(value, NoteStyling.ERROR);
     this.mismatchType = mismatchType;
-    this.sequenceNumber = RbelTcpIpMessageFacet.getSequenceNumber(mismatchedNode);
+    this.sequenceNumber = mismatchedNode.getSequenceNumber().orElse(-1L);
     this.rbelPath =
         mismatchedNode.getParentNode() != null ? "$." + mismatchedNode.findNodePath() : "$";
   }

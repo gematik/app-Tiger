@@ -134,7 +134,7 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
               startupTimeoutSec: 60
               source:
                 - local:test.jar
-              healthcheckUrl: http://127.0.0.1:${free.port.115}
+              healthcheckUrl: http://127.0.0.1:${free.port.114}
               externalJarOptions:
                 workingDir: ../tiger-standalone-proxy/target
                 arguments:
@@ -192,7 +192,7 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
   private Boolean checkProxyOnline(String offset) {
     try {
       log.info(
-          "connecting to admin api:"
+          "connecting to proxy api and checking routing to httpbin works:"
               + "http://127.0.0.1:"
               + TigerGlobalConfiguration.readString("free.port." + offset + "5")
               + "/");
@@ -207,7 +207,7 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
       if (response.isSuccess()) {
         assertThat(response.getBody()).contains("Hello World!!!");
         log.info(
-            "connecting to proxy api:"
+            "connecting to admin api and checking if webui works:"
                 + "http://127.0.0.1:"
                 + TigerGlobalConfiguration.readString("free.port." + offset + "4")
                 + "/webui");
@@ -223,10 +223,10 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
           assertThat(response.getBody()).contains("Tiger Proxy Log");
           return true;
         } else {
-          log.warn("Proxy port returns status {}", response.getStatus());
+          log.warn("Admin port returns status {}", response.getStatus());
         }
       } else {
-        log.warn("Admin port returns status {}", response.getStatus());
+        log.warn("Proxy port returns status {}", response.getStatus());
       }
     } catch (Exception e) {
       log.warn("Accepting exception {}", e.getMessage());

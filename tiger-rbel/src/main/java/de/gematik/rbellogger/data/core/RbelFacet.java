@@ -20,6 +20,7 @@
  */
 package de.gematik.rbellogger.data.core;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.util.Optional;
@@ -63,4 +64,6 @@ public interface RbelFacet {
   default Optional<String> printShortDescription(RbelElement element) {
     return Optional.empty();
   }
+
+  default void waitForFacetToHaveParsedPartners(RbelElement rbelElement, RbelConverter converter) {}
 }

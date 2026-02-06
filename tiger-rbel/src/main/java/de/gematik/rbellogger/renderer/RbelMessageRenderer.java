@@ -167,10 +167,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                     "scrollToMessage('"
                         + msg.getUuid()
                         + "',"
-                        + msg.getFacet(RbelTcpIpMessageFacet.class)
-                            .map(RbelTcpIpMessageFacet::getSequenceNumber)
-                            .map(Object::toString)
-                            .orElse("null")
+                        + msg.getSequenceNumber().map(Object::toString).orElse("null")
                         + ")")
                 .with(span().withClass("icon is-small").with(i().withClass("fas fa-right-left"))));
   }

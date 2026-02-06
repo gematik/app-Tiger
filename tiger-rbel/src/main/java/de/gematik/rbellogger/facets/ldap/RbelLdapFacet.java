@@ -33,6 +33,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class RbelLdapFacet implements RbelFacet {
   public static final String PROTOCOL_OP_KEY = "protocolOp";
   public static final String TEXT_REPRESENTATION_KEY = "textRepresentation";
   public static final String ATTRIBUTES_KEY = "attributes";
+  public static final String CONTROLS_KEY = "controls";
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(
@@ -63,12 +65,65 @@ public class RbelLdapFacet implements RbelFacet {
             final RbelLdapFacet facet = element.getFacetOrFail(RbelLdapFacet.class);
 
             final String messageId = facet.getChildElements().get(MSG_ID_KEY).getRawStringContent();
-            final String protocolOperation =
-                facet.getChildElements().get(PROTOCOL_OP_KEY).getRawStringContent();
+            final RbelElement protocolOpElement = facet.getChildElements().get(PROTOCOL_OP_KEY);
+
+            // Get operation type from the protocolOp facet
+            String operationType =
+                protocolOpElement
+                    .getFacet(RbelLdapProtocolOpFacet.class)
+                    .map(RbelLdapProtocolOpFacet::getOperationType)
+                    .flatMap(RbelElement::printValue)
+                    .orElse("Unknown");
 
             final Map<String, String> attributesMap = new LinkedHashMap<>();
             attributesMap.put("Message ID", messageId);
-            attributesMap.put("Operation", protocolOperation);
+            attributesMap.put("Operation", operationType);
+
+            // Add all protocolOp fields if present
+            protocolOpElement
+                .getFacet(RbelLdapProtocolOpFacet.class)
+                .ifPresent(
+                    protocolOpFacet -> {
+                      addFieldIfPresent(attributesMap, "DN", protocolOpFacet.getDn());
+                      addFieldIfPresent(
+                          attributesMap, "Base Object", protocolOpFacet.getBaseObject());
+                      addFieldIfPresent(attributesMap, "Scope", protocolOpFacet.getScope());
+                      addFieldIfPresent(
+                          attributesMap, "Deref Aliases", protocolOpFacet.getDerefAliases());
+                      addFieldIfPresent(
+                          attributesMap, "Size Limit", protocolOpFacet.getSizeLimit());
+                      addFieldIfPresent(
+                          attributesMap, "Time Limit", protocolOpFacet.getTimeLimit());
+                      addFieldIfPresent(
+                          attributesMap, "Types Only", protocolOpFacet.getTypesOnly());
+                      addFieldIfPresent(attributesMap, "Filter", protocolOpFacet.getFilter());
+                      addFieldIfPresent(attributesMap, "New RDN", protocolOpFacet.getNewRdn());
+                      addFieldIfPresent(
+                          attributesMap, "Delete Old RDN", protocolOpFacet.getDeleteOldRdn());
+                      addFieldIfPresent(
+                          attributesMap, "New Superior", protocolOpFacet.getNewSuperior());
+                      addFieldIfPresent(attributesMap, "Version", protocolOpFacet.getVersion());
+                      addFieldIfPresent(attributesMap, "Name", protocolOpFacet.getName());
+                      addFieldIfPresent(attributesMap, "Simple", protocolOpFacet.getSimple());
+                      addFieldIfPresent(
+                          attributesMap, "Attribute Desc", protocolOpFacet.getAttributeDesc());
+                      addFieldIfPresent(
+                          attributesMap, "Assertion Value", protocolOpFacet.getAssertionValue());
+                      addFieldIfPresent(
+                          attributesMap, "Request Name", protocolOpFacet.getRequestName());
+                      addFieldIfPresent(
+                          attributesMap, "Response Name", protocolOpFacet.getResponseName());
+                      addFieldIfPresent(
+                          attributesMap, "Result Code", protocolOpFacet.getResultCode());
+                      addFieldIfPresent(
+                          attributesMap, "Matched DN", protocolOpFacet.getMatchedDN());
+                      addFieldIfPresent(
+                          attributesMap,
+                          "Diagnostic Message",
+                          protocolOpFacet.getDiagnosticMessage());
+                      addFieldIfPresent(
+                          attributesMap, "Server SASL Creds", protocolOpFacet.getServerSaslCreds());
+                    });
 
             if (facet.getChildElements().containsKey(ATTRIBUTES_KEY)) {
               final RbelElement attributesElement = facet.getChildElements().get(ATTRIBUTES_KEY);
@@ -78,11 +133,51 @@ public class RbelLdapFacet implements RbelFacet {
                     attributesElement.getFacetOrFail(RbelLdapAttributesFacet.class);
 
                 for (Map.Entry<String, RbelElement> attribute : attributesFacet.entries()) {
-                  String attributeName = "Attribute: " + attribute.getKey();
+                  String attributeName =
+                      resolveAttributeName(attribute.getKey(), attribute.getValue());
                   String value = attribute.getValue().getRawStringContent();
                   attributesMap.computeIfPresent(attributeName, (k, v) -> v + ", " + value);
                   attributesMap.putIfAbsent(attributeName, value);
                 }
+              }
+              // --- Enhancement: Render LDAP modifications ---
+              if (attributesElement != null && attributesElement.getFacets() != null) {
+                attributesElement.getFacets().stream()
+                    .filter(RbelLdapModificationFacet.class::isInstance)
+                    .map(RbelLdapModificationFacet.class::cast)
+                    .forEach(
+                        modFacet -> {
+                          modFacet
+                              .getOperation()
+                              .printValue()
+                              .ifPresent(op -> attributesMap.put("Modification Operation", op));
+                          modFacet
+                              .getAttributeName()
+                              .printValue()
+                              .ifPresent(s -> attributesMap.put("Modification Attribute Name", s));
+                          var i = new AtomicInteger(0);
+                          modFacet.getValues().stream()
+                              .map(RbelElement::getRawStringContent)
+                              .forEach(
+                                  v ->
+                                      attributesMap.put(
+                                          "Modification Value " + i.incrementAndGet(), v));
+                        });
+              }
+            }
+
+            if (facet.getChildElements().containsKey(CONTROLS_KEY)) {
+              final RbelElement controlsElement = facet.getChildElements().get(CONTROLS_KEY);
+              if (controlsElement != null
+                  && controlsElement.hasFacet(RbelLdapControlsFacet.class)) {
+                final RbelLdapControlsFacet controlsFacet =
+                    controlsElement.getFacetOrFail(RbelLdapControlsFacet.class);
+                controlsFacet
+                    .entries()
+                    .forEach(
+                        control ->
+                            addFieldIfPresent(
+                                attributesMap, "Control: " + control.oid(), control.element()));
               }
             }
 
@@ -113,6 +208,24 @@ public class RbelLdapFacet implements RbelFacet {
   private final RbelElement msgId;
   private final RbelElement protocolOp;
   private final RbelElement attributes;
+  private final RbelElement controls;
+
+  private static void addFieldIfPresent(Map<String, String> map, String key, RbelElement element) {
+    if (element != null) {
+      String value = element.printValue().orElseGet(element::getRawStringContent);
+      if (value != null && !value.isEmpty()) {
+        map.put(key, value);
+      }
+    }
+  }
+
+  private static String resolveAttributeName(String sanitizedKey, RbelElement valueElement) {
+    return valueElement
+        .getFacet(RbelLdapAttributeMetadataFacet.class)
+        .map(RbelLdapAttributeMetadataFacet::getOriginalName)
+        .map(name -> "Attribute: " + name)
+        .orElse("Attribute: " + sanitizedKey);
+  }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
@@ -120,6 +233,7 @@ public class RbelLdapFacet implements RbelFacet {
         .with(TEXT_REPRESENTATION_KEY, textRepresentation)
         .with(MSG_ID_KEY, msgId)
         .with(PROTOCOL_OP_KEY, protocolOp)
-        .withSkipIfNull(ATTRIBUTES_KEY, attributes);
+        .withSkipIfNull(ATTRIBUTES_KEY, attributes)
+        .withSkipIfNull(CONTROLS_KEY, controls);
   }
 }

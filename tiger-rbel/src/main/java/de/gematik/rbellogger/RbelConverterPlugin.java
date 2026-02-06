@@ -103,7 +103,7 @@ public abstract class RbelConverterPlugin {
   public @NotNull Optional<RbelElement> getPreviousMessage(
       RbelElement rbelElement, RbelConversionExecutor converter) {
     converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement.findRootElement());
-    return converter.getPreviousMessagesInSameConnectionAs(rbelElement).findFirst();
+    return converter.findPreviousMessageInSameConnectionAs(rbelElement);
   }
 
   public static boolean messageIsCompleteOrParsingDeactivated(RbelElement message) {

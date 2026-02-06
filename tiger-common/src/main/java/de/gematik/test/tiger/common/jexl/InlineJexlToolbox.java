@@ -24,7 +24,6 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,7 +45,7 @@ public class InlineJexlToolbox {
    */
   @SneakyThrows
   public static String file(String filename) {
-    return Files.readString(Path.of(filename));
+    return Files.readString(TigerGlobalConfiguration.resolveRelativePathToTigerYaml(filename));
   }
 
   /**

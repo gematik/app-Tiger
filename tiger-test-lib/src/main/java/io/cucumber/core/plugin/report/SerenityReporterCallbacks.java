@@ -26,7 +26,6 @@ import com.google.common.collect.Streams;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelMismatchNoteFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
-import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -291,7 +290,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
               .flatMap(Collection::stream);
       var seqNumToMsg =
           knownMessages
-              .map(msg -> Pair.of(RbelTcpIpMessageFacet.getSequenceNumber(msg), msg))
+              .map(msg -> Pair.of(msg.getSequenceNumber().orElse(-1L), msg))
               .filter(pair -> sequenceNumbersOfMismatches.contains(pair.getKey()))
               .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
       oldMismatches.stream()

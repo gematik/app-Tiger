@@ -61,7 +61,7 @@ public class RbelUriFacet implements RbelFacet {
             final String originalUrl = element.getRawStringContent();
             final ContainerTag urlContent =
                 renderUrlContent(renderingToolkit, uriFacet, originalUrl);
-            if (element.traverseAndReturnNestedMembers().isEmpty()) {
+            if (element.traverseNestedMembers().findFirst().isEmpty()) {
               return div().with(urlContent).with(addNotes(element));
             } else {
               return ancestorTitle()

@@ -112,7 +112,7 @@ public class MessageMetaDataDto {
                     .orElse(null));
 
     builder.additionalInformation(
-        el.findAllNestedFacets(RbelMessageInfoFacet.class).stream()
+        el.findAllNestedFacetsStream(RbelMessageInfoFacet.class)
             .map(RbelMessageInfoFacet::getMenuInfoString)
             .toList());
     builder.menuInfoString(
@@ -141,9 +141,6 @@ public class MessageMetaDataDto {
   }
 
   public static long getElementSequenceNumber(RbelElement rbelElement) {
-    return rbelElement
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-        .orElse(0L);
+    return rbelElement.getSequenceNumber().orElse(0L);
   }
 }

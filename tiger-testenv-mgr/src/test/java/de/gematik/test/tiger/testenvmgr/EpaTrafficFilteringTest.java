@@ -90,7 +90,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     upstreamRbelConverter.waitForAllCurrentMessagesToBeParsed();
     Thread.sleep(1000);
 
-    envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+    envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().stream()
         .map(RbelElement::printShortDescription)
         .forEach(System.out::println);
 
@@ -99,7 +99,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         .ignoreExceptions()
         .until(
             () ->
-                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().stream()
                     .allMatch(
                         e ->
                             e.findElement("$.body.recordId")

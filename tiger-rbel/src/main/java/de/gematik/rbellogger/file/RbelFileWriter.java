@@ -64,6 +64,7 @@ public class RbelFileWriter {
   public static final String MESSAGE_TIME = "timestamp";
   public static final String MESSAGE_UUID = "uuid";
   public static final String TIGER_VERSION_KEY = "tigerVersion";
+  private static final byte[] HTTP_PREFIX = "HTTP/".getBytes();
 
   private final RbelConverter rbelConverter;
   private final AtomicBoolean versionHeaderWritten = new AtomicBoolean();
@@ -306,20 +307,20 @@ public class RbelFileWriter {
 
     public void pairPotentialHttpResponseWithPreviousMessage(
         RbelElement message, RbelConversionExecutor converter) {
-      if (Optional.ofNullable(message.getRawStringContent())
-          .map(content -> content.startsWith("HTTP/"))
-          .orElse(false)) {
+      if (message.getContent().startsWith(HTTP_PREFIX)) {
         converter
-            .messagesStreamLatestFirst()
-            .dropWhile(candidate -> candidate != message)
-            .filter(msg -> msg.hasFacet(RbelHttpRequestFacet.class))
-            .filter(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
+            .getConverter()
+            .getPreviousMessages(
+                message,
+                msg ->
+                    msg.hasFacet(RbelHttpRequestFacet.class)
+                        && !msg.hasFacet(TracingMessagePairFacet.class))
             .findFirst()
             .ifPresent(
-                previousMessage -> {
-                  message.addOrReplaceFacet(new TracingMessagePairFacet(message, previousMessage));
-                  previousMessage.addOrReplaceFacet(
-                      new TracingMessagePairFacet(message, previousMessage));
+                unpairedRequest -> {
+                  message.addOrReplaceFacet(new TracingMessagePairFacet(message, unpairedRequest));
+                  unpairedRequest.addOrReplaceFacet(
+                      new TracingMessagePairFacet(message, unpairedRequest));
                 });
       }
     }

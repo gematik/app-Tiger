@@ -20,6 +20,7 @@
  */
 package de.gematik.rbellogger.data.core;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.util.Optional;
@@ -48,5 +49,10 @@ public class TracingMessagePairFacet implements RbelFacet {
     } else {
       return Optional.empty();
     }
+  }
+
+  @Override
+  public void waitForFacetToHaveParsedPartners(RbelElement rbelElement, RbelConverter converter) {
+    getOtherMessage(rbelElement).ifPresent(converter::waitForGivenElementToBeParsed);
   }
 }

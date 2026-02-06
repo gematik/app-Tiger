@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@types/bootstrap": "5.2.10",
-    "@types/node": "22.13.14",
+    "@types/node": "24.10.9",
     "@vitejs/plugin-vue": "6.0.1",
     "@vitest/ui": "3.2.4",
     "@vue/eslint-config-prettier": "10.2.0",

@@ -88,9 +88,7 @@ public class TlsFacet implements RbelFacet {
                 val cipherSuiteValue = previousTlsFacet.getCipherSuite().seekValue(String.class);
                 val clientCertificateChainValue =
                     Optional.ofNullable(previousTlsFacet.getClientCertificateChain())
-                        .map(
-                            s ->
-                                s.getChildNodes().stream().map(RbelElement::getRawContent).toList())
+                        .map(s -> s.getChildNodesStream().map(RbelElement::getRawContent).toList())
                         .orElse(null);
 
                 if (tlsVersionValue.isPresent() && cipherSuiteValue.isPresent()) {

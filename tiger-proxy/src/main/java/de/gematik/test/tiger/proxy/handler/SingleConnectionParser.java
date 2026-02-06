@@ -149,20 +149,7 @@ public class SingleConnectionParser {
 
     RbelMessageMetadata.PREVIOUS_MESSAGE_UUID.putValue(messageMetadata, entry.getPreviousUuid());
 
-    messageElement.addFacet(
-        RbelTcpIpMessageFacet.builder()
-            .receiver(
-                RbelMessageMetadata.MESSAGE_RECEIVER
-                    .getValue(messageMetadata)
-                    .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
-                    .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
-            .sender(
-                RbelMessageMetadata.MESSAGE_SENDER
-                    .getValue(messageMetadata)
-                    .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
-                    .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
-            .sequenceNumber(rbelConverter.addMessageToHistoryWithNextSequenceNumber(messageElement))
-            .build());
+    rbelConverter.addMessageToHistory(messageElement, messageMetadata);
     log.atTrace()
         .addArgument(messageElement.getContent()::size)
         .addArgument(messageElement::getUuid)

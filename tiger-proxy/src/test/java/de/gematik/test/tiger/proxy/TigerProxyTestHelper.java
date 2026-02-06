@@ -41,7 +41,7 @@ public class TigerProxyTestHelper {
           .pollDelay(200, TimeUnit.MILLISECONDS)
           .until(
               () ->
-                  tigerProxy.getRbelMessages().stream()
+                  tigerProxy.getMessages().stream()
                           .filter(msg -> msg.getConversionPhase().isFinished())
                           .count()
                       == expectedMessagesCount);
@@ -67,10 +67,7 @@ public class TigerProxyTestHelper {
           "Expected {} message(s) in rbel message list but found {}",
           expectedMessagesCount,
           tigerProxy.getRbelMessagesList().size());
-      tigerProxy
-          .getRbelLogger()
-          .getMessageHistory()
-          .forEach(msg -> log.error(msg.printTreeStructure()));
+      tigerProxy.getRbelLogger().getMessages().forEach(msg -> log.error(msg.printTreeStructure()));
       throw cte;
     }
   }

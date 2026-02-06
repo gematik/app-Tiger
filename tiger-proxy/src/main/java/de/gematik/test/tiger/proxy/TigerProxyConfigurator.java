@@ -24,6 +24,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -47,13 +48,14 @@ public class TigerProxyConfigurator
   private final ServletWebServerApplicationContext webServerAppCtxt;
   private final TigerProxyConfiguration tigerProxyConfiguration;
   private final TigerWebUiController tigerWebUiController;
+  private final TigerBuildPropertiesService buildPropertiesService;
 
   @Bean
   public TigerProxy tigerProxy() {
     var shouldSubscribeAfterStart = !tigerProxyConfiguration.isSkipTrafficEndpointsSubscription();
     tigerProxyConfiguration.setSkipTrafficEndpointsSubscription(false);
     tigerProxy = new TigerProxy(tigerProxyConfiguration);
-    tracingPushService = new TracingPushService(template, tigerProxy);
+    tracingPushService = new TracingPushService(template, buildPropertiesService, tigerProxy);
     tracingPushService.addWebSocketListener();
     tigerWebUiController.setTigerProxy(tigerProxy);
     if (shouldSubscribeAfterStart) {

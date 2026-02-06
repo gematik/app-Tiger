@@ -56,8 +56,7 @@ class IdpDecryptionTest extends AbstractTigerProxyTest {
 
       awaitMessagesInTigerProxy(22);
 
-      final String htmlData =
-          RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
+      final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessages());
       FileUtils.writeStringToFile(
           new File("target/idpFlow.html"), htmlData, StandardCharsets.UTF_8);
 

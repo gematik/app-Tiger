@@ -46,9 +46,9 @@ public class RbelXmlSerializer implements RbelSerializer {
   public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
     final Document document = DocumentHelper.createDocument();
 
-    for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
-      addNode(childNode, document, rbelWriter);
-    }
+    treeRootNode
+        .getChildNodesStream()
+        .forEach(childNode -> addNode(childNode, document, rbelWriter));
 
     addEncodingInformationIfMissing(document, treeRootNode);
 
@@ -58,9 +58,9 @@ public class RbelXmlSerializer implements RbelSerializer {
   @SneakyThrows
   public byte[] renderNode(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
     final Document document = DocumentHelper.createDocument();
-    for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
-      addNode(childNode, document, rbelWriter);
-    }
+    treeRootNode
+        .getChildNodesStream()
+        .forEach(childNode -> addNode(childNode, document, rbelWriter));
     return convertDocumentToString(document, true);
   }
 
@@ -117,9 +117,7 @@ public class RbelXmlSerializer implements RbelSerializer {
       String key) {
     final Element newElement = parentBranch.addElement(determineQualifiedName(treeNode, key));
 
-    for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
-      addNode(childNode, newElement, rbelWriter);
-    }
+    treeNode.getChildNodesStream().forEach(childNode -> addNode(childNode, newElement, rbelWriter));
   }
 
   private static boolean isATextNode(RbelContentTreeNode treeNode, String key) {

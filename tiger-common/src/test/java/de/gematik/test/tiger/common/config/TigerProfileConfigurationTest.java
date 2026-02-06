@@ -21,10 +21,12 @@
 
 package de.gematik.test.tiger.common.config;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_ROOT_FOLDER;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.nio.file.Path;
 import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +38,7 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 @ExtendWith(SystemStubsExtension.class)
-public class TigerProfileConfigurationTest {
+class TigerProfileConfigurationTest {
 
   @SystemStub private EnvironmentVariables environmentVariables;
 
@@ -71,11 +73,20 @@ public class TigerProfileConfigurationTest {
   }
 
   @Test
-  void testLoadsProfileConfiguredViaEnvironmentVariable() {
+  void testResolveRelativeLocation() {
     environmentVariables.set("PROFILE", "profileSetViaEnv");
     TigerGlobalConfiguration.initialize();
     val value = TigerGlobalConfiguration.readString("tiger.test");
     assertThat(value).isEqualTo("set via env");
+  }
+
+  @Test
+  void testLoadsProfileConfiguredViaEnvironmentVariable() {
+    TigerGlobalConfiguration.initialize();
+    assertThat(TigerGlobalConfiguration.resolveRelativePathToTigerYaml("../customCa.p12")).exists();
+    assertThat(TIGER_ROOT_FOLDER.getValue())
+        .get()
+        .isEqualTo(Path.of("src/test/resources/testTigerYaml/").toAbsolutePath().toString());
   }
 
   @Test

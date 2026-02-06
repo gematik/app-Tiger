@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
+import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -42,7 +43,6 @@ import io.cucumber.java.en.When;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -89,6 +89,18 @@ public class TigerGlue {
   public void ctxtISetGlobalVariableTo(final String key, final String value) {
     log.debug("Setting global variable {} to '{}'", key, value);
     TigerGlobalConfiguration.putValue(key, value);
+  }
+
+  /**
+   * Remove the variable with the given key from the global configuration store. Variable
+   * substitution is performed.
+   *
+   * @param key key of the context entry to remove
+   */
+  @Wenn("TGR globale Variable {tigerResolvedString} zurücksetzen")
+  @When("TGR unset global variable {tigerResolvedString}")
+  public void unsetGlobalVariable(String key) {
+    TigerGlobalConfiguration.deleteFromAllSources(new TigerConfigurationKey(key));
   }
 
   /**
@@ -331,7 +343,7 @@ public class TigerGlue {
   public void tgrSaveTigerGlobalConfigurationToFile(String filename) throws IOException {
     var configAsYaml = tigerGlobalConfigurationController.getGlobalConfigurationAsYaml();
     Files.writeString(
-        Path.of(filename),
+        TigerGlobalConfiguration.resolveRelativePathToTigerYaml(filename),
         configAsYaml,
         StandardCharsets.UTF_8,
         StandardOpenOption.CREATE,
@@ -349,7 +361,10 @@ public class TigerGlue {
   @Given("TGR load TigerGlobalConfiguration from file {tigerResolvedString}")
   @Gegebensei("TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}")
   public void tgrLoadTigerGlobalConfigurationFromFile(String filename) throws IOException {
-    var configAsYaml = Files.readString(Path.of(filename), StandardCharsets.UTF_8);
+    var configAsYaml =
+        Files.readString(
+            TigerGlobalConfiguration.resolveRelativePathToTigerYaml(filename),
+            StandardCharsets.UTF_8);
     tigerGlobalConfigurationController.importConfiguration(configAsYaml);
   }
 

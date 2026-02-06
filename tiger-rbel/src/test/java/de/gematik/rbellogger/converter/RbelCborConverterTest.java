@@ -175,8 +175,7 @@ class RbelCborConverterTest {
                     cborContent),
                 null);
 
-    assertThatNoException()
-        .isThrownBy(() -> RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));
+    assertThatNoException().isThrownBy(() -> RbelHtmlRenderer.render(rbelLogger.getMessages()));
 
     assertThat(convertMessage)
         .extractChildWithPath("$.body.0.1")

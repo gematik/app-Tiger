@@ -49,10 +49,9 @@ public class RbelHttpPairingInBinaryChannelConverter extends RbelConverterPlugin
     if (rbelElement.hasFacet(RbelHttpResponseFacet.class)) { // if it is a response
       // we assume the request before it is the request
       converter
-          .getPreviousMessagesInSameConnectionAs(rbelElement)
-          .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
-          .findFirst()
-          .ifPresent(e -> updateHttpFacetsWithPairedMessages(e, rbelElement));
+          .findPreviousMessageInSameConnectionAs(
+              rbelElement, e -> e.hasFacet(RbelHttpRequestFacet.class))
+          .ifPresent(request -> updateHttpFacetsWithPairedMessages(request, rbelElement));
     }
   }
 

@@ -59,7 +59,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
               .asString();
           awaitMessagesInTigerProxy(2);
 
-          assertThat(tigerProxy.getRbelMessages().getLast())
+          assertThat(tigerProxy.getMessageHistory().getLast())
               .andPrintTree()
               .extractFacet(TracingMessagePairFacet.class)
               .extracting(TracingMessagePairFacet::getRequest)

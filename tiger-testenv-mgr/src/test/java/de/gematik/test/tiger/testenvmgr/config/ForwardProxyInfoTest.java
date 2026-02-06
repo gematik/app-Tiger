@@ -79,7 +79,7 @@ class ForwardProxyInfoTest {
             ((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
                 .getApplicationContext()
                 .getBean(TigerProxy.class)
-                .getRbelMessages())
+                .getMessages())
         .isEmpty();
   }
 
@@ -308,7 +308,7 @@ class ForwardProxyInfoTest {
         .until(
             () ->
                 ((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
-                    .getApplicationContext().getBean(TigerProxy.class).getRbelMessages().stream()
+                    .getApplicationContext().getBean(TigerProxy.class).getMessages().stream()
                         .anyMatch(
                             el ->
                                 el.getFacet(RbelHttpRequestFacet.class)

@@ -2,6 +2,6 @@ servers:
   testServerWithNoHostname:
     type: externalUrl
     source:
-      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
-    healthcheckUrl: https://idp-test.app.ti-dienste.de/.well-known/openid-configuration
+      - https://iana.org/
+    healthcheckUrl: https://iana.org/
     startupTimeoutSec: 20

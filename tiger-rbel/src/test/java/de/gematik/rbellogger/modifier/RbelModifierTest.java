@@ -31,12 +31,14 @@ import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Slf4j
 class RbelModifierTest extends AbstractModifierTest {
 
   @Test
@@ -384,7 +386,7 @@ class RbelModifierTest extends AbstractModifierTest {
 
   @Test
   void modifyRequestPath() throws IOException {
-    String specialCaseParameter = RandomStringUtils.insecure().nextPrint(300);
+    String specialCaseParameter = RandomStringUtils.insecure().nextAlphabetic(300);
     final RbelElement message =
         readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/getRequest.curl",

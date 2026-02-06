@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.16</version>
+        <version>4.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tiger-testenv-mgr</artifactId>
@@ -180,7 +180,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.9.0</version>
                 <configuration>
                     <artifactItems>
                         <artifactItem>
@@ -265,7 +265,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>${version.maven-resources-plugin}</version>
                 <executions>
                     <execution>
                         <id>Copy Vue frontend into Spring Boot target static folder</id>
@@ -350,7 +350,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.17.0</version>
+                <version>7.19.0</version>
                 <executions>
                     <execution>
                         <id>generate java code</id>

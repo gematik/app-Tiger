@@ -28,7 +28,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseConverter;
 import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -51,10 +50,8 @@ public class RbelSockJsConverter extends RbelConverterPlugin {
       return;
     }
     boolean isSockJsStream =
-        getPreviousMessage(message.findRootElement(), converter)
-            .map(RbelElement::getChildNodes)
-            .stream()
-            .flatMap(List::stream)
+        getPreviousMessage(message.findRootElement(), converter).stream()
+            .flatMap(RbelElement::getChildNodesStream)
             .flatMap(el -> el.getFacets().stream())
             .anyMatch(RbelSockJsFacet.class::isInstance);
     // TODO exclude close command (since after that we can reconnect)

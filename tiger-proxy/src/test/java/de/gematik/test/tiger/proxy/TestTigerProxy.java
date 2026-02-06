@@ -844,7 +844,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     awaitMessagesInTigerProxy(4);
 
     assertThat(
-            tigerProxy.getRbelMessages().stream()
+            tigerProxy.getMessages().stream()
                 .sorted(
                     Comparator.comparing(
                         el ->
@@ -857,8 +857,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             "HTTP 777 with body '{\"foo\":\"bar\"}'",
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
 
-    assertThat(
-            tigerProxy.getRbelMessages().stream().map(RbelElement::printShortDescription).toList())
+    assertThat(tigerProxy.getMessages().stream().map(RbelElement::printShortDescription).toList())
         .containsExactly(
             "HTTP GET /mainserver with body ''",
             "HTTP GET /deep/foobar/mainserver with body ''",
@@ -1075,5 +1074,27 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(IOException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  void multiplePorts_allShouldWork() {
+    spawnTigerProxyWith(
+        new TigerProxyConfiguration()
+            .setProxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .setAdditionalProxyPorts(
+                List.of(
+                    TigerGlobalConfiguration.readIntegerOptional("free.port.99").orElseThrow())));
+
+    val response =
+        Unirest.get(
+                TigerGlobalConfiguration.resolvePlaceholders("http://localhost:${free.port.99}/"))
+            .asEmpty();
+    assertThat(response.getStatus()).isEqualTo(888);
   }
 }

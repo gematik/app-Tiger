@@ -30,9 +30,30 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
+import java.util.Map;
 import java.util.Optional;
 
 public class RbelLdapAttributesFacet extends RbelMultiMap<RbelElement> implements RbelFacet {
+
+  public void putAttribute(String attributeName, RbelElement element) {
+    String sanitizedName = sanitize(attributeName);
+    element.addFacet(new RbelLdapAttributeMetadataFacet(attributeName));
+    put(sanitizedName, element);
+  }
+
+  private static String sanitize(String attributeName) {
+    if (attributeName == null || attributeName.isBlank()) {
+      return "attribute";
+    }
+    String sanitized = attributeName.replaceAll("[^A-Za-z0-9_]", "_");
+    if (sanitized.isBlank()) {
+      sanitized = "attribute";
+    }
+    if (!Character.isLetter(sanitized.charAt(0)) && sanitized.charAt(0) != '_') {
+      sanitized = "attr_" + sanitized;
+    }
+    return sanitized;
+  }
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(
@@ -54,10 +75,18 @@ public class RbelLdapAttributesFacet extends RbelMultiMap<RbelElement> implement
                 facet.getChildElements().stream()
                     .map(
                         child ->
-                            p().with(b().withText(child.getKey()).withText(": "))
+                            p().with(b().withText(resolveDisplayName(child)).withText(": "))
                                 .withText(child.getValue().printValue().orElse("")))
                     .toList());
             return div;
+          }
+
+          private String resolveDisplayName(Map.Entry<String, RbelElement> child) {
+            return child
+                .getValue()
+                .getFacet(RbelLdapAttributeMetadataFacet.class)
+                .map(RbelLdapAttributeMetadataFacet::getOriginalName)
+                .orElse(child.getKey());
           }
         });
   }

@@ -122,7 +122,7 @@ public class RbelContentTreeConverter {
         .map(el -> convertRbelElement(el, TGR_ENCODE_AS, conversionContext))
         .stream()
         .flatMap(List::stream)
-        .map(el -> el.getChildNodes().stream().findFirst().orElse(el))
+        .map(el -> el.getChildNodesStream().findFirst().orElse(el))
         .map(el -> new String(el.getContent(), el.getElementCharset()))
         .findFirst();
   }
@@ -178,11 +178,12 @@ public class RbelContentTreeConverter {
       throw new RbelContentTreeConversionException(
           "tgrFor not present even though call stack should guarantee so!");
     }
-    if (tgrFor.get().getChildNodes().size() == 1) {
-      return tgrFor.get().getChildNodes().get(0).getRawStringContent();
-    } else {
-      return tgrFor.get().getRawStringContent();
-    }
+    return tgrFor
+        .get()
+        .getChildNodesStream()
+        .findFirst()
+        .map(RbelElement::getRawStringContent)
+        .orElseGet(() -> tgrFor.get().getRawStringContent());
   }
 
   private boolean isReservedKey(String key) {

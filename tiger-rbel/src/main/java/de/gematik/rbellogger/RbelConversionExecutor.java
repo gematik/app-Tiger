@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -158,22 +157,21 @@ public class RbelConversionExecutor {
   }
 
   public Optional<RbelElement> findPreviousMessageInSameConnectionAs(
-      RbelElement targetElement, Predicate<RbelElement> additionalFilter) {
-    var stream = getPreviousMessagesInSameConnectionAs(targetElement);
-    return stream.filter(additionalFilter).findFirst();
+      @NonNull RbelElement targetElement, @NonNull Predicate<RbelElement> additionalFilter) {
+    return converter.findPreviousMessage(
+        targetElement,
+        msg ->
+            RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement)
+                && additionalFilter.test(msg));
   }
 
-  public Stream<RbelElement> getPreviousMessagesInSameConnectionAs(RbelElement targetElement) {
-    val messageHistoryAsync = converter.getMessageHistoryAsync();
-    messageHistoryAsync.setAllowUnparsedMessagesToAppearInFacade(true);
-    return StreamSupport.stream(
-            Spliterators.spliteratorUnknownSize(
-                messageHistoryAsync.descendingIterator(), Spliterator.ORDERED),
-            false)
-        // we assume that targetElement is in the history!
-        .dropWhile(msg -> msg != targetElement)
-        .skip(1)
-        .filter(msg -> RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement));
+  public Optional<RbelElement> findPreviousMessageInSameConnectionAs(RbelElement rbelElement) {
+    return findPreviousMessageInSameConnectionAs(rbelElement, m -> true);
+  }
+
+  private Stream<RbelElement> getPreviousMessagesInSameConnectionAs(RbelElement targetElement) {
+    return converter.getPreviousMessages(
+        targetElement, msg -> RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement));
   }
 
   public Optional<RbelElement> findAndPairMatchingRequest(
@@ -181,11 +179,14 @@ public class RbelConversionExecutor {
     if (response.hasFacet(TracingMessagePairFacet.class)) {
       return Optional.of(response.getFacetOrFail(TracingMessagePairFacet.class).getRequest());
     }
-    List<RbelElement> lastMessages =
-        getPreviousMessagesInSameConnectionAs(response)
-            .filter(msg -> msg.hasFacet(requestFacetClass))
-            .takeWhile(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
-            .toList();
+    List<RbelElement> lastMessages;
+    synchronized (getConverter().getHistory()) {
+      lastMessages =
+          getPreviousMessagesInSameConnectionAs(response)
+              .filter(msg -> msg.hasFacet(requestFacetClass))
+              .takeWhile(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
+              .toList();
+    }
     if (lastMessages.isEmpty()) {
       return Optional.empty();
     }

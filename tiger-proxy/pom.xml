@@ -28,7 +28,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.1.16</version>
+        <version>4.1.17</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -226,7 +226,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>${version.maven-resources-plugin}</version>
                 <executions>
                     <execution>
                         <id>Copy Vue frontend into Spring Boot target static folder</id>

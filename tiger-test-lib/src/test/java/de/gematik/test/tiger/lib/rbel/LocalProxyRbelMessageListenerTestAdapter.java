@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
@@ -28,6 +29,7 @@ import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,7 +47,7 @@ import lombok.val;
 public class LocalProxyRbelMessageListenerTestAdapter {
 
   private final LocalProxyRbelMessageListener localProxyRbelMessageListener;
-  private final Deque<RbelElement> validatableMessagesMock;
+  private final NavigableMap<Long, RbelElement> validatableMessagesMock;
 
   public LocalProxyRbelMessageListenerTestAdapter() {
     this.localProxyRbelMessageListener =
@@ -57,11 +59,11 @@ public class LocalProxyRbelMessageListenerTestAdapter {
               }
 
               @Override
-              public Deque<RbelElement> getRbelMessages() {
-                return validatableMessagesMock;
+              public RbelMessageHistory.Facade getMessageHistory() {
+                return new MockHistoryFacade(validatableMessagesMock);
               }
             });
-    this.validatableMessagesMock = new ArrayDeque<>();
+    this.validatableMessagesMock = new TreeMap<>();
   }
 
   public void clearMockMessagesList() {
@@ -70,11 +72,11 @@ public class LocalProxyRbelMessageListenerTestAdapter {
   }
 
   public void addMessage(RbelElement element) {
-    validatableMessagesMock.add(element);
+    validatableMessagesMock.put(element.getSequenceNumber().get(), element);
   }
 
   public void addMessages(Collection<RbelElement> elements) {
-    validatableMessagesMock.addAll(elements);
+    elements.forEach(this::addMessage);
   }
 
   public void addSomeMessagesToTigerTestHooks() {
@@ -87,7 +89,7 @@ public class LocalProxyRbelMessageListenerTestAdapter {
                         .build())
                 .build());
     logger.getRbelCapturer().initialize();
-    validatableMessagesMock.addAll(logger.getMessageHistory());
+    logger.getMessages().forEach(this::addMessage);
   }
 
   /* we add requests to the given validatableMessagesMock.
@@ -95,14 +97,16 @@ public class LocalProxyRbelMessageListenerTestAdapter {
   public void addTwoRequestsToTigerTestHooks() {
     localProxyRbelMessageListener.clearValidatableRbelMessages();
     val requestsAndResponses = buildElementsFromTgrFile("simpleHttpRequests.tgr");
-    validatableMessagesMock.addAll(requestsAndResponses);
+    requestsAndResponses.forEach(this::addMessage);
   }
 
   @SneakyThrows
   public List<RbelElement> buildElementsFromTgrFile(String fileName) {
     val fileContent =
         Files.readString(
-            Path.of("src", "test", "resources", "testdata", fileName), StandardCharsets.UTF_8);
+            TigerGlobalConfiguration.resolveRelativePathToTigerYaml(".")
+                .resolve(Path.of("src", "test", "resources", "testdata", fileName)),
+            StandardCharsets.UTF_8);
     return new RbelFileWriter(RbelLogger.build().getRbelConverter())
         .convertFromRbelFile(fileContent, Optional.empty());
   }
