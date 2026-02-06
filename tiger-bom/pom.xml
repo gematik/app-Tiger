@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.1.16</version>
+    <version>4.1.17</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -60,29 +60,27 @@
                     -->
 
         <version.apache-mime4j>0.8.13</version.apache-mime4j>
+        <version.asm>9.9.1</version.asm>
 
-        <version.assertj>3.27.6</version.assertj>
+        <version.assertj>3.27.7</version.assertj>
         <version.awaitility>4.3.0</version.awaitility>
         <version.bootstrap>5.3.8</version.bootstrap>
-        <version.bouncycastle>1.82</version.bouncycastle>
-        <version.central-publishing-maven-plugin>0.9.0</version.central-publishing-maven-plugin>
-        <version.commons-codec>1.19.0</version.commons-codec>
+        <version.bouncycastle>1.83</version.bouncycastle>
+        <version.central-publishing-maven-plugin>0.10.0</version.central-publishing-maven-plugin>
+        <version.commons-codec>1.21.0</version.commons-codec>
         <version.commons-collections4>4.5.0</version.commons-collections4>
         <version.commons-compress>1.28.0</version.commons-compress>
-        <version.commons-io>2.20.0</version.commons-io>
-        <version.commons-jexl3>3.5.0</version.commons-jexl3>
-        <version.commons-lang3>3.19.0</version.commons-lang3>
-        <version.commons-text>1.14.0</version.commons-text>
+        <version.commons-io>2.21.0</version.commons-io>
+        <version.commons-jexl3>3.6.1</version.commons-jexl3>
+        <version.commons-lang3>3.20.0</version.commons-lang3>
+        <version.commons-text>1.15.0</version.commons-text>
         <version.cucumber>7.31.0</version.cucumber>
         <version.dokka-maven-plugin>2.1.0</version.dokka-maven-plugin>
-        <version.font-awesome>7.0.1</version.font-awesome>
-        <version.frontend-maven-plugin>1.15.4</version.frontend-maven-plugin>
-        <!-- frontend -->
-        <!-- when changing the webjar version here make sure to adapt the web ui links too -->
-        <!-- see src/main/resources/templates/adminui.html -->
-        <version.frontend-maven-plugin>1.15.4</version.frontend-maven-plugin>
-        <version.groovy>4.0.29</version.groovy>
+        <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
+        <version.font-awesome>7.1.0</version.font-awesome>
+        <version.frontend-maven-plugin>2.0.0</version.frontend-maven-plugin>
         <!-- serenity -> restassured -> groovy - restassured is not yet compatible with groovy v5 -->
+        <version.groovy>4.0.29</version.groovy>
         <version.gson>2.13.2</version.gson>
         <version.hamcrest>3.0</version.hamcrest>
         <version.highlightjs>11.11.1</version.highlightjs>
@@ -92,44 +90,50 @@
         <version.jackson-databind-nullable>0.2.8</version.jackson-databind-nullable>
         <version.jacoco-maven-plugin>0.8.13</version.jacoco-maven-plugin>
         <version.jakarta.xml.bind>4.0.4</version.jakarta.xml.bind>
-        <version.javaparser>3.27.1</version.javaparser>
+        <version.javaparser>3.28.0</version.javaparser>
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>11.0.15</version.jetty>
         <version.jfiglet>1.0.1</version.jfiglet>
         <version.jna>5.18.1</version.jna>
         <version.jose4j>0.9.6</version.jose4j>
         <version.jquery>3.7.1</version.jquery>
-        <version.json>20250517</version.json>
+        <version.json>20251224</version.json>
         <version.json-schema-validator>1.5.6</version.json-schema-validator>
         <!-- 20240303 -->
-        <version.json-unit>5.0.0</version.json-unit>
+        <version.json-unit>5.1.0</version.json-unit>
         <version.jsonschema-generator>4.38.0</version.jsonschema-generator>
+        <version.jsoup>1.22.1</version.jsoup>
         <!-- junit 5 and junit-platform should be in sync -->
         <version.junit-minor-version>14.1</version.junit-minor-version>
         <version.junit-platform>1.${version.junit-minor-version}</version.junit-platform>
         <version.junit5>5.${version.junit-minor-version}</version.junit5>
-        <version.kotlin>2.2.21</version.kotlin>
-        <version.kotlin-io>0.8.0</version.kotlin-io>
-        <version.kotlin-serialization>1.9.0</version.kotlin-serialization>
+        <version.kotlin>2.3.0</version.kotlin>
+        <version.kotlin-io>0.8.2</version.kotlin-io>
+        <version.kotlin-serialization>1.10.0</version.kotlin-serialization>
         <version.kotlinx-coroutines>1.10.2</version.kotlinx-coroutines>
-        <version.ktor>3.3.2</version.ktor>
+        <version.ktor>3.4.0</version.ktor>
         <version.lombok>1.18.42</version.lombok>
         <version.lombok-mapstruct-binding>0.2.0</version.lombok-mapstruct-binding>
         <version.mapstruct>1.6.3</version.mapstruct>
-        <version.maven>3.9.11</version.maven>
-        <version.maven-compiler-plugin>3.14.0</version.maven-compiler-plugin>
+        <version.maven>3.9.12</version.maven>
+        <version.maven-assembly-plugin>3.8.0</version.maven-assembly-plugin>
+        <version.maven-compiler-plugin>3.14.1</version.maven-compiler-plugin>
         <version.maven-deploy-plugin>3.1.4</version.maven-deploy-plugin>
+        <version.maven-jar-plugin>3.5.0</version.maven-jar-plugin>
+        <version.maven-plugin-testing>3.5.0</version.maven-plugin-testing>
         <version.maven-plugin-tools>3.15.2</version.maven-plugin-tools>
         <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
+        <version.maven-resources-plugin>3.3.1</version.maven-resources-plugin>
         <version.maven.failsafe>3.5.4</version.maven.failsafe>
         <version.maven.javadoc>3.12.0</version.maven.javadoc>
         <version.maven.surefire>3.5.4</version.maven.surefire>
-        <version.mockito>5.20.0</version.mockito>
+        <version.mockito>5.21.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
-        <version.netty>4.2.7.Final</version.netty>
-        <version.node>v24.12.0</version.node>
+        <version.netty>4.2.9.Final</version.netty>
+        <version.node>v24.13.0</version.node>
         <version.npm>11.6.2</version.npm>
-        <version.okhttp>5.3.0</version.okhttp>
+        <version.objenesis>3.5</version.objenesis>
+        <version.okhttp>5.3.2</version.okhttp>
         <version.org.glassfish.jaxb>4.0.6</version.org.glassfish.jaxb>
         <version.selenium>4.38.0</version.selenium>
         <version.serenity.core>4.3.2</version.serenity.core>
@@ -138,16 +142,16 @@
         <version.snakeyaml>2.5</version.snakeyaml>
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spotless-maven-plugin>3.0.0</version.spotless-maven-plugin>
+        <version.spotless-maven-plugin>3.2.1</version.spotless-maven-plugin>
         <version.spotless.google-java-format>1.28.0</version.spotless.google-java-format>
         <version.spring-boot>3.5.7</version.spring-boot>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
-        <version.swagger-parser>2.1.35</version.swagger-parser>
+        <version.swagger-parser>2.1.37</version.swagger-parser>
         <version.system-stubs>2.1.8</version.system-stubs>
         <version.unirest>4.5.1</version.unirest>
         <version.velocity>2.3</version.velocity>
         <version.webjars-locator-core>0.59</version.webjars-locator-core>
-        <version.wiremock>3.13.1</version.wiremock>
+        <version.wiremock>3.13.2</version.wiremock>
         <version.xmlunit>2.11.0</version.xmlunit>
     </properties>
 
@@ -247,7 +251,7 @@
             <dependency>
                 <groupId>com.fasterxml</groupId>
                 <artifactId>classmate</artifactId>
-                <version>1.7.1</version>
+                <version>1.7.3</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -267,7 +271,7 @@
             <dependency>
                 <groupId>com.github.oshi</groupId>
                 <artifactId>oshi-core</artifactId>
-                <version>6.9.1</version>
+                <version>6.9.3</version>
             </dependency>
             <dependency>
                 <groupId>com.github.victools</groupId>
@@ -292,7 +296,7 @@
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.43.0</version>
+                <version>2.46.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -307,7 +311,7 @@
             <dependency>
                 <groupId>com.microsoft.playwright</groupId>
                 <artifactId>playwright</artifactId>
-                <version>1.56.0</version>
+                <version>1.58.0</version>
             </dependency>
             <dependency>
                 <groupId>com.networknt</groupId>
@@ -315,21 +319,10 @@
                 <version>2.0.0</version>
             </dependency>
             <dependency>
-                <!-- ktor dependency that we need to pin -->
-                <groupId>com.squareup.okio</groupId>
-                <artifactId>okio-jvm</artifactId>
-                <version>3.16.2</version>
-            </dependency>
-            <dependency>
-                <!-- ktor dependency that we need to pin -->
+                <!-- need to pin to solve dependency conflict serenity-model and ktor -->
                 <groupId>com.typesafe</groupId>
                 <artifactId>config</artifactId>
                 <version>1.4.5</version>
-            </dependency>
-            <dependency>
-                <groupId>com.unboundid</groupId>
-                <artifactId>unboundid-ldapsdk</artifactId>
-                <version>7.0.3</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -344,63 +337,63 @@
             <dependency>
                 <groupId>commons-validator</groupId>
                 <artifactId>commons-validator</artifactId>
-                <version>1.10.0</version>
+                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
                 <classifier>jar-with-dependencies</classifier>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>4.1.16</version>
+                <version>4.1.17</version>
             </dependency>
 
             <dependency>
@@ -411,7 +404,7 @@
             <dependency>
                 <groupId>io.github.oshai</groupId>
                 <artifactId>kotlin-logging-jvm</artifactId>
-                <version>7.0.13</version>
+                <version>7.0.14</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.parser.v3</groupId>
@@ -453,7 +446,7 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.17.8</version>
+                <version>1.18.4</version>
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
@@ -550,6 +543,11 @@
                 <artifactId>commons-text</artifactId>
                 <version>${version.commons-text}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.directory.api</groupId>
+                <artifactId>api-all</artifactId>
+                <version>2.1.7</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -569,7 +567,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
-                <version>5.5.1</version>
+                <version>5.6</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.james</groupId>
@@ -580,6 +578,11 @@
                 <groupId>org.apache.james</groupId>
                 <artifactId>apache-mime4j-dom</artifactId>
                 <version>${version.apache-mime4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-testing</groupId>
+                <artifactId>maven-plugin-testing-harness</artifactId>
+                <version>${version.maven-plugin-testing}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
@@ -634,7 +637,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.51.1</version>
+                <version>3.53.1</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
@@ -649,7 +652,7 @@
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-xml</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <groupId>org.dom4j</groupId>
@@ -664,12 +667,12 @@
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest</artifactId>
-                <version>2.2</version>
+                <version>${version.hamcrest}</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
-                <version>3.0</version>
+                <version>${version.hamcrest}</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
@@ -679,7 +682,7 @@
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
-                <version>26.0.2</version>
+                <version>26.0.2-1</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -729,7 +732,7 @@
             <dependency>
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
-                <version>1.21.2</version>
+                <version>${version.jsoup}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
@@ -750,7 +753,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.4</version>
+                <version>${version.objenesis}</version>
             </dependency>
             <dependency>
                 <groupId>org.openapitools</groupId>
@@ -761,7 +764,7 @@
                 <!-- conflict between json-unit-spring and maven-surefire-common -->
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>9.9</version>
+                <version>${version.asm}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -802,7 +805,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
-                <version>2.0.1</version>
+                <version>2.0.3</version>
             </dependency>
             <dependency>
                 <groupId>org.webjars</groupId>
@@ -842,7 +845,7 @@
             <dependency>
                 <groupId>org.webjars.npm</groupId>
                 <artifactId>dayjs</artifactId>
-                <version>1.11.18</version>
+                <version>1.11.19</version>
             </dependency>
             <dependency>
                 <groupId>org.wiremock</groupId>

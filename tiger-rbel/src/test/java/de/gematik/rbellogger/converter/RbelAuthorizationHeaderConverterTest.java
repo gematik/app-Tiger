@@ -68,7 +68,7 @@ class RbelAuthorizationHeaderConverterTest {
             curlMessage.getBytes(StandardCharsets.UTF_8),
             new RbelMessageMetadata().withTransmissionTime(ZonedDateTime.now()));
 
-    final String renderingOutput = RbelHtmlRenderer.render(logger.getMessageHistory());
+    final String renderingOutput = RbelHtmlRenderer.render(logger.getMessages());
     assertThat(renderingOutput)
         .contains("Carvalho")
         .contains("https://idp.zentral.idp.splitdns.ti-dienste.de");

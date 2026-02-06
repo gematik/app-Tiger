@@ -94,7 +94,10 @@ class JsonConverterTest {
     assertThat(RbelHtmlRenderer.render(List.of(convertedMessage))).isNotBlank();
 
     assertThat(
-            convertedMessage.getFirst("body").get().traverseAndReturnNestedMembers().stream()
+            convertedMessage
+                .getFirst("body")
+                .get()
+                .traverseNestedMembers()
                 .filter(el -> el.hasFacet(RbelJwtFacet.class))
                 .findAny())
         .isPresent();

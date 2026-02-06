@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Enables the usage of the RbelPathExecutor. The methods are called by the RbelPathExecutor, but
@@ -38,9 +40,20 @@ public abstract class RbelPathAble {
 
   public abstract List<? extends RbelPathAble> getAll(String subkey);
 
-  public abstract List<? extends RbelPathAble> getChildNodes();
+  public <T extends RbelPathAble> List<T> getChildNodes() {
+    return this.<T>getChildNodesStream().toList();
+  }
 
-  public abstract RbelMultiMap<? extends RbelPathAble> getChildNodesWithKey();
+  public <T extends RbelPathAble> Stream<T> getChildNodesStream() {
+    return this.<T>getChildNodesWithKeyStream().map(Map.Entry::getValue);
+  }
+
+  public abstract <T extends RbelPathAble>
+      @NotNull Stream<Map.Entry<String, T>> getChildNodesWithKeyStream();
+
+  public <T extends RbelPathAble> RbelMultiMap<T> getChildNodesWithKey() {
+    return getChildNodesWithKeyStream().collect(RbelMultiMap.COLLECTOR);
+  }
 
   public abstract Optional<String> getKey();
 
@@ -74,8 +87,7 @@ public abstract class RbelPathAble {
 
   public Optional<String> findKeyInParentElement() {
     return Optional.ofNullable(getParentNode()).stream()
-        .map(RbelPathAble::getChildNodesWithKey)
-        .flatMap(RbelMultiMap::stream)
+        .flatMap(RbelPathAble::getChildNodesWithKeyStream)
         .filter(e -> e.getValue() == this)
         .map(Map.Entry::getKey)
         .findFirst();

@@ -47,6 +47,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.xmlunit.builder.DiffBuilder;
 
@@ -112,6 +113,46 @@ public class RBelValidatorGlue {
   }
 
   /**
+   * filter all subsequent findRequest steps for port. To reset set port to empty string "".
+   *
+   * @param port to filter for
+   */
+  @Wenn("TGR filtere Anfragen nach Port {tigerResolvedString}")
+  @When("TGR filter requests based on port {tigerResolvedString}")
+  public void tgrFilterBasedOnPort(final String port) {
+    if (StringUtils.isBlank(port)) {
+      TigerConfigurationKeys.REQUEST_FILTER_PORT.deleteFromSourceAndLowerPrecedences(
+          ConfigurationValuePrecedence.TEST_CONTEXT);
+    }
+    val portInt = Integer.parseInt(port);
+    if (!isPortNumberPlausible(portInt)) {
+      throw new TigerLibraryException("Port must be between 1 and 65535");
+    }
+    TigerConfigurationKeys.REQUEST_FILTER_PORT.putValue(
+        portInt, ConfigurationValuePrecedence.TEST_CONTEXT);
+  }
+
+  private boolean isPortNumberPlausible(int port) {
+    return port > 0 && port <= 65535;
+  }
+
+  /** reset filter for host for subsequent findRequest steps. */
+  @Wenn("TGR lösche den gesetzten Server filter")
+  @When("TGR reset request host filter")
+  public void tgrResetRequestHostFilter() {
+    TigerConfigurationKeys.REQUEST_FILTER_HOST.deleteFromSourceAndLowerPrecedences(
+        ConfigurationValuePrecedence.TEST_CONTEXT);
+  }
+
+  /** reset filter for host for subsequent findRequest steps. */
+  @Wenn("TGR lösche den gesetzten port filter")
+  @When("TGR reset request port filter")
+  public void tgrResetRequestPortFilter() {
+    TigerConfigurationKeys.REQUEST_FILTER_PORT.deleteFromSourceAndLowerPrecedences(
+        ConfigurationValuePrecedence.TEST_CONTEXT);
+  }
+
+  /**
    * filter all subsequent findRequest steps for method.
    *
    * @param method method to filter for
@@ -127,8 +168,8 @@ public class RBelValidatorGlue {
   @Wenn("TGR lösche den gesetzten HTTP Methodenfilter")
   @When("TGR reset request method filter")
   public void tgrResetRequestMethodFilter() {
-    TigerGlobalConfiguration.deleteFromAllSources(
-        TigerConfigurationKeys.REQUEST_FILTER_METHOD.getKey());
+    TigerConfigurationKeys.REQUEST_FILTER_METHOD.deleteFromSourceAndLowerPrecedences(
+        ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**
@@ -265,11 +306,11 @@ public class RBelValidatorGlue {
    */
   @Wenn("TGR finde Anfrage mit Host {tigerResolvedString} und Port {tigerResolvedString}")
   @When("TGR find request with host {tigerResolvedString} and port {tigerResolvedString}")
-  public void findRequestToPathWithHostAndPort(final String host, final String port) {
+  public void findRequestWithHostAndPort(final String host, final String port) {
+    tgrFilterBasedOnHost(host);
+    tgrFilterBasedOnPort(port);
     rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
-            .host(host)
-            .port(port)
             .startFromPreviouslyFoundMessage(false)
             .build()
             .resolvePlaceholders());
@@ -924,7 +965,8 @@ public class RBelValidatorGlue {
   @SuppressWarnings("java:S106")
   public void printAllMessages() {
     getRbelMessageRetriever()
-        .getRbelMessages()
+        .getMessageHistory()
+        .getMessages()
         .forEach(
             message ->
                 System.out.println(

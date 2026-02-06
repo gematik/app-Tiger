@@ -94,7 +94,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(responsePayload);
         ZonedDateTime afterRespone = ZonedDateTime.now();
 
-        await().until(() -> tigerProxy.getRbelMessages().size() >= 2);
+        await().until(() -> tigerProxy.getMessageHistory().size() >= 2);
 
         // check content
         assertThat(tigerProxy.getRbelMessagesList().get(0).getRawContent())

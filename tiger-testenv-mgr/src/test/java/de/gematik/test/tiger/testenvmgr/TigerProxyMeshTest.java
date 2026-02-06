@@ -135,10 +135,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     assertThat(status).isEqualTo(404);
 
-    final Deque<RbelElement> reverseProxyMessages =
+    final Collection<RbelElement> reverseProxyMessages =
         ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
             .getTigerProxy()
-            .getRbelMessages();
+            .getMessageHistory()
+            .getMessages();
     val lastLocalSize = new AtomicInteger(0);
     val lastRemoteSize = new AtomicInteger(0);
     await()
@@ -147,7 +148,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             () -> {
               envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
               var localSize =
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size();
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size();
               var remoteSize = reverseProxyMessages.size();
               if (localSize > lastLocalSize.get() || remoteSize > lastRemoteSize.get()) {
                 log.info("Local Proxy size: {}, Remote Proxy size {}", localSize, remoteSize);
@@ -242,10 +243,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .get("https://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
         .asString();
 
-    final Deque<RbelElement> reverseProxyMessages =
+    val reverseProxyMessages =
         ((TigerProxyServer) envMgr.getServers().get("sneakyProxy"))
             .getTigerProxy()
-            .getRbelMessages();
+            .getMessageHistory()
+            .getMessages();
 
     await().atMost(10, TimeUnit.SECONDS).until(reverseProxyMessages::size, size -> size == 16);
 
@@ -326,7 +328,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           """)
   void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
     waitShortTime();
-    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()).isEmpty();
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages()).isEmpty();
 
     assertThat(
             Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.15"))
@@ -470,7 +472,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           """)
   void unreachableRouteInUpstreamProxy_downstreamShouldStart(TigerTestEnvMgr envMgr) {
     waitShortTime();
-    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()).isEmpty();
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages()).isEmpty();
   }
 
   @SneakyThrows
@@ -519,9 +521,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       }
       await()
           .atMost(10, TimeUnit.SECONDS)
-          .until(
-              () ->
-                  !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
+          .until(() -> !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().isEmpty());
     }
     waitShortTime();
   }
@@ -570,7 +570,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .until(
-            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory(),
+            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages(),
             l -> !l.isEmpty());
     waitShortTime();
   }
@@ -652,7 +652,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .pollInterval(100, TimeUnit.MILLISECONDS)
         .until(
             () ->
-                rbelLogger.getMessageHistory().stream()
+                rbelLogger.getMessages().stream()
                     .filter(m -> m.hasFacet(RbelHttpRequestFacet.class))
                     .toList(),
             list -> list.size() == 2);
@@ -661,7 +661,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
 
     var httpMessages =
-        rbelLogger.getMessageHistory().stream()
+        rbelLogger.getMessages().stream()
             .filter(m -> m.hasFacet(RbelHttpRequestFacet.class))
             .toList();
 
@@ -689,12 +689,10 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             h -> h.getTransmissionHops().get(0).getProxyName().equals("reverseProxy1"),
             "Expected hop from reverseProxy1");
 
-    var messages = rbelLogger.getMessageHistory().stream().toList();
+    var messages = rbelLogger.getMessages().stream().toList();
     for (int i = 0; i < messages.size() - 1; i++) {
-      Long sequenceNumber0 =
-          messages.get(i).getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber();
-      Long sequenceNumber1 =
-          messages.get(i + 1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber();
+      Long sequenceNumber0 = messages.get(i).getSequenceNumber().get();
+      Long sequenceNumber1 = messages.get(i + 1).getSequenceNumber().get();
 
       assertThat(sequenceNumber0).isLessThan(sequenceNumber1);
     }
@@ -746,14 +744,19 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       await()
           .atMost(10, TimeUnit.SECONDS)
           .until(
-              envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()::size,
+              envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages()::size,
               size -> size == 1);
 
       val senderPort = clientSocket.getLocalPort();
       val receiverPort =
           Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.50}"));
       val message =
-          envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst();
+          envMgr
+              .getLocalTigerProxyOrFail()
+              .getRbelLogger()
+              .getRbelConverter()
+              .getMessageHistory()
+              .getFirst();
       assertThat(message)
           .extractChildWithPath("$.receiver")
           .hasStringContentEqualTo("reverseHostname:" + receiverPort)
@@ -841,14 +844,14 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .atMost(numberOfSentMessages * maxDelay + 5_000, TimeUnit.MILLISECONDS)
           .until(
               () ->
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().stream()
                           .filter(msg -> msg.hasFacet(RbelHttpMessageFacet.class))
                           .count()
                       == 2 * numberOfSentMessages);
     } catch (Exception e) {
       log.error(
           "Error while waiting for messages to be parsed. Got {} messages, wanted {}",
-          envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size(),
+          envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size(),
           2 * numberOfSentMessages);
       throw e;
     }
@@ -940,7 +943,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     await()
         .atMost(cycles * maxDelay, TimeUnit.MILLISECONDS)
         .until(
-            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size(),
+            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size(),
             size -> size == 2 * cycles);
 
     envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
@@ -977,10 +980,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       var req = messages.get(reqIndex);
       var resp = messages.get(respIndex);
 
-      assertThat(req.getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber())
-          .isEqualTo(reqIndex);
-      assertThat(resp.getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber())
-          .isEqualTo(respIndex);
+      assertThat(req.getSequenceNumber().get()).isEqualTo(reqIndex);
+      assertThat(resp.getSequenceNumber().get()).isEqualTo(respIndex);
 
       assertThat(req)
           .extractFacet(ProxyTransmissionHistory.class)
@@ -1112,14 +1113,12 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .getOutputStream()
           .write(Bytes.concat(cetpMessage, Arrays.copyOfRange(cetpMessage, 0, 10)));
       clientSocket.getOutputStream().flush();
-      waitAtMost(2, TimeUnit.SECONDS)
-          .until(() -> reverseProxyLogger.getMessageHistory().size() > 1);
+      waitAtMost(2, TimeUnit.SECONDS).until(() -> reverseProxyLogger.getMessages().size() > 1);
       clientSocket
           .getOutputStream()
           .write(
               Bytes.concat(Arrays.copyOfRange(cetpMessage, 10, cetpMessage.length), cetpMessage));
-      waitAtMost(5, TimeUnit.SECONDS)
-          .until(() -> reverseProxyLogger.getMessageHistory().size() > 3);
+      waitAtMost(5, TimeUnit.SECONDS).until(() -> reverseProxyLogger.getMessages().size() > 3);
     }
     val revProxyUuids =
         reverseProxyLogger.getMessageList().stream()
@@ -1129,7 +1128,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     waitAtMost(10, TimeUnit.SECONDS)
         .until(
             () ->
-                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size()
                     == revProxyUuids.size());
     val localProxyUuids =
         envMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()

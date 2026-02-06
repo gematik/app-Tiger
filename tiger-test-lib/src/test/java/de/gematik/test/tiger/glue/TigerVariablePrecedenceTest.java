@@ -59,4 +59,14 @@ class TigerVariablePrecedenceTest {
     TigerGlobalConfiguration.clearTestVariables();
     assertThat(TigerGlobalConfiguration.readString("test.hello")).isEqualTo("global");
   }
+
+  @Test
+  void unsetGlobalVariable_shouldRemoveVariableFromConfiguration() {
+    TigerGlobalConfiguration.putValue("remove.me", "content");
+    assertThat(TigerGlobalConfiguration.readStringOptional("remove.me")).isPresent();
+
+    tigerGlue.unsetGlobalVariable("remove.me");
+
+    assertThat(TigerGlobalConfiguration.readStringOptional("remove.me")).isEmpty();
+  }
 }

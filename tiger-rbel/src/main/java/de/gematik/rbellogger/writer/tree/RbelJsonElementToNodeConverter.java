@@ -48,7 +48,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
   public RbelContentTreeNode convert(
       RbelElement el, TigerConfigurationLoader context, RbelContentTreeConverter converter) {
     final RbelMultiMap<RbelContentTreeNode> map =
-        el.getChildNodesWithKey().stream()
+        el.getChildNodesWithKeyStream()
             .flatMap(
                 entry ->
                     convertNode(entry.getValue(), entry.getKey(), context, converter).stream()

@@ -34,6 +34,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -50,12 +51,13 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   public static final AttributeKey<RbelSocketAddress> VIRTUAL_SERVER_ADDRESS =
       AttributeKey.valueOf("VIRTUAL_SERVER_ADRESS");
   private final BinaryExchangeHandler binaryProxyListener;
-  private final BinaryModifierApplier binaryModifierApplier;
+  @Getter private final BinaryModifierApplier binaryModifierApplier;
   private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
 
-  public BinaryBridgeHandler(MockServerConfiguration configuration) {
+  public BinaryBridgeHandler(
+      MockServerConfiguration configuration, BinaryModifierApplier binaryModifierApplier) {
     this.binaryProxyListener = configuration.binaryProxyListener();
-    this.binaryModifierApplier = new BinaryModifierApplier(configuration);
+    this.binaryModifierApplier = binaryModifierApplier;
   }
 
   @Override

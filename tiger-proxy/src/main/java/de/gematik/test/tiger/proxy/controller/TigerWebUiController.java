@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.proxy.controller;
 
+import static de.gematik.rbellogger.renderer.MessageMetaDataDto.getElementSequenceNumber;
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
 import de.gematik.rbellogger.RbelLogger;
@@ -28,7 +29,6 @@ import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelContent;
@@ -50,7 +50,6 @@ import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import java.util.AbstractMap;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -163,7 +162,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     var response = JexlQueryResponseScrollableDto.builder().messageUuid(messageUuid).query(query);
 
     final var targetMessage =
-        getTigerProxy().getRbelLogger().getMessageHistory().stream()
+        getTigerProxy().getRbelLogger().getMessages().stream()
             .filter(msg -> msg.getUuid().equals(messageUuid))
             .findFirst()
             .orElseThrow();
@@ -200,7 +199,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     List<RbelElement> targetElements;
     try {
       targetElements =
-          getTigerProxy().getRbelLogger().getMessageHistory().stream()
+          getTigerProxy().getRbelLogger().getMessages().stream()
               .filter(msg -> msg.getUuid().equals(msgUuid))
               .map(msg -> msg.findRbelPathMembers(query))
               .flatMap(List::stream)
@@ -263,11 +262,10 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   /** Returns a stable hash, even if the message queue is empty. */
-  private String messageHash() {
-    var messages = getTigerProxy().getRbelMessages();
+  private String messageHash(Collection<RbelElement> messages) {
     return messages.isEmpty()
         ? (new UUID(getTigerProxy().hashCode(), 1234)).toString()
-        : messages.getFirst().getUuid();
+        : messages.iterator().next().getUuid();
   }
 
   private <T> void addOffsetToMessages(
@@ -287,8 +285,8 @@ public class TigerWebUiController implements ApplicationContextAware {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "`toOffsetExcluding` must be greater or equal than `fromOffset`");
 
-    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
-    var total = messages.size();
+    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+    var total = parsedMessages.size();
 
     var result = new GetMessagesWithHtmlScrollableDto();
     result.setFromOffset(fromOffset);
@@ -297,9 +295,9 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     result.setTotal(total);
 
-    result.setHash(messageHash());
+    result.setHash(messageHash(parsedMessages));
 
-    var messageStream = messages.stream();
+    var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
 
     result.setMessages(
@@ -312,7 +310,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                         .content(
                             new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
                         .uuid(msg.getUuid())
-                        .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+                        .sequenceNumber(getElementSequenceNumber(msg))
                         .build())
             .toList());
 
@@ -326,16 +324,16 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/getMessagesWithMeta", produces = MediaType.APPLICATION_JSON_VALUE)
   public GetMessagesWithMetaScrollableDto getMessagesWithMeta(
       @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
-    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
-    var total = messages.size();
+    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+    var total = parsedMessages.size();
 
     var result = new GetMessagesWithMetaScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash());
+    result.setHash(messageHash(parsedMessages));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
-    var messageStream = messages.stream();
+    var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
 
     result.setMessages(messageStream.map(MetaMessageScrollableDto::createFrom).toList());
@@ -350,16 +348,16 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/testFilterMessages", produces = MediaType.APPLICATION_JSON_VALUE)
   public SearchMessagesScrollableDto testFilterMessages(
       @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
-    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
-    var total = messages.size();
+    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+    var total = parsedMessages.size();
 
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash());
+    result.setHash(messageHash(parsedMessages));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
-    var messageStream = messages.stream();
+    var messageStream = parsedMessages.stream();
     try {
       // Retrieve one more message to check for additional data; trim the extra later.
       messageStream =
@@ -385,19 +383,18 @@ public class TigerWebUiController implements ApplicationContextAware {
       @RequestParam(name = "searchRbelPath") String searchRbelPath) {
 
     var rbelLogger = tigerProxy.getRbelLogger();
-    var total = rbelLogger.getMessageHistory().size();
-
-    var messages = getTigerProxy().getRbelLogger().getMessageHistory();
+    var parsedMessages = rbelLogger.getMessageList();
+    var total = parsedMessages.size();
 
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash());
+    result.setHash(messageHash(parsedMessages));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
     result.setSearchFilter(
         GetMessagesFilterScrollableDto.builder().rbelPath(searchRbelPath).build());
 
-    var messageStream = messages.stream();
+    var messageStream = parsedMessages.stream();
     try {
       messageStream = filterMessages(messageStream, filterRbelPath);
       messageStream = filterMessages(messageStream, searchRbelPath);
@@ -518,7 +515,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     return HtmlMessageScrollableDto.builder()
         .content(new RbelHtmlRenderingToolkit(fullRbelHtmlRenderer).convertMessage(msg).render())
         .uuid(msg.getUuid())
-        .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+        .sequenceNumber(getElementSequenceNumber(msg))
         .build();
   }
 
@@ -534,24 +531,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   private Collection<RbelElement> getMessagesAfterUuid(String lastMsgUuid, RbelLogger rbelLogger) {
-    if (lastMsgUuid != null
-        && rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
-      var history = rbelLogger.getMessageHistory();
-      var iterator = history.descendingIterator();
-      var newMessages = new LinkedList<RbelElement>();
-
-      while (iterator.hasNext()) {
-        var msg = iterator.next();
-        if (msg.getUuid().equals(lastMsgUuid)) {
-          break;
-        }
-        newMessages.addFirst(msg);
-      }
-
-      return newMessages;
-    } else {
-      return rbelLogger.getMessageHistory();
-    }
+    return rbelLogger.getRbelConverter().getMessagesNewerThan(lastMsgUuid);
   }
 
   private Predicate<RbelElement> matchesFilter(String filterCriterion) {
@@ -575,7 +555,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResetMessagesDto resetMessages() {
     log.info("Resetting currently recorded messages on rbel logger..");
-    int size = getTigerProxy().getRbelLogger().getMessageHistory().size();
+    int size = getTigerProxy().getRbelLogger().getMessages().size();
     ResetMessagesDto result = new ResetMessagesDto();
     result.setNumMsgs(size);
     getTigerProxy().getRbelLogger().clearAllMessages();

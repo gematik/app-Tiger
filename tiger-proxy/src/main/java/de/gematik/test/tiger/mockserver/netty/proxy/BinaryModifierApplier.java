@@ -101,6 +101,7 @@ public class BinaryModifierApplier {
   }
 
   private BinaryMessage filterMessageThroughPlugins(BinaryMessage message, RbelElement target) {
+    rbelConverter.waitForMessageAndPartnersToBeFullyConverted(target);
     var modifiedMessage =
         new AtomicReference<>(new BinaryMessage(target.getRawContent(), message.getTimestamp()));
     var parsedMessage = new AtomicReference<>(target);

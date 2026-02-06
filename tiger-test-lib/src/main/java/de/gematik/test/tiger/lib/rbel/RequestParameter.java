@@ -21,9 +21,7 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 
 @Builder
@@ -34,8 +32,9 @@ public class RequestParameter {
   private String path;
   private String rbelPath;
   private String value;
-  private String host;
-  private String port;
+  @Setter private String host;
+  @Setter private Integer port;
+  @Setter private String method;
   private final boolean startFromPreviouslyFoundMessage;
   private final boolean filterPreviousRequest;
   private final boolean requireNewMessage;

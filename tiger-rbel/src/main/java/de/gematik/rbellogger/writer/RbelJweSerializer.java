@@ -25,7 +25,6 @@ import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
 import org.jose4j.jca.ProviderContext;
@@ -107,14 +106,15 @@ public class RbelJweSerializer implements RbelSerializer {
 
   private void writeHeaderInJwe(
       Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriterInstance rbelWriter) {
-    headers.map(RbelContentTreeNode::getChildNodes).stream()
-        .flatMap(Collection::stream)
+    headers.stream()
+        .flatMap(RbelContentTreeNode::getChildNodesStream)
         .forEach(
             header -> {
               if (RbelJsonSerializer.isJsonArray(header)) {
                 jwe.setHeader(
                     header.getKey().orElseThrow(),
-                    header.getChildNodes().stream()
+                    header
+                        .getChildNodesStream()
                         .map(
                             childNode ->
                                 new String(

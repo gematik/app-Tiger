@@ -98,8 +98,8 @@ public class RbelLogger {
    * Gives a view of the current messages. This view includes messages that are not yet fully
    * parsed.
    */
-  public Deque<RbelElement> getMessageHistory() {
-    return rbelConverter.getMessageHistoryAsync();
+  public Collection<RbelElement> getMessages() {
+    return rbelConverter.getMessageHistoryAsync().getMessages();
   }
 
   public void clearAllMessages() {

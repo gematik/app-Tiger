@@ -23,25 +23,34 @@ package de.gematik.test.tiger.proxy.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.gematik.test.tiger.proxy.client.legacy.TigerTracingDtoLegacy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 
-@RequiredArgsConstructor
 @Slf4j
 class TracingStompHandler implements StompFrameHandler {
 
   private final TigerRemoteProxyClient remoteProxyClient;
+  private boolean legacyMode = false;
+
+  public TracingStompHandler(TigerRemoteProxyClient remoteProxyClient) {
+    this.legacyMode = remoteProxyClient.getTigerProxyConfiguration().isEnableLegacyTraffic();
+    this.remoteProxyClient = remoteProxyClient;
+  }
 
   @Override
   public Type getPayloadType(@Nullable StompHeaders stompHeaders) {
-    return TigerTracingDto.class;
+    if (legacyMode) {
+      return TigerTracingDtoLegacy.class;
+    } else {
+      return TigerTracingDto.class;
+    }
   }
 
   @Override
@@ -67,19 +76,25 @@ class TracingStompHandler implements StompFrameHandler {
             })
         .log("Received new frame of type {} in proxy {} with content: {}");
     if (frameContent instanceof TigerTracingDto tigerTracingDto) {
-      CompletableFuture.runAsync(
-              () -> registerNewMessage(tigerTracingDto), remoteProxyClient.getMeshHandlerPool())
-          .exceptionally(
-              e -> {
-                remoteProxyClient.propagateException(
-                    new TigerProxyRoutingException(
-                        "Error while handling message: " + e.getMessage(),
-                        tigerTracingDto.getSender(),
-                        tigerTracingDto.getReceiver(),
-                        e));
-                return null;
-              });
+      registerNewMessageAsync(tigerTracingDto);
+    } else if (frameContent instanceof TigerTracingDtoLegacy tigerTracingDtoLegacy) {
+      tigerTracingDtoLegacy.toDtoList().forEach(this::registerNewMessageAsync);
     }
+  }
+
+  private void registerNewMessageAsync(TigerTracingDto tigerTracingDto) {
+    CompletableFuture.runAsync(
+            () -> registerNewMessage(tigerTracingDto), remoteProxyClient.getMeshHandlerPool())
+        .exceptionally(
+            e -> {
+              remoteProxyClient.propagateException(
+                  new TigerProxyRoutingException(
+                      "Error while handling message: " + e.getMessage(),
+                      tigerTracingDto.getSender(),
+                      tigerTracingDto.getReceiver(),
+                      e));
+              return null;
+            });
   }
 
   private void registerNewMessage(TigerTracingDto tigerTracingDto) {

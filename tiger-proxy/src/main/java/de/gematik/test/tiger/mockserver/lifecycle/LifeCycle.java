@@ -220,7 +220,8 @@ public abstract class LifeCycle {
       List<Integer> requestedPortBindings,
       List<Future<Channel>> channelFutures) {
     List<Integer> actualPortBindings = new ArrayList<>();
-    for (final Integer portToBind : requestedPortBindings) {
+    for (final Integer requestedPort : requestedPortBindings) {
+      int portToBind = requestedPort == null ? 0 : requestedPort;
       try {
         final CompletableFuture<Channel> channelOpened = new CompletableFuture<>();
         channelFutures.add(channelOpened);

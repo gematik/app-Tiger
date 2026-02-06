@@ -82,7 +82,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   }
 
   @Test
-  void testHostnameIsAutosetIfMissingK() {
+  void testHostnameIsAutosetIfMissing() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(

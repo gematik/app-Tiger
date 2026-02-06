@@ -60,12 +60,13 @@ class PcapCaptureTest {
 
     fileReaderCapturer.initialize();
 
-    assertThat(rbelLogger.getMessageHistory().getFirst())
+    var history = rbelLogger.getRbelConverter().getMessageHistory();
+    assertThat(history.getFirst())
         .hasStringContentEqualToAtPosition("$.sender.port", "51441")
         .extractChildWithPath("$.sender.domain")
         .asString()
         .matches("(view-|)localhost");
-    assertThat(rbelLogger.getMessageHistory().getFirst())
+    assertThat(history.getFirst())
         .hasStringContentEqualToAtPosition("$.receiver.port", "8080")
         .extractChildWithPath("$.receiver.domain")
         .asString()
@@ -127,7 +128,7 @@ class PcapCaptureTest {
     addRandomTimestamps(rbelLogger);
 
     log.info("start rendering " + LocalDateTime.now());
-    final String render = new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory());
+    final String render = new RbelHtmlRenderer().doRender(rbelLogger.getMessages());
     FileUtils.writeStringToFile(
         new File("target/pairingList.html"), render, Charset.defaultCharset());
     log.info("completed rendering " + LocalDateTime.now());
@@ -148,7 +149,7 @@ class PcapCaptureTest {
 
   private void addRandomTimestamps(RbelLogger rbelLogger) {
     ZonedDateTime now = ZonedDateTime.now();
-    for (RbelElement msg : rbelLogger.getMessageHistory()) {
+    for (RbelElement msg : rbelLogger.getMessages()) {
       msg.addFacet(RbelMessageTimingFacet.builder().transmissionTime(now).build());
       now = now.plusNanos((long) (1000 * 1000 * RandomUtils.nextDouble(10, 1000)));
     }

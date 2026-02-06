@@ -102,7 +102,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           assertThat(chain[0].getSubjectX500Principal().getName()).contains("muahaha");
           verifyWasCalledSuccessfully.set(true);
         });
-    proxyRest.config().proxy(null);
+    proxyRest.config().proxy((kong.unirest.core.Proxy) null);
     proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
     assertThat(verifyWasCalledSuccessfully).isTrue();
   }
@@ -605,7 +605,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                         throw new RuntimeException(e);
                       }
                     }));
-    proxyRest.config().proxy(null);
+    proxyRest.config().proxy((kong.unirest.core.Proxy) null);
     proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
     assertThat(checkCounter).hasValueGreaterThanOrEqualTo(1);

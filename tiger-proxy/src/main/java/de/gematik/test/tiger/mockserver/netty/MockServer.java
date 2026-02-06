@@ -31,6 +31,7 @@ import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
+import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
@@ -73,6 +74,7 @@ public class MockServer extends LifeCycle {
   private NettySslContextFactory serverSslContextFactory;
   private NettySslContextFactory clientSslContextFactory;
   private MockServerInfiniteLoopChecker infiniteLoopChecker;
+  private final BinaryModifierApplier binaryModifierApplier;
 
   /**
    * Start the instance using the ports provided
@@ -89,6 +91,7 @@ public class MockServer extends LifeCycle {
     } else {
       remoteSocket = null;
     }
+    this.binaryModifierApplier = new BinaryModifierApplier(configuration);
     createServerBootstrap(configuration, localPorts);
 
     // wait to start
@@ -109,7 +112,8 @@ public class MockServer extends LifeCycle {
     serverSslContextFactory = new NettySslContextFactory(configuration, true);
     clientSslContextFactory = new NettySslContextFactory(configuration, false);
     val httpClient =
-        new NettyHttpClient(configuration, getEventLoopGroup(), clientSslContextFactory);
+        new NettyHttpClient(
+            configuration, getEventLoopGroup(), clientSslContextFactory, binaryModifierApplier);
     infiniteLoopChecker = new MockServerInfiniteLoopChecker(httpClient);
 
     actionHandler = new HttpActionHandler(configuration, httpState, httpClient);

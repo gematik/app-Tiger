@@ -35,7 +35,7 @@ export function useSettings(): SettingsReturn {
   const reverseMessageQueue = useStorage("reverseMessageQueue", false);
   const hideMessageHeaders = useStorage("hideMessageHeaders", false);
   const hideMessageDetails = useStorage("hideMessageDetails", false);
-  const hideRbelHelp = useStorage("hideRbelHelp", false);
+  const hideRbelHelp = useStorage("hideRbelHelp", true);
 
   return {
     reverseMessageQueue,

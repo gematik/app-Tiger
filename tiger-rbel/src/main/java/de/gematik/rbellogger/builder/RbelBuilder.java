@@ -32,8 +32,6 @@ import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -66,7 +64,8 @@ public class RbelBuilder {
    */
   @SneakyThrows
   public static RbelBuilder fromFile(String pathName) {
-    String fileContent = Files.readString(Paths.get(String.valueOf(Path.of(pathName))));
+    String fileContent =
+        Files.readString(TigerGlobalConfiguration.resolveRelativePathToTigerYaml(pathName));
     final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(fileContent);
     return fromString(resolvedInput);
   }
@@ -186,7 +185,8 @@ public class RbelBuilder {
         parentNode.addOrReplaceChild(
             entry.getKey().orElseThrow(), modifiedRbelContentTreeNode.getChildNodes().get(0));
       } else {
-        modifiedRbelContentTreeNode.getChildNodesWithKey().stream()
+        modifiedRbelContentTreeNode
+            .getChildNodesWithKeyStream()
             .forEach(
                 childNode ->
                     parentNode.addOrReplaceChild(childNode.getKey(), childNode.getValue()));

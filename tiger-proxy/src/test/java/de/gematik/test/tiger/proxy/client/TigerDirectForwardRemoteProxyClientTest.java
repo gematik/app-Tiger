@@ -30,7 +30,6 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractNonHttpTest;
-import de.gematik.test.tiger.proxy.AbstractNonHttpTest.VerifyInteractionsConsumer;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import java.io.BufferedReader;
@@ -83,8 +82,8 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
           log.info("Server received request: '{}'", reader.readLine());
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages()).hasSize(1);
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getFirst().getRawContent())
+          assertThat(tigerRemoteProxyClient.get().getMessages()).hasSize(1);
+          assertThat(tigerRemoteProxyClient.get().getMessageHistory().getFirst().getRawContent())
               .containsExactly(request);
           assertThat(serverCalled.get()).isEqualTo(1);
         },
@@ -105,9 +104,9 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
           serverSocket.getOutputStream().flush();
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getFirst())
+          assertThat(tigerRemoteProxyClient.get().getMessageHistory().getFirst())
               .hasStringContentEqualTo(new String(request));
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getLast())
+          assertThat(tigerRemoteProxyClient.get().getMessageHistory().getLast())
               .hasStringContentEqualTo(new String(response));
         },
         Object::toString);
@@ -119,8 +118,8 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
         socket -> writeSingleRequestMessage(socket, request),
         serverSocket -> {},
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages()).hasSize(1);
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getFirst().getRawContent())
+          assertThat(tigerRemoteProxyClient.get().getMessages()).hasSize(1);
+          assertThat(tigerRemoteProxyClient.get().getMessageHistory().getFirst().getRawContent())
               .containsExactly(request);
           assertThat(tigerRemoteProxyClient.get().getReceivedRemoteExceptions()).hasSize(1);
         },

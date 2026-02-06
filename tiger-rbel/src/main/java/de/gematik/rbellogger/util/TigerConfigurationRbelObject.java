@@ -23,11 +23,11 @@ package de.gematik.rbellogger.util;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -81,31 +81,22 @@ class TigerConfigurationRbelObject extends RbelPathAble {
   }
 
   @Override
-  public List<TigerConfigurationRbelObject> getChildNodes() {
-    List<TigerConfigurationRbelObject> result = new ArrayList<>();
-    for (Entry<TigerConfigurationKey, String> e : configuration.entrySet()) {
-      if (e.getKey().isBelow(key)) {
-        final TigerConfigurationRbelObject configurationRbelObject;
-        if (e.getKey().isDirectlyBelow(key)) {
-          configurationRbelObject =
-              new TigerConfigurationRbelObject(this.configuration, e.getKey());
-        } else {
-          configurationRbelObject =
-              new TigerConfigurationRbelObject(
-                  this.configuration,
-                  new TigerConfigurationKey(e.getKey().subList(0, key.size() + 1)));
-        }
+  public Stream<TigerConfigurationRbelObject> getChildNodesStream() {
+    return super.getChildNodesStream();
+  }
 
-        if (!result.contains(configurationRbelObject)) {
-          result.add(configurationRbelObject);
-        }
-      }
-    }
-    return result;
+  @Override
+  public List<TigerConfigurationRbelObject> getChildNodes() {
+    return super.getChildNodes();
   }
 
   @Override
   public RbelMultiMap<TigerConfigurationRbelObject> getChildNodesWithKey() {
+    return super.getChildNodesWithKey();
+  }
+
+  @Override
+  public Stream<Map.Entry<String, TigerConfigurationRbelObject>> getChildNodesWithKeyStream() {
     return configuration.entrySet().stream()
         .filter(e -> e.getKey().isBelow(key))
         .map(
@@ -119,8 +110,7 @@ class TigerConfigurationRbelObject extends RbelPathAble {
               }
             })
         .distinct()
-        .map(e -> Pair.of(e.getKey().get(), e))
-        .collect(RbelMultiMap.COLLECTOR);
+        .map(e -> Pair.of(e.getKey().get(), e));
   }
 
   @Override

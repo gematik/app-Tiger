@@ -70,7 +70,9 @@ public class RbelOcspResponseFacet implements RbelFacet {
                             .orElse(null)),
                     br())
                 .with(
-                    ocspResponseFacet.getResponses().getChildNodes().stream()
+                    ocspResponseFacet
+                        .getResponses()
+                        .getChildNodesStream()
                         .map(
                             c ->
                                 renderingToolkit.generateSubsection(
@@ -79,7 +81,9 @@ public class RbelOcspResponseFacet implements RbelFacet {
                                     renderSingleOcspResponse(c, renderingToolkit)))
                         .toList())
                 .with(
-                    ocspResponseFacet.getExtensions().getChildNodes().stream()
+                    ocspResponseFacet
+                        .getExtensions()
+                        .getChildNodesStream()
                         .map(ext -> renderX509Extension(ext, renderingToolkit))
                         .toList());
           }
@@ -103,7 +107,9 @@ public class RbelOcspResponseFacet implements RbelFacet {
                         "Next Update: ", singleOcspResponseFacet.getNextUpdate()),
                     br())
                 .with(
-                    singleOcspResponseFacet.getExtensions().getChildNodes().stream()
+                    singleOcspResponseFacet
+                        .getExtensions()
+                        .getChildNodesStream()
                         .map(ext -> renderX509Extension(ext, renderingToolkit))
                         .toList());
           }

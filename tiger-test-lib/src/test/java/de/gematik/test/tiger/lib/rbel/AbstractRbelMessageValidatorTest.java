@@ -53,7 +53,7 @@ abstract class AbstractRbelMessageValidatorTest {
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                 .addCapturer(RbelFileReaderCapturer.builder().rbelFile(rbelFile).build()));
     rbelLogger.getRbelCapturer().initialize();
-    localProxyRbelMessageListenerTestAdapter.addMessages(rbelLogger.getMessageHistory());
+    localProxyRbelMessageListenerTestAdapter.addMessages(rbelLogger.getMessages());
   }
 
   protected void setUp() {
@@ -62,8 +62,10 @@ abstract class AbstractRbelMessageValidatorTest {
     this.localProxyRbelMessageListenerTestAdapter = new LocalProxyRbelMessageListenerTestAdapter();
 
     tigerProxy = mock(TigerProxy.class);
-    when(tigerProxy.getRbelMessages())
-        .thenReturn(localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock());
+    when(tigerProxy.getMessageHistory())
+        .thenReturn(
+            new MockHistoryFacade(
+                localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock()));
 
     rbelMessageRetriever =
         new RbelMessageRetriever(

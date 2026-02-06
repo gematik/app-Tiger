@@ -70,7 +70,7 @@ class VauEpa3ConverterTest {
       capturer.initialize();
     }
 
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/vau3.html").toPath(), html.getBytes());
     assertThat(html)
         .isNotBlank()
@@ -82,7 +82,7 @@ class VauEpa3ConverterTest {
   @SneakyThrows
   @Test
   void testDecryption() {
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/decryption.html").toPath(), html.getBytes());
     assertThat(rbelLogger.getMessageList().get(1))
         .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
@@ -126,12 +126,12 @@ class VauEpa3ConverterTest {
       capturer.initialize();
     }
 
-    assertThat(rbelLogger.getMessageHistory()).hasSize(2);
-    val request = rbelLogger.getMessageHistory().getFirst();
+    assertThat(rbelLogger.getMessages()).hasSize(2);
+    val request = rbelLogger.getRbelConverter().getMessageHistory().getFirst();
     assertThat(request)
         .extractChildWithPath("$.body.decrypted.method")
         .hasStringContentEqualTo("GET");
-    val response = rbelLogger.getMessageHistory().getLast();
+    val response = rbelLogger.getRbelConverter().getMessageHistory().getLast();
     assertThat(response)
         .extractChildWithPath("$.body.decrypted.responseCode")
         .hasStringContentEqualTo("200");

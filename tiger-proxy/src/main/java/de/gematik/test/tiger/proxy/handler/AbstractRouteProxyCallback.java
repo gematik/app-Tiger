@@ -29,6 +29,7 @@ import java.net.URL;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @Slf4j
 @Getter
@@ -96,18 +97,15 @@ public abstract class AbstractRouteProxyCallback extends AbstractTigerRouteCallb
   }
 
   private String concatenateUrlFragments(String path, String unmatchedRequestPath) {
-    if (path.endsWith("/") && unmatchedRequestPath.startsWith("/")) {
-      return path + unmatchedRequestPath.substring(1);
-    } else if (!path.endsWith("/") && !unmatchedRequestPath.startsWith("/")) {
-      if (unmatchedRequestPath.isBlank()) {
-        return path;
-      }
-      if (path.isBlank()) {
-        return unmatchedRequestPath;
-      }
-      return path + "/" + unmatchedRequestPath;
-    } else {
-      return path + unmatchedRequestPath;
+    if (unmatchedRequestPath.isBlank()) {
+      return path;
     }
+    val slashes = (path.endsWith("/") ? 1 : 0) + (unmatchedRequestPath.startsWith("/") ? 1 : 0);
+    return path
+        + switch (slashes) {
+          case 0 -> "/" + unmatchedRequestPath;
+          case 2 -> unmatchedRequestPath.substring(1);
+          default -> unmatchedRequestPath;
+        };
   }
 }

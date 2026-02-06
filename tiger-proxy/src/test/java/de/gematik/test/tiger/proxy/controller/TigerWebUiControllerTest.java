@@ -339,7 +339,7 @@ class TigerWebUiControllerTest {
 
     RestAssured.given().get(getWebUiUrl() + "/resetMessages").then().statusCode(200);
 
-    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    assertThat(tigerProxy.getMessages()).isEmpty();
 
     RestAssured.with()
         .body(downloadedTraffic)
@@ -415,7 +415,7 @@ class TigerWebUiControllerTest {
         .header("available-messages", String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES - 2));
 
     RestAssured.given().get(getWebUiUrl() + "/resetMessages");
-    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    assertThat(tigerProxy.getMessages()).isEmpty();
 
     RestAssured.with()
         .body(trafficFileContent.asString())

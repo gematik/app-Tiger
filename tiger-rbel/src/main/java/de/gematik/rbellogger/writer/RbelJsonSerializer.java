@@ -42,9 +42,9 @@ public class RbelJsonSerializer implements RbelSerializer {
   public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
     if (isJsonArray(node)) {
       StringJoiner joiner = new StringJoiner(",");
-      for (RbelContentTreeNode childNode : node.getChildNodes()) {
-        joiner.add(renderToString(childNode, rbelWriter));
-      }
+
+      node.getChildNodesStream()
+          .forEach(childNode -> joiner.add(renderToString(childNode, rbelWriter)));
       return "[" + joiner + "]";
 
     } else if (isPrimitive(node) || !node.hasTypeOptional(RbelContentType.JSON).orElse(true)) {
@@ -55,13 +55,14 @@ public class RbelJsonSerializer implements RbelSerializer {
       }
     } else if (isJsonObject(node)) {
       StringJoiner joiner = new StringJoiner(",");
-      for (RbelContentTreeNode childNode : node.getChildNodes()) {
-        joiner.add(
-            "\""
-                + childNode.getKey().orElseThrow()
-                + "\": "
-                + renderToString(childNode, rbelWriter));
-      }
+      node.getChildNodesStream()
+          .forEach(
+              childNode ->
+                  joiner.add(
+                      "\""
+                          + childNode.getKey().orElseThrow()
+                          + "\": "
+                          + renderToString(childNode, rbelWriter)));
       return "{" + joiner + "}";
     } else {
       throw new RbelSerializationException("Failed to serialize the node: " + node);
@@ -70,7 +71,7 @@ public class RbelJsonSerializer implements RbelSerializer {
 
   private static String getStringContentForNode(
       RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-    if (node.getChildNodes().isEmpty()) {
+    if (node.getChildNodesStream().findFirst().isEmpty()) {
       if (node.getContent() == null) {
         return "{}";
       }
@@ -94,6 +95,6 @@ public class RbelJsonSerializer implements RbelSerializer {
 
   private boolean isPrimitive(RbelContentTreeNode node) {
     return node.attributes().containsKey(RbelJsonElementToNodeConverter.JSON_PRIMITIVE)
-        || node.getChildNodes().isEmpty();
+        || node.getChildNodesStream().findFirst().isEmpty();
   }
 }

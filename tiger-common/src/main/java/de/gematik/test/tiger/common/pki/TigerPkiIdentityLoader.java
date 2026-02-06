@@ -120,7 +120,7 @@ public class TigerPkiIdentityLoader {
 
     throw new TigerPkiIdentityLoaderException(
         "Unable to decrypt file %s with any of these keystore passwords: %s"
-            .formatted(file.getName(), keystorePasswords));
+            .formatted(file.getAbsolutePath(), keystorePasswords));
   }
 
   static List<String> getAllKeystorePasswords() {

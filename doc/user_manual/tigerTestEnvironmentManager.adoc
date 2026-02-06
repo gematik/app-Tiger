@@ -17,7 +17,7 @@ It then loads further yaml-files:
 
 * `tiger-$+{hostname}+.yaml` and `tiger-$+{hostname}+.yml` are read and give the possibility to make computer-dependent configuration.
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).
-* `tiger-$+{profile}+.yaml` is read if the system property `PROFILE` or the environment variable `PROFILE` is set.
+* `tiger-$+{profile}+.yaml` is read if the system property `profile` or the environment variable `PROFILE` is set.
 The file needs to be located in the same folder as the `tiger.yaml` file.
 * The list given under `tiger.additionalYamls` is read.
 Each list-entry has two properties:
@@ -759,8 +759,12 @@ additionalConfigurationFiles:
 
 # the block where all the Tiger Proxy configuration properties are located
 tigerProxy:
-  # the port under which the server will be booted
+  # the port which will be used for administration (webUI, mesh-Setup,...)
   adminPort: 7777
+  # port which will be used to proxy requests
+  proxyPort: 6666
+  additionalProxyPorts:
+    - 5555 # additional port which will be used for proxying
   # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
   # section to configure whether and where the proxy should dump a tiger traffic file on shutdown

@@ -65,10 +65,10 @@ class TestCetpCommunication extends AbstractNonHttpTest {
           TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(getTigerProxy(), 2);
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
+          assertThat(getTigerProxy().getMessageHistory().getFirst().getRawContent())
               .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
-          assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
+          assertThat(getTigerProxy().getMessageHistory().getLast().getRawContent())
               .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
         });
@@ -95,10 +95,10 @@ class TestCetpCommunication extends AbstractNonHttpTest {
           }
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
+          assertThat(getTigerProxy().getMessageHistory().getFirst().getRawContent())
               .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
-          assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
+          assertThat(getTigerProxy().getMessageHistory().getLast().getRawContent())
               .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
         });

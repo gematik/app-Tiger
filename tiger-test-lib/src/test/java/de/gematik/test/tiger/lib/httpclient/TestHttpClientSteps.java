@@ -66,20 +66,20 @@ import org.junit.jupiter.params.provider.CsvSource;
  * glue code so by running the feature file as test, no coverage is reported for the glue code.
  */
 @Slf4j
-public class TestHttpClientSteps {
+class TestHttpClientSteps {
 
   private HttpGlueCode httpGlueCode;
   private RBelValidatorGlue rbelValidatorGlueCode;
   private TigerGlue tigerGlue;
 
   @BeforeAll
-  public static void resetTiger() {
+  static void resetTiger() {
     TigerHttpClient.reset();
     TigerDirector.testUninitialize();
   }
 
   @BeforeEach
-  public synchronized void clearMessages() {
+  synchronized void clearMessages() {
     if (!TigerDirector.isInitialized()) {
       System.setProperty("tiger.testenv.cfgfile", "tiger.yaml");
       TigerDirector.start();
@@ -97,7 +97,7 @@ public class TestHttpClientSteps {
   }
 
   @AfterAll
-  public static void shutdown() {
+  static void shutdown() {
     TigerTestEnvMgr tigerTestEnvMgr = TigerDirector.getTigerTestEnvMgr();
     if (tigerTestEnvMgr.isShuttingDown()) {
       return;

@@ -28,6 +28,7 @@ import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
+import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.mockserver.netty.unification.WebSocketUpgradeHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
@@ -69,13 +70,14 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   HttpClientInitializer(
       MockServerConfiguration configuration,
       NettySslContextFactory nettySslContextFactory,
-      HttpProtocol httpProtocol) {
+      HttpProtocol httpProtocol,
+      BinaryModifierApplier binaryModifierApplier) {
     this.proxyConfiguration = configuration.proxyConfiguration();
     this.httpProtocol = httpProtocol;
     this.protocolFuture = new CompletableFuture<>();
     this.httpClientHandler = new HttpClientHandler();
     this.httpClientConnectionHandler = new HttpClientConnectionErrorHandler();
-    this.binaryBridgeHandler = new BinaryBridgeHandler(configuration);
+    this.binaryBridgeHandler = new BinaryBridgeHandler(configuration, binaryModifierApplier);
     this.nettySslContextFactory = nettySslContextFactory;
     this.mockServerConfiguration = configuration;
   }
@@ -177,7 +179,9 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast(new HttpClientCodec());
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
     pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
-    pipeline.addLast(new WebSocketUpgradeHandler(mockServerConfiguration));
+    pipeline.addLast(
+        new WebSocketUpgradeHandler(
+            mockServerConfiguration, binaryBridgeHandler.getBinaryModifierApplier()));
     pipeline.addLast(httpClientHandler);
     protocolFuture.complete(HttpProtocol.HTTP_1_1);
   }

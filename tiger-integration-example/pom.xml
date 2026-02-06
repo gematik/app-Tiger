@@ -22,7 +22,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-starter-parent</artifactId>
-        <version>4.1.16</version>
+        <version>4.1.17</version>
         <relativePath>../tiger-starter-parent/pom.xml</relativePath>
     </parent>
 
@@ -52,7 +52,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <id>empty-javadoc-jar</id>

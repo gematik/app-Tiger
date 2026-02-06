@@ -56,8 +56,7 @@ class EpaVauParsingTest {
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
           tigerProxy, 36, 40);
 
-      final String htmlData =
-          RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
+      final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessages());
       FileUtils.writeStringToFile(
           new File("target/vauFlow.html"), htmlData, StandardCharsets.UTF_8);
 

@@ -50,7 +50,7 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
     long bufferSize = tigerProxy.getRbelLogger().getRbelConverter().getCurrentBufferSize();
     return Health.status(status)
         .withDetail("tigerProxyHealthy", tigerProxyHealthy())
-        .withDetail("rbelMessages", tigerProxy.getRbelLogger().getMessageHistory().size())
+        .withDetail("rbelMessages", tigerProxy.getRbelLogger().getMessages().size())
         .withDetail("rbelMessageBuffer", bufferSize)
         .withDetail("lastSuccessfulMockserverRequest", lastSuccessfulRequest)
         .withDetail("firstFailedMockserverRequest", firstFailedRequest)

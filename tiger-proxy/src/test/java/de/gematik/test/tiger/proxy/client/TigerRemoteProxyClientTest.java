@@ -462,10 +462,10 @@ class TigerRemoteProxyClientTest {
         .atMost(10, TimeUnit.SECONDS)
         .until(() -> listenerCallCounter.get() > 0);
 
-    assertThat(filteredTigerProxy.getRbelMessages()).hasSize(2);
+    assertThat(filteredTigerProxy.getMessages()).hasSize(2);
     assertThat(
             filteredTigerProxy
-                .getRbelMessages()
+                .getMessageHistory()
                 .getFirst()
                 .findElement("$.path")
                 .get()
@@ -473,7 +473,7 @@ class TigerRemoteProxyClientTest {
         .isEqualTo("/faa");
     assertThat(
             filteredTigerProxy
-                .getRbelMessages()
+                .getMessageHistory()
                 .getLast()
                 .findElement("$.responseCode")
                 .get()

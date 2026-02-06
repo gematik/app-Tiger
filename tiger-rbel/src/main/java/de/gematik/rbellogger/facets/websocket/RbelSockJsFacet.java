@@ -32,8 +32,8 @@ import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.util.RbelPathAble;
 import j2html.tags.ContainerTag;
-import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
@@ -80,9 +80,11 @@ public class RbelSockJsFacet implements RbelFacet {
               return div()
                   .with(addNotes(messageFacet.getContent()))
                   .with(
-                      messageFacet.getContent().getChildNodes().stream()
-                          .map(RbelElement::getChildNodes)
-                          .flatMap(List::stream)
+                      messageFacet
+                          .getContent()
+                          .getChildNodesStream()
+                          .flatMap(RbelPathAble::getChildNodesStream)
+                          .map(RbelElement.class::cast)
                           .map(toolkit::convert)
                           .toList());
             }

@@ -17,9 +17,6 @@
 
 @Library('gematik-jenkins-shared-library') _
 pipelineDockerHubPublish {
-    JIRA_RELEASE_VERSION = jiraGetMostRecentVersion('TGR', true)
-    echo "Jira Version found: " + JIRA_RELEASE_VERSION
-    PUBLISH_VERSION = JIRA_RELEASE_VERSION
     INTERNAL_IMAGE_NAME = "tiger/tiger-testsuite-baseimage"
     EXTERNAL_IMAGE_NAME = "gematik1/tiger-testsuite-baseimage"
 }

@@ -21,8 +21,8 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.TigerMasterSecretListeners;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HexFormat;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +53,7 @@ public class TigerProxyMasterSecretListener implements TigerMasterSecretListener
   private void dumpToMasterSecretsFile(String line) {
     try {
       Files.write(
-          Path.of(masterSecretsFile),
+          TigerGlobalConfiguration.resolveRelativePathToTigerYaml(masterSecretsFile),
           line.getBytes(),
           StandardOpenOption.APPEND,
           StandardOpenOption.CREATE);

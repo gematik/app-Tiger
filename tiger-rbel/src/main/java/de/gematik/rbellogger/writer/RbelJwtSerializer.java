@@ -24,7 +24,6 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
-import java.util.Collection;
 import java.util.Optional;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
@@ -103,14 +102,15 @@ public class RbelJwtSerializer implements RbelSerializer {
 
   private void writeHeaderInJws(
       Optional<RbelContentTreeNode> headers, JsonWebSignature jws, RbelWriterInstance rbelWriter) {
-    headers.map(RbelContentTreeNode::getChildNodes).stream()
-        .flatMap(Collection::stream)
+    headers.stream()
+        .flatMap(RbelContentTreeNode::getChildNodesStream)
         .forEach(
             header -> {
               if (RbelJsonSerializer.isJsonArray(header)) {
                 jws.setHeader(
                     header.getKey().orElseThrow(),
-                    header.getChildNodes().stream()
+                    header
+                        .getChildNodesStream()
                         .map(
                             childNode ->
                                 new String(

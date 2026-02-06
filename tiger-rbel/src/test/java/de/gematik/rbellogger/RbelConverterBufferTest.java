@@ -51,7 +51,7 @@ class RbelConverterBufferTest {
             .parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
 
     assertThat(convertedMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(30);
-    assertThat(rbelLogger.getMessageHistory()).isEmpty();
+    assertThat(rbelLogger.getMessages()).isEmpty();
   }
 
   @Test
@@ -69,7 +69,7 @@ class RbelConverterBufferTest {
           rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata()));
     }
 
-    var rbelLoggerHistory = rbelLogger.getMessageHistory();
+    var rbelLoggerHistory = rbelLogger.getMessages();
     final int sizeOfMessagesInRbelLogger =
         (int) rbelLoggerHistory.stream().mapToLong(RbelElement::getSize).sum();
     assertThat(maxBufferSizeInBytes).isGreaterThan(sizeOfMessagesInRbelLogger);
@@ -89,7 +89,7 @@ class RbelConverterBufferTest {
     RbelConverter rbelConverter = rbelLogger.getRbelConverter();
 
     rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
-    assertThat(rbelLogger.getMessageHistory()).isEmpty();
+    assertThat(rbelLogger.getMessages()).isEmpty();
   }
 
   @Test
@@ -112,7 +112,7 @@ class RbelConverterBufferTest {
       allMessages.add(message);
     }
 
-    List<RbelElement> historyMessages = new ArrayList<>(rbelLogger.getMessageHistory());
+    List<RbelElement> historyMessages = new ArrayList<>(rbelLogger.getMessages());
 
     assertThat(historyMessages.size()).isLessThan(allMessages.size());
     assertThat(historyMessages).isNotEmpty();
@@ -142,9 +142,9 @@ class RbelConverterBufferTest {
       rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
     }
 
-    assertThat(rbelLogger.getMessageHistory()).hasSize(10);
+    assertThat(rbelLogger.getMessages()).hasSize(10);
 
-    long totalSize = rbelLogger.getMessageHistory().stream().mapToLong(RbelElement::getSize).sum();
+    long totalSize = rbelLogger.getMessages().stream().mapToLong(RbelElement::getSize).sum();
     assertThat(totalSize).isGreaterThan(bufferSizeInBytes);
   }
 }

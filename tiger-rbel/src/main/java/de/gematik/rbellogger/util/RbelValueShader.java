@@ -142,7 +142,7 @@ public class RbelValueShader {
     @Override
     public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
       addNote(rbelElement);
-      rbelElement.getChildNodes().forEach(child -> consumeElement(child, converter));
+      rbelElement.getChildNodesStream().forEach(child -> consumeElement(child, converter));
     }
   }
 }

@@ -34,7 +34,9 @@ Feature: Playwright Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.body.hello')}" matches "world"
 
   Scenario: PUT Request with body from file to folder
-    When TGR send PUT request to "http://httpbin/put" with body "!{file('pom.xml')}"
+    # !({file()}) resolves relative to the tiger.yaml location. In this case the yaml is in src/test/resources/playwright-main.yaml
+    # and the pom is then ../../../pom.xml
+    When TGR send PUT request to "http://httpbin/put" with body "!{file('../../../pom.xml')}"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"

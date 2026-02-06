@@ -140,11 +140,10 @@ servers:
       tigerTestEnvMgr
           .getLocalTigerProxyOrFail()
           .getRbelLogger()
-          .getMessageHistory()
+          .getMessages()
           .forEach(m -> log.info("Message {}: {}", m.getUuid(), m.printTreeStructure()));
       // Finding the messages for the first connection (to httpbin1)
-      rbelValidatorGlue.findRequestToPathWithHostAndPort(
-          "localhost", String.valueOf(httpbin1ServerPort));
+      rbelValidatorGlue.findRequestWithHostAndPort("localhost", String.valueOf(httpbin1ServerPort));
       rbelValidatorGlue.currentRequestMessageAtMatchesDocString(
           "$.path", "/anything/toHttpBin1_first");
       rbelValidatorGlue.findNextMessageOnSameConnection();
@@ -152,8 +151,7 @@ servers:
           "$.path", "/anything/toHttpBin1_second");
 
       // Finding the messages for the second connection (to httpbin2)
-      rbelValidatorGlue.findRequestToPathWithHostAndPort(
-          "localhost", String.valueOf(httpbin2ServerPort));
+      rbelValidatorGlue.findRequestWithHostAndPort("localhost", String.valueOf(httpbin2ServerPort));
       rbelValidatorGlue.currentRequestMessageAtMatchesDocString(
           "$.path", "/anything/toHttpBin2_first");
       rbelValidatorGlue.findNextMessageOnSameConnection();
@@ -168,7 +166,7 @@ servers:
           .atMost(20, TimeUnit.SECONDS)
           .until(
               () ->
-                  proxy.getRbelLogger().getMessageHistory().stream()
+                  proxy.getRbelLogger().getMessages().stream()
                           .filter(el -> el.getConversionPhase().isFinished())
                           .count()
                       >= expectedMessageCount);
@@ -176,7 +174,7 @@ servers:
       log.error("Timed out waiting for tiger to receive {} messages", expectedMessageCount);
       proxy
           .getRbelLogger()
-          .getMessageHistory()
+          .getMessages()
           .forEach(
               el ->
                   log.error("Message {}: {}", el.getUuid(), el.printTreeStructureWithoutColors()));

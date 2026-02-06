@@ -76,7 +76,7 @@ class TigerRemoteProxyClientSchedulingAdditionalTest {
             .rawContent("X".getBytes(StandardCharsets.UTF_8))
             .build();
     previous.setConversionPhase(RbelConversionPhase.COMPLETED);
-    client.getRbelLogger().getRbelConverter().addMessageToHistoryWithNextSequenceNumber(previous);
+    client.getRbelLogger().getRbelConverter().addMessageToHistory(previous);
 
     CountDownLatch latch = new CountDownLatch(1);
     client.scheduleAfterMessage(prevUuid, latch::countDown, curUuid);
@@ -137,7 +137,7 @@ class TigerRemoteProxyClientSchedulingAdditionalTest {
             .rawContent("Y".getBytes(StandardCharsets.UTF_8))
             .build();
     previous.setConversionPhase(RbelConversionPhase.COMPLETED);
-    client.getRbelLogger().getRbelConverter().addMessageToHistoryWithNextSequenceNumber(previous);
+    client.getRbelLogger().getRbelConverter().addMessageToHistory(previous);
 
     client.signalNewCompletedMessage(previous);
 
@@ -183,7 +183,7 @@ class TigerRemoteProxyClientSchedulingAdditionalTest {
             .rawContent("Z".getBytes(StandardCharsets.UTF_8))
             .build();
     previous.setConversionPhase(RbelConversionPhase.COMPLETED);
-    client.getRbelLogger().getRbelConverter().addMessageToHistoryWithNextSequenceNumber(previous);
+    client.getRbelLogger().getRbelConverter().addMessageToHistory(previous);
 
     client.signalNewCompletedMessage(previous);
 

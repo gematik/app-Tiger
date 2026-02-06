@@ -21,15 +21,17 @@
 package de.gematik.test.tiger;
 
 import com.google.common.annotations.VisibleForTesting;
+import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.lib.TigerDirector;
-import java.util.ArrayDeque;
+import de.gematik.test.tiger.lib.rbel.MockHistoryFacade;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -132,7 +134,7 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
   public void clearValidatableRbelMessages() {
     // we dont actually delete anything, we just remember the last element
     // when this method is called.
-    var messageHistory = messagesSupplier.getRbelMessages();
+    var messageHistory = messagesSupplier.getMessageHistory();
     if (messageHistory.isEmpty()) {
       lastDeletedElement = null;
     } else {
@@ -141,33 +143,25 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
   }
 
   /**
-   * List of messages received via local Tiger Proxy. It is used by the TGR validation steps. The
-   * list is not cleared at the end of / start of new scenarios!
+   * Map of sequence numbers to messages received via local Tiger Proxy. It is used by the TGR
+   * validation steps. The list is not cleared at the end of / start of new scenarios!
    */
-  public Deque<RbelElement> getValidatableRbelMessages() {
+  public RbelMessageHistory.Facade getValidatableMessages() {
     // we make a new unmodifiable list that is read directly from the tiger proxy messageHistory
     // but without the elements that should habe been deleted by the clearValidatableRbelMessages()
     // call.
-    return messagesSupplier.getRbelMessages().stream()
-        .dropWhile(e -> lastDeletedElement != null && e != lastDeletedElement)
-        .collect(Collectors.toCollection(ArrayDeque::new));
-  }
-}
-
-/**
- * When starting the tiger test suite with the local tiger proxy active set to false, there are
- * still code sections that attempt to access the LocalProxyRbelMessageListener. To prevent such
- * access to throw exceptions, we fallback to this supplier
- */
-class DoNothingSupplier implements RbelMessagesSupplier {
-
-  @Override
-  public void addRbelMessageListener(IRbelMessageListener listener) {
-    // NOOP
-  }
-
-  @Override
-  public Deque<RbelElement> getRbelMessages() {
-    return new ArrayDeque<>();
+    return Optional.ofNullable(lastDeletedElement)
+        .map(
+            element ->
+                new MockHistoryFacade(
+                    messagesSupplier.getMessageHistory().getMessagesAfter(element, false).stream()
+                        .collect(
+                            Collectors.toMap(
+                                e -> e.getSequenceNumber().get(),
+                                e -> e,
+                                (e1, e2) -> e1,
+                                TreeMap::new))))
+        .map(RbelMessageHistory.Facade.class::cast)
+        .orElseGet(messagesSupplier::getMessageHistory);
   }
 }

@@ -37,7 +37,7 @@ import de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone.CfgStandalo
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.Deque;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -117,7 +117,7 @@ class TracingResilienceTest {
       log.info(
           "Sent {} msgs, sending-proxy has {} msgs, receiving-proxy has {} msgs",
           (i + 1) * MESSAGES_PER_ROUND * 2,
-          testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
+          testEnvMgr.getLocalTigerProxyOrFail().getMessageHistory().size(),
           getReceivingTigerProxyMessages().size());
     }
 
@@ -133,8 +133,8 @@ class TracingResilienceTest {
               log.info(
                   "We sent {} message, intercepted {}, aggregating {}, receiving {}",
                   MASTER_ROUNDS * MESSAGES_PER_ROUND * 2,
-                  testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
-                  aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
+                  testEnvMgr.getLocalTigerProxyOrFail().getMessageHistory().size(),
+                  aggregatingProxyContext.getBean(TigerProxy.class).getMessageHistory().size(),
                   getReceivingTigerProxyMessages().size());
               return MASTER_ROUNDS * MESSAGES_PER_ROUND * 2
                   == getReceivingTigerProxyMessages().size();
@@ -167,8 +167,8 @@ class TracingResilienceTest {
         waitAtMost(2, TimeUnit.SECONDS)
             .until(
                 () ->
-                    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().count()
-                        == getReceivingTigerProxyMessages().stream().count());
+                    testEnvMgr.getLocalTigerProxyOrFail().getMessageHistory().size()
+                        == getReceivingTigerProxyMessages().size());
       } catch (ConditionTimeoutException e) {
         log.error("/////////////////////////////////////////////////////////////////////////////");
         testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
@@ -177,9 +177,9 @@ class TracingResilienceTest {
         log.error(
             "We sent {} message, intercepted {}, aggregating {}, receiving {}",
             round * MESSAGES_PER_ROUND * 2,
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().count(),
-            aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().stream().count(),
-            getReceivingTigerProxyMessages().stream().count());
+            testEnvMgr.getLocalTigerProxyOrFail().getMessageHistory().size(),
+            aggregatingProxyContext.getBean(TigerProxy.class).getMessageHistory().size(),
+            getReceivingTigerProxyMessages().size());
         log.error("/////////////////////////////////////////////////////////////////////////////");
         final int toBeSkippedMessages =
             Math.max(0, testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size() - 200);
@@ -272,8 +272,8 @@ class TracingResilienceTest {
     }
   }
 
-  private Deque<RbelElement> getReceivingTigerProxyMessages() {
-    return receivingProxy.getRbelLogger().getMessageHistory();
+  private Collection<RbelElement> getReceivingTigerProxyMessages() {
+    return receivingProxy.getRbelLogger().getMessages();
   }
 
   private void bootTigerProxy(int aggregatingAdminPort) {

@@ -50,10 +50,12 @@ public class TigerProxyConfiguration {
   @Builder.Default private boolean activateTlsTermination = true;
   private TigerFileSaveInfo fileSaveInfo;
   private Integer proxyPort;
+  @Builder.Default private List<Integer> additionalProxyPorts = new ArrayList<>();
   @Builder.Default private boolean skipTrafficEndpointsSubscription = false;
   @Builder.Default private boolean failOnOfflineTrafficEndpoints = false;
   @Builder.Default private boolean requireHealthyTrafficEndpoints = false;
   private List<String> trafficEndpoints;
+  @Builder.Default private boolean enableLegacyTraffic = false;
   @Builder.Default private boolean downloadInitialTrafficFromEndpoints = false;
   @Builder.Default private String trafficEndpointFilterString = "";
   @Builder.Default private int maximumPartialMessageAgeInSeconds = 300;
@@ -102,10 +104,15 @@ public class TigerProxyConfiguration {
 
   @JsonIgnore
   public Integer[] getPortAsArray() {
-    if (proxyPort == null) {
-      return null; // NOSONAR
-    } else {
+    if (additionalProxyPorts.isEmpty()) {
       return new Integer[] {proxyPort};
+    } else {
+      final Integer[] ports = new Integer[additionalProxyPorts.size() + 1];
+      ports[0] = proxyPort;
+      for (int i = 0; i < additionalProxyPorts.size(); i++) {
+        ports[i + 1] = additionalProxyPorts.get(i);
+      }
+      return ports;
     }
   }
 }

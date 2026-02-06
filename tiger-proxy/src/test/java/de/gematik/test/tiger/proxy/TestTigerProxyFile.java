@@ -59,7 +59,6 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
           awaitMessagesInTigerProxy(otherProxy, 4);
           assertThat(
                   otherProxy
-                      .getRbelLogger()
                       .getMessageHistory()
                       .getLast()
                       .getFacetOrFail(TracingMessagePairFacet.class)
@@ -85,14 +84,13 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
           otherProxy.waitForAllCurrentMessagesToBeParsed();
           assertThat(
                   otherProxy
-                      .getRbelLogger()
                       .getMessageHistory()
                       .getFirst()
                       .findElement("$.path")
                       .get()
                       .getRawStringContent())
               .isEqualTo("/faabor");
-          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+          assertThat(otherProxy.getRbelLogger().getMessages()).hasSize(2);
         },
         TigerFileSaveInfo.builder().readFilter("message.path == '/faabor'"),
         () -> {
@@ -108,7 +106,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     executeFileWritingAndReadingTest(
         otherProxy -> {
           awaitMessagesInTigerProxy(otherProxy, 2);
-          val faaborResponse = otherProxy.getRbelLogger().getMessageHistory().getLast();
+          val faaborResponse = otherProxy.getMessageHistory().getLast();
           assertThat(faaborResponse).hasFacet(TracingMessagePairFacet.class);
           val faaborRequest =
               otherProxy
@@ -138,9 +136,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     executeFileWritingAndReadingTest(
         otherProxy -> {
           otherProxy.waitForAllCurrentMessagesToBeParsed();
-          assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst())
+          assertThat(otherProxy.getMessageHistory().getFirst())
               .hasStringContentEqualToAtPosition("$.path", "/foobar");
-          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+          assertThat(otherProxy.getMessages()).hasSize(2);
         },
         TigerFileSaveInfo.builder().readFilter("request.url !$ 'faabor'"),
         () -> {
@@ -156,7 +154,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     executeFileWritingAndReadingTest(
         otherProxy -> {
           otherProxy.waitForAllCurrentMessagesToBeParsed();
-          assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst())
+          assertThat(otherProxy.getRbelLogger().getRbelConverter().getMessageHistory().getFirst())
               .hasFacet(TlsFacet.class)
               .hasStringContentEqualToAtPosition(
                   "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")

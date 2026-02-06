@@ -62,7 +62,9 @@ public class RbelOcspRequestFacet implements RbelFacet {
                     br())
                 .with(
                     ocspRequestFacet.getRequests() != null
-                        ? ocspRequestFacet.getRequests().getChildNodes().stream()
+                        ? ocspRequestFacet
+                            .getRequests()
+                            .getChildNodesStream()
                             .map(
                                 c ->
                                     renderingToolkit.generateSubsection(
@@ -73,7 +75,9 @@ public class RbelOcspRequestFacet implements RbelFacet {
                         : java.util.Collections.emptyList())
                 .with(
                     ocspRequestFacet.getExtensions() != null
-                        ? ocspRequestFacet.getExtensions().getChildNodes().stream()
+                        ? ocspRequestFacet
+                            .getExtensions()
+                            .getChildNodesStream()
                             .map(ext -> renderX509Extension(ext, renderingToolkit))
                             .toList()
                         : java.util.Collections.emptyList());
@@ -97,8 +101,7 @@ public class RbelOcspRequestFacet implements RbelFacet {
                     singleOcspRequestFacet.getSingleRequestExtensions() != null
                         ? singleOcspRequestFacet
                             .getSingleRequestExtensions()
-                            .getChildNodes()
-                            .stream()
+                            .getChildNodesStream()
                             .map(ext -> renderX509Extension(ext, renderingToolkit))
                             .toList()
                         : java.util.Collections.emptyList());

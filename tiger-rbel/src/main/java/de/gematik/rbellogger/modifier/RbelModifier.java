@@ -65,6 +65,10 @@ public class RbelModifier {
   }
 
   public RbelElement applyModifications(final RbelElement message) {
+    if (modificationsMap.isEmpty()) {
+      return message;
+    }
+    rbelConverter.waitForMessageAndPartnersToBeFullyConverted(message);
     RbelElement modifiedMessage = message;
     final TigerJexlContext jexlContext = new TigerJexlContext().withRootElement(message);
     for (RbelModificationDescription modification : modificationsMap.values()) {

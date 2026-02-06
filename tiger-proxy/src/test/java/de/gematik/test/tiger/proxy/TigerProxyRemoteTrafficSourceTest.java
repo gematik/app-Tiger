@@ -20,7 +20,7 @@
  */
 package de.gematik.test.tiger.proxy;
 
-import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
@@ -49,7 +49,7 @@ class TigerProxyRemoteTrafficSourceTest {
   @Test
   void sendSimpleHttpRequest() throws IOException {
     tigerProxy.clearAllMessages();
-    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    assertThat(tigerProxy.getMessages()).isEmpty();
     Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
         .header(TrafficPushController.SENDER_REQUEST_HEADER, "localhost:54321")
         .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "localhost:8080")
@@ -65,27 +65,28 @@ class TigerProxyRemoteTrafficSourceTest {
         .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
         .asEmpty();
 
-    assertThat(tigerProxy.getRbelMessages()).hasSize(2);
-    assertThat(tigerProxy.getRbelMessages().getFirst())
+    assertThat(tigerProxy.getMessages()).hasSize(2);
+    assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.sender")
         .hasStringContentEqualTo("localhost:54321");
-    assertThat(tigerProxy.getRbelMessages().getFirst())
+    assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.receiver")
         .hasStringContentEqualTo("localhost:8080");
-    assertThat(tigerProxy.getRbelMessages().getFirst()).hasFacet(RbelMessageTimingFacet.class);
-    assertThat(tigerProxy.getRbelMessages().getLast())
+    assertThat(tigerProxy.getMessageHistory().getFirst()).hasFacet(RbelMessageTimingFacet.class);
+    assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.sender")
         .hasStringContentEqualTo("localhost:8080");
-    assertThat(tigerProxy.getRbelMessages().getLast())
+    assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.receiver")
         .hasStringContentEqualTo("localhost:54321");
-    assertThat(tigerProxy.getRbelMessages().getLast()).hasFacet(RbelMessageTimingFacet.class);
+    assertThat(tigerProxy.getMessageHistory().getLast()).hasFacet(RbelMessageTimingFacet.class);
   }
 
   @Test
   void sendMessageWithMissingParameters_expectCorrectDefaults() throws IOException {
     tigerProxy.clearAllMessages();
-    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    assertThat(tigerProxy.getMessages()).isEmpty();
+
     Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
         .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
         .asEmpty();
@@ -93,22 +94,22 @@ class TigerProxyRemoteTrafficSourceTest {
         .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
         .asEmpty();
 
-    assertThat(tigerProxy.getRbelMessages()).hasSize(2);
-    assertThat(tigerProxy.getRbelMessages().getFirst())
+    assertThat(tigerProxy.getMessages()).hasSize(2);
+    assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.sender")
         .hasNullContent();
-    assertThat(tigerProxy.getRbelMessages().getFirst())
+    assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.receiver")
         .hasNullContent();
-    assertThat(tigerProxy.getRbelMessages().getFirst())
+    assertThat(tigerProxy.getMessageHistory().getFirst())
         .doesNotHaveFacet(RbelMessageTimingFacet.class);
-    assertThat(tigerProxy.getRbelMessages().getLast())
+    assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.sender")
         .hasNullContent();
-    assertThat(tigerProxy.getRbelMessages().getLast())
+    assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.receiver")
         .hasNullContent();
-    assertThat(tigerProxy.getRbelMessages().getLast())
+    assertThat(tigerProxy.getMessageHistory().getLast())
         .doesNotHaveFacet(RbelMessageTimingFacet.class);
   }
 }

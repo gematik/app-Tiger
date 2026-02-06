@@ -133,6 +133,10 @@ public class TigerTypedConfigurationKey<T> {
     TigerGlobalConfiguration.deleteFromAllSources(this.key);
   }
 
+  public void deleteFromSourceAndLowerPrecedences(ConfigurationValuePrecedence precedence) {
+    TigerGlobalConfiguration.deleteFromSourceAndLowerPrecedence(this.key, precedence);
+  }
+
   public void setAsSystemProperty(T value) {
     System.setProperty(key.downsampleKey(), value.toString());
   }

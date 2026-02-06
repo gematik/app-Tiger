@@ -28,7 +28,6 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -261,15 +260,18 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   }
 
   private void hasCorrectParentKeysSetInAllElements(RbelElement actual) {
-    for (Entry<String, RbelElement> child : actual.getChildNodesWithKey().entries()) {
-      if (child.getValue().getParentNode() != actual) {
-        log.error(actual.findRootElement().printTreeStructure());
-        failWithMessage(
-            "Expecting all parents to be correct. Fail for child $.%s of element $.%s",
-            child.getKey(), actual.findNodePath());
-      }
-      hasCorrectParentKeysSetInAllElements(child.getValue());
-    }
+    actual
+        .getChildNodesWithKeyStream()
+        .forEach(
+            child -> {
+              if (child.getValue().getParentNode() != actual) {
+                log.error(actual.findRootElement().printTreeStructure());
+                failWithMessage(
+                    "Expecting all parents to be correct. Fail for child $.%s of element $.%s",
+                    child.getKey(), actual.findNodePath());
+              }
+              hasCorrectParentKeysSetInAllElements(child.getValue());
+            });
   }
 
   public RbelElementAssertion hasCharset(Charset charset) {

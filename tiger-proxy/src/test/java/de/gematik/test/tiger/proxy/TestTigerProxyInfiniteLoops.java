@@ -64,7 +64,7 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
 
     awaitMessagesInTigerProxy(23);
 
-    final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
+    final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessages());
     FileUtils.writeStringToFile(new File("target/error.html"), htmlData, StandardCharsets.UTF_8);
     assertThat(tigerProxy.getRbelMessagesList().get(11))
         .extractChildWithPath("$.error.message")

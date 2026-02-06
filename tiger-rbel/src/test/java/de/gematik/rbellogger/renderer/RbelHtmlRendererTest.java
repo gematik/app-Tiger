@@ -87,7 +87,10 @@ class RbelHtmlRendererTest {
     final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
     convertedMessage.addFacet(new RbelNoteFacet("foobar Message"));
     convertedMessage.getFirst("header").get().addFacet(new RbelNoteFacet("foobar Header"));
-    convertedMessage.getFirst("header").get().getChildNodes().stream()
+    convertedMessage
+        .getFirst("header")
+        .get()
+        .getChildNodesStream()
         .forEach(
             element -> {
               for (int i = 0; i < RandomUtils.nextInt(0, 4); i++) {

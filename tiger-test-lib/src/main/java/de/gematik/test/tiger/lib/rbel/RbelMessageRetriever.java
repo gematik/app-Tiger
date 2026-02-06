@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
@@ -55,10 +56,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
@@ -145,9 +144,9 @@ public class RbelMessageRetriever {
         RBEL_NAMESPACE, new RbelMessageRetriever.JexlToolbox());
   }
 
-  public List<RbelElement> getRbelMessages() {
+  public RbelMessageHistory.Facade getMessageHistory() {
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    return localProxyRbelMessageListener.getValidatableRbelMessages().stream().toList();
+    return localProxyRbelMessageListener.getValidatableMessages();
   }
 
   public void clearRbelMessages() {
@@ -308,11 +307,13 @@ public class RbelMessageRetriever {
       RequestParameter requestParameter,
       HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     String message;
-    if (noPathNoRbelPath(requestParameter) && hostAndPortSpecified(requestParameter)) {
+    if (noPathNoRbelPath(requestParameter) && hostAndPortSpecified()) {
       message =
           String.format(
               "No request with host '%s' and port '%s'%s",
-              requestParameter.getHost(), requestParameter.getPort(), FOUND_IN_MESSAGES);
+              TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault(),
+              TigerConfigurationKeys.REQUEST_FILTER_PORT.getValueOrDefault(),
+              FOUND_IN_MESSAGES);
       throw buildValidatorError(message, mismatchNotes);
     } else if (requestParameter.getPath() == null) {
       message =
@@ -339,8 +340,9 @@ public class RbelMessageRetriever {
     return requestParameter.getPath() == null && requestParameter.getRbelPath() == null;
   }
 
-  private static boolean hostAndPortSpecified(RequestParameter requestParameter) {
-    return requestParameter.getHost() != null && requestParameter.getPort() != null;
+  private static boolean hostAndPortSpecified() {
+    return !TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault().isBlank()
+        && TigerConfigurationKeys.REQUEST_FILTER_PORT.getValue().isEmpty();
   }
 
   private static @NotNull AssertionError buildValidatorError(
@@ -351,13 +353,12 @@ public class RbelMessageRetriever {
   }
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
-    var validatableRbelMessages = localProxyRbelMessageListener.getValidatableRbelMessages();
+    var validatableRbelMessages = localProxyRbelMessageListener.getValidatableMessages();
     if (requestParameter.isStartFromPreviouslyFoundMessage()) {
       var markerMessage =
           requestParameter.isRequireRequestMessage() ? currentRequest : lastFoundMessage;
-      return validatableRbelMessages.stream()
-          .dropWhile(msg -> msg != markerMessage)
-          .skip(1)
+      return Optional.ofNullable(markerMessage).stream()
+          .flatMap(msg -> validatableRbelMessages.getMessagesAfter(msg, false).stream())
           .findFirst();
     } else if (requestParameter.isRequireNewMessage() && !validatableRbelMessages.isEmpty()) {
       return Optional.ofNullable(validatableRbelMessages.getLast());
@@ -375,11 +376,12 @@ public class RbelMessageRetriever {
         getRbelElementsOptionallyFromGivenMessageInclusively(
             startFromMessageInclusively, checkedCandidates);
 
-    final String hostFilter = TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault();
-    final String methodFilter = TigerConfigurationKeys.REQUEST_FILTER_METHOD.getValueOrDefault();
+    requestParameter.setHost(TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault());
+    TigerConfigurationKeys.REQUEST_FILTER_PORT.getValue().ifPresent(requestParameter::setPort);
+    requestParameter.setMethod(TigerConfigurationKeys.REQUEST_FILTER_METHOD.getValueOrDefault());
 
     List<RbelElement> candidateMessages =
-        getCandidateMessages(requestParameter, msgs, hostFilter, methodFilter, mismatchNotes);
+        getCandidateMessages(requestParameter, msgs, mismatchNotes);
     if (candidateMessages.isEmpty()) {
       return Optional.empty();
     }
@@ -432,78 +434,59 @@ public class RbelMessageRetriever {
 
   private List<RbelElement> getRbelElementsOptionallyFromGivenMessageInclusively(
       Optional<RbelElement> startFromMessage, Set<RbelElement> checkedCandidates) {
-    var msgs = getRbelMessages();
-    if (startFromMessage.isPresent()) {
-      val start = startFromMessage.get();
-      for (int i = msgs.size() - 1; i >= 0; i--) {
-        if (msgs.get(i) == start) {
-          msgs = msgs.subList(i, msgs.size());
-          break;
-        }
-      }
-    }
-    return msgs.stream().filter(checkedCandidates::add).toList();
+    var messageHistory = getMessageHistory();
+    return startFromMessage
+        .map(msg -> messageHistory.getMessagesAfter(msg, true))
+        .orElseGet(messageHistory::getMessages)
+        .stream()
+        .filter(checkedCandidates::add)
+        .toList();
   }
 
   @NotNull
   private List<RbelElement> getCandidateMessages(
       RequestParameter requestParameter,
       List<RbelElement> msgs,
-      String hostFilter,
-      String methodFilter,
       Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
     return msgs.stream()
         .filter(
             el ->
                 !requestParameter.isRequireRequestMessage() || el.hasFacet(RbelRequestFacet.class))
         .filter(req -> pathMatches(req, requestParameter.getPath(), mismatchNotes))
-        .filter(req -> hostAndPortMatch(req, requestParameter, mismatchNotes))
+        .filter(req -> portMatch(req, requestParameter.getPort(), mismatchNotes))
+        .filter(req -> hostFilterMatches(req, requestParameter.getHost(), mismatchNotes))
+        .filter(req -> methodFilterMatches(req, requestParameter.getMethod(), mismatchNotes))
         .filter(req -> filterSameConnection(req, requestParameter))
-        .filter(req -> hostFilterMatches(req, hostFilter, mismatchNotes))
-        .filter(req -> methodFilterMatches(req, methodFilter, mismatchNotes))
         .toList();
   }
 
-  public boolean hostAndPortMatch(
+  public boolean portMatch(
       RbelElement req,
-      RequestParameter requestParameter,
+      Integer port,
       Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
-    if (requestParameter.getHost() == null && requestParameter.getPort() == null) {
-      return true;
-    }
-    if (areHostAndPortEqual(req, requestParameter.getHost(), requestParameter.getPort())) {
+    if (arePortsEqual(req, port)) {
       return true;
     } else {
       addMismatchNote(
-          mismatchNotes,
-          req,
-          FILTER_MISMATCH,
-          String.format(
-              "Host and port '%s:%s' didn't match!",
-              requestParameter.getHost(), requestParameter.getPort()));
+          mismatchNotes, req, FILTER_MISMATCH, String.format("Port '%s' didn't match!", port));
       return false;
     }
   }
 
-  public boolean areHostAndPortEqual(RbelElement req, String host, String port) {
+  public boolean arePortsEqual(RbelElement req, Integer port) {
+    if (port == null) {
+      return true;
+    }
     val tcpIpFacet = req.getFacet(RbelTcpIpMessageFacet.class);
-    val reqHost =
-        tcpIpFacet
-            .flatMap(e -> RbelHostnameFacet.tryToExtractServerName(e.getReceiver()))
-            .orElse("");
     val reqPort =
         tcpIpFacet
             .flatMap(e -> e.getReceiverHostname().map(RbelSocketAddress::getPort))
             .orElse(null);
 
-    return isSameHostPort(host, Integer.parseInt(port), reqHost, reqPort);
+    return Objects.equals(port, reqPort);
   }
 
-  private boolean isSameHostPort(String host1, Integer port1, String host2, Integer port2) {
-    if (!Objects.equals(port1, port2)) {
-      return false;
-    }
-
+  private boolean areHostsEqual(String host1, String host2) {
     try {
       InetAddress addr1 = InetAddress.getByName(host1);
       InetAddress addr2 = InetAddress.getByName(host2);
@@ -679,7 +662,7 @@ public class RbelMessageRetriever {
             .flatMap(e -> RbelHostnameFacet.tryToExtractServerName(e.getReceiver()))
             .orElse("");
 
-    return doesItMatch(host, hostFilter);
+    return areHostsEqual(host, hostFilter) || doesItMatch(host, hostFilter);
   }
 
   public boolean doesMethodMatch(final RbelElement req, final String method) {
@@ -828,7 +811,7 @@ public class RbelMessageRetriever {
 
   public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
     val mismatchNotes = new HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>>();
-    if (getRbelMessages().stream()
+    if (getMessageHistory().getMessages().stream()
         .map(
             msg -> {
               List<RbelElement> findings = msg.findRbelPathMembers(rbelPath);
@@ -870,12 +853,9 @@ public class RbelMessageRetriever {
   }
 
   public void findLastRequest() {
-    final Iterator<RbelElement> descendingIterator = new ReverseListIterator<>(getRbelMessages());
-    final RbelElement lastRequest =
-        StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)
-            .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
-            .findFirst()
+    var lastRequest =
+        getMessageHistory()
+            .findLast(msg -> msg.hasFacet(RbelRequestFacet.class))
             .orElseThrow(() -> new TigerLibraryException("No Request found."));
     setCurrentRequest(lastRequest);
     setCurrentResponse(
@@ -929,15 +909,10 @@ public class RbelMessageRetriever {
     }
 
     private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
-      final Iterator<RbelElement> backwardsIterator =
-          localProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
-      while (backwardsIterator.hasNext()) {
-        final RbelElement element = backwardsIterator.next();
-        if (testMessage.test(element)) {
-          return element;
-        }
-      }
-      throw new NoSuchElementException();
+      return localProxyRbelMessageListener
+          .getValidatableMessages()
+          .findLast(testMessage)
+          .orElseThrow(NoSuchElementException::new);
     }
 
     public String lastRequestAsString() {

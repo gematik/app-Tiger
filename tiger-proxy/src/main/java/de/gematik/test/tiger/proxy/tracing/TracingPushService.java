@@ -20,7 +20,6 @@
  */
 package de.gematik.test.tiger.proxy.tracing;
 
-import static de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet.getSequenceNumber;
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -33,8 +32,8 @@ import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -50,6 +49,7 @@ public class TracingPushService {
 
   public static final int MAX_MESSAGE_SIZE = 512 * KB;
   private final SimpMessagingTemplate template;
+  private final TigerBuildPropertiesService buildPropertiesService;
   private final TigerProxy tigerProxy;
   private Logger log = LoggerFactory.getLogger(TracingPushService.class);
 
@@ -90,7 +90,7 @@ public class TracingPushService {
 
   private synchronized void propagateRbelMessage(RbelElement msg) {
     log.atTrace()
-        .addArgument(() -> getSequenceNumber(msg))
+        .addArgument(() -> msg.getSequenceNumber().get())
         .addArgument(
             () ->
                 Optional.ofNullable(msg.getRawStringContent())
@@ -125,17 +125,17 @@ public class TracingPushService {
               .sender(sender)
               .messageUuid(msg.getUuid())
               .additionalInformation(gatherAdditionalInformation(metadata))
-              .sequenceNumber(rbelTcpIpMessageFacet.getSequenceNumber())
+              .sequenceNumber(msg.getSequenceNumber().orElse(null))
               .proxyTransmissionHistory(
                   new ProxyTransmissionHistory(
                       tigerProxy.getTigerProxyConfiguration().getName(),
-                      List.of(rbelTcpIpMessageFacet.getSequenceNumber()), // TODO npe
+                      msg.getSequenceNumber().stream().toList(),
                       msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
               .request(
                   msg.hasFacet(RbelRequestFacet.class) || !msg.hasFacet(RbelResponseFacet.class))
               .build();
 
-      template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto);
+      template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto, versionHeader());
 
       mapRbelMessageAndSent(msg);
       log.trace("completed sending message {}", msg.getUuid());
@@ -158,7 +158,8 @@ public class TracingPushService {
             .className(exception.getClass().getName())
             .message(exception.getMessage())
             .stacktrace(ExceptionUtils.getStackTrace(exception))
-            .build());
+            .build(),
+        versionHeader());
   }
 
   private void mapRbelMessageAndSent(RbelElement rbelMessage) {
@@ -190,8 +191,13 @@ public class TracingPushService {
               .index(i)
               .uuid(rbelMessage.getUuid())
               .numberOfMessages(numberOfParts)
-              .build());
+              .build(),
+          versionHeader());
       nextPartIndex += partContent.length;
     }
+  }
+
+  private Map<String, Object> versionHeader() {
+    return Map.of("Tiger-Proxy-Version", buildPropertiesService.tigerVersionAsString());
   }
 }

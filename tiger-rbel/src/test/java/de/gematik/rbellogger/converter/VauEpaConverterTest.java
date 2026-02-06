@@ -103,7 +103,7 @@ class VauEpaConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
-    assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory())).isNotBlank();
+    assertThat(RbelHtmlRenderer.render(rbelLogger.getMessages())).isNotBlank();
   }
 
   @Test
@@ -180,9 +180,9 @@ class VauEpaConverterTest {
 
   @Test
   void nestedHandshakeMessage_ShouldParseNestedJson() {
-    assertThat(rbelLogger.getMessageHistory()).hasSize(8);
+    assertThat(rbelLogger.getMessages()).hasSize(8);
 
-    assertThat(rbelLogger.getMessageHistory().getFirst())
+    assertThat(rbelLogger.getRbelConverter().getMessageHistory().getFirst())
         .extractChildWithPath("$.body.Data.content.decoded.DataType.content")
         .hasStringContentEqualTo("VAUClientHelloData");
   }

@@ -67,7 +67,7 @@ class RbelConverterTest {
 
     FileUtils.writeStringToFile(
         new File("target/error.html"),
-        new RbelHtmlRenderer().doRender(rbelLogger.getMessageHistory()),
+        new RbelHtmlRenderer().doRender(rbelLogger.getMessages()),
         Charset.defaultCharset());
 
     assertThat(

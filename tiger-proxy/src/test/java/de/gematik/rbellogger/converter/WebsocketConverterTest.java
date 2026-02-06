@@ -62,7 +62,7 @@ class WebsocketConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/websocket.html").toPath(), html.getBytes());
     System.out.println(rbelLogger.getMessageList().get(12).printTreeStructure());
     assertThat(html)
@@ -130,7 +130,7 @@ class WebsocketConverterTest {
       capturer.initialize();
     }
 
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/wsCompression.html").toPath(), html.getBytes());
 
     assertThat(rbelLogger.getMessageList().get(17))

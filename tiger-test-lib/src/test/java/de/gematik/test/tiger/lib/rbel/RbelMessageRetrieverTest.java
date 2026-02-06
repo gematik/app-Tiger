@@ -66,7 +66,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.clearValue();
   }
 
@@ -185,38 +185,46 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testHostPortMatch_OK() {
+  void testPortMatch_OK() {
     assertThat(
-            rbelMessageRetriever.areHostAndPortEqual(
+            rbelMessageRetriever.arePortsEqual(
                 localProxyRbelMessageListenerTestAdapter
                     .buildElementsFromTgrFile("simpleHttpRequests.tgr")
                     .get(0),
-                "localhost",
-                "8080"))
+                8080))
         .isTrue();
   }
 
   @Test
-  void testHostPortMatch_wrongPort() {
+  void testPortMatch_wrongPort() {
     assertThat(
-            rbelMessageRetriever.areHostAndPortEqual(
+            rbelMessageRetriever.arePortsEqual(
                 localProxyRbelMessageListenerTestAdapter
                     .buildElementsFromTgrFile("simpleHttpRequests.tgr")
                     .get(0),
-                "localhost",
-                "8181"))
+                8181))
         .isFalse();
   }
 
   @Test
-  void testHostPortMatch_wrongHost() {
+  void testHostMatch_OK() {
     assertThat(
-            rbelMessageRetriever.areHostAndPortEqual(
+            rbelMessageRetriever.doesHostMatch(
                 localProxyRbelMessageListenerTestAdapter
                     .buildElementsFromTgrFile("simpleHttpRequests.tgr")
                     .get(0),
-                "example.com",
-                "8080"))
+                "localhost"))
+        .isTrue();
+  }
+
+  @Test
+  void testHostMatch_wrongHost() {
+    assertThat(
+            rbelMessageRetriever.doesHostMatch(
+                localProxyRbelMessageListenerTestAdapter
+                    .buildElementsFromTgrFile("simpleHttpRequests.tgr")
+                    .get(0),
+                "example.com"))
         .isFalse();
   }
 
@@ -783,7 +791,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/interleavedRequests.tgr");
 
-    localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock().stream()
+    localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock().values().stream()
         .map(RbelElement::printShortDescription)
         .forEach(log::info);
 

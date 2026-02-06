@@ -21,7 +21,6 @@
 package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelNestedFacet;
 import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
@@ -115,7 +114,8 @@ public class RbelContextDecorator {
 
   private static Map<String, Object> buildPositionDescriptor(RbelElement element) {
     final HashMap<String, Object> result = new HashMap<>();
-    element.getChildNodesWithKey().stream()
+    element
+        .getChildNodesWithKeyStream()
         .forEach(
             entry -> {
               final String key = buildKey(entry.getKey());
@@ -133,7 +133,7 @@ public class RbelContextDecorator {
                 } else {
                   result.put(key, null);
                 }
-              } else if (!entry.getValue().getChildNodes().isEmpty()) {
+              } else if (entry.getValue().getChildNodesStream().findFirst().isPresent()) {
                 result.put(key, buildPositionDescriptor(entry.getValue()));
               } else {
                 result.put(key, getMaxedOutContentOfElement(entry.getValue()));
@@ -271,8 +271,7 @@ public class RbelContextDecorator {
   private static Optional<String> tryToFindKeyFromParentMap(
       Object element, Optional<RbelElement> parent) {
     return parent.stream()
-        .map(RbelElement::getChildNodesWithKey)
-        .flatMap(RbelMultiMap::stream)
+        .flatMap(RbelElement::getChildNodesWithKeyStream)
         .filter(entry -> entry.getValue() == element)
         .map(Map.Entry::getKey)
         .findFirst();

@@ -193,7 +193,9 @@ class RbelBuilderTests {
     RbelBuilder builder = RbelBuilder.fromFile(filePath);
     Assertions.assertNotNull(builder);
     Assertions.assertTrue(
-        builder.getTreeRootNode().getChildNodes().stream()
+        builder
+            .getTreeRootNode()
+            .getChildNodesStream()
             .map(r -> r.getKey().orElseThrow())
             .toList()
             .contains("blub"));

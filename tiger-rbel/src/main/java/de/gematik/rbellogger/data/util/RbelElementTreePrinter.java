@@ -96,10 +96,8 @@ public class RbelElementTreePrinter {
   }
 
   private String findKeyOfRootElement() {
-    return Optional.ofNullable(rootElement.getParentNode())
-        .map(RbelElement::getChildNodesWithKey)
-        .stream()
-        .flatMap(RbelMultiMap::stream)
+    return Optional.ofNullable(rootElement.getParentNode()).stream()
+        .flatMap(RbelElement::getChildNodesWithKeyStream)
         .filter(pair -> pair.getValue() == rootElement)
         .map(Map.Entry::getKey)
         .findFirst()
@@ -141,7 +139,7 @@ public class RbelElementTreePrinter {
       // print facet
       result.append(printFacets(childNode.getValue()));
       result.append("\n");
-      if (!childNode.getValue().getChildNodes().isEmpty()) {
+      if (childNode.getValue().getChildNodesStream().findFirst().isPresent()) {
         result.append(
             executeRecursive(childNode.getValue(), padding + padString, remainingLevels - 1));
       }

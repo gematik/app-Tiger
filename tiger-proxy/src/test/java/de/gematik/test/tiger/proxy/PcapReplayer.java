@@ -199,7 +199,7 @@ public class PcapReplayer implements AutoCloseable {
       val serverConnectionSocket = replayPackets(clientSocket, serverSocket);
       int before = tigerProxy.getRbelMessagesList().size();
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
-      int after = tigerProxy.getRbelMessages().size();
+      int after = tigerProxy.getMessageHistory().size();
 
       log.info("Before: {}, After: {}", before, after);
 

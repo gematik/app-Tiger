@@ -75,7 +75,9 @@ public class RbelX509CertificateFacet implements RbelFacet {
                         .map(this::printPublicKeyInfo)
                         .orElse(List.of()))
                 .with(
-                    x509Facet.getExtensions().getChildNodes().stream()
+                    x509Facet
+                        .getExtensions()
+                        .getChildNodesStream()
                         .map(ext -> renderX509Extension(ext, renderingToolkit))
                         .toList())
                 .with(

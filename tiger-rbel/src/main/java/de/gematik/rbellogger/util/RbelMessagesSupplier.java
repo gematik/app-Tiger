@@ -20,11 +20,10 @@
  */
 package de.gematik.rbellogger.util;
 
-import de.gematik.rbellogger.data.RbelElement;
-import java.util.Deque;
+import de.gematik.rbellogger.RbelMessageHistory;
 
 public interface RbelMessagesSupplier {
   void addRbelMessageListener(IRbelMessageListener listener);
 
-  Deque<RbelElement> getRbelMessages();
+  RbelMessageHistory.Facade getMessageHistory();
 }

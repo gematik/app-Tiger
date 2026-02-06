@@ -64,7 +64,7 @@ public class TigerRemoteTrafficDownloader {
         "Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
             + " in local history ({} actual messages)",
         getRemoteProxyUrl(),
-        getRbelLogger().getMessageHistory().size(),
+        getRbelLogger().getMessages().size(),
         getRbelLogger().getMessageList().size());
   }
 
@@ -120,7 +120,7 @@ public class TigerRemoteTrafficDownloader {
       log.trace(
           "Just parsed another traffic batch, got {} messages. Now standing at {} messages overall",
           convertedMessages.size(),
-          getRbelLogger().getMessageHistory().size());
+          getRbelLogger().getMessages().size());
     }
     if (!convertedMessages.isEmpty()) {
       tigerRemoteProxyClient
@@ -176,7 +176,7 @@ public class TigerRemoteTrafficDownloader {
         .addArgument(downloadUrl)
         .addArgument(() -> currentLastUuid.orElse(""))
         .addArgument(pageSize)
-        .addArgument(() -> getRbelLogger().getMessageHistory().size())
+        .addArgument(() -> getRbelLogger().getMessages().size())
         .log(
             "Downloading missed traffic from '{}', starting after {}. page-size {} (currently"
                 + " cached {} messages)");
