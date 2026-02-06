@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.1.16 - 2026-01-21</span>
+<span id="revdate">Version 4.1.17 - 2026-02-06</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1457,7 +1457,7 @@ If none of these files exist it will fail the start-up.</p>
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).</p>
 </li>
 <li>
-<p><code>tiger-${profile}.yaml</code> is read if the system property <code>PROFILE</code> or the environment variable <code>PROFILE</code> is set.<br>
+<p><code>tiger-${profile}.yaml</code> is read if the system property <code>profile</code> or the environment variable <code>PROFILE</code> is set.<br>
 The file needs to be located in the same folder as the <code>tiger.yaml</code> file.</p>
 </li>
 <li>
@@ -2398,8 +2398,12 @@ additionalConfigurationFiles:
 
 # the block where all the Tiger Proxy configuration properties are located
 tigerProxy:
-  # the port under which the server will be booted
+  # the port which will be used for administration (webUI, mesh-Setup,...)
   adminPort: 7777
+  # port which will be used to proxy requests
+  proxyPort: 6666
+  additionalProxyPorts:
+    - 5555 # additional port which will be used for proxying
   # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
   # section to configure whether and where the proxy should dump a tiger traffic file on shutdown
@@ -4549,6 +4553,39 @@ reported via the rbel log HTML page or the messages shown on web ui of tiger pro
 </div>
 </div>
 <div class="sect4">
+<h5 id="tgr-filtere-anfragen-nach-port-tigerresolvedstring"><a class="anchor" href="#tgr-filtere-anfragen-nach-port-tigerresolvedstring"></a>TGR filtere Anfragen nach Port {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-filter-requests-based-on-port-tigerresolvedstring"><a class="anchor" href="#tgr-filter-requests-based-on-port-tigerresolvedstring"></a>TGR filter requests based on port {tigerResolvedString}</h5>
+<div class="paragraph indent">
+<p>filter all subsequent findRequest steps for port. To reset set port to empty string "".</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> port to filter for</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-lösche-den-gesetzten-server-filter"><a class="anchor" href="#tgr-lösche-den-gesetzten-server-filter"></a>TGR lösche den gesetzten Server filter</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-reset-request-host-filter"><a class="anchor" href="#tgr-reset-request-host-filter"></a>TGR reset request host filter</h5>
+<div class="paragraph indent">
+<p>reset filter for host for subsequent findRequest steps.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-lösche-den-gesetzten-port-filter"><a class="anchor" href="#tgr-lösche-den-gesetzten-port-filter"></a>TGR lösche den gesetzten port filter</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-reset-request-port-filter"><a class="anchor" href="#tgr-reset-request-port-filter"></a>TGR reset request port filter</h5>
+<div class="paragraph indent">
+<p>reset filter for host for subsequent findRequest steps.</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="tgr-filtere-anfragen-nach-http-methode-tigerresolvedstring"><a class="anchor" href="#tgr-filtere-anfragen-nach-http-methode-tigerresolvedstring"></a>TGR filtere Anfragen nach HTTP Methode {tigerResolvedString}</h5>
 
 </div>
@@ -6357,6 +6394,20 @@ is performed.</p>
 <div class="paragraph indent">
 <p><strong>param</strong> key key of the context<br>
 <strong>param</strong> value value for the context entry with given key</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-globale-variable-tigerresolvedstring-zurücksetzen"><a class="anchor" href="#tgr-globale-variable-tigerresolvedstring-zurücksetzen"></a>TGR globale Variable {tigerResolvedString} zurücksetzen</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-unset-global-variable-tigerresolvedstring"><a class="anchor" href="#tgr-unset-global-variable-tigerresolvedstring"></a>TGR unset global variable {tigerResolvedString}</h5>
+<div class="paragraph indent">
+<p>Remove the variable with the given key from the global configuration store. Variable<br>
+substitution is performed.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> key key of the context entry to remove</p>
 </div>
 </div>
 <div class="sect4">
@@ -9404,7 +9455,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-01-21 12:35:20 +0100
+Last updated 2026-02-06 14:50:24 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
