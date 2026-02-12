@@ -82,6 +82,7 @@ class TigerProxyModificationControllerTest {
             .condition("isRequest")
             .targetElement("$.header.user-agent")
             .replaceWith("modified user-agent")
+            .deleteAfterNExecutions(5)
             .build();
     tigerRemoteProxyClient.addModificaton(modificationDescription);
 
@@ -91,6 +92,7 @@ class TigerProxyModificationControllerTest {
     assertThat(modification.getCondition()).isEqualTo("isRequest");
     assertThat(modification.getTargetElement()).isEqualTo("$.header.user-agent");
     assertThat(modification.getReplaceWith()).isEqualTo("modified user-agent");
+    assertThat(modification.getDeleteAfterNExecutions()).isEqualTo(5);
   }
 
   @Test

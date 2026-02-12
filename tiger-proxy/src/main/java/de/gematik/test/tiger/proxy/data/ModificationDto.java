@@ -37,6 +37,7 @@ public class ModificationDto {
   private String targetElement;
   private String replaceWith;
   private String regexFilter;
+  private Integer deleteAfterNExecutions;
 
   public static ModificationDto from(RbelModificationDescription modification) {
     return ModificationDto.builder()
