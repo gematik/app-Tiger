@@ -20,13 +20,13 @@
  */
 package de.gematik.test.tiger.maven.adapter;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
+
 import de.gematik.test.tiger.maven.adapter.mojos.TestEnvironmentMojo;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.maven.project.MavenProject;
 import org.mockito.Mockito;
@@ -39,7 +39,7 @@ public class MojoTestSetup {
     MavenProject project = Mockito.mock(MavenProject.class);
 
     List<String> runtimeClasspathElements =
-        Arrays.stream(buildClasspathUrls()).map(URL::getPath).collect(Collectors.toList());
+        Arrays.stream(buildClasspathUrls()).map(URL::getPath).toList();
     Mockito.when(project.getRuntimeClasspathElements()).thenReturn(runtimeClasspathElements);
 
     mojo.setProject(project);
@@ -48,14 +48,7 @@ public class MojoTestSetup {
 
   private static URL[] buildClasspathUrls() {
     return Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
-        .map(
-            path -> {
-              try {
-                return new File(path).toURI().toURL();
-              } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-              }
-            })
+        .map(unchecked(path -> new File(path).toURI().toURL()))
         .toArray(URL[]::new);
   }
 }

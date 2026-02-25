@@ -642,6 +642,18 @@ public class RBelValidatorGlue {
   }
 
   /**
+   * assert that request does not contain node/attribute at given rbel path.
+   *
+   * @param rbelPath path to node/attribute
+   */
+  @Dann("TGR prüfe aktueller Request enthält nicht Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Anfrage enthält nicht Knoten {tigerResolvedString}")
+  @Then("TGR current request does not contain node {tigerResolvedString}")
+  public void currentRequestMessageDoesNotContainNode(final String rbelPath) {
+    assertThat(rbelMessageRetriever.findElementsInCurrentRequestOrEmpty(rbelPath)).isEmpty();
+  }
+
+  /**
    * assert that request matches at given rbel path node/attribute. If multiple nodes are found,
    * each is tested and if any matches, this step succeeds.
    *
@@ -820,9 +832,22 @@ public class RBelValidatorGlue {
    * @param rbelPath path to node/attribute
    */
   @Dann("TGR prüfe aktuelle Antwort enthält Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Response enthält Knoten {tigerResolvedString}")
   @Then("TGR current response contains node {tigerResolvedString}")
   public void currentResponseMessageContainsNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentResponse(rbelPath)).isNotEmpty();
+  }
+
+  /**
+   * assert that request does not contain node/attribute at given rbel path.
+   *
+   * @param rbelPath path to node/attribute
+   */
+  @Dann("TGR prüfe aktuelle Antwort enthält nicht Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Response enthält nicht Knoten {tigerResolvedString}")
+  @Then("TGR current response does not contain node {tigerResolvedString}")
+  public void currentResponseMessageDoesNotContainNode(final String rbelPath) {
+    assertThat(rbelMessageRetriever.findElementsInCurrentResponseOrEmpty(rbelPath)).isEmpty();
   }
 
   /**

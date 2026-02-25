@@ -20,8 +20,9 @@
  */
 package de.gematik.test.tiger.util;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
+
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,14 +35,7 @@ public class NoProxyUtils {
     }
     return noProxyHosts.stream()
         .map(String::trim)
-        .map(
-            host -> {
-              try {
-                return InetAddress.getByName(host);
-              } catch (UnknownHostException e) {
-                return null;
-              }
-            })
+        .map(nullOnException(InetAddress::getByName))
         .filter(Objects::nonNull)
         .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }

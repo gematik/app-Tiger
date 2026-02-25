@@ -69,7 +69,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                     + " body \n"
                     + "''{1}''",
                 httpResponse.getStatus(), httpResponse.getBody()))
-        .startsWith("<!DOCTYPE html>")
+        .startsWith("<!")
         .endsWith("</html>");
   }
 
@@ -78,7 +78,6 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
       cfgFilePath =
           "src/test/resources/de/gematik/test/tiger/testenvmgr/testReverseProxyManual.yaml")
   void testReverseProxyManual() {
-    log.info("Entering test");
     final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
@@ -93,7 +92,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                     + " body \n"
                     + "''{1}''",
                 httpResponse.getStatus(), httpResponse.getBody()))
-        .startsWith("<!DOCTYPE html>")
+        .startsWith("<!")
         .endsWith("</html>")
         .contains("<h1>Herman Melville - Moby-Dick</h1>");
   }

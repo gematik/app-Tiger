@@ -27,9 +27,14 @@ import static org.mockito.Mockito.mock;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.Key;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -80,6 +85,29 @@ class RbelKeyManagerTest {
   @Test
   void shouldGrepJwkKeys() throws IOException {
     RbelConverter converter = RbelLogger.build().getRbelConverter();
+
+    converter.parseMessage(
+        readCurlFromFileWithCorrectedLineBreaks(
+                "src/test/resources/sampleMessages/jwtWithKeysClaim.curl")
+            .getBytes(),
+        new RbelMessageMetadata());
+
+    assertThat(converter.getRbelKeyManager().findKeyByName("puk_fed_sig")).isPresent();
+  }
+
+  @Test
+  void shouldBeAbleToHandle() throws IOException {
+    TigerGlobalConfiguration.initializeWithCliProperties(
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            Path.of("../tiger-common/src/test/resources/testTigerYaml/tiger.yaml").toString()));
+    RbelConverter converter =
+        RbelLogger.build(
+                new RbelConfiguration()
+                    .addInitializer(
+                        new RbelKeyFolderInitializer(
+                            Path.of("src/test/resources").toAbsolutePath().toString())))
+            .getRbelConverter();
 
     converter.parseMessage(
         readCurlFromFileWithCorrectedLineBreaks(

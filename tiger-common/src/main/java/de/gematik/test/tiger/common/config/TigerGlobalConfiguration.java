@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -111,23 +112,37 @@ public class TigerGlobalConfiguration {
     val profileFile =
         globalConfigurationLoader
             .readStringOptional("profile")
-            .map(p -> findBasePathOfMainTigerYaml() + "tiger-" + p + ".yaml")
-            .map(File::new);
-    if (profileFile.isEmpty()) {
-      return;
-    }
+            .map(TigerGlobalConfiguration::profileFileName)
+            .map(TigerGlobalConfiguration::resolveRelativePathToTigerYaml)
+            .map(Path::toFile);
 
-    if (!profileFile.get().exists()) {
-      throw new TigerConfigurationException(
-          "Could not find profile configuration-file '"
-              + profileFile.get().getAbsolutePath()
-              + "'.");
+    if (profileFile.isPresent()) {
+      val f = profileFile.get();
+      if (!f.exists()) {
+        throw new TigerConfigurationException(
+            "Could not find profile configuration-file '" + f.getAbsolutePath() + "'.");
+      }
+      log.info("Reading profile configuration from file '{}'", f.getAbsolutePath());
+      readYamlFile(
+          profileFile.get(), Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.PROFILE_YAML);
+    } else {
+      TIGER_DEFAULT_PROFILE
+          .getValue()
+          .map(TigerGlobalConfiguration::profileFileName)
+          .map(TigerGlobalConfiguration::resolveRelativePathToTigerYaml)
+          .map(Path::toFile)
+          .filter(File::exists)
+          .ifPresent(
+              f -> {
+                log.info("Reading profile configuration from file '{}'", f.getAbsolutePath());
+                readYamlFile(
+                    f, Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.PROFILE_YAML);
+              });
     }
-    profileFile.ifPresent(
-        file -> {
-          log.info("Reading profile configuration from file '{}'", file.getAbsolutePath());
-          readYamlFile(file, Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.PROFILE_YAML);
-        });
+  }
+
+  private static String profileFileName(String profile) {
+    return "tiger-" + profile + ".yaml";
   }
 
   private static String findBasePathOfMainTigerYaml() {
@@ -369,6 +384,7 @@ public class TigerGlobalConfiguration {
     return readStringOptional(key).map(Integer::parseInt);
   }
 
+  @SneakyThrows
   private static void readMainYamlFile() {
     final Optional<String> tigerYamlValue = TIGER_YAML_VALUE.getValueWithoutResolving();
     TIGER_ROOT_FOLDER.putValue(Path.of(".").toAbsolutePath().toString());
@@ -387,11 +403,7 @@ public class TigerGlobalConfiguration {
             customCfgFile.get(),
             Optional.of(TIGER_BASEKEY),
             ConfigurationValuePrecedence.MAIN_YAML);
-        customCfgFile
-            .map(File::getAbsoluteFile)
-            .map(File::getParentFile)
-            .map(File::getAbsolutePath)
-            .ifPresent(TIGER_ROOT_FOLDER::putValue);
+        setRootFolderNormalized(customCfgFile);
         return;
       } else {
         throw new TigerConfigurationException(
@@ -406,11 +418,7 @@ public class TigerGlobalConfiguration {
             .filter(File::exists)
             .findFirst();
     if (mainCfgFile.isPresent()) {
-      mainCfgFile
-          .map(File::getAbsoluteFile)
-          .map(File::getParentFile)
-          .map(File::getAbsolutePath)
-          .ifPresent(TIGER_ROOT_FOLDER::putValue);
+      setRootFolderNormalized(mainCfgFile);
       readYamlFile(
           mainCfgFile.get(), Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.MAIN_YAML);
       return;
@@ -419,6 +427,14 @@ public class TigerGlobalConfiguration {
     if (requireTigerYaml) {
       throw new TigerConfigurationException("Could not find configuration-file 'tiger.yaml'.");
     }
+  }
+
+  private static void setRootFolderNormalized(Optional<File> customCfgFile) {
+    customCfgFile
+        .map(unchecked(File::getCanonicalFile))
+        .map(File::getParentFile)
+        .map(unchecked(File::getCanonicalPath))
+        .ifPresent(TIGER_ROOT_FOLDER::putValue);
   }
 
   private static void readHostYamlFile() {
@@ -596,6 +612,9 @@ public class TigerGlobalConfiguration {
   }
 
   public static Path resolveRelativePathToTigerYaml(String relativePath) {
-    return Path.of(TigerGlobalConfiguration.findBasePathOfMainTigerYaml(), relativePath);
+    return Path.of(TigerGlobalConfiguration.findBasePathOfMainTigerYaml())
+        .resolve(relativePath)
+        .normalize()
+        .toAbsolutePath();
   }
 }

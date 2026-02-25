@@ -59,6 +59,9 @@ lib:
     # Flag whether to clear the initial traffic after the environment startup phase
     # activated by default
     clearEnvironmentStartupTraffic: true
+    # name of the tiger-${profile}.yaml to be loaded when none is explcited specified via system property or
+    # environment variable, default is an emtpy string, meaning no additional configuration file is loaded
+    defaultProfile: "my-default"
 
 # flag whether to start the local Tiger Proxy (default) or to omit it completely.
 # if you have the local Tiger Proxy deactivated you will NOT be able to

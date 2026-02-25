@@ -26,13 +26,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
-import com.github.tomakehurst.wiremock.common.FileSource;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.extension.Parameters;
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer;
-import com.github.tomakehurst.wiremock.http.Request;
+import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
@@ -477,11 +474,50 @@ class TestHttpClientSteps {
         explicitSetContentTypeHeader);
   }
 
+  @SuppressWarnings("java:S2699") // rbel validator performs assertions
+  @Test
+  void testSendRequestWithFormParams_shouldSucceed() {
+    httpGlueCode.sendRequestWithMultiLineBody(
+        Method.POST,
+        createAddress("http://httpbin/post"),
+        "application/x-www-form-urlencoded;charset=UTF-8",
+        "param1=value1&param2=value2");
+    rbelValidatorGlueCode.findLastRequestToPath(".*");
+    rbelValidatorGlueCode.currentRequestMessageAttributeMatches("$.body.param1", "value1");
+    rbelValidatorGlueCode.currentRequestMessageAttributeMatches("$.body.param2", "value2");
+  }
+
+  @Test
+  void testClearOnlyOneHeader() {
+    // set two headers
+    httpGlueCode.setDefaultHeader("X-My-Header-To-Clear", "value1");
+    httpGlueCode.setDefaultHeader("X-My-Header-To-Keep", "value2");
+
+    // send request and check that the headers were sent
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/status/200"));
+    rbelValidatorGlueCode.findLastRequestToPath(".*/status/200");
+    rbelValidatorGlueCode.currentResponseMessageAttributeMatches("$.responseCode", "200");
+    rbelValidatorGlueCode.currentRequestMessageAttributeMatches(
+        "$.header.[~'X-My-Header-To-Clear']", "value1");
+    rbelValidatorGlueCode.currentRequestMessageAttributeMatches(
+        "$.header.[~'X-My-Header-To-Keep']", "value2");
+
+    // delete one header and resend request. check that only the deleted header is gone
+    httpGlueCode.clearDefaultHeader("X-My-Header-To-Clear");
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/status/200"));
+    rbelValidatorGlueCode.findLastRequestToPath(".*/status/200");
+    rbelValidatorGlueCode.currentResponseMessageAttributeMatches("$.responseCode", "200");
+    rbelValidatorGlueCode.currentResponseMessageDoesNotContainNode(
+        "$.header.[~'X-My-Header-To-Clear']");
+    rbelValidatorGlueCode.currentRequestMessageAttributeMatches(
+        "$.header.[~'X-My-Header-To-Keep']", "value2");
+  }
+
   private static URI createAddress(String urlString) {
     return URI.create(urlString);
   }
 
-  class CustomBlockingTransformer extends ResponseDefinitionTransformer {
+  static class CustomBlockingTransformer implements ResponseDefinitionTransformerV2 {
     private final AtomicBoolean blockResponse;
 
     public CustomBlockingTransformer(AtomicBoolean blockResponse) {
@@ -489,19 +525,15 @@ class TestHttpClientSteps {
     }
 
     @Override
-    public ResponseDefinition transform(
-        Request request,
-        ResponseDefinition responseDefinition,
-        FileSource files,
-        Parameters parameters) {
-      await().until(() -> !blockResponse.get());
-
-      return ResponseDefinitionBuilder.like(responseDefinition).build();
+    public String getName() {
+      return "block-until-atomic";
     }
 
     @Override
-    public String getName() {
-      return "block-until-atomic";
+    public ResponseDefinition transform(ServeEvent serveEvent) {
+      await().until(() -> !blockResponse.get());
+
+      return serveEvent.getResponseDefinition();
     }
 
     @Override

@@ -14,8 +14,9 @@
 # limitations under the License.
 #
 
+mkdir -p target
 sed "s/^ *//;s/ *$//" < ../../tiger-common/src/main/java/de/gematik/test/tiger/common/jexl/InlineJexlToolbox.java | \
 grep -E "(^[\*|\/])|(^(public|protected|private|static|\s).*\(.*)" | \
 grep -ve "^//" | \
 sed 's/^\/\*/\n\//' | \
-tail -n +5 > InlineJexlToolboxCommentsOnly.java
+tail -n +5 > target/InlineJexlToolboxCommentsOnly.java

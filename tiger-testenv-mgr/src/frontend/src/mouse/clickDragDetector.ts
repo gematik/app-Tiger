@@ -22,6 +22,8 @@
 export const setupDragDetector = (
   element: HTMLElement,
   onDrag: (ev: MouseEvent) => any,
+  onDragStart: () => void = () => {},
+  onDragEnd: () => void = () => {},
 ) => {
   let drag = false;
   const delta = 6;
@@ -47,6 +49,7 @@ export const setupDragDetector = (
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
 
+    onDragEnd();
     drag = false;
   };
 
@@ -54,6 +57,7 @@ export const setupDragDetector = (
     startX = e.pageX;
     startY = e.pageY;
     drag = false;
+    onDragStart();
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   });

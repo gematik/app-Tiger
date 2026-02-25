@@ -31,6 +31,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.util.List;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.jupiter.api.BeforeAll;
@@ -108,6 +109,9 @@ class VauEpa3ConverterTest {
         .hasValueEqualTo(
             new BigInteger(
                 "49117871460386101168058772883563639427765135898532450228055942387686676034354"));
+    assertThat(html)
+        .contains(List.of("VAU 3 Encrypted Message", "VAU 3 Encrypted Message"))
+        .doesNotContain("ASL");
   }
 
   @SneakyThrows

@@ -131,9 +131,9 @@
 <script setup lang="ts">
 import BannerMessage from "@/types/BannerMessage";
 import BannerType from "@/types/BannerType";
-
 import { computed, ref, watch } from "vue";
 import type QuitReason from "@/types/QuitReason";
+import { useFavicon } from "@/composables/useFavicon";
 
 const props = defineProps<{
   bannerMessage: BannerMessage | boolean;
@@ -143,10 +143,12 @@ const props = defineProps<{
 
 const windowClosed = ref(false);
 const showMessage = computed(() => !windowClosed.value && props.bannerMessage);
+const { setNotification } = useFavicon();
 
 function isOfType(bannerType: BannerType): boolean {
   return (
-    props.bannerMessage &&
+    props.bannerMessage !== false &&
+    props.bannerMessage !== true &&
     (props.bannerMessage as BannerMessage).type === bannerType
   );
 }
@@ -159,8 +161,18 @@ watch(
   },
 );
 
+// Update favicon when workflow message visibility changes
+watch(
+  [showMessage, () => props.quitTestrunOngoing],
+  ([isShowing, isQuitting]) => {
+    setNotification(Boolean(isShowing) || Boolean(isQuitting));
+  },
+  { immediate: true },
+);
+
 function closeWindow() {
   windowClosed.value = true;
+  setNotification(false);
 }
 
 function confirmContinue() {

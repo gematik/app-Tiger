@@ -7,7 +7,7 @@ The different extensions are shortly described in the following sections.
 
 The Tiger-Konnektor-Management-Extension provides an interface to the KMS system of different connector providers.
 It also provides cucumber feature steps to access the different connectors.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-konnektor-management-extensions.
+This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-konnektor-management-extensions.
 
 === Tiger On FHIR Extension
 
@@ -19,7 +19,7 @@ The tiger-on-fhir can be found on GitHub https://github.com/gematik/tiger-on-fhi
 
 CATS stands for Card Terminal Simulator.
 Tiger-Cats-Extensions offers the option to use the REST interface of CATS as Java functionality or as BDD steps.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-cats-extensions.
+This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/cats/tiger-cats-extensions.
 
 === Tiger Cloud Extension
 
@@ -30,9 +30,9 @@ The GitHub repo is https://github.com/gematik/tiger-cloud-extension.
 
 The Tiger-PSSIM-Extension is an extension for simulating a Primärsystem (PS) in your tests.
 It provides a wide range of BDD Steps and covers the majority of PS functionalities.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-pssim-extension.
+This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-pssim-extension.
 
 === Tiger Robot Extension
 
 The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension.
+This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension.

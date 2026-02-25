@@ -774,8 +774,7 @@ public class RbelMessageRetriever {
   }
 
   public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
-    assertCurrentResponseFound();
-    final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
+    final List<RbelElement> elems = findElementsInCurrentResponseOrEmpty(rbelPath);
     if (elems.isEmpty()) {
       val errorMsg = "Unable to find element in response for rbel path '" + rbelPath + "'";
       val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentResponse);
@@ -788,9 +787,18 @@ public class RbelMessageRetriever {
     return elems;
   }
 
-  public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
+  public List<RbelElement> findElementsInCurrentResponseOrEmpty(final String rbelPath) {
+    assertCurrentResponseFound();
+    return currentResponse.findRbelPathMembers(rbelPath);
+  }
+
+  public List<RbelElement> findElementsInCurrentRequestOrEmpty(final String rbelPath) {
     assertCurrentRequestFound();
-    final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+    return currentRequest.findRbelPathMembers(rbelPath);
+  }
+
+  public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
+    final List<RbelElement> elems = findElementsInCurrentRequestOrEmpty(rbelPath);
     if (elems.isEmpty()) {
       val errorMsg = "Unable to find element in request for rbel path '" + rbelPath + "'";
       val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentRequest);

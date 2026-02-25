@@ -20,6 +20,8 @@
  */
 package de.gematik.rbellogger.util;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.falseOnException;
+
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
@@ -43,14 +45,10 @@ public class RbelValueShader {
   public Optional<String> shadeValue(final Object element, final Optional<String> key) {
     return jexlShadingMap.stream()
         .filter(
-            entry -> {
-              try {
-                return TigerJexlExecutor.matchesAsJexlExpression(
-                    element, entry.getJexlExpression(), key);
-              } catch (RuntimeException ignored) {
-                return false;
-              }
-            })
+            falseOnException(
+                entry ->
+                    TigerJexlExecutor.matchesAsJexlExpression(
+                        element, entry.getJexlExpression(), key)))
         .map(this::incrementNumberOfMatches)
         .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
         .findFirst();
@@ -65,14 +63,10 @@ public class RbelValueShader {
   public void addNote(final RbelElement element) {
     jexlNoteMap.stream()
         .filter(
-            entry -> {
-              try {
-                return TigerJexlExecutor.matchesAsJexlExpression(
-                    element, entry.getJexlExpression(), element.findKeyInParentElement());
-              } catch (RuntimeException ignored) {
-                return false;
-              }
-            })
+            falseOnException(
+                entry ->
+                    TigerJexlExecutor.matchesAsJexlExpression(
+                        element, entry.getJexlExpression(), element.findKeyInParentElement())))
         .map(this::incrementNumberOfMatches)
         .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
         .map(note -> new RbelNoteFacet(note, RbelNoteFacet.NoteStyling.INFO))

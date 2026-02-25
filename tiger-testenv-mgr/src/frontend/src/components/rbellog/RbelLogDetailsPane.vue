@@ -74,6 +74,7 @@
         ref="rbelLogIframe"
         allow="clipboard-write"
         class="h-100 w-100"
+        :style="iframeStyle"
         :src="`${localProxyWebUiUrl}?embedded`"
         title="Rbel log view"
       />
@@ -96,6 +97,7 @@ defineProps<{
 const detailsPane = ref<HTMLElement | null>(null);
 const detailsResizer = ref<HTMLElement | null>(null);
 const rbelLogIframe = ref<HTMLIFrameElement | null>(null);
+const iFramePointerEventsActive = ref(true);
 const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 
 const expanded = ref(false);
@@ -107,6 +109,7 @@ const tooltipExpandMinimize = computed(
 
 const paneStyle = computed<CSSProperties>(() => ({
   width: `${paneWidth.value}px`,
+  pointerEvents: iFramePointerEventsActive.value ? "auto" : "none",
   right: "0",
 }));
 
@@ -118,6 +121,10 @@ const resizerStyle = computed<CSSProperties>(() => {
     userSelect: "none",
   };
 });
+
+const iframeStyle = computed<CSSProperties>(() => ({
+  pointerEvents: iFramePointerEventsActive.value ? "auto" : "none",
+}));
 
 function onClick(_ev: MouseEvent) {
   if (expanded.value) {
@@ -147,6 +154,16 @@ function onDrag(ev: MouseEvent) {
   }
 }
 
+//When dragging, if the mouse goes over the iframe, we cannot capture anymore
+//the mouseup event to stop the dragging. To prevent this, we disable pointer events on the iframe while dragging.
+function onDragStart() {
+  iFramePointerEventsActive.value = false;
+}
+
+function onDragEnd() {
+  iFramePointerEventsActive.value = true;
+}
+
 emitter.on("scrollToRbelLogMessage", (messageUuid: string) => {
   scrollToMessage(messageUuid);
 });
@@ -165,7 +182,7 @@ function scrollToMessage(messageUuid: string) {
 
 watch(detailsResizer, () => {
   if (detailsResizer.value) {
-    setupDragDetector(detailsResizer.value, onDrag);
+    setupDragDetector(detailsResizer.value, onDrag, onDragStart, onDragEnd);
   }
 });
 </script>
@@ -202,6 +219,7 @@ watch(detailsResizer, () => {
   color: var(--gem-primary-400);
   top: 0;
   bottom: 0;
+  z-index: 1050;
 }
 
 #rbellog-details-iframe > iframe {

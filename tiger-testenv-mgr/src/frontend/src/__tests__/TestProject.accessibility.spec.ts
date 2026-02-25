@@ -60,7 +60,6 @@ describe("TestProject.vue - Tab Navigation Accessibility Tests", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
 
-
     // Mock ResizeObserver as a proper constructor
     class MockResizeObserver {
       observe = vi.fn();
