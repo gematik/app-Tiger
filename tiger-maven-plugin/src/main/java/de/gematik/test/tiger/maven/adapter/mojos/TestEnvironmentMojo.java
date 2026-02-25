@@ -20,9 +20,10 @@
  */
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
+
 import de.gematik.test.tiger.lib.TigerDirector;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Duration;
@@ -139,14 +140,7 @@ public class TestEnvironmentMojo extends AbstractMojo {
     }
 
     return runtimeClasspathElements.stream()
-        .map(
-            path -> {
-              try {
-                return new File(path).toURI().toURL();
-              } catch (MalformedURLException ex) {
-                throw new RuntimeException(ex);
-              }
-            })
+        .map(unchecked(path -> new File(path).toURI().toURL()))
         .toArray(URL[]::new);
   }
 }

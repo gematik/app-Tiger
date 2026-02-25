@@ -16,12 +16,12 @@
   ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.1.17</version>
+    <version>4.2.1</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -342,58 +342,58 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
                 <classifier>jar-with-dependencies</classifier>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
             </dependency>
 
             <dependency>
@@ -485,6 +485,11 @@
             </dependency>
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-ensure</artifactId>
+                <version>${version.serenity.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-json-summary-report</artifactId>
                 <version>${version.serenity.core}</version>
             </dependency>
@@ -506,6 +511,11 @@
             <dependency>
                 <groupId>net.serenity-bdd</groupId>
                 <artifactId>serenity-screenplay</artifactId>
+                <version>${version.serenity.core}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.serenity-bdd</groupId>
+                <artifactId>serenity-screenplay-rest</artifactId>
                 <version>${version.serenity.core}</version>
             </dependency>
             <dependency>
@@ -796,6 +806,16 @@
                 <groupId>org.sonarsource.java</groupId>
                 <artifactId>sonar-jacoco-listeners</artifactId>
                 <version>${version.sonar-jacoco-listeners}</version>
+            </dependency>
+            <dependency>
+                <!-- because of a bug in spring-webmvc which is not yet fixed in spring-boot-dependencies.
+                when spring-boot includes this version, we can remove it from here.
+                Problem manifests in zion, but since zion reads dependencies from here, it is
+                safer to set it directly in bom - See TGRZ-8
+                -->
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>6.2.16</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>

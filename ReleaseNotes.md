@@ -1,5 +1,25 @@
 # Changelog Tiger Test platform
 
+# Release 4.2.0
+
+## Features
+
+* TGR-2007: favicon badge added when banner is shown (user interaction is needed)
+* TGR-2043: Tiger Test Lib: fixed an issue where sending requests with content type `application/x-www-form-urlencoded`
+  with the tiger glue code was not possible.
+* TGR-2070: Tiger Test Lib: Add new tiger BDD steps to clear a specific default header and to assert that a given
+  message
+  does not contain a node at a specific rbelPath.
+* TGR-2077: Tiger Test Lib: it is now possible to configure a default tiger profile to be used when none is defined. See
+
+## Bugfixes
+
+* TGR-2076: Fixed an issue when using relative keyfolder-locations with absolute tiger.yaml locations.
+* TGR-2071: Workflow UI: fix an issue where dragging the tiger proxy log pane would get stuck in a dragging state after
+  the mouse was released.
+* TGR-2062: Tiger Testsuite Baseimage: fix ownership permissions of created folders.
+* TGR-1894: Workflow UI: fixed overlap of traffic visualization with the rbel log pane.
+
 # Release 4.1.17
 
 ## Breaking Changes
@@ -15,6 +35,7 @@
 
 * TGR-2030: LDAP converter now adds missing structures for protocol Op, as well as control structures,
   both for the rbel tree as well as the html rendering.
+* TGR-2066: Added support for ASL encryption
 * TGR-2028: Added a new property `tiger.rootFolder` that will automatically be set to the parent folder of the
   tiger.yaml configuration file. This allows to reference files relative to the tiger.yaml location.
 * TGR-1971: Tiger-Proxy: add support for subscribing to traffic of old tiger-proxy versions ( version < 3.8.0 ) with
@@ -252,9 +273,9 @@ package de.gematik.test.tiger.common.jexl;
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
 
-  public String testMethod() {
-    return "test";
-  }
+    public String testMethod() {
+        return "test";
+    }
 }
 ```
 

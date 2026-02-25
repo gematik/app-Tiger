@@ -382,15 +382,20 @@ public class HttpGlueCode {
   @Wenn("TGR lösche alle default headers")
   public void clearDefaultHeaders() {
     TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER)
+        .keySet()
         .forEach(
-            (key, value) ->
-                TigerGlobalConfiguration.listSources().stream()
-                    .sorted(Comparator.comparing(source -> source.getPrecedence().getValue()))
-                    .forEach(
-                        source ->
-                            source.removeValue(
-                                new TigerConfigurationKey(
-                                    KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, key))));
+            key ->
+                TigerGlobalConfiguration.deleteFromAllSources(
+                    new TigerConfigurationKey(
+                        KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, key)));
+  }
+
+  @When("TGR clear default header {tigerResolvedString}")
+  @Wenn("TGR lösche default header {tigerResolvedString}")
+  public void clearDefaultHeader(String headerToRemove) {
+    var headerKey =
+        new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, headerToRemove);
+    TigerGlobalConfiguration.deleteFromAllSources(headerKey);
   }
 
   /**

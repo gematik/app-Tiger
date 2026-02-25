@@ -94,8 +94,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
               getServerId());
         } else {
           folder =
-              TigerGlobalConfiguration.resolveRelativePathToTigerYaml(
-                      System.getProperty("java.io.tmpdir"))
+              Path.of(System.getProperty("java.io.tmpdir"))
                   .resolve("tiger_ls")
                   .toFile()
                   .getAbsolutePath();

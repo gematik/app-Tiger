@@ -23,8 +23,7 @@ package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_ROOT_FOLDER;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.*;
 
 import java.nio.file.Path;
 import lombok.val;
@@ -95,5 +94,28 @@ class TigerProfileConfigurationTest {
     assertThatExceptionOfType(TigerConfigurationException.class)
         .isThrownBy(TigerGlobalConfiguration::initialize)
         .withMessageContaining("Could not find profile configuration-file ");
+  }
+
+  @Test
+  void testDoesNotThrowExceptionWhenDefaultProfileSetDoesNotExist() {
+    environmentVariables.set("tiger.lib.defaultProfile", "NoSuchProfileExists");
+    assertThatNoException().isThrownBy(TigerGlobalConfiguration::initialize);
+  }
+
+  @Test
+  void testLoadsDefaultProfileWhenNoProfileIsSet() {
+    environmentVariables.set("tiger.lib.defaultProfile", "test-default");
+    TigerGlobalConfiguration.initialize();
+    val value = TigerGlobalConfiguration.readString("tiger.test");
+    assertThat(value).isEqualTo("set via default profile");
+  }
+
+  @Test
+  void testLoadsExplicitProfileWhenBothDefaultAndExplicitProfileAreSet() {
+    environmentVariables.set("tiger.lib.defaultProfile", "test-default");
+    systemProperties.set("PROFILE", "profileSetViaProperties");
+    TigerGlobalConfiguration.initialize();
+    val value = TigerGlobalConfiguration.readString("tiger.test");
+    assertThat(value).isEqualTo("set via properties");
   }
 }

@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.mockserver.httpclient;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.SECURE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -43,7 +44,6 @@ import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -222,14 +222,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     }
     return proxyConfiguration.getNoProxyHosts().stream()
         .map(String::trim)
-        .map(
-            host -> {
-              try {
-                return InetAddress.getByName(host);
-              } catch (UnknownHostException e) {
-                return null;
-              }
-            })
+        .map(nullOnException(InetAddress::getByName))
         .filter(Objects::nonNull)
         .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }

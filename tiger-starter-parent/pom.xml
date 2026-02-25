@@ -27,7 +27,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-starter-parent</artifactId>
-    <version>4.1.17</version>
+    <version>4.2.1</version>
     <packaging>pom</packaging>
     <name>tiger-starter-parent</name>
     <description>Parent pom for getting a tiger test suite project quickly up and running</description>
@@ -65,13 +65,14 @@
         <tiger.glues>${project.groupId}</tiger.glues>
         <version.central-publishing-maven-plugin>0.10.0</version.central-publishing-maven-plugin>
         <version.maven.javadoc>3.12.0</version.maven.javadoc>
+        <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-bom</artifactId>
-                <version>4.1.17</version>
+                <version>4.2.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -207,7 +208,7 @@
                 <plugin>
                     <groupId>de.gematik.test</groupId>
                     <artifactId>tiger-maven-plugin</artifactId>
-                    <version>4.1.17</version>
+                    <version>4.2.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>

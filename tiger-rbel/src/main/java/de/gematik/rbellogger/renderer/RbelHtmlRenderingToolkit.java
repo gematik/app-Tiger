@@ -22,6 +22,7 @@ package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
 import static j2html.TagCreator.*;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -506,14 +507,12 @@ public class RbelHtmlRenderingToolkit {
         .getValue()
         .filter(StringUtils::isNotEmpty)
         .map(
-            filePath -> {
-              try {
-                final byte[] bytes = FileUtils.readFileToByteArray(new File(filePath));
-                return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-              } catch (IOException e) {
-                throw new RbelRenderingException("Could not load file", e);
-              }
-            })
+            unchecked(
+                filePath -> {
+                  final byte[] bytes = FileUtils.readFileToByteArray(new File(filePath));
+                  return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
+                },
+                e -> new RbelRenderingException("Could not load file", e)))
         .orElseGet(
             () -> {
               try {

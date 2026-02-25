@@ -18,7 +18,8 @@ It then loads further yaml-files:
 * `tiger-$+{hostname}+.yaml` and `tiger-$+{hostname}+.yml` are read and give the possibility to make computer-dependent configuration.
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).
 * `tiger-$+{profile}+.yaml` is read if the system property `profile` or the environment variable `PROFILE` is set.
-The file needs to be located in the same folder as the `tiger.yaml` file.
+The file needs to be located in the same folder as the `tiger.yaml` file. Additionaly, you can configure in the tiger
+configuration a default profile which will be loaded when none is set via environment variable or system property. See xref:tigerTestLibrary.adoc#_tiger_test_lib_configuration[here] for more details.
 * The list given under `tiger.additionalYamls` is read.
 Each list-entry has two properties:
 ** `filename` pointing to the file to be read.

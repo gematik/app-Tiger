@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.mockserver.httpclient;
 
+import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
@@ -39,7 +40,6 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.util.AttributeKey;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
@@ -275,14 +275,7 @@ public class NettyHttpClient {
         .or(
             () ->
                 Optional.ofNullable(remoteAddress.getHostName())
-                    .map(
-                        adr -> {
-                          try {
-                            return InetAddress.getByName(adr);
-                          } catch (UnknownHostException e) {
-                            return null;
-                          }
-                        }))
+                    .map(nullOnException(InetAddress::getByName)))
         .map(adr -> NoProxyUtils.shouldUseProxyForHost(adr, proxyConfiguration.getNoProxyHosts()))
         .orElse(true);
   }

@@ -33,6 +33,7 @@ import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
 import io.restassured.config.RedirectConfig;
+import io.restassured.http.ContentType;
 import io.restassured.http.Method;
 import io.restassured.internal.RequestSpecificationImpl;
 import io.restassured.specification.QueryableRequestSpecification;
@@ -224,7 +225,12 @@ public class TigerHttpClient {
                 StringUtils.isEmpty(
                     ((RequestSpecificationImpl) requestSpecification).getContentType()))
         .ifPresent(requestSpecification::contentType);
-    requestSpecification.body(resolved.getContent()).request(method, address);
+
+    if (ContentType.URLENC.equals(ContentType.fromContentType(contentType))) {
+      requestSpecification.body(resolved.getContentAsString()).request(method, address);
+    } else {
+      requestSpecification.body(resolved.getContent()).request(method, address);
+    }
   }
 
   private static void setExactContentTypeHeader(

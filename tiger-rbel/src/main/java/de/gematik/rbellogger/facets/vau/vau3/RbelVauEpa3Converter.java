@@ -21,30 +21,24 @@
 package de.gematik.rbellogger.facets.vau.vau3;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
-import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.data.core.RbelNestedFacet;
 import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
+import de.gematik.rbellogger.facets.vau.AbstractAslDecryptionConverter;
+import de.gematik.rbellogger.facets.vau.asl.RbelAslEncryptionFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.CryptoUtils;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.*;
 import java.util.*;
-import java.util.stream.Stream;
-import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -59,7 +53,7 @@ import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
 
 @ConverterInfo(onlyActivateFor = "epa3-vau")
 @Slf4j
-public class RbelVauEpa3Converter extends RbelConverterPlugin {
+public class RbelVauEpa3Converter extends AbstractAslDecryptionConverter {
 
   // Constants for complete VAU cipher message: (see A_24628 to A_24633 in gemSpec_Krypt V2.30.0)
   private static final int HEADER_VERSION_INDEX = 0;
@@ -94,105 +88,13 @@ public class RbelVauEpa3Converter extends RbelConverterPlugin {
     } else if (element.getParentNode() != null
         && element.getParentNode().hasFacet(RbelHttpMessageFacet.class)) {
       tryToExtractVauNonPuTracingKeys(element, context);
-      tryToParseVauEpa3Message(element, context);
+      tryToParseVau3AslMessage(element, context);
     }
   }
 
-  private void tryToParseVauEpa3Message(RbelElement element, RbelConversionExecutor context) {
-    context
-        .getRbelKeyManager()
-        .getAllKeys()
-        .filter(key -> key.getKey() instanceof SecretKeySpec)
-        .filter(key -> key.getKey().getAlgorithm().equals("AES"))
-        .filter(key -> key.getKeyName().startsWith(VAU_3_PAYLOAD_KEYS))
-        .forEach(key -> decryptEpa3VauSuccessfull(element, key.getKey(), context)); // NOSONAR
-  }
-
-  private boolean decryptEpa3VauSuccessfull(
-      RbelElement element, Key key, RbelConversionExecutor context) {
-    try {
-      final byte[] rawContent = element.getRawContent();
-      // These numbers are derived from A_24628 to A_24633 in gemSpec_Krypt V2.30.0
-      byte[] header = ArrayUtils.subarray(rawContent, 0, BODY_INDEX);
-      byte[] iv = ArrayUtils.subarray(rawContent, BODY_INDEX, BODY_INDEX + BODY_IV_LENGTH);
-      byte[] ct = ArrayUtils.subarray(rawContent, BODY_CT_INDEX, rawContent.length);
-      final byte[] cleartext = performActualDecryption(key, iv, ct, header);
-      if (log.isTraceEnabled()) {
-        log.trace("Decrypted VAU EPA3: {}", new String(cleartext));
-      }
-      final RbelElement headerElement = context.convertElement(header, element);
-      final byte[] reqCounterBytes =
-          Arrays.copyOfRange(
-              header,
-              HEADER_REQ_COUNTER_INDEX,
-              HEADER_REQ_COUNTER_INDEX + HEADER_REQ_COUNTER_LENGTH);
-      headerElement.addFacet(
-          new RbelMapFacet(
-              new RbelMultiMap<RbelElement>()
-                  .with(
-                      "version", RbelElement.wrap(new byte[] {header[0]}, headerElement, header[0]))
-                  .with(
-                      "pu",
-                      RbelElement.wrap(
-                          new byte[] {header[HEADER_PU_INDEX]},
-                          headerElement,
-                          header[HEADER_PU_INDEX]))
-                  .with(
-                      "req",
-                      RbelElement.wrap(
-                          new byte[] {header[HEADER_REQ_INDEX]},
-                          headerElement,
-                          header[HEADER_REQ_INDEX]))
-                  .with(
-                      "reqCtr",
-                      RbelElement.wrap(
-                          reqCounterBytes,
-                          headerElement,
-                          ByteBuffer.wrap(reqCounterBytes).getLong()))
-                  .with(
-                      "keyId",
-                      RbelElement.wrap(
-                          Arrays.copyOfRange(
-                              header,
-                              HEADER_KEY_ID_INDEX,
-                              HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH),
-                          headerElement,
-                          new BigInteger(
-                              Arrays.copyOfRange(
-                                  header,
-                                  HEADER_KEY_ID_INDEX,
-                                  HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH))))));
-      final RbelElement cleartextElement = context.convertElement(cleartext, element);
-      element.addFacet(new RbelVau3EncryptionFacet(cleartextElement, headerElement));
-      return true;
-    } catch (Exception e) {
-      log.trace("Failed to parse VAU EPA3: ", e);
-      return false;
-    }
-  }
-
-  @SneakyThrows
-  private static byte[] performActualDecryption(Key key, byte[] iv, byte[] ciphertext, byte[] ad) {
-    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); // NOSONAR
-    cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
-    cipher.updateAAD(ad);
-    return cipher.doFinal(ciphertext);
-  }
-
-  private void tryToExtractVauNonPuTracingKeys(
-      RbelElement element, RbelConversionExecutor context) {
-    Optional.ofNullable(element.getParentNode())
-        .flatMap(el -> el.getFacet(RbelHttpMessageFacet.class))
-        .map(RbelHttpMessageFacet::getHeader)
-        .flatMap(header -> header.getFirstIgnoringCase("VAU-nonPU-Tracing"))
-        .map(RbelElement::getRawStringContent)
-        .map(keyString -> keyString.split(" "))
-        .stream()
-        .flatMap(Stream::of)
-        .map(Base64.getDecoder()::decode)
-        .map(key -> new SecretKeySpec(key, "AES"))
-        .map(key -> new RbelKey(key, VAU_3_PAYLOAD_KEYS + UUID.randomUUID(), 0))
-        .forEach(key -> context.getRbelKeyManager().addKey(key));
+  public RbelAslEncryptionFacet buildFacet(
+      RbelElement cleartextElement, RbelElement headerElement) {
+    return new RbelVau3EncryptionFacet(cleartextElement, headerElement);
   }
 
   private void tryToParseVauEpa3HandshakeMessage(
@@ -372,5 +274,10 @@ public class RbelVauEpa3Converter extends RbelConverterPlugin {
     ECPublicKeySpec ecKeySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
     KeyFactory keyFactory = KeyFactory.getInstance("ECDH", "BC");
     return (ECPublicKey) keyFactory.generatePublic(ecKeySpec);
+  }
+
+  @Override
+  public String getKeyHeaderName() {
+    return "VAU-nonPU-Tracing";
   }
 }
