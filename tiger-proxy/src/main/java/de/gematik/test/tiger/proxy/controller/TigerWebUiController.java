@@ -261,6 +261,12 @@ public class TigerWebUiController implements ApplicationContextAware {
         .execute();
   }
 
+  private static String renderMessageWithReset(
+      RbelHtmlRenderingToolkit renderingToolkit, RbelElement msg) {
+    renderingToolkit.resetForNewMessage();
+    return renderingToolkit.convertMessage(msg).render();
+  }
+
   /** Returns a stable hash, even if the message queue is empty. */
   private String messageHash(Collection<RbelElement> messages) {
     return messages.isEmpty()
@@ -299,6 +305,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
+    var renderingToolkit = new RbelHtmlRenderingToolkit(renderer);
 
     result.setMessages(
         messageStream
@@ -308,7 +315,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                 msg ->
                     HtmlMessageScrollableDto.builder()
                         .content(
-                            new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+                            renderMessageWithReset(renderingToolkit, msg))
                         .uuid(msg.getUuid())
                         .sequenceNumber(getElementSequenceNumber(msg))
                         .build())
