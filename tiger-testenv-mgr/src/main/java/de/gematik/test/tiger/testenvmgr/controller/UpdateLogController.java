@@ -27,11 +27,16 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogUpdate;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@ConditionalOnExpression(
+    "${tiger.lib.activateWorkflowUi:false} || ${tiger.lib.trafficVisualization:false}")
 @RequiredArgsConstructor
 public class UpdateLogController implements TigerServerLogListener {
 
