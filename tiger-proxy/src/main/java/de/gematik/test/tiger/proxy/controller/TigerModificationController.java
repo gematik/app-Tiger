@@ -50,6 +50,7 @@ public class TigerModificationController {
                 .targetElement(addModificationDto.getTargetElement())
                 .replaceWith(addModificationDto.getReplaceWith())
                 .regexFilter(addModificationDto.getRegexFilter())
+                .deleteAfterNExecutions(addModificationDto.getDeleteAfterNExecutions())
                 .build());
     return ModificationDto.from(modification);
   }
