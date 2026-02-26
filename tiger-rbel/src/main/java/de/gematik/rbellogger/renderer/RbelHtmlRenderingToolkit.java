@@ -598,6 +598,13 @@ public class RbelHtmlRenderingToolkit {
               .build());
       output.put("note", uuid.toString());
     }
+    // Cache first child per key to avoid repeated child traversal for each field.
+    final Map<String, RbelElement> firstChildByKey = new HashMap<>();
+    for (Entry<String, RbelElement> entry : originalElement.getChildNodesWithKey().entries()) {
+      if (entry.getValue() != null) {
+        firstChildByKey.putIfAbsent(entry.getKey(), entry.getValue());
+      }
+    }
     for (Iterator<Entry<String, JsonNode>> it = input.fields(); it.hasNext(); ) {
       Entry<String, JsonNode> element = it.next();
       output.set(
@@ -605,8 +612,7 @@ public class RbelHtmlRenderingToolkit {
           shadeJson(
               element.getValue(),
               Optional.of(element.getKey()),
-              originalElement
-                  .getFirst(element.getKey())
+              Optional.ofNullable(firstChildByKey.get(element.getKey()))
                   .orElseThrow(
                       () ->
                           new RuntimeException(
