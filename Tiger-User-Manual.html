@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.2.2 - 2026-03-04</span>
+<span id="revdate">Version 4.2.5 - 2026-03-18</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -267,16 +267,17 @@ video {
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
 <ul class="sectlevel2">
 <li><a href="#_inlets">6.1. Inlets</a></li>
-<li><a href="#key-translation">6.2. Key-translation</a></li>
-<li><a href="#thread-based-configuration">6.3. Thread-based configuration</a></li>
-<li><a href="#placeholders">6.4. Placeholders</a></li>
-<li><a href="#rbelpath-style-retrieval">6.5. RbelPath-style retrieval</a></li>
-<li><a href="#fallback-values">6.6. Fallback values</a></li>
-<li><a href="#localized-configuration">6.7. Localized configuration</a></li>
-<li><a href="#examples">6.8. Examples</a></li>
-<li><a href="#pre-defined-values">6.9. Pre-Defined values</a></li>
-<li><a href="#inline-jexl">6.10. Inline JEXL</a></li>
-<li><a href="#_tiger_configuration_editor">6.11. Configuration Editor</a></li>
+<li><a href="#tiger-yaml-file-resolution">6.2. Tiger YAML file resolution</a></li>
+<li><a href="#key-translation">6.3. Key-translation</a></li>
+<li><a href="#thread-based-configuration">6.4. Thread-based configuration</a></li>
+<li><a href="#placeholders">6.5. Placeholders</a></li>
+<li><a href="#rbelpath-style-retrieval">6.6. RbelPath-style retrieval</a></li>
+<li><a href="#fallback-values">6.7. Fallback values</a></li>
+<li><a href="#localized-configuration">6.8. Localized configuration</a></li>
+<li><a href="#examples">6.9. Examples</a></li>
+<li><a href="#pre-defined-values">6.10. Pre-Defined values</a></li>
+<li><a href="#inline-jexl">6.11. Inline JEXL</a></li>
+<li><a href="#_tiger_configuration_editor">6.12. Configuration Editor</a></li>
 </ul>
 </li>
 <li><a href="#tiger-user-interfaces">7. Tiger User interfaces</a>
@@ -1458,8 +1459,9 @@ The hostname is the name of your own computer in the network (on Windows-machine
 </li>
 <li>
 <p><code>tiger-${profile}.yaml</code> is read if the system property <code>profile</code> or the environment variable <code>PROFILE</code> is set.<br>
-The file needs to be located in the same folder as the <code>tiger.yaml</code> file. Additionaly, you can configure in the tiger<br>
-configuration a default profile which will be loaded when none is set via environment variable or system property. See <a href="#_tiger_test_lib_configuration">here</a> for more details.</p>
+The file needs to be located in the same folder as the <code>tiger.yaml</code> file.<br>
+Additionaly, you can configure in the tiger configuration a default profile which will be loaded when none is set via environment variable or system property.<br>
+See <a href="#_tiger_test_lib_configuration">here</a> for more details.</p>
 </li>
 <li>
 <p>The list given under <code>tiger.additionalYamls</code> is read.<br>
@@ -2009,8 +2011,14 @@ Any Jar archive executable which can be started with the <code>java -jar</code> 
 <p>The options list are arguments added immediately after the java executable, while the arguments list is appended after the -jar argument.</p>
 </div>
 <div class="paragraph">
-<p>The working directory is the place where the jar file is downloaded to and executed from.<br>
+<p>The working directory is the place where the jar is executed from.<br>
 So if your jar archive expects some configuration files make sure to choose the folder appropriately.</p>
+</div>
+<div class="paragraph">
+<p>If <code>workingDir</code> is not set, Tiger defaults to the parent directory of the jar file for <code>local:</code> sources, or the OS temp folder for downloaded jars.</p>
+</div>
+<div class="paragraph">
+<p>Relative paths for both <code>source</code> and <code>workingDir</code> are resolved relative to the location of the main <code>tiger.yaml</code> file.</p>
 </div>
 <div class="paragraph">
 <p>If using the <code>local:</code> prefix you can also use wildcards to find any matching jar-files.<br>
@@ -2019,16 +2027,13 @@ Tiger will use the following order to try to find a matching file:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>In the working directory a file with the filename contained in the source</p>
+<p>The path given in <code>source</code> directly (absolute, or resolved from the tiger.yaml location if relative)</p>
 </li>
 <li>
-<p>From the working directory a file with a relative path equal to the source</p>
+<p>In the working directory, a file whose name matches the filename part of the source (fallback for bare filenames)</p>
 </li>
 <li>
-<p>In the working directory a file with a filename matching the source (eg. <code>app-*.jar</code>)</p>
-</li>
-<li>
-<p>From the working directory a file with a relative path equal and matching the filename of the source (eg. <code>../target/app-*.jar</code>)</p>
+<p>In the working directory, a file whose name matches a wildcard pattern in the source (eg. <code>app-*.jar</code>)</p>
 </li>
 </ul>
 </div>
@@ -2068,12 +2073,10 @@ Tiger will use the following order to try to find a matching file:</p>
 
       externalJarOptions:
         # OPTIONAL folder from where to start the external jar.
-        # The downloaded jar file will be stored and executed from here
-        # The default value is empty, which means that the operating-system-specific
-        # temporary folder will be used.
-        # hint: when the jar file is taken from a local directory and is set in source
-        # and the workingDir is set then the workingDir has to be the directory where
-        # the jar file is located
+        # If not set, Tiger defaults to the parent directory of the jar file (for local: sources)
+        # or the OS temp folder (for downloaded jars).
+        # Relative paths are resolved relative to the location of the tiger.yaml file.
+        # A non-existent directory is created automatically.
         workingDir: /home/user/test/myspecificjar
         # OPTIONAL Options to pass in to the java executable call.
         options: []
@@ -2782,8 +2785,7 @@ The test environment manager boots the main tiger proxy (local tiger proxy) and 
 <div class="paragraph">
 <p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>), which supports both http- and https-traffic, (so you do not have to differentiate between the two).<br>
 Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>).<br>
-This provides the Tiger Proxy Log to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a<br>
-rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
+This provides the Tiger Proxy Log to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4025,6 +4027,47 @@ It, however, greatly simplifies the test suite (after the communication is concl
 Therefore, the blocking is deactivated by default.<br>
 The only exception is the local Tiger Proxy, which WILL block communication until parsing is completed.<br>
 For all Tiger Proxies this default behavior can be changed.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="waitforpreviousmessagebeforeparsinginseconds"><a class="anchor" href="#waitforpreviousmessagebeforeparsinginseconds"></a>waitForPreviousMessageBeforeParsingInSeconds</h5>
+<div class="paragraph">
+<p>Defines the timeout in seconds (supports decimal values) to wait for a previous message before parsing the current message when messages reference each other in mesh setups.<br>
+If the referenced previous message doesn&#8217;t arrive within this timeframe, the current message will be parsed anyway.<br>
+Default is 5.0 seconds.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="previousmessagetimeoutdetectiongraceperiodinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiongraceperiodinseconds"></a>previousMessageTimeoutDetectionGracePeriodInSeconds</h5>
+<div class="paragraph">
+<p>Grace period in seconds (supports decimal values) for clock skew between mesh nodes when detecting messages that will never arrive.<br>
+This compensates for small time differences between different proxy instances.<br>
+Default is 10.0 seconds.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="previousmessagetimeoutdetectiontimegapthresholdinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiontimegapthresholdinseconds"></a>previousMessageTimeoutDetectionTimeGapThresholdInSeconds</h5>
+<div class="paragraph">
+<p>Minimum age in seconds (supports decimal values) for previous messages to trigger timeout detection.<br>
+If a referenced previous message has a timestamp older than this threshold, it may be considered as "will never arrive" and the current message will be processed immediately.<br>
+Default is 30.0 seconds.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"><a class="anchor" href="#previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"></a>previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes</h5>
+<div class="paragraph">
+<p>Time threshold in minutes (supports decimal values) for considering a mesh connection as "recent".<br>
+Timeout detection only applies to connections that are newer than this threshold to avoid false positives in long-running connections.<br>
+Default is 5.0 minutes.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    waitForPreviousMessageBeforeParsingInSeconds: 5.0
+    previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
+    previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
+    previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0</code></pre>
+</div>
 </div>
 </div>
 <div class="sect4">
@@ -6855,7 +6898,7 @@ It is therefore recommended reusing this system for your own testsuite as well.<
 <p>Host YAML-File (<code>tiger-&lt;hostname&gt;.yaml</code>)</p>
 </li>
 <li>
-<p>Main YAML-File (<code>tiger.yaml</code>)</p>
+<p>Main YAML-File (<code>tiger.yaml</code> or <code>tiger.yml</code>)</p>
 </li>
 <li>
 <p>Internal Defaults</p>
@@ -6864,7 +6907,28 @@ It is therefore recommended reusing this system for your own testsuite as well.<
 </div>
 </div>
 <div class="sect2">
-<h3 id="key-translation"><a class="anchor" href="#key-translation"></a>6.2. Key-translation</h3>
+<h3 id="tiger-yaml-file-resolution"><a class="anchor" href="#tiger-yaml-file-resolution"></a>6.2. Tiger YAML file resolution</h3>
+<div class="paragraph">
+<p>Tiger resolves the main configuration file as follows:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>If <code>tiger.testenv.cfgfile</code> is set, that exact path is used.<br>
+If the file does not exist Tiger fails immediately.</p>
+</li>
+<li>
+<p>Otherwise, Tiger searches for <code>tiger.yaml</code> (preferred) or <code>tiger.yml</code> starting from the current working directory and walking upward through parent directories.</p>
+</li>
+<li>
+<p>The upward search stops when a VCS root directory is encountered (i.e. a directory containing <code>.git</code>, <code>.hg</code>, or <code>.svn</code>).<br>
+The VCS root itself is still checked for a tiger YAML before stopping.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="key-translation"><a class="anchor" href="#key-translation"></a>6.3. Key-translation</h3>
 <div class="paragraph">
 <p>To easily convert between the multiple sources the TigerGlobalConfiguration offers key-translation:</p>
 </div>
@@ -6887,7 +6951,7 @@ To allow a clean startup on systems that have values like this configured the gi
 </div>
 </div>
 <div class="sect2">
-<h3 id="thread-based-configuration"><a class="anchor" href="#thread-based-configuration"></a>6.3. Thread-based configuration</h3>
+<h3 id="thread-based-configuration"><a class="anchor" href="#thread-based-configuration"></a>6.4. Thread-based configuration</h3>
 <div class="paragraph">
 <p>To enable execution of multiple tests simultaneously some data has to be stored in a thread-based manner (the first step could for example store the result of a request in a variable, the second step could read it from that variable).</p>
 </div>
@@ -6904,7 +6968,7 @@ To allow a clean startup on systems that have values like this configured the gi
 </div>
 </div>
 <div class="sect2">
-<h3 id="placeholders"><a class="anchor" href="#placeholders"></a>6.4. Placeholders</h3>
+<h3 id="placeholders"><a class="anchor" href="#placeholders"></a>6.5. Placeholders</h3>
 <div class="paragraph">
 <p>The TigerGlobalConfiguration supports the use of placeholders.<br>
 Say for example you have a test-environment with two servers, "A" and "B".<br>
@@ -6963,7 +7027,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect2">
-<h3 id="rbelpath-style-retrieval"><a class="anchor" href="#rbelpath-style-retrieval"></a>6.5. RbelPath-style retrieval</h3>
+<h3 id="rbelpath-style-retrieval"><a class="anchor" href="#rbelpath-style-retrieval"></a>6.6. RbelPath-style retrieval</h3>
 <div class="paragraph">
 <p>The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties.<br>
 Consider for example the following YAML:</p>
@@ -7002,7 +7066,7 @@ This expression uses the recursive descent mechanic of RbelPath.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="fallback-values"><a class="anchor" href="#fallback-values"></a>6.6. Fallback values</h3>
+<h3 id="fallback-values"><a class="anchor" href="#fallback-values"></a>6.7. Fallback values</h3>
 <div class="paragraph">
 <p>Sometimes a default value is desired when a given key is not set.<br>
 To define such a value, just use the pipe (|) after the key, like so:</p>
@@ -7016,7 +7080,7 @@ If that key is not found, the fallback value "orThisValue" will be used.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="localized-configuration"><a class="anchor" href="#localized-configuration"></a>6.7. Localized configuration</h3>
+<h3 id="localized-configuration"><a class="anchor" href="#localized-configuration"></a>6.8. Localized configuration</h3>
 <div class="paragraph">
 <p>It is possible to set a local variable in the TigerGlobalConfiguration which will only be active for the duration of the test case execution.</p>
 </div>
@@ -7048,12 +7112,12 @@ TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}</c
 </div>
 </div>
 <div class="sect2">
-<h3 id="examples"><a class="anchor" href="#examples"></a>6.8. Examples</h3>
+<h3 id="examples"><a class="anchor" href="#examples"></a>6.9. Examples</h3>
 <div class="paragraph">
 <p>Some examples to clarify:</p>
 </div>
 <div class="sect3">
-<h4 id="example-1"><a class="anchor" href="#example-1"></a>6.8.1. Example 1</h4>
+<h4 id="example-1"><a class="anchor" href="#example-1"></a>6.9.1. Example 1</h4>
 <div class="paragraph">
 <p>Say you have an environment configured in your testenv.yaml.<br>
 You want the Tiger Proxy to forward traffic on one route to your backend-server.<br>
@@ -7080,7 +7144,7 @@ Below are the relevant snippets:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="example-2"><a class="anchor" href="#example-2"></a>6.8.2. Example 2</h4>
+<h4 id="example-2"><a class="anchor" href="#example-2"></a>6.9.2. Example 2</h4>
 <div class="paragraph">
 <p>In the above example let&#8217;s say you only want to customize the port.<br>
 This can be done by using placeholders:</p>
@@ -7104,7 +7168,7 @@ This can be done by using placeholders:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="example-3"><a class="anchor" href="#example-3"></a>6.8.3. Example 3</h4>
+<h4 id="example-3"><a class="anchor" href="#example-3"></a>6.9.3. Example 3</h4>
 <div class="paragraph">
 <p>Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.<br>
 To do this we have to reference the configured URL from above, since the value could be different on every execution.<br>
@@ -7122,7 +7186,7 @@ We can solve this using placeholders:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="pre-defined-values"><a class="anchor" href="#pre-defined-values"></a>6.9. Pre-Defined values</h3>
+<h3 id="pre-defined-values"><a class="anchor" href="#pre-defined-values"></a>6.10. Pre-Defined values</h3>
 <div class="paragraph">
 <p>Tiger adds some pre-defined values to make your life easier configuring the environment.<br>
 Currently, these are:</p>
@@ -7137,7 +7201,7 @@ This enables side effect free execution of the testsuite.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="inline-jexl"><a class="anchor" href="#inline-jexl"></a>6.10. Inline JEXL</h3>
+<h3 id="inline-jexl"><a class="anchor" href="#inline-jexl"></a>6.11. Inline JEXL</h3>
 <div class="paragraph">
 <p>In addition to the <code>${foo.bar}</code> syntax allowing the retrieval of configuration values there exists the <code>!{'foo' != 'bar'}</code> syntax allowing the execution of JEXL expressions.<br>
 The JEXL-syntax is described in more depth here: <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html" class="bare">https://commons.apache.org/proper/commons-jexl/reference/syntax.html</a></p>
@@ -7147,7 +7211,7 @@ The JEXL-syntax is described in more depth here: <a href="https://commons.apache
 You will find two predefined namespaces and also the ability to add your own, allowing further customization.</p>
 </div>
 <div class="sect3">
-<h4 id="the-default-namespace"><a class="anchor" href="#the-default-namespace"></a>6.10.1. The default namespace</h4>
+<h4 id="the-default-namespace"><a class="anchor" href="#the-default-namespace"></a>6.11.1. The default namespace</h4>
 <div class="paragraph">
 <p>The default-namespace of the inline JEXL-expression carries the following functions:</p>
 </div>
@@ -7198,7 +7262,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="the-rbel-namespace"><a class="anchor" href="#the-rbel-namespace"></a>6.10.2. The rbel namespace</h4>
+<h4 id="the-rbel-namespace"><a class="anchor" href="#the-rbel-namespace"></a>6.11.2. The rbel namespace</h4>
 <div class="paragraph">
 <p>To give you direct access to the messages sent please use the rbel-namespace:</p>
 </div>
@@ -7231,7 +7295,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="adding-custom-namespaces"><a class="anchor" href="#adding-custom-namespaces"></a>6.10.3. Adding custom namespaces</h4>
+<h4 id="adding-custom-namespaces"><a class="anchor" href="#adding-custom-namespaces"></a>6.11.3. Adding custom namespaces</h4>
 <div class="sect4">
 <h5 id="using-code"><a class="anchor" href="#using-code"></a>Using code</h5>
 <div class="paragraph">
@@ -7266,7 +7330,7 @@ public class DummyJexlMethods {
 </div>
 </div>
 <div class="sect2">
-<h3 id="_tiger_configuration_editor"><a class="anchor" href="#_tiger_configuration_editor"></a>6.11. Configuration Editor</h3>
+<h3 id="_tiger_configuration_editor"><a class="anchor" href="#_tiger_configuration_editor"></a>6.12. Configuration Editor</h3>
 <div class="paragraph">
 <p>The configuration editor allows to view and edit the tiger configuration during a test run.<br>
 The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 13</a>).</p>
@@ -9501,7 +9565,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-04 10:07:34 +0100
+Last updated 2026-03-18 15:25:09 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
