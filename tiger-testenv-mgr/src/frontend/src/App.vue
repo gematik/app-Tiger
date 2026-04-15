@@ -126,6 +126,6 @@ i.fa-solid.right {
 .smallcode {
   font-size: 60%;
   font-family: courier, monospace;
-  color: darkgray;
+  color: #6c757d;
 }
 </style>
