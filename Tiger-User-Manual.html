@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.2.5 - 2026-03-18</span>
+<span id="revdate">Version 4.2.6 - 2026-04-15</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -765,7 +765,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;
-        &lt;version.tiger&gt;3.7.2&lt;/version.tiger&gt;
+        &lt;version.tiger&gt;4.2.5&lt;/version.tiger&gt;
     &lt;/properties&gt;
 
     &lt;dependencyManagement&gt;
@@ -4322,7 +4322,8 @@ logging:
 <p>When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.</p>
 </div>
 <div class="paragraph">
-<p>By implementing a Java class which implements the interface <code>de.gematik.test.tiger.lifecycle.LifecycleCallbacks</code> you can run custom code before and after each of the mentioned steps. All classes that implement this interface and are located in the package <code>de.gematik.test.tiger.lifecycle</code> are automatically registered and their methods will be called on the corresponding event.</p>
+<p>By implementing a Java class which implements the interface <code>de.gematik.test.tiger.lifecycle.LifecycleCallbacks</code> you can run custom code before and after each of the mentioned steps.<br>
+All classes that implement this interface and are located in the package <code>de.gematik.test.tiger.lifecycle</code> are automatically registered and their methods will be called on the corresponding event.</p>
 </div>
 <div class="paragraph">
 <p>Here is an example of a class that will log messages on each callback method:</p>
@@ -6407,6 +6408,71 @@ This applies also to objects and arrays as seen in the dummyarray2 entry.</p>
 <p>For full details how to specify a JSON Schema, refer to the external resource: <a href="https://json-schema.org/understanding-json-schema">Understanding JSON Schema</a>.<br>
 In <a href="https://json-schema.org/implementations#validators-web-(online)">this list</a> you can find a list of online validators which you can use to test your schema.<br>
 Remember to test under JSON Schema version 2020-12.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="yaml-schema-validation"><a class="anchor" href="#yaml-schema-validation"></a>YAML Schema Validation</h5>
+<div class="paragraph">
+<p>Using the validation step <code>TGR current response at {string} matches as YAML_SCHEMA:</code> you are able to assert that the content of any RbelPath node complies with the schema given in the doc string beneath the step, where both the content and the schema are expressed in YAML.</p>
+</div>
+<div class="paragraph">
+<p>Since YAML is a superset of JSON, the content under test can be either YAML or JSON — the schema however must be in YAML format.</p>
+</div>
+<div class="paragraph">
+<p>The same JSON Schema version 2020-12 is used for validation, and placeholder substitution from the Tiger Global Configuration works the same way as for <code>JSON_SCHEMA</code>.</p>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">TGR current response at "$.body" matches as YAML_SCHEMA:
+"""
+type: object
+properties:
+  name:
+    type: string
+  age:
+    type: integer
+    minimum: 0
+  email:
+    type: string
+    format: email
+  address:
+    type: string
+    const: "${tiger.value.from.config}"
+required:
+  - name
+  - age
+"""</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would validate a message with a YAML body like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">name: hello
+age: 5
+email: hello@example.com
+address: Friedrichstraße</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or equivalently a JSON body like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "name": "hello",
+  "age": 5,
+  "email": "hello@example.com",
+  "address": "Friedrichstraße"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>assuming that the value of <code>${tiger.value.from.config}</code> set in the Tiger Global Configuration is <code>Friedrichstraße</code>.</p>
 </div>
 </div>
 </div>
@@ -9565,7 +9631,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-03-18 15:25:09 +0100
+Last updated 2026-04-15 15:27:30 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
