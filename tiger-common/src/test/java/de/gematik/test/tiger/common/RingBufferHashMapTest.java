@@ -27,8 +27,10 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class RingBufferHashMapTest {
 
   private RingBufferHashMap<String, String> boundedMap;

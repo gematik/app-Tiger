@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ResolveRelativePathToTigerYamlTest {
 
@@ -40,17 +41,17 @@ class ResolveRelativePathToTigerYamlTest {
   }
 
   @Test
-  void relativePath_isResolvedAgainstTigerRootFolder() {
-    TigerConfigurationKeys.TIGER_ROOT_FOLDER.putValue("/tmp/project");
+  void relativePath_isResolvedAgainstTigerRootFolder(@TempDir Path tempDir){
+    TigerConfigurationKeys.TIGER_ROOT_FOLDER.putValue(tempDir.resolve("project").toString());
 
     Path resolved = TigerGlobalConfiguration.resolveRelativePathToTigerYaml("target/app.jar");
 
-    assertThat(resolved).isEqualTo(Path.of("/tmp/project/target/app.jar"));
+    assertThat(resolved).isEqualTo(tempDir.resolve("project/target/app.jar"));
   }
 
   @Test
-  void absolutePath_isReturnedNormalizedWithoutRebasing() {
-    Path absoluteInput = Path.of("/tmp/project/../project/target/app.jar");
+  void absolutePath_isReturnedNormalizedWithoutRebasing(@TempDir Path tempDir) {
+    Path absoluteInput = tempDir.resolve("project/../project/target/app.jar");
 
     Path resolved =
         TigerGlobalConfiguration.resolveRelativePathToTigerYaml(absoluteInput.toString());

@@ -35,10 +35,11 @@ import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
 @Builder(toBuilder = true)
-@Data
+@Value
 public class RbelVauErpFacet implements RbelFacet {
 
   static {
@@ -110,24 +111,23 @@ public class RbelVauErpFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement message;
-  private final RbelElement encryptedMessage;
-  private final RbelElement requestId;
-  private final RbelElement pVersionNumber;
-  private final RbelElement keyIdUsed;
-  private final RbelElement responseKey;
-  private final RbelElement decryptedPString;
-  @Builder.Default private final Optional<RbelKey> keyUsed = Optional.empty();
+  RbelElement message;
+  RbelElement encryptedMessage;
+  RbelElement requestId;
+  RbelElement pVersionNumber;
+  RbelElement keyIdUsed;
+  RbelElement responseKey;
+  RbelElement decryptedPString;
+  @Builder.Default Optional<RbelKey> keyUsed = Optional.empty();
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .withSkipIfNull("message", message)
-        .withSkipIfNull("encryptedMessage", encryptedMessage)
-        .withSkipIfNull("requestId", requestId)
-        .withSkipIfNull("pVersionNumber", pVersionNumber)
-        .withSkipIfNull("keyId", keyIdUsed)
-        .withSkipIfNull("responseKey", responseKey)
-        .withSkipIfNull("decryptedPString", decryptedPString);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .withSkipIfNull("message", message)
+          .withSkipIfNull("encryptedMessage", encryptedMessage)
+          .withSkipIfNull("requestId", requestId)
+          .withSkipIfNull("pVersionNumber", pVersionNumber)
+          .withSkipIfNull("keyId", keyIdUsed)
+          .withSkipIfNull("responseKey", responseKey)
+          .withSkipIfNull("decryptedPString", decryptedPString);
 }

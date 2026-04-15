@@ -17,7 +17,13 @@ git diff --cached --name-only --diff-filter=ACMR >"$STAGED_EXISTING_FILE"
 # Validate changelog fragments being committed
 if grep -q '^releasenotes/unreleased/.*\.md$' "$STAGED_EXISTING_FILE" 2>/dev/null; then
     echo "Validating changelog fragments..."
-    kotlinc -script releasenotes/scripts/compile-release-notes.main.kts -- --validate || FAILED=1
+    if command -v kotlinc >/dev/null 2>&1; then
+        kotlinc -script releasenotes/scripts/compile-release-notes.main.kts -- --validate || FAILED=1
+    elif command -v mvn >/dev/null 2>&1; then
+        mvn -q compile exec:java -pl releasenotes/scripts -Dexec.args="--validate" || FAILED=1
+    else
+        echo "⚠️  Neither kotlinc nor mvn found – skipping changelog fragment validation"
+    fi
 fi
 
 restage_previously_staged() {

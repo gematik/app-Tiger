@@ -156,16 +156,15 @@ public class RbelVauEpaFacet implements RbelFacet {
   private final RbelElement decryptedHeader;
   @Builder.Default private final Optional<RbelKey> keyUsed = Optional.empty();
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .withSkipIfNull("message", message)
-        .withSkipIfNull("encryptedMessage", encryptedMessage)
-        .withSkipIfNull("additionalHeaders", additionalHeaders)
-        .withSkipIfNull("sequenceNumber", sequenceNumber)
-        .withSkipIfNull("pVersionNumber", pVersionNumber)
-        .withSkipIfNull("pHeaderInformation", pHeaderInformation)
-        .withSkipIfNull("keyId", keyIdUsed)
-        .withSkipIfNull("decryptedHeader", decryptedHeader);
-  }
+  @Getter(lazy = true)
+  private final RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .withSkipIfNull("message", message)
+          .withSkipIfNull("encryptedMessage", encryptedMessage)
+          .withSkipIfNull("additionalHeaders", additionalHeaders)
+          .withSkipIfNull("sequenceNumber", sequenceNumber)
+          .withSkipIfNull("pVersionNumber", pVersionNumber)
+          .withSkipIfNull("pHeaderInformation", pHeaderInformation)
+          .withSkipIfNull("keyId", keyIdUsed)
+          .withSkipIfNull("decryptedHeader", decryptedHeader);
 }

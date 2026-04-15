@@ -28,9 +28,11 @@ import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionResultTestsInnerD
 import java.time.OffsetDateTime;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class TestExecutionResultMapperTest {
   private TestExecutionResultMapper mapper;
 

@@ -210,9 +210,6 @@
     }
   }
 
-  @page {
-    size: 594mm 420mm;
-  }
 
   .radio-item {
     display: inline-block;
@@ -704,3 +701,8 @@
     background-color: #469408 !important;
   }
 }
+
+@page {
+  size: 594mm 420mm;
+}
+

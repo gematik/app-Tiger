@@ -160,19 +160,12 @@ public class RbelContentTreeNode extends RbelPathAble {
 
   @Override
   public Optional<RbelPathAble> getFirst(String key) {
-    return getChildNodesWithKeyStream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Map.Entry::getValue)
-        .map(RbelPathAble.class::cast)
-        .findFirst();
+    return Optional.ofNullable(childNodes.get(key));
   }
 
   @Override
   public List<RbelContentTreeNode> getAll(String key) {
-    return getChildNodesWithKeyStream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Map.Entry::getValue)
-        .toList();
+    return childNodes.getAll(key);
   }
 
   @Override

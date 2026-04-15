@@ -35,8 +35,10 @@ import java.io.UnsupportedEncodingException;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.val;
 import org.jose4j.jws.AlgorithmIdentifiers;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class JwtConverterTest {
 
   static final String JWT =

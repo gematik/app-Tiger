@@ -57,7 +57,17 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
   }
 
   private void setDefaultFilterTags(ConfigurationParameters configurationParameters) {
-    if (configurationParameters.get(FILTER_TAGS_PROPERTY_NAME).isEmpty()) {
+    // Use filter tags from environment variable to replicate Junit4 behaviour described in
+    // https://cucumber.io/docs/cucumber/api/#running-a-subset-of-scenarios
+    // # Linux / OS X:
+    // CUCUMBER_FILTER_TAGS="@smoke and @fast" mvn test
+    //
+    // # Windows:
+    // set CUCUMBER_FILTER_TAGS="@smoke and @fast"
+    // mvn test
+    if (System.getenv().containsKey("CUCUMBER_FILTER_TAGS")) {
+      System.setProperty(FILTER_TAGS_PROPERTY_NAME, System.getenv("CUCUMBER_FILTER_TAGS"));
+    } else if (configurationParameters.get(FILTER_TAGS_PROPERTY_NAME).isEmpty()) {
       System.setProperty(FILTER_TAGS_PROPERTY_NAME, "not @Ignore");
     }
   }

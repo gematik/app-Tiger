@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -41,6 +42,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 class TrafficVisualizationTest extends AbstractBase {
 
   @Test
+  @Tag("screenshot")
   void test_B_ExecutionPaneActive_TestHaveRunThru() {
     showTrafficVisualizationPane();
     screenshot(page, "trafficVisualization.png");

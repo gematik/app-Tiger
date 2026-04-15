@@ -32,11 +32,12 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 @RequiredArgsConstructor
-@Data
+@Value
 public class RbelBearerTokenFacet implements RbelFacet {
 
   static {
@@ -71,10 +72,9 @@ public class RbelBearerTokenFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement bearerToken;
+  RbelElement bearerToken;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("BearerToken", bearerToken);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("BearerToken", bearerToken);
 }

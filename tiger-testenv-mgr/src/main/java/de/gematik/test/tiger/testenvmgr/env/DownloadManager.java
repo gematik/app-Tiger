@@ -211,6 +211,9 @@ public class DownloadManager {
         List.of(
             // 1. resolve the local: path directly, relative to tiger-yaml location
             () -> {
+              if (localJarString.contains("*")) {
+                return Optional.empty();
+              }
               Path sourcePath =
                   TigerGlobalConfiguration.resolveRelativePathToTigerYaml(localJarString);
               return Optional.of(sourcePath.toFile()).filter(File::exists);

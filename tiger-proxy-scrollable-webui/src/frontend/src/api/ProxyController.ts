@@ -44,7 +44,7 @@ export interface UseProxyControllerReturn {
   addProxyRoute: ControllerCall<ProxyRepository["fetchAddProxyRoute"]>;
   tigerVersion: (
     options?: ControllerCallOptions,
-  ) => Promise<{ version: string; buildDate: string } | void>;
+  ) => Promise<{ version: string; buildDate: string; proxyName: string } | void>;
 }
 
 export interface UseProxyControllerOptions {

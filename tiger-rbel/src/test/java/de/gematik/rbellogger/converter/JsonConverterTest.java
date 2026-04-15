@@ -33,8 +33,10 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.IOException;
 import java.util.List;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class JsonConverterTest {
 
   @Test

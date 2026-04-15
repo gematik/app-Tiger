@@ -20,7 +20,6 @@
  */
 package de.gematik.test.tiger.mockserver.httpclient;
 
-import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.SECURE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -42,9 +41,8 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.Objects;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -210,14 +208,39 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     protocolFuture.complete(null);
   }
 
-  private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {
-    if (remoteAddress == null || proxyConfiguration == null) {
+  public boolean isHostNotOnNoProxyHostList(InetSocketAddress address) {
+    if (address == null
+        || address.getHostString() == null
+        || proxyConfiguration == null
+        || proxyConfiguration.getNoProxyHosts() == null
+        || proxyConfiguration.getNoProxyHosts().isEmpty()) {
       return true;
     }
-    return proxyConfiguration.getNoProxyHosts().stream()
-        .map(String::trim)
-        .map(nullOnException(InetAddress::getByName))
-        .filter(Objects::nonNull)
-        .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
+
+    String host = address.getHostString().toLowerCase(Locale.ROOT);
+
+    for (String pattern : proxyConfiguration.getNoProxyHosts()) {
+      if (pattern == null || pattern.isBlank()) {
+        continue;
+      }
+
+      String p = pattern.toLowerCase(Locale.ROOT).trim();
+
+      if (hostPatternMatches(host, p)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  static boolean hostPatternMatches(String host, String pattern) {
+    if (!pattern.contains("*")) {
+      return host.equals(pattern);
+    }
+
+    String regex = pattern.replace(".", "\\.").replace("*", ".*");
+
+    return host.matches(regex);
   }
 }

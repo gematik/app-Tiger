@@ -23,14 +23,19 @@ package de.gematik.rbellogger.data.core;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
-@Data
+@Getter
+@Builder
 public class RbelNestedFacet implements RbelFacet {
 
   private final RbelElement nestedElement;
   private final String nestedElementName;
+
+  @Getter(lazy = true)
+  private final RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with(nestedElementName, nestedElement);
 
   public RbelNestedFacet(RbelElement nestedElement) {
     this.nestedElement = nestedElement;
@@ -45,10 +50,5 @@ public class RbelNestedFacet implements RbelFacet {
     } else {
       this.nestedElementName = "content";
     }
-  }
-
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with(nestedElementName, nestedElement);
   }
 }

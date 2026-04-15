@@ -45,13 +45,12 @@ public class RbelHttpMessageFacet implements RbelFacet {
     this.httpVersion = httpVersion;
   }
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("body", body)
-        .with("header", header)
-        .with("httpVersion", httpVersion);
-  }
+  @Getter(lazy = true)
+  private final RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("body", body)
+          .with("header", header)
+          .with("httpVersion", httpVersion);
 
   @Override
   public Optional<String> printShortDescription(RbelElement element) {

@@ -1,0 +1,52 @@
+{
+  "name": "tiger-topology-visualizer",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./lib/tiger-topology-visualizer.js",
+  "exports": {
+    ".": "./lib/tiger-topology-visualizer.js",
+    "./style.css": "./lib/tiger-topology-visualizer.css"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build && vite build --config vite.config.lib.ts",
+    "build:lib": "vite build --config vite.config.lib.ts",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix && npm run format",
+    "format": "prettier --write src/"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "pinia": "^3.0.0"
+  },
+  "dependencies": {
+    "@primeuix/themes": "2.0.3",
+    "@vue-flow/background": "1.3.2",
+    "@vue-flow/controls": "1.1.3",
+    "@vue-flow/core": "1.48.2",
+    "@vue-flow/minimap": "1.5.4",
+    "elkjs": "0.11.1",
+    "pinia": "3.0.4",
+    "primevue": "4.5.4",
+    "vue": "3.5.32"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@vitejs/plugin-vue": "6.0.5",
+    "@vue/eslint-config-prettier": "10.2.0",
+    "@vue/eslint-config-typescript": "14.7.0",
+    "@vue/tsconfig": "0.9.1",
+    "eslint": "10.2.0",
+    "eslint-plugin-vue": "10.8.0",
+    "jiti": "2.6.1",
+    "prettier": "3.8.1",
+    "typescript": "6.0.2",
+    "vite": "8.0.8",
+    "vue-tsc": "3.2.6"
+  }
+}

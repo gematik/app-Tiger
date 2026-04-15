@@ -1,10 +1,98 @@
 # Changelog Tiger Test platform
 
-# Release 4.2.5
+# Release 4.2.6
+
+## Breaking Changes
+
+* TGR-2103: Performance optimization of RBel child element lookups and Html rendering — potential breaking changes.
+
+  `RbelMultiMap` now maintains an internal index for O(1) key lookups. Custom `RbelFacet` implementations should cache
+  the result of `getChildElements()` (e.g. via `@Getter(lazy=true)`) rather than rebuilding it on every call. The JSON
+  renderer caches child lookups per rendering pass as a fallback for implementations that do not.
+
+  Built-in facet classes changed from `@Data` to `@Value` — generated setters are no longer available.
+
+## Features
+
+* TGR-1541: TigerGlobalConfiguration accepts now also TigerConfigurationKeys.
+* TGR-1840: Tiger Test Lib: Now it is possible to set the cucumber filter tags via an environment variable when running the test suite via maven. This replicates functionality that was previously available on Junit 4. E.g.:
+  ```shell
+  # Linux / OS X:
+  CUCUMBER_FILTER_TAGS="@smoke and @fast" mvn verify
+
+  # Windows:
+  set CUCUMBER_FILTER_TAGS="@smoke and @fast"
+  mvn verify
+  ```
+* TGR-2049: Topology Visualizer: the Workflow UI has a new topology visualizer that displays the current test setup configuration in a diagram. It draws the relationships between the configured server types and configured routes.
+  A standalone version of the visualizer is also available. https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.2.6/tiger-topology-visualizer-4.2.6-standalone.jar
+  You can start it locally with:
+
+  ```shell
+  java -jar tiger-topology-visualizer-4.2.6-standalone.jar
+  ```
+
+  Open http://localhost:8080 in your browser and drag your tiger.yaml into it to visualize your topology.
+* TGR-2102: allow `deleteAfterNExecutions` in body of `POST modification` endpoint.
+* TGR-2111: Tiger now skips starting the embedded web server when none of the UI or REST API features are active
+  (`activateWorkflowUi` or `enableTestManagementRestApi`). This reduces test startup
+  time for setups that don't need the workflow UI or the test management REST API.
+* TGR-2112: Tiger-Proxy now exposes a **Swagger UI** and an **OpenAPI 3 specification** for its REST API.
+
+  Once the proxy is running, the following endpoints are available:
+
+  - **Swagger UI** — interactive browser-based API explorer:
+    `http://localhost:{port}/swagger-ui/index.html`
+  - **OpenAPI JSON spec**:
+    `http://localhost:{port}/v3/api-docs`
+  - **OpenAPI YAML spec**:
+    `http://localhost:{port}/v3/api-docs.yaml`
+
+  The spec covers all Tiger-Proxy REST endpoints, including route management (`/route`),
+  traffic modifications (`/modification`), tracing points (`/tracingpoints`),
+  traffic push (`/traffic`), and the Web UI endpoints.
+* TGR-2113: YAML Schema Validation: it is now possible to validate RbelPath nodes against a YAML-formatted JSON Schema using the new
+  `YAML_SCHEMA` mode.
+
+  The content under test can be either YAML or JSON (since YAML is a superset of JSON); the schema must be expressed in
+  YAML. The same JSON Schema version 2020-12 rules apply as for `JSON_SCHEMA`, including placeholder substitution from the
+  Tiger Global Configuration.
+
+  Example step:
+
+  ```gherkin
+  TGR current response at "$.body" matches as YAML_SCHEMA:
+  """
+  type: object
+  properties:
+    name:
+      type: string
+    age:
+      type: integer
+      minimum: 0
+  required:
+    - name
+    - age
+  """
+  ```
 
 ## Bugfixes
 
+* TGR-1967: Set pom version in user manual.
+* TGR-2091: Fix opening browser from a WSL session by improving the fallback chain:
+
+  1. Java Desktop API (works natively on Windows/Mac)
+  2. `xdg-open` (standard Linux, available on virtually all Linux environments including WSL)
+  3. `wslview` (WSL-specific, requires the `wslu` package — install with `sudo apt install wslu`)
 * TGR-2093: Tigerproxy mesh-setup: fixed a bug that prevented download of partially received messages after connection loss.
+* TGR-2096: Correctly handle comma separated glue code packages inputted in the tiger.glues property of the tiger-starter-parent configuration.
+* TGR-2098: `externalUrl` server type now uses the full source URL to build the tiger proxy route.
+* TGR-2103: Improved performance of JSON rendering.
+* TGR-2110: Performance optimization for HTML rendering messages.
+  RbelHtmlRenderingToolkit is re-used and ObjectMapper is shared between toolkits.
+* TGR-2120: Avoid reverse DNS lookups in non-proxy host matching by using the original host string instead of resolving via
+  getHostName(). This reduces performance penalties when using the "forwardToProxy" property.
+* TGR-2122: External jar files containing wildcards are now supported again.
 
 
 # Release 4.2.4

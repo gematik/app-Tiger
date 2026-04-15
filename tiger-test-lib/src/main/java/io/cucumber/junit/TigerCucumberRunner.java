@@ -65,14 +65,12 @@ import org.junit.platform.launcher.core.LauncherFactory;
 @Slf4j
 public class TigerCucumberRunner {
 
+  private static final String TIGER_GLUES_ARGUMENT = "--tiger.glues";
+
   public static void main(String[] args) {
     log.info("Starting TigerCucumberRunner.main()...");
 
-    RuntimeOptions cmdLineOptions =
-        (new CommandlineOptionsParser(System.out)).parse(args).build(); // NOSONAR
-
-    Map<String, String> configurationParameters =
-        convertToConfigurationParametersMap(cmdLineOptions);
+    Map<String, String> configurationParameters = parseCommandLineOptions(args);
 
     LauncherDiscoveryRequest request =
         request().configurationParameters(configurationParameters).build();
@@ -80,6 +78,40 @@ public class TigerCucumberRunner {
     discoverAndRunTests(request);
 
     System.exit(0);
+  }
+
+  protected static Map<String, String> parseCommandLineOptions(String[] args) {
+    String[] modifiedArgs = parseTigerGlues(args);
+    RuntimeOptions cmdLineOptions =
+        (new CommandlineOptionsParser(System.out)).parse(modifiedArgs).build(); // NOSONAR
+
+    return convertToConfigurationParametersMap(cmdLineOptions);
+  }
+
+  public static String[] parseTigerGlues(String[] args) {
+    var toProcess =
+        new ArrayList<>(
+            Arrays.asList(args)); // need to pack it into a List to be able to modify length
+    List<String> processedArgs = new ArrayList<>();
+
+    while (!toProcess.isEmpty()) {
+      String arg = toProcess.remove(0);
+      if (TIGER_GLUES_ARGUMENT.equals(arg) && !toProcess.isEmpty()) {
+        String glues = toProcess.remove(0);
+        String[] glueArray = glues.split(",");
+        Arrays.stream(glueArray)
+            .forEachOrdered(
+                glue -> {
+                  processedArgs.add("--glue");
+                  processedArgs.add(glue.trim());
+                });
+      } else {
+        processedArgs.add(arg);
+      }
+    }
+
+    // Convert the List back to an Array
+    return processedArgs.toArray(new String[0]);
   }
 
   public static void discoverAndRunTests(
@@ -168,7 +200,7 @@ public class TigerCucumberRunner {
         .receiveTestEnvUpdate(TigerStatusUpdate.builder().featureMap(featureMap).build());
   }
 
-  private static Map<String, String> convertToConfigurationParametersMap(
+  protected static Map<String, String> convertToConfigurationParametersMap(
       RuntimeOptions runtimeOptions) {
     // IntelliJ passes the command line options to the runner. The CommandlineOptionsParser parses
     // them and delivers a RuntimeOptions object. However this can only be used if we directly

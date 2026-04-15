@@ -17,6 +17,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "tiger-topology-visualizer": [
+        "../../../tiger-topology-visualizer/src/frontend/tiger-topology-visualizer/src/index.ts"
+      ],
+      "tiger-topology-visualizer/*": [
+        "../../../tiger-topology-visualizer/src/frontend/tiger-topology-visualizer/src/*"
       ]
     }
   },

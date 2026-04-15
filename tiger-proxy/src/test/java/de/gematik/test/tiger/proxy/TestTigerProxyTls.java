@@ -29,7 +29,6 @@ import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration.TigerProxyConfigurationBuilder;
@@ -218,27 +217,20 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         .isInstanceOf(RuntimeException.class);
   }
 
-  // TODO TGR-263 really fix this and reactivate @Test, Julian knows more
-  public void customEccCaFileInTruststore_shouldVerifyConnection()
-      throws UnirestException, IOException {
-    final TigerPkiIdentity ca =
-        CryptoLoader.getIdentityFromP12(
-            FileUtils.readFileToByteArray(new File("src/test/resources/customCa.p12")), "00");
+  @Test
+  public void customEccCaFileInTruststore_shouldVerifyConnection() throws UnirestException {
+    final TigerConfigurationPkiIdentity eccCa =
+        new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00");
 
-    final TigerProxy tigerProxy =
-        new TigerProxy(
-            TigerProxyConfiguration.builder()
-                .tls(
-                    TigerTlsConfiguration.builder()
-                        .serverRootCa(
-                            new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00"))
-                        .build())
-                .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .tls(TigerTlsConfiguration.builder().serverRootCa(eccCa).build())
+            .build());
 
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.config().verifySsl(true);
-      unirestInstance.config().sslContext(tigerProxy.buildSslContext());
+      unirestInstance.config().sslContext(buildSslContextTrustingOnly(eccCa));
 
       final HttpResponse<JsonNode> response =
           unirestInstance.get("https://backend/foobar").asJson();

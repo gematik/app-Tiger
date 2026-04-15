@@ -25,8 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import lombok.val;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class SenderReceiverPairTest {
   @Test
   void testEqualityForOppositeDirection() {

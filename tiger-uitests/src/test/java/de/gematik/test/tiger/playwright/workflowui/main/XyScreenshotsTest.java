@@ -30,10 +30,12 @@ import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
+@Tag("screenshot")
 class XyScreenshotsTest extends AbstractBase {
 
   @SuppressWarnings("squid:S2699")
@@ -184,7 +186,7 @@ class XyScreenshotsTest extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
-    externalPage.locator(".test-message-number").first().click();
+    externalPage.locator(".test-message-number").first().evaluate("el => el.click()");
     screenshot(externalPage, "webui.png");
     screenshotWithHighlightedByClassname(
         externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
@@ -207,7 +209,8 @@ class XyScreenshotsTest extends AbstractBase {
     screenshotWithHighlightedByClassname(
         externalPage, "webui_full_message.png", "full-message-button");
 
-    Page singleMessagePage = externalPage.waitForPopup(fullMessageButton::click);
+    Page singleMessagePage =
+        externalPage.waitForPopup(() -> fullMessageButton.evaluate("el => el.click()"));
 
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -230,7 +233,9 @@ class XyScreenshotsTest extends AbstractBase {
     // replaces screenshot(externalPage, "webui_hide_header.png");
     externalPage.locator(".test-btn-settings").click();
 
-    externalPage.locator(".test-btn-inspect").first().click();
+    // Use JS click — the inspect button is inside the virtual scroller whose CSS transforms
+    // may position it outside the browser viewport
+    externalPage.locator(".test-btn-inspect").first().evaluate("el => el.click()");
     com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
             externalPage.locator("#jexlQueryModal #rbelTreeExpressionTextArea"))
         .isEditable();
@@ -316,7 +321,7 @@ class XyScreenshotsTest extends AbstractBase {
     externalPage.evaluate(
         "document.getElementsByClassName(\"test-modal-content\")[1].style.removeProperty(\"background-color\")");
 
-    externalPage.locator(".test-modal-content").nth(2).click();
+    externalPage.locator(".test-modal-content").nth(2).evaluate("el => el.click()");
     externalPage.evaluate(
         "document.getElementById(\"rawContentModal\").children.item(0).children.item(0).style.backgroundColor='yellow'");
     com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(

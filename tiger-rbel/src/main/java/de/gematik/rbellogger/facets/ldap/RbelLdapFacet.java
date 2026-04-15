@@ -35,10 +35,11 @@ import j2html.tags.DomContent;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 @RequiredArgsConstructor
 public class RbelLdapFacet implements RbelFacet {
@@ -242,11 +243,11 @@ public class RbelLdapFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement textRepresentation;
-  private final RbelElement msgId;
-  private final RbelElement protocolOp;
-  private final RbelElement attributes;
-  private final RbelElement controls;
+  RbelElement textRepresentation;
+  RbelElement msgId;
+  RbelElement protocolOp;
+  RbelElement attributes;
+  RbelElement controls;
 
   private static void addFieldIfPresent(Map<String, String> map, String key, RbelElement element) {
     if (element != null) {
@@ -287,13 +288,12 @@ public class RbelLdapFacet implements RbelFacet {
         .orElse("Attribute: " + sanitizedKey);
   }
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with(TEXT_REPRESENTATION_KEY, textRepresentation)
-        .with(MSG_ID_KEY, msgId)
-        .with(PROTOCOL_OP_KEY, protocolOp)
-        .withSkipIfNull(ATTRIBUTES_KEY, attributes)
-        .withSkipIfNull(CONTROLS_KEY, controls);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with(TEXT_REPRESENTATION_KEY, textRepresentation)
+          .with(MSG_ID_KEY, msgId)
+          .with(PROTOCOL_OP_KEY, protocolOp)
+          .withSkipIfNull(ATTRIBUTES_KEY, attributes)
+          .withSkipIfNull(CONTROLS_KEY, controls);
 }

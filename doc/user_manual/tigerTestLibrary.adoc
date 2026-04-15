@@ -80,14 +80,16 @@ logging:
 ----
 
 === Registering Lifecycle Callbacks
+
 When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.
 
-By implementing a Java class which implements the interface `de.gematik.test.tiger.lifecycle.LifecycleCallbacks` you can run custom code before and after each of the mentioned steps. All classes that implement this interface and are located in the package `de.gematik.test.tiger.lifecycle` are automatically registered and their methods will be called on the corresponding event.
+By implementing a Java class which implements the interface `de.gematik.test.tiger.lifecycle.LifecycleCallbacks` you can run custom code before and after each of the mentioned steps.
+All classes that implement this interface and are located in the package `de.gematik.test.tiger.lifecycle` are automatically registered and their methods will be called on the corresponding event.
 
 Here is an example of a class that will log messages on each callback method:
 
 .ExampleCallback.java
-[source, java]
+[source,java]
 ----
 package de.gematik.test.tiger.lifecycle;
 
@@ -474,6 +476,63 @@ assuming that the value of `${tiger.value.from.config}` set in the Tiger Global 
 For full details how to specify a JSON Schema, refer to the external resource: https://json-schema.org/understanding-json-schema[Understanding JSON Schema].
 In https://json-schema.org/implementations#validators-web-(online)[this list] you can find a list of online validators which you can use to test your schema.
 Remember to test under JSON Schema version 2020-12.
+
+===== YAML Schema Validation
+
+Using the validation step `TGR current response at \{string} matches as YAML_SCHEMA:` you are able to assert that the content of any RbelPath node complies with the schema given in the doc string beneath the step, where both the content and the schema are expressed in YAML.
+
+Since YAML is a superset of JSON, the content under test can be either YAML or JSON — the schema however must be in YAML format.
+
+The same JSON Schema version 2020-12 is used for validation, and placeholder substitution from the Tiger Global Configuration works the same way as for `JSON_SCHEMA`.
+
+For example:
+
+[source,gherkin]
+----
+TGR current response at "$.body" matches as YAML_SCHEMA:
+"""
+type: object
+properties:
+  name:
+    type: string
+  age:
+    type: integer
+    minimum: 0
+  email:
+    type: string
+    format: email
+  address:
+    type: string
+    const: "${tiger.value.from.config}"
+required:
+  - name
+  - age
+"""
+----
+
+would validate a message with a YAML body like:
+
+[source,yaml]
+----
+name: hello
+age: 5
+email: hello@example.com
+address: Friedrichstraße
+----
+
+or equivalently a JSON body like:
+
+[source,json]
+----
+{
+  "name": "hello",
+  "age": 5,
+  "email": "hello@example.com",
+  "address": "Friedrichstraße"
+}
+----
+
+assuming that the value of `${tiger.value.from.config}` set in the Tiger Global Configuration is `Friedrichstraße`.
 
 === Exemplaric scenario Konnektorfarm EAU validation
 

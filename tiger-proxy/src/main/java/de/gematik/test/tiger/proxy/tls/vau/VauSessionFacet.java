@@ -32,9 +32,10 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 @Builder(toBuilder = true)
 public class VauSessionFacet implements RbelFacet {
 
@@ -73,7 +74,7 @@ public class VauSessionFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement recordId;
+  RbelElement recordId;
 
   public static void buildFromOtherInstanceForRoot(
       VauSessionFacet vauSessionFacet, RbelElement jsonRoot) {
@@ -84,8 +85,7 @@ public class VauSessionFacet implements RbelFacet {
             .build());
   }
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("recordId", recordId);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("recordId", recordId);
 }

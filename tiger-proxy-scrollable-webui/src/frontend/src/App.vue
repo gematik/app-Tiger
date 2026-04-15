@@ -71,7 +71,9 @@ const proxyController = useProxyController({
   },
 });
 
-const tigerVersion = ref<{ version: string; buildDate: string } | void>(undefined);
+const tigerVersion = ref<{ version: string; buildDate: string; proxyName: string } | void>(
+  undefined,
+);
 
 onMounted(() => {
   // this workaround is necessary to capture `scrollToMessage` events from the messages
@@ -158,7 +160,7 @@ watchEffect(() => {
             :on-click-reset-messages="proxyController.resetMessageQueue"
             :on-click-quit-proxy="proxyController.quitProxy"
           />
-          <StatusHeader class="flex-grow-1" :tigerVersion="tigerVersion" />
+          <StatusHeader class="flex-grow-1" :tigerVersion="tigerVersion"></StatusHeader>
         </div>
         <MessageList class="flex-grow-1 flex-shrink-1" :is-embedded="isEmbedded" />
       </div>

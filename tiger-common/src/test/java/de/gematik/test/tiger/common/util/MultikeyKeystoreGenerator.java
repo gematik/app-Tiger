@@ -376,7 +376,7 @@ public class MultikeyKeystoreGenerator {
         "chainalias1");
     keystore.setKeyEntry(
         "chainalias1", endKeyPair1.getPrivate(), KEYSTORE_PASSWORD.toCharArray(), chain1);
-    System.out.println("    ��� chainalias1 added with chain length: " + chain1.length);
+    System.out.println("     chainalias1 added with chain length: " + chain1.length);
 
     // Add root CA as a trusted certificate entry for chainalias1
     keystore.setCertificateEntry("chainalias1-root", rootCert1);

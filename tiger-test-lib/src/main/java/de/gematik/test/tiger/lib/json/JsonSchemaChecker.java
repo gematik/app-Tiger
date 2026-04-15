@@ -20,63 +20,40 @@
  */
 package de.gematik.test.tiger.lib.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.SpecificationVersion;
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.exceptions.GenericTigerException;
-import java.util.stream.Collectors;
 
-/** Validates a given json string against a given json schema */
-public class JsonSchemaChecker extends AbstractRbelJsonChecker {
+/** Validates a given JSON string against a given JSON schema. */
+public class JsonSchemaChecker extends AbstractSchemaChecker {
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Override
-  public void verify(String oracle, RbelElement element, String diffOptionCSV) {
-    compareJsonToSchema(getAsJsonString(element), oracle);
+  protected ObjectMapper mapper() {
+    return MAPPER;
   }
 
-  /**
-   * Checks that the json conforms to the given schema
-   *
-   * @param jsonToCheck json to check
-   * @param schema schema to check against
-   */
-  public void compareJsonToSchema(String jsonToCheck, String schema) {
+  @Override
+  public void compareToSchema(String jsonToCheck, String schema) {
     try {
-      JsonNode jsonNode = objectMapper.readTree(jsonToCheck);
-      JsonNode schemaNode = objectMapper.readTree(schema);
-
-      SchemaRegistry factory =
-          SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
-      Schema jsonSchema = factory.getSchema(schemaNode);
-
-      var errors = jsonSchema.validate(jsonNode);
-
-      if (!errors.isEmpty()) {
-        var errorMessages =
-            errors.stream().map(Error::toString).collect(Collectors.joining("\n  "));
-        throw new JsonSchemaAssertionError("JSON schema validation failed:\n  " + errorMessages);
-      }
-    } catch (JsonProcessingException e) {
-      throw new JsonSchemaProcessingError("Failed to process input json and/or input schema", e);
+      super.compareToSchema(jsonToCheck, schema);
+    } catch (SchemaAssertionError e) {
+      throw new JsonSchemaAssertionError(e.getMessage());
+    } catch (SchemaProcessingError e) {
+      throw new JsonSchemaProcessingError(e.getMessage(), e.getCause());
     }
   }
 
-  public static class JsonSchemaAssertionError extends AssertionError {
+  public void compareJsonToSchema(String jsonToCheck, String schema) {
+    compareToSchema(jsonToCheck, schema);
+  }
 
+  public static class JsonSchemaAssertionError extends SchemaAssertionError {
     public JsonSchemaAssertionError(String message) {
       super(message);
     }
   }
 
-  public static class JsonSchemaProcessingError extends GenericTigerException {
-
+  public static class JsonSchemaProcessingError extends SchemaProcessingError {
     public JsonSchemaProcessingError(String message, Throwable cause) {
       super(message, cause);
     }

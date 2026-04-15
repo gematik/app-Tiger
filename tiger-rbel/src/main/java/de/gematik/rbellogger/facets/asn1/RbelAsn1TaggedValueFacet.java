@@ -23,16 +23,19 @@ package de.gematik.rbellogger.facets.asn1;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 public class RbelAsn1TaggedValueFacet implements RbelFacet {
 
-  private final RbelElement tag;
-  private final RbelElement nestedElement;
+  RbelElement tag;
+  RbelElement nestedElement;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements = buildChildElements();
+
+  private RbelMultiMap<RbelElement> buildChildElements() {
     if (nestedElement == null) {
       return new RbelMultiMap<>();
     } else {

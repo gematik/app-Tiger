@@ -35,22 +35,19 @@ import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.JsonNoteEntry;
 import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import j2html.tags.ContainerTag;
 import j2html.tags.UnescapedText;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
-import lombok.Data;
-import lombok.SneakyThrows;
+import lombok.Getter;
+import lombok.Value;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 
-@Data
+@Value
 @Builder(toBuilder = true)
 public class RbelCborFacet implements RbelFacet {
 
@@ -69,40 +66,28 @@ public class RbelCborFacet implements RbelFacet {
           }
 
           @Override
-          @SneakyThrows
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            String formatedJson =
-                renderingToolkit
-                    .getObjectMapper()
-                    .writeValueAsString(
-                        renderingToolkit.shadeJson(
-                            element.getFacetOrFail(RbelCborFacet.class).node,
-                            Optional.empty(),
-                            element));
-            for (final Entry<UUID, JsonNoteEntry> entry :
-                renderingToolkit.getNoteTags().entrySet()) {
-              if (formatedJson.contains(entry.getValue().getStringToMatch() + ",")) {
-                formatedJson =
-                    formatedJson.replace(
-                        entry.getValue().getStringToMatch() + ",",
-                        entry.getValue().getTagForKeyReplacement().render()
-                            + ","
-                            + entry.getValue().getTagForValueReplacement().render());
-              } else if (formatedJson.contains(entry.getValue().getStringToMatch())) {
-                formatedJson =
-                    formatedJson.replace(
-                        entry.getValue().getStringToMatch(),
-                        entry.getValue().getTagForKeyReplacement().render()
-                            + entry.getValue().getTagForValueReplacement().render());
-              }
+            String json;
+            try {
+              json =
+                  renderingToolkit
+                      .getObjectMapper()
+                      .writeValueAsString(
+                          renderingToolkit.shadeJson(
+                              element.getFacetOrFail(RbelCborFacet.class).node,
+                              Optional.empty(),
+                              element));
+            } catch (Exception e) {
+              json = element.getRawStringContent();
             }
+            String formattedJson = renderingToolkit.replaceNoteTags(json);
 
             return div(
                 t1ms("CBOR").with(showContentButtonAndDialog(element, renderingToolkit)),
-                pre(new UnescapedText(formatedJson)).withClass("binary"),
+                pre(new UnescapedText(formattedJson)).withClass("binary"),
                 br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
@@ -110,11 +95,10 @@ public class RbelCborFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement unparsedBytes;
-  private final JsonNode node;
+  RbelElement unparsedBytes;
+  JsonNode node;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
 }

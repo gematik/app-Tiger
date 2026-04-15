@@ -26,10 +26,12 @@ import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.engine.UniqueId;
 
 @Slf4j
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class PathsConverterTest {
 
   private PathsConverter pathsConverter;

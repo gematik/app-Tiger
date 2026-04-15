@@ -39,13 +39,21 @@ public class TigerProxyMasterSecretListener implements TigerMasterSecretListener
   public void onMasterSecret(Object session) {
     if (session instanceof TlsContext ctx) {
       final SecurityParameters securityParametersConnection = ctx.getSecurityParametersConnection();
-
+      final byte[] masterSecret;
+      try {
+        masterSecret = securityParametersConnection.getMasterSecret().extract();
+      } catch (IllegalStateException e) {
+        log.debug(
+            "Master secret already extracted or destroyed, skipping write to {}",
+            masterSecretsFile);
+        return;
+      }
       log.info("Intercepted master secret, writing to file {}", masterSecretsFile);
       dumpToMasterSecretsFile(
           "CLIENT_RANDOM "
               + HexFormat.of().formatHex(securityParametersConnection.getClientRandom())
               + " "
-              + HexFormat.of().formatHex(securityParametersConnection.getMasterSecret().extract())
+              + HexFormat.of().formatHex(masterSecret)
               + "\n");
     }
   }

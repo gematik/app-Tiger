@@ -30,6 +30,7 @@ import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -40,6 +41,7 @@ class XDynamicPlaySidebarTest extends AbstractBase {
 
   @SuppressWarnings("squid:S2699")
   @Test
+  @Tag("screenshot")
   void testAScreenshotSidebar() {
     page.querySelector("#test-execution-pane-tab").click();
     openSidebar();
