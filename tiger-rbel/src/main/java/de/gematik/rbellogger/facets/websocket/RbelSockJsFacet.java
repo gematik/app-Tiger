@@ -36,10 +36,11 @@ import de.gematik.rbellogger.util.RbelPathAble;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 import lombok.val;
 
-@Data
+@Value
 @Builder
 public class RbelSockJsFacet implements RbelFacet {
 
@@ -96,15 +97,14 @@ public class RbelSockJsFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement type;
-  private final RbelElement qualifier;
-  private final RbelElement content;
+  RbelElement type;
+  RbelElement qualifier;
+  RbelElement content;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("type", type)
-        .with("qualifier", qualifier)
-        .with("content", content);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("type", type)
+          .with("qualifier", qualifier)
+          .with("content", content);
 }

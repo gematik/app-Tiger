@@ -23,13 +23,15 @@ package de.gematik.test.tiger.lib.rbel;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.json.JsonSchemaChecker;
+import de.gematik.test.tiger.lib.json.YamlSchemaChecker;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum ModeType {
   XML(new RbelXmlContentValidator()),
   JSON(new JsonChecker()),
-  JSON_SCHEMA(new JsonSchemaChecker());
+  JSON_SCHEMA(new JsonSchemaChecker()),
+  YAML_SCHEMA(new YamlSchemaChecker());
 
   private final RbelContentValidator verifier;
 

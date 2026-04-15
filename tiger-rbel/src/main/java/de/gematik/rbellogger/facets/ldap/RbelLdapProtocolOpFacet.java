@@ -25,115 +25,115 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Value;
 
 /**
  * Facet providing structured access to LDAP protocol operation fields. This allows accessing
  * sub-fields of the protocolOp element like dn, filter, scope, etc.
  */
-@Getter
+@Value
 @Builder
 public class RbelLdapProtocolOpFacet implements RbelFacet {
 
   // Operation type wrapped as an element
-  private final RbelElement operationType;
+  RbelElement operationType;
 
   // Common fields
-  private final RbelElement dn;
+  RbelElement dn;
 
   // ModifyDnRequest fields
-  private final RbelElement newRdn;
-  private final RbelElement deleteOldRdn;
-  private final RbelElement newSuperior;
+  RbelElement newRdn;
+  RbelElement deleteOldRdn;
+  RbelElement newSuperior;
 
   // SearchRequest fields
-  private final RbelElement baseObject;
-  private final RbelElement scope;
-  private final RbelElement derefAliases;
-  private final RbelElement sizeLimit;
-  private final RbelElement timeLimit;
-  private final RbelElement typesOnly;
-  private final RbelElement filter;
-  private final RbelElement requestedAttributes;
+  RbelElement baseObject;
+  RbelElement scope;
+  RbelElement derefAliases;
+  RbelElement sizeLimit;
+  RbelElement timeLimit;
+  RbelElement typesOnly;
+  RbelElement filter;
+  RbelElement requestedAttributes;
 
   // BindRequest fields
-  private final RbelElement version;
-  private final RbelElement name;
-  private final RbelElement simple;
-  private final RbelElement saslMechanism;
-  private final RbelElement saslCredentials;
+  RbelElement version;
+  RbelElement name;
+  RbelElement simple;
+  RbelElement saslMechanism;
+  RbelElement saslCredentials;
 
   // CompareRequest fields
-  private final RbelElement attributeDesc;
-  private final RbelElement assertionValue;
+  RbelElement attributeDesc;
+  RbelElement assertionValue;
 
   // ExtendedRequest/Response fields
-  private final RbelElement requestName;
-  private final RbelElement requestValue;
-  private final RbelElement responseName;
-  private final RbelElement responseValue;
+  RbelElement requestName;
+  RbelElement requestValue;
+  RbelElement responseName;
+  RbelElement responseValue;
 
   // Response fields (ResultResponse)
-  private final RbelElement resultCode;
-  private final RbelElement matchedDN;
-  private final RbelElement diagnosticMessage;
-  private final RbelElement referrals;
+  RbelElement resultCode;
+  RbelElement matchedDN;
+  RbelElement diagnosticMessage;
+  RbelElement referrals;
 
   // BindResponse fields
-  private final RbelElement serverSaslCreds;
+  RbelElement serverSaslCreds;
 
   // PasswordModifyRequest/Response fields
-  private final RbelElement userIdentity;
-  private final RbelElement oldPassword;
-  private final RbelElement newPassword;
-  private final RbelElement genPassword;
+  RbelElement userIdentity;
+  RbelElement oldPassword;
+  RbelElement newPassword;
+  RbelElement genPassword;
 
   // WhoAmIResponse field
-  private final RbelElement authzId;
+  RbelElement authzId;
 
   // CancelRequest field
-  private final RbelElement cancelId;
+  RbelElement cancelId;
 
   // AbandonRequest field
-  private final RbelElement abandonedMessageId;
+  RbelElement abandonedMessageId;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .withSkipIfNull("operationType", operationType)
-        .withSkipIfNull("dn", dn)
-        .withSkipIfNull("newRdn", newRdn)
-        .withSkipIfNull("deleteOldRdn", deleteOldRdn)
-        .withSkipIfNull("newSuperior", newSuperior)
-        .withSkipIfNull("baseObject", baseObject)
-        .withSkipIfNull("scope", scope)
-        .withSkipIfNull("derefAliases", derefAliases)
-        .withSkipIfNull("sizeLimit", sizeLimit)
-        .withSkipIfNull("timeLimit", timeLimit)
-        .withSkipIfNull("typesOnly", typesOnly)
-        .withSkipIfNull("filter", filter)
-        .withSkipIfNull("requestedAttributes", requestedAttributes)
-        .withSkipIfNull("version", version)
-        .withSkipIfNull("name", name)
-        .withSkipIfNull("simple", simple)
-        .withSkipIfNull("saslMechanism", saslMechanism)
-        .withSkipIfNull("saslCredentials", saslCredentials)
-        .withSkipIfNull("attributeDesc", attributeDesc)
-        .withSkipIfNull("assertionValue", assertionValue)
-        .withSkipIfNull("requestName", requestName)
-        .withSkipIfNull("requestValue", requestValue)
-        .withSkipIfNull("responseName", responseName)
-        .withSkipIfNull("responseValue", responseValue)
-        .withSkipIfNull("resultCode", resultCode)
-        .withSkipIfNull("matchedDN", matchedDN)
-        .withSkipIfNull("diagnosticMessage", diagnosticMessage)
-        .withSkipIfNull("referrals", referrals)
-        .withSkipIfNull("serverSaslCreds", serverSaslCreds)
-        .withSkipIfNull("userIdentity", userIdentity)
-        .withSkipIfNull("oldPassword", oldPassword)
-        .withSkipIfNull("newPassword", newPassword)
-        .withSkipIfNull("genPassword", genPassword)
-        .withSkipIfNull("authzId", authzId)
-        .withSkipIfNull("cancelId", cancelId)
-        .withSkipIfNull("abandonedMessageId", abandonedMessageId);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .withSkipIfNull("operationType", operationType)
+          .withSkipIfNull("dn", dn)
+          .withSkipIfNull("newRdn", newRdn)
+          .withSkipIfNull("deleteOldRdn", deleteOldRdn)
+          .withSkipIfNull("newSuperior", newSuperior)
+          .withSkipIfNull("baseObject", baseObject)
+          .withSkipIfNull("scope", scope)
+          .withSkipIfNull("derefAliases", derefAliases)
+          .withSkipIfNull("sizeLimit", sizeLimit)
+          .withSkipIfNull("timeLimit", timeLimit)
+          .withSkipIfNull("typesOnly", typesOnly)
+          .withSkipIfNull("filter", filter)
+          .withSkipIfNull("requestedAttributes", requestedAttributes)
+          .withSkipIfNull("version", version)
+          .withSkipIfNull("name", name)
+          .withSkipIfNull("simple", simple)
+          .withSkipIfNull("saslMechanism", saslMechanism)
+          .withSkipIfNull("saslCredentials", saslCredentials)
+          .withSkipIfNull("attributeDesc", attributeDesc)
+          .withSkipIfNull("assertionValue", assertionValue)
+          .withSkipIfNull("requestName", requestName)
+          .withSkipIfNull("requestValue", requestValue)
+          .withSkipIfNull("responseName", responseName)
+          .withSkipIfNull("responseValue", responseValue)
+          .withSkipIfNull("resultCode", resultCode)
+          .withSkipIfNull("matchedDN", matchedDN)
+          .withSkipIfNull("diagnosticMessage", diagnosticMessage)
+          .withSkipIfNull("referrals", referrals)
+          .withSkipIfNull("serverSaslCreds", serverSaslCreds)
+          .withSkipIfNull("userIdentity", userIdentity)
+          .withSkipIfNull("oldPassword", oldPassword)
+          .withSkipIfNull("newPassword", newPassword)
+          .withSkipIfNull("genPassword", genPassword)
+          .withSkipIfNull("authzId", authzId)
+          .withSkipIfNull("cancelId", cancelId)
+          .withSkipIfNull("abandonedMessageId", abandonedMessageId);
 }

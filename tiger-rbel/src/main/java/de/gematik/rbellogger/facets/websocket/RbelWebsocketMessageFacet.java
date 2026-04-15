@@ -41,12 +41,13 @@ import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
-@Data
+@Value
 @Builder
 public class RbelWebsocketMessageFacet implements RbelFacet {
 
@@ -120,31 +121,30 @@ public class RbelWebsocketMessageFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement fin0Bit;
-  private final RbelElement rsv1Bit;
-  private final RbelElement rsv2Bit;
-  private final RbelElement rsv3Bit;
-  private final RbelElement opcode;
-  private final RbelElement masked;
-  private final RbelElement payloadLength;
-  private final RbelElement payload;
-  private final RbelElement extensions;
-  private final RbelElement frameType;
+  RbelElement fin0Bit;
+  RbelElement rsv1Bit;
+  RbelElement rsv2Bit;
+  RbelElement rsv3Bit;
+  RbelElement opcode;
+  RbelElement masked;
+  RbelElement payloadLength;
+  RbelElement payload;
+  RbelElement extensions;
+  RbelElement frameType;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("fin0Bit", fin0Bit)
-        .with("rsv1Bit", rsv1Bit)
-        .with("rsv2Bit", rsv2Bit)
-        .with("rsv3Bit", rsv3Bit)
-        .with("opcode", opcode)
-        .with("masked", masked)
-        .with("payloadLength", payloadLength)
-        .with("payload", payload)
-        .with("extensions", extensions)
-        .with("frameType", frameType);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("fin0Bit", fin0Bit)
+          .with("rsv1Bit", rsv1Bit)
+          .with("rsv2Bit", rsv2Bit)
+          .with("rsv3Bit", rsv3Bit)
+          .with("opcode", opcode)
+          .with("masked", masked)
+          .with("payloadLength", payloadLength)
+          .with("payload", payload)
+          .with("extensions", extensions)
+          .with("frameType", frameType);
 
   @Override
   public Optional<String> printShortDescription(RbelElement element) {

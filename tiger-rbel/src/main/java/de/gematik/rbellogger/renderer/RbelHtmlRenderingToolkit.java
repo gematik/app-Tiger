@@ -43,7 +43,6 @@ import j2html.rendering.FlatHtml;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import j2html.tags.EmptyTag;
-import j2html.tags.Tag;
 import j2html.tags.UnescapedText;
 import j2html.tags.specialized.DivTag;
 import j2html.tags.specialized.PTag;
@@ -57,6 +56,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
@@ -94,8 +94,13 @@ public class RbelHtmlRenderingToolkit {
     return "is-size-" + n;
   }
 
+  private static final ObjectMapper SHARED_OBJECT_MAPPER =
+      new ObjectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+
   @Getter private final ObjectMapper objectMapper;
-  @Getter private final Map<UUID, JsonNoteEntry> noteTags;
+  private final Map<UUID, NotePlaceholderEntry> notePlaceholders;
   private final RbelHtmlRenderer rbelHtmlRenderer;
 
   /** We are rendering a large element that should not be rendered fully. */
@@ -106,13 +111,7 @@ public class RbelHtmlRenderingToolkit {
           new TigerConfigurationKey("tiger", "lib", "rbelLogoFilePath"), String.class);
 
   public RbelHtmlRenderingToolkit(RbelHtmlRenderer rbelHtmlRenderer) {
-    this(
-        new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true),
-        new HashMap<>(),
-        rbelHtmlRenderer,
-        false);
+    this(SHARED_OBJECT_MAPPER, new HashMap<>(), rbelHtmlRenderer, false);
   }
 
   public RbelHtmlRenderingToolkit withInShortenedRenderingMode(boolean inShortenedRenderingMode) {
@@ -232,6 +231,9 @@ public class RbelHtmlRenderingToolkit {
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public ContainerTag convert(final RbelElement element) {
+    if (element.getParentNode() == null) {
+      notePlaceholders.clear();
+    }
     return convert(element, Optional.empty());
   }
 
@@ -543,27 +545,33 @@ public class RbelHtmlRenderingToolkit {
     }
   }
 
+  private void addNotePlaceholder(
+      UUID uuid, String stringToMatch, String renderedKeyReplacement, RbelElement originalElement) {
+    notePlaceholders.put(
+        uuid,
+        NotePlaceholderEntry.builder()
+            .stringToMatch(stringToMatch)
+            .renderedKeyReplacement(renderedKeyReplacement)
+            .renderedValueReplacement(renderNoteValues(originalElement))
+            .build());
+  }
+
+  private static String renderNoteValues(RbelElement element) {
+    return span()
+        .with(
+            element.getNotes().stream()
+                .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
+                .toList())
+        .withClass(JSON_NOTE)
+        .render();
+  }
+
   private JsonNode shadeJsonArray(
       JsonNode input, Optional<String> key, RbelElement originalElement) {
     final ArrayNode output = objectMapper.createArrayNode();
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
-      noteTags.put(
-          uuid,
-          JsonNoteEntry.builder()
-              .stringToMatch("\"" + uuid + "\"")
-              .tagForKeyReplacement(span())
-              .tagForValueReplacement(
-                  span()
-                      .with(
-                          originalElement.getNotes().stream()
-                              .map(
-                                  note ->
-                                      div(i(note.getValue()))
-                                          .withClass(note.getStyle().toCssClass()))
-                              .toList())
-                      .withClass(JSON_NOTE))
-              .build());
+      addNotePlaceholder(uuid, "\"" + uuid + "\"", span().render(), originalElement);
       output.add(uuid.toString());
     }
     for (int i = 0; i < input.size(); i++) {
@@ -579,25 +587,14 @@ public class RbelHtmlRenderingToolkit {
     final ObjectNode output = objectMapper.createObjectNode();
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
-
-      noteTags.put(
+      addNotePlaceholder(
           uuid,
-          JsonNoteEntry.builder()
-              .stringToMatch("\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","))
-              .tagForKeyReplacement(span())
-              .tagForValueReplacement(
-                  span()
-                      .with(
-                          originalElement.getNotes().stream()
-                              .map(
-                                  note ->
-                                      div(i(note.getValue()))
-                                          .withClass(note.getStyle().toCssClass()))
-                              .toList())
-                      .withClass(JSON_NOTE))
-              .build());
+          "\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","),
+          span().render(),
+          originalElement);
       output.put("note", uuid.toString());
     }
+    final var childLookup = new HashMap<String, RbelElement>();
     for (Iterator<Entry<String, JsonNode>> it = input.fields(); it.hasNext(); ) {
       Entry<String, JsonNode> element = it.next();
       output.set(
@@ -605,12 +602,15 @@ public class RbelHtmlRenderingToolkit {
           shadeJson(
               element.getValue(),
               Optional.of(element.getKey()),
-              originalElement
-                  .getFirst(element.getKey())
-                  .orElseThrow(
-                      () ->
-                          new RuntimeException(
-                              "Unable to find matching Element for key " + element.getKey()))));
+              childLookup.computeIfAbsent(
+                  element.getKey(),
+                  key ->
+                      originalElement
+                          .getFirst(key)
+                          .orElseThrow(
+                              () ->
+                                  new RuntimeException(
+                                      "Unable to find matching Element for key " + key)))));
     }
     return output;
   }
@@ -626,22 +626,8 @@ public class RbelHtmlRenderingToolkit {
 
     if (!originalElement.getNotes().isEmpty()) {
       final UUID uuid = UUID.randomUUID();
-      noteTags.put(
-          uuid,
-          JsonNoteEntry.builder()
-              .stringToMatch("\"" + uuid + "\"")
-              .tagForKeyReplacement(span(jsonElement.toString()))
-              .tagForValueReplacement(
-                  span()
-                      .with(
-                          originalElement.getNotes().stream()
-                              .map(
-                                  note ->
-                                      div(i(text(note.getValue())))
-                                          .withClass(note.getStyle().toCssClass()))
-                              .toList())
-                      .withClass(JSON_NOTE))
-              .build());
+      addNotePlaceholder(
+          uuid, "\"" + uuid + "\"", span(jsonElement.toString()).render(), originalElement);
       return new TextNode(uuid.toString());
     } else {
       return jsonElement;
@@ -739,11 +725,99 @@ public class RbelHtmlRenderingToolkit {
   @Builder
   @AllArgsConstructor
   @Getter
-  @SuppressWarnings({"rawtypes", "java:S3740"})
-  public static class JsonNoteEntry {
+  public static class NotePlaceholderEntry {
 
     private final String stringToMatch;
-    private final Tag tagForKeyReplacement;
-    private final Tag tagForValueReplacement;
+    private final String renderedKeyReplacement;
+    private final String renderedValueReplacement;
+  }
+
+  private static final Pattern UUID_PATTERN =
+      Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+
+  /**
+   * Replaces all note-placeholder UUIDs in the formatted content string in a single forward pass.
+   * Uses a UUID regex to find placeholders, looks up each UUID in the notePlaceholders map, and
+   * replaces the full surrounding stringToMatch context. Collects all segments first, then
+   * assembles them in a single pre-sized StringBuilder. Clears {@link #notePlaceholders} after
+   * processing.
+   */
+  public String replaceNoteTags(String formattedContent) {
+    if (notePlaceholders.isEmpty()) {
+      return formattedContent;
+    }
+
+    var matcher = UUID_PATTERN.matcher(formattedContent);
+    int lastEnd = 0;
+
+    List<String> segments = new ArrayList<>();
+    int totalLength = 0;
+
+    while (matcher.find()) {
+      UUID uuid;
+      try {
+        uuid = UUID.fromString(matcher.group());
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      NotePlaceholderEntry entry = notePlaceholders.remove(uuid);
+      if (entry == null) {
+        continue;
+      }
+
+      int uuidStart = matcher.start();
+      int matchStart = formattedContent.lastIndexOf(entry.getStringToMatch(), uuidStart);
+      if (matchStart < 0 || matchStart < lastEnd) {
+        continue;
+      }
+
+      totalLength +=
+          addVerbatimSegment(
+              matchStart > lastEnd, formattedContent.substring(lastEnd, matchStart), segments);
+
+      int matchEnd = matchStart + entry.getStringToMatch().length();
+      boolean hasTrailingComma =
+          matchEnd < formattedContent.length() && formattedContent.charAt(matchEnd) == ',';
+      if (hasTrailingComma) {
+        matchEnd++;
+      }
+      totalLength += addReplacement(hasTrailingComma, entry, segments);
+      lastEnd = matchEnd;
+    }
+
+    if (segments.isEmpty()) {
+      return formattedContent;
+    }
+
+    // Trailing verbatim segment
+    totalLength +=
+        addVerbatimSegment(
+            lastEnd < formattedContent.length(), formattedContent.substring(lastEnd), segments);
+
+    // Assemble in one pre-sized StringBuilder
+    var result = new StringBuilder(totalLength);
+    for (String segment : segments) {
+      result.append(segment);
+    }
+    return result.toString();
+  }
+
+  private static int addReplacement(
+      boolean hasTrailingComma, NotePlaceholderEntry entry, List<String> segments) {
+    String separator = hasTrailingComma ? "," : "";
+    String replacement =
+        entry.getRenderedKeyReplacement() + separator + entry.getRenderedValueReplacement();
+
+    // Replacement segment
+    segments.add(replacement);
+    return replacement.length();
+  }
+
+  private static int addVerbatimSegment(boolean add, String verbatim, List<String> segments) {
+    if (add) {
+      segments.add(verbatim);
+      return verbatim.length();
+    }
+    return 0;
   }
 }

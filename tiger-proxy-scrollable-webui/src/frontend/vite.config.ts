@@ -57,6 +57,7 @@ export default defineConfig(({mode}) => {
       minify: true,
       outDir: isDetachedDistMode ? "dist-detached" : "dist",
       target: "ES2022",
+      cssTarget: ["chrome111", "firefox128", "safari17"],
       sourcemap: true,
     },
   };

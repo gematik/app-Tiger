@@ -326,7 +326,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
     var frameLocator = page.frameLocator("#rbellog-details-iframe");
-    frameLocator.locator("#test-rbel-section").first().click();
+    frameLocator.locator(".scroll-container").click();
 
     Keyboard keyboard = page.keyboard();
 
@@ -362,12 +362,20 @@ class XYDynamicRbelLogTests extends AbstractBase {
     // to the window object.
     externalPage.waitForFunction("() => typeof window.scrollToMessage === 'function'");
     externalPage.evaluate("scrollToMessage('', " + sequenceNumber + ")");
-    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
 
-    Locator fullMessageButton = externalPage.locator(".full-message-button").first();
-    fullMessageButton.scrollIntoViewIfNeeded();
+    Locator fullMessageButton =
+        externalPage
+            .locator(".rbel-message:has(.test-message-number:text-is('" + sequenceNumber + "'))")
+            .locator(".full-message-button");
+    // Wait until the virtual scroller has rendered the message and its button.
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .pollInterval(200, TimeUnit.MILLISECONDS)
+        .ignoreExceptions()
+        .until(fullMessageButton::isVisible);
 
-    Page singleMessagePage = externalPage.waitForPopup(fullMessageButton::click);
+    Page singleMessagePage =
+        externalPage.waitForPopup(() -> fullMessageButton.evaluate("el => el.click()"));
 
     assertAll(
         () -> assertThat(singleMessagePage.locator("body")).isVisible(),
@@ -421,11 +429,13 @@ class XYDynamicRbelLogTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
     var frameLocator = page.frameLocator("#rbellog-details-iframe");
 
-    // Open first message details if not already open (click on card header)
-    frameLocator.locator(".test-card").first().click();
+    // Open first message details if not already open (click on card header).
+    // Use JS click — the element is inside a virtual scroller whose CSS transforms
+    // may position it outside the browser viewport.
+    frameLocator.locator(".test-card").first().evaluate("el => el.click()");
 
     // Click inspect button in the details view
-    frameLocator.locator(".test-btn-inspect").first().click();
+    frameLocator.locator(".test-btn-inspect").first().evaluate("el => el.click()");
 
     var modalLocator = frameLocator.locator("#jexlQueryModal");
     assertThat(modalLocator).isVisible();

@@ -37,14 +37,15 @@ import j2html.tags.ContainerTag;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 
-@Data
 @Builder(toBuilder = true)
+@Value
 @Slf4j
 public class RbelAsn1Facet implements RbelFacet {
 
@@ -83,11 +84,10 @@ public class RbelAsn1Facet implements RbelFacet {
         });
   }
 
-  private final RbelElement unparsedBytes;
-  private final ASN1Encodable asn1Content;
+  RbelElement unparsedBytes;
+  ASN1Encodable asn1Content;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
 }

@@ -36,6 +36,7 @@ defineProps<{
   tigerVersion: {
     version: string;
     buildDate: string;
+    proxyName: string;
   } | void;
 }>();
 </script>
@@ -80,8 +81,9 @@ defineProps<{
       v-if="tigerVersion && knownTigerVersion(tigerVersion)"
       class="tiger-version align-self-center text-start lh-1 ms-auto font-monospace"
     >
-      <p>
-        {{ tigerVersion.version }}<br /><em>Build date: {{ tigerVersion.buildDate }}</em>
+      <p class="version">
+        {{ tigerVersion.version }}<br /><em>Build date: {{ tigerVersion.buildDate }}</em
+        ><br /><em> {{ tigerVersion.proxyName }}</em>
       </p>
     </div>
   </div>
@@ -94,6 +96,11 @@ defineProps<{
 
 .tiger-version {
   font-size: x-small;
+}
+
+.version {
+  margin-top: 0.4em;
+  margin-bottom: 0.3em;
 }
 
 .logo {

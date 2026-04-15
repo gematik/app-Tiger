@@ -22,10 +22,12 @@ package de.gematik.test.tiger.common.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class TigerConfigurationKeyTest {
   @Test
   void testCreateConfigurationKeyWithRepeatedSubKey_ShouldAppendToKey() {

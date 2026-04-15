@@ -64,9 +64,11 @@ import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 @Slf4j
 @WireMockTest(httpsEnabled = true)
+@ExtendWith(TigerAgentExtension.class)
 public abstract class AbstractTigerProxyTest {
 
   public final UnirestInstance unirestInstance =

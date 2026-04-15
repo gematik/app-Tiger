@@ -53,7 +53,9 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = WebEnvironment.RANDOM_PORT,
+    properties = "tiger.lib.activateWorkflowUi=true")
 @DirtiesContext
 @ResetTigerConfiguration
 class UpdatePushControllerTest {

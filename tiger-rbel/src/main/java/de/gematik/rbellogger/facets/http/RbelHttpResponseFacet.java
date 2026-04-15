@@ -40,10 +40,9 @@ public class RbelHttpResponseFacet implements RbelFacet {
     this.reasonPhrase = reasonPhrase;
   }
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("responseCode", responseCode)
-        .with("reasonPhrase", reasonPhrase);
-  }
+  @Getter(lazy = true)
+  private final RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("responseCode", responseCode)
+          .with("reasonPhrase", reasonPhrase);
 }

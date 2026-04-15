@@ -67,7 +67,9 @@ public class TigerGlobalConfiguration {
   @Getter @Setter private static boolean requireTigerYaml = false;
   private static boolean initialized = false;
 
-  private TigerGlobalConfiguration() {}
+  public static boolean isInitialized() {
+    return initialized;
+  }
 
   public static synchronized void reset() {
     globalConfigurationLoader.reset();
@@ -212,12 +214,34 @@ public class TigerGlobalConfiguration {
     return resolvePlaceholders(globalConfigurationLoader.readString(key));
   }
 
+  public static synchronized String readString(TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return resolvePlaceholders(
+        globalConfigurationLoader
+            .readStringOptional(key)
+            .orElseThrow(
+                () -> new TigerConfigurationException("Could not find value for '" + key + "'")));
+  }
+
   public static synchronized String readString(String key, String defaultValue) {
     assertGlobalConfigurationIsInitialized();
     return resolvePlaceholders(globalConfigurationLoader.readString(key, defaultValue));
   }
 
+  public static synchronized String readString(TigerConfigurationKey key, String defaultValue) {
+    assertGlobalConfigurationIsInitialized();
+    return resolvePlaceholders(
+        globalConfigurationLoader.readStringOptional(key).orElse(defaultValue));
+  }
+
   public static synchronized Optional<String> readStringOptional(String key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader
+        .readStringOptional(key)
+        .map(TigerGlobalConfiguration::resolvePlaceholders);
+  }
+
+  public static synchronized Optional<String> readStringOptional(TigerConfigurationKey key) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader
         .readStringOptional(key)
@@ -229,7 +253,18 @@ public class TigerGlobalConfiguration {
     return globalConfigurationLoader.readStringOptional(key);
   }
 
+  public static synchronized Optional<String> readStringWithoutResolving(
+      TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readStringOptional(key);
+  }
+
   public static Optional<byte[]> readByteArray(String key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
+  }
+
+  public static Optional<byte[]> readByteArray(TigerConfigurationKey key) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
   }
@@ -292,7 +327,17 @@ public class TigerGlobalConfiguration {
     return BooleanUtils.toBoolean(readString(key));
   }
 
+  public static synchronized boolean readBoolean(TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return BooleanUtils.toBoolean(readString(key));
+  }
+
   public static synchronized boolean readBoolean(String key, boolean defaultValue) {
+    assertGlobalConfigurationIsInitialized();
+    return readBooleanOptional(key).orElse(defaultValue);
+  }
+
+  public static synchronized boolean readBoolean(TigerConfigurationKey key, boolean defaultValue) {
     assertGlobalConfigurationIsInitialized();
     return readBooleanOptional(key).orElse(defaultValue);
   }
@@ -300,6 +345,11 @@ public class TigerGlobalConfiguration {
   public static synchronized Optional<Boolean> readBooleanOptional(String key) {
     assertGlobalConfigurationIsInitialized();
     return readStringOptional(key).map(BooleanUtils::toBoolean);
+  }
+
+  public static synchronized Optional<Boolean> readBooleanOptional(TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readStringOptional(key).map(BooleanUtils::toBoolean);
   }
 
   private static void assertGlobalConfigurationIsInitialized() {
@@ -314,14 +364,29 @@ public class TigerGlobalConfiguration {
     return globalConfigurationLoader.readList(baseKeys);
   }
 
+  public static List<String> readList(TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readList(key);
+  }
+
   public static Map<String, String> readMap(String... baseKeys) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.readMap(baseKeys);
   }
 
+  public static Map<String, String> readMapByKey(TigerConfigurationKey key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readMap(key);
+  }
+
   public static Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.readMapWithCaseSensitiveKeys(baseKeys);
+  }
+
+  public static Map<String, String> readMapWithCaseSensitiveKeys(TigerConfigurationKey baseKey) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readMapWithCaseSensitiveKeys(baseKey);
   }
 
   public static List<TigerConfigurationSource> listSources() {
@@ -334,7 +399,17 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.putValue(key, value);
   }
 
+  public static void putValue(TigerConfigurationKey key, String value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, value);
+  }
+
   public static void putValue(String key, Object value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, value);
+  }
+
+  public static void putValue(TigerConfigurationKey key, Object value) {
     assertGlobalConfigurationIsInitialized();
     globalConfigurationLoader.putValue(key, value);
   }
@@ -344,7 +419,17 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.putValue(key, Long.toString(value));
   }
 
+  public static void putValue(TigerConfigurationKey key, long value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, Long.toString(value));
+  }
+
   public static void putValue(String key, boolean value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, Boolean.toString(value));
+  }
+
+  public static void putValue(TigerConfigurationKey key, boolean value) {
     assertGlobalConfigurationIsInitialized();
     globalConfigurationLoader.putValue(key, Boolean.toString(value));
   }
@@ -354,7 +439,17 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.putValue(key, Double.toString(value));
   }
 
+  public static void putValue(TigerConfigurationKey key, double value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, Double.toString(value));
+  }
+
   public static void putValue(String key, int value) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, Integer.toString(value));
+  }
+
+  public static void putValue(TigerConfigurationKey key, int value) {
     assertGlobalConfigurationIsInitialized();
     globalConfigurationLoader.putValue(key, Integer.toString(value));
   }
@@ -364,7 +459,19 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.putValue(key, value, precedence);
   }
 
+  public static void putValue(
+      TigerConfigurationKey key, String value, ConfigurationValuePrecedence precedence) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, value, precedence);
+  }
+
   public static void putValue(String key, Object value, ConfigurationValuePrecedence precedence) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.putValue(key, value, precedence);
+  }
+
+  public static void putValue(
+      TigerConfigurationKey key, Object value, ConfigurationValuePrecedence precedence) {
     assertGlobalConfigurationIsInitialized();
     globalConfigurationLoader.putValue(key, value, precedence);
   }
@@ -382,6 +489,11 @@ public class TigerGlobalConfiguration {
   }
 
   public static Optional<Integer> readIntegerOptional(String key) {
+    assertGlobalConfigurationIsInitialized();
+    return readStringOptional(key).map(Integer::parseInt);
+  }
+
+  public static Optional<Integer> readIntegerOptional(TigerConfigurationKey key) {
     assertGlobalConfigurationIsInitialized();
     return readStringOptional(key).map(Integer::parseInt);
   }

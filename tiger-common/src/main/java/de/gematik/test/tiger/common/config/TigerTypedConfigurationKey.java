@@ -20,12 +20,13 @@
  */
 package de.gematik.test.tiger.common.config;
 
+import lombok.Getter;
+import lombok.SneakyThrows;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.function.Function;
-import lombok.Getter;
-import lombok.SneakyThrows;
 
 /**
  * Ease-of-use solution to retrieve configuration values from the TigerGlobalConfiguration. This
@@ -36,112 +37,113 @@ import lombok.SneakyThrows;
  */
 public class TigerTypedConfigurationKey<T> {
 
-  @Getter private final TigerConfigurationKey key;
-  private final Optional<T> defaultValue;
-  private final Function<String, T> typeConstructor;
+    @Getter
+    private final TigerConfigurationKey key;
+    private final Optional<T> defaultValue;
+    private final Function<String, T> typeConstructor;
 
-  public TigerTypedConfigurationKey(String key, Class<T> type) {
-    this(key, type, null);
-  }
-
-  public TigerTypedConfigurationKey(String key, Class<T> type, T defaultValue) {
-    this(new TigerConfigurationKey(key), type, defaultValue);
-  }
-
-  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
-    this(key, type, null);
-  }
-
-  @SneakyThrows
-  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
-    this.key = key;
-    if (type.isArray()) {
-      this.typeConstructor =
-          s -> {
-            String[] split = s.split(",");
-            T[] array = (T[]) Array.newInstance(type.getComponentType(), split.length);
-            for (int i = 0; i < split.length; i++) {
-              try {
-                Array.set(
-                    array,
-                    i,
-                    type.componentType().getConstructor(String.class).newInstance(split[i].trim()));
-              } catch (InstantiationException
-                  | IllegalAccessException
-                  | InvocationTargetException
-                  | NoSuchMethodException e) {
-                throw new TigerConfigurationException(
-                    "Exception while retrieving value for key "
-                        + key.downsampleKey()
-                        + " and type "
-                        + type,
-                    e);
-              }
-            }
-            return (T) array;
-          };
-    } else {
-      this.typeConstructor =
-          (s) -> {
-            try {
-              return type.getConstructor(String.class).newInstance(s);
-            } catch (InstantiationException
-                | IllegalAccessException
-                | InvocationTargetException
-                | NoSuchMethodException e) {
-              throw new TigerConfigurationException(
-                  "Exception while retrieving value for key "
-                      + key.downsampleKey()
-                      + " and type "
-                      + type,
-                  e);
-            }
-          };
+    public TigerTypedConfigurationKey(String key, Class<T> type) {
+        this(key, type, null);
     }
-    this.defaultValue = Optional.ofNullable(defaultValue);
-  }
 
-  @SneakyThrows
-  public Optional<T> getValue() {
-    return TigerGlobalConfiguration.readStringOptional(key.downsampleKey()).map(this::getInstance);
-  }
+    public TigerTypedConfigurationKey(String key, Class<T> type, T defaultValue) {
+        this(new TigerConfigurationKey(key), type, defaultValue);
+    }
 
-  @SneakyThrows
-  public Optional<T> getValueWithoutResolving() {
-    return TigerGlobalConfiguration.readStringWithoutResolving(key.downsampleKey())
-        .map(this::getInstance);
-  }
+    public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
+        this(key, type, null);
+    }
 
-  public T getValueOrDefault() {
-    return getValue().or(() -> defaultValue).orElseThrow();
-  }
+    @SneakyThrows
+    public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
+        this.key = key;
+        if (type.isArray()) {
+            this.typeConstructor =
+                s -> {
+                    String[] split = s.split(",");
+                    T[] array = (T[]) Array.newInstance(type.getComponentType(), split.length);
+                    for (int i = 0; i < split.length; i++) {
+                        try {
+                            Array.set(
+                                array,
+                                i,
+                                type.componentType().getConstructor(String.class).newInstance(split[i].trim()));
+                        } catch (InstantiationException
+                                 | IllegalAccessException
+                                 | InvocationTargetException
+                                 | NoSuchMethodException e) {
+                            throw new TigerConfigurationException(
+                                "Exception while retrieving value for key "
+                                    + key.downsampleKey()
+                                    + " and type "
+                                    + type,
+                                e);
+                        }
+                    }
+                    return (T) array;
+                };
+        } else {
+            this.typeConstructor =
+                (s) -> {
+                    try {
+                        return type.getConstructor(String.class).newInstance(s);
+                    } catch (InstantiationException
+                             | IllegalAccessException
+                             | InvocationTargetException
+                             | NoSuchMethodException e) {
+                        throw new TigerConfigurationException(
+                            "Exception while retrieving value for key "
+                                + key.downsampleKey()
+                                + " and type "
+                                + type,
+                            e);
+                    }
+                };
+        }
+        this.defaultValue = Optional.ofNullable(defaultValue);
+    }
 
-  @SneakyThrows
-  private T getInstance(String s) {
-    return typeConstructor.apply(s);
-  }
+    @SneakyThrows
+    public Optional<T> getValue() {
+        return TigerGlobalConfiguration.readStringOptional(key).map(this::getInstance);
+    }
 
-  public void putValue(T value) {
-    TigerGlobalConfiguration.putValue(key.downsampleKey(), value);
-  }
+    @SneakyThrows
+    public Optional<T> getValueWithoutResolving() {
+        return TigerGlobalConfiguration.readStringWithoutResolving(key)
+            .map(this::getInstance);
+    }
 
-  public void putValue(T value, ConfigurationValuePrecedence precedence) {
-    TigerGlobalConfiguration.putValue(key.downsampleKey(), value, precedence);
-  }
+    public T getValueOrDefault() {
+        return getValue().or(() -> defaultValue).orElseThrow();
+    }
 
-  public void clearValue() {
-    TigerGlobalConfiguration.deleteFromAllSources(this.key);
-  }
+    @SneakyThrows
+    private T getInstance(String s) {
+        return typeConstructor.apply(s);
+    }
 
-  public void deleteFromSourceAndLowerPrecedences(ConfigurationValuePrecedence precedence) {
-    TigerGlobalConfiguration.deleteFromSourceAndLowerPrecedence(this.key, precedence);
-  }
+    public void putValue(T value) {
+        TigerGlobalConfiguration.putValue(key, value);
+    }
 
-  public void setAsSystemProperty(T value) {
-    System.setProperty(key.downsampleKey(), value.toString());
-  }
+    public void putValue(T value, ConfigurationValuePrecedence precedence) {
+        TigerGlobalConfiguration.putValue(key, value, precedence);
+    }
 
-  public void clearSystemProperty() {
-    System.clearProperty(key.downsampleKey());
-  }
+    public void clearValue() {
+        TigerGlobalConfiguration.deleteFromAllSources(this.key);
+    }
+
+    public void deleteFromSourceAndLowerPrecedences(ConfigurationValuePrecedence precedence) {
+        TigerGlobalConfiguration.deleteFromSourceAndLowerPrecedence(this.key, precedence);
+    }
+
+    public void setAsSystemProperty(T value) {
+        System.setProperty(key.downsampleKey(), value.toString());
+    }
+
+    public void clearSystemProperty() {
+        System.clearProperty(key.downsampleKey());
+    }
 }

@@ -124,7 +124,7 @@ public class KeystoreAnalyzer {
 
               // List all aliases
               var aliases = Collections.list(keystore.aliases());
-              System.out.println("���� Found " + aliases.size() + " aliases:");
+              System.out.println("Found " + aliases.size() + " aliases:");
 
               for (String alias : aliases) {
                 System.out.println("  🔑 " + alias);

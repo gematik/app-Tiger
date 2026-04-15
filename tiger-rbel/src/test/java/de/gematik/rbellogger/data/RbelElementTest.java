@@ -28,9 +28,11 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelContent;
 import java.io.IOException;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("unchecked")
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class RbelElementTest {
   private static final RbelElement msg;
 

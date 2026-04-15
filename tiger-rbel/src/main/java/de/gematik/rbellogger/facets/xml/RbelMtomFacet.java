@@ -39,9 +39,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 public class RbelMtomFacet implements RbelFacet {
 
   static {
@@ -138,15 +139,14 @@ public class RbelMtomFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement contentType;
-  private final RbelElement reconstructedMessage;
-  @Nullable private final RbelElement dataParts;
+  RbelElement contentType;
+  RbelElement reconstructedMessage;
+  @Nullable RbelElement dataParts;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("contentType", contentType)
-        .with("reconstructedMessage", reconstructedMessage)
-        .withSkipIfNull("dataParts", dataParts);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("contentType", contentType)
+          .with("reconstructedMessage", reconstructedMessage)
+          .withSkipIfNull("dataParts", dataParts);
 }

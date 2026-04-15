@@ -42,7 +42,13 @@ vi.mock("@/stores/testSuiteLifecycle", () => ({
   }),
 }));
 
-// Mock WebSocket/SockJS
+vi.mock("tiger-topology-visualizer", () => ({
+  TopologyDiagram: { template: "<div />" },
+  useDiagramModel: () => ({
+    loadFromLiveEndpoint: vi.fn(),
+  }),
+}));
+
 // Mock WebSocket/SockJS
 vi.mock("sockjs-client", () => {
   return {

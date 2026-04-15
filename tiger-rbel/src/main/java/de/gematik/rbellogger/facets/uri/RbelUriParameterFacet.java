@@ -24,19 +24,19 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
 @Builder
-@Data
+@Value
 public class RbelUriParameterFacet implements RbelFacet {
 
-  private final RbelElement key;
-  private final RbelElement value;
+  RbelElement key;
+  RbelElement value;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("key", key).with("value", value);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("key", key).with("value", value);
 
   public String getKeyAsString() {
     return key.seekValue(String.class).orElseThrow();

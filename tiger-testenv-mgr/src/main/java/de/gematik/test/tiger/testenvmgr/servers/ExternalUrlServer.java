@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
@@ -63,6 +64,15 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
     addServerToLocalProxyRouteMap(url);
     publishNewStatusUpdate(TigerServerStatusUpdate.builder().baseUrl(extractBaseUrl(url)).build());
     waitForServerUp();
+  }
+
+  @Override
+  public void addServerToLocalProxyRouteMap(URL url) {
+    addRoute(
+            TigerConfigurationRoute.builder()
+                    .from(TigerTestEnvMgr.HTTP + getHostname())
+                    .to(url.toString())
+                    .build());
   }
 
   @Override

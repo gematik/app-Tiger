@@ -26,8 +26,10 @@ import static org.awaitility.Awaitility.await;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag("screenshot")
 class ConfigEditorScreenshotsTest extends AbstractBase {
 
   @Test

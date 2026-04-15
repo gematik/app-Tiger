@@ -29,6 +29,7 @@ import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -114,6 +115,7 @@ class TestSelectorTest extends AbstractBase {
   }
 
   @Test
+  @Tag("screenshot")
   void takeScreenshots() {
     screenshotTestSelectorModal();
     screenshotTagsArea();

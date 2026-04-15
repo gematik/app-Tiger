@@ -28,6 +28,7 @@ import envCompatible from "vite-plugin-env-compatible";
 export default defineConfig(() => {
   return {
     resolve: {
+      dedupe: ["vue", "pinia", "@vue-flow/core"],
       alias: [
         {
           find: /^~/,
@@ -49,6 +50,10 @@ export default defineConfig(() => {
         "/testLog": {
           target: "http://localhost:54727",
           ws: true,
+          rewrite: (path) => path,
+        },
+        "/topology": {
+          target: "http://localhost:54727",
           rewrite: (path) => path,
         },
       },

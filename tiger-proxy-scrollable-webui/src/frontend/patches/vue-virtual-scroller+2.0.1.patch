@@ -1,0 +1,13 @@
+diff --git a/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.js b/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.js
+index be1398a..caba7d3 100644
+--- a/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.js
++++ b/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.js
+@@ -327,7 +327,7 @@ function yt(e, n, i, t, s) {
+   }
+   function Xe(r) {
+     const l = r.nr.type;
+-    G(l).push(r), r.nr.used = !1, r.position = -9999, st(r), N.delete(r.nr.key);
++    G(l).push(r), r.nr.used = !1, r.position = -999999, st(r), N.delete(r.nr.key);
+   }
+   function Oe() {
+     N.clear(), p.clear();

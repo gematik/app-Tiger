@@ -37,8 +37,6 @@ const { isLoading, routes, deleteRoute, addRoute } = useTigerProxyConfig({
 
 const fromInput = ref("");
 const toInput = ref("");
-const fromInputRef = ref<HTMLInputElement | null>(null);
-const toInputRef = ref<HTMLInputElement | null>(null);
 
 function validateRouteInput() {
   if (fromInput.value.length === 0 || toInput.value.length === 0) {
@@ -110,7 +108,6 @@ function onAddRoute() {
             <div class="input-group">
               <span class="input-group-text" id="basic-addon1">from</span>
               <input
-                ref="fromInputRef"
                 type="text"
                 class="form-control"
                 placeholder="scheme://host:port"
@@ -120,7 +117,6 @@ function onAddRoute() {
                 ><FontAwesomeIcon :icon="faArrowRight" class="me-3" />to</span
               >
               <input
-                ref="toInputRef"
                 type="text"
                 class="form-control"
                 placeholder="scheme://host:port"

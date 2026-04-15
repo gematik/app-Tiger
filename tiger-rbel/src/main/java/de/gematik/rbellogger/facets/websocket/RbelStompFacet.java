@@ -37,10 +37,11 @@ import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.*;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 @RequiredArgsConstructor
 public class RbelStompFacet implements RbelFacet {
@@ -103,15 +104,14 @@ public class RbelStompFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement command;
-  private final RbelElement headers;
-  private final RbelElement body;
+  RbelElement command;
+  RbelElement headers;
+  RbelElement body;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with(COMMAND_KEY, command)
-        .with(HEADERS_KEY, headers)
-        .with(BODY_KEY, body);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with(COMMAND_KEY, command)
+          .with(HEADERS_KEY, headers)
+          .with(BODY_KEY, body);
 }

@@ -21,7 +21,6 @@
 package de.gematik.rbellogger.data;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,7 +38,8 @@ public class RbelMultiMap<T> implements Map<String, T> {
             m1.putAll(m2);
             return m1;
           });
-  private final Queue<Entry<String, T>> values = new ConcurrentLinkedQueue<>();
+  private final Queue<Entry<String, T>> values = new ArrayDeque<>();
+  private final Map<String, List<T>> index = new LinkedHashMap<>();
 
   @Override
   public int size() {
@@ -53,7 +53,7 @@ public class RbelMultiMap<T> implements Map<String, T> {
 
   @Override
   public boolean containsKey(Object key) {
-    return values.stream().anyMatch(entry -> entry.getKey().equals(key));
+    return index.containsKey(key);
   }
 
   @Override
@@ -63,28 +63,25 @@ public class RbelMultiMap<T> implements Map<String, T> {
 
   @Override
   public T get(Object key) {
-    return values.stream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Entry::getValue)
-        .findFirst()
-        .orElse(null);
+    List<T> list = index.get(key);
+    return (list == null || list.isEmpty()) ? null : list.get(0);
   }
 
-  public List<T> getAll(Object key) {
-    return values.stream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Entry::getValue)
-        .toList();
+  public List<T> getAll(String key) {
+    List<T> list = index.get(key);
+    return list == null ? List.of() : Collections.unmodifiableList(list);
   }
 
   @Override
   public T put(String key, T value) {
     values.add(Pair.of(key, value));
+    index.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
     return null;
   }
 
   public T put(Entry<String, T> value) {
     values.add(value);
+    index.computeIfAbsent(value.getKey(), k -> new ArrayList<>()).add(value.getValue());
     return null;
   }
 
@@ -106,6 +103,7 @@ public class RbelMultiMap<T> implements Map<String, T> {
         removed.add(entry.getValue());
       }
     }
+    index.remove(key);
     return removed;
   }
 
@@ -113,13 +111,14 @@ public class RbelMultiMap<T> implements Map<String, T> {
   @SuppressWarnings("java:S4968")
   public void putAll(Map<? extends String, ? extends T> m) {
     for (Entry<? extends String, ? extends T> entry : m.entrySet()) {
-      values.add(Pair.of(entry.getKey(), entry.getValue()));
+      put(entry.getKey(), entry.getValue());
     }
   }
 
   @Override
   public void clear() {
     values.clear();
+    index.clear();
   }
 
   @Override

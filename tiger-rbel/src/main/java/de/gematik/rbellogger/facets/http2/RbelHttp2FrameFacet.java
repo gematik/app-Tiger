@@ -108,15 +108,14 @@ public class RbelHttp2FrameFacet implements RbelFacet {
   private final RbelElement payloadLength;
   private final RbelElement payload;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("frameType", frameType)
-        .withSkipIfNull("flags", flags)
-        .with("streamId", streamId)
-        .withSkipIfNull("payloadLength", payloadLength)
-        .withSkipIfNull("payload", payload);
-  }
+  @Getter(lazy = true)
+  private final RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("frameType", frameType)
+          .withSkipIfNull("flags", flags)
+          .with("streamId", streamId)
+          .withSkipIfNull("payloadLength", payloadLength)
+          .withSkipIfNull("payload", payload);
 
   @Override
   public Optional<String> printShortDescription(RbelElement element) {

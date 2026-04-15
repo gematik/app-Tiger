@@ -23,16 +23,16 @@ package de.gematik.rbellogger.facets.xml;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 public class RbelMtomDataPartFacet implements RbelFacet {
 
-  private final RbelElement content;
-  private final RbelElement xpath;
+  RbelElement content;
+  RbelElement xpath;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("xpath", xpath).with("content", content);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("xpath", xpath).with("content", content);
 }

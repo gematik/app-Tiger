@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.2.5</version>
+    <version>4.2.6</version>
     <relativePath>./tiger-bom/pom.xml</relativePath>
   </parent>
   <artifactId>tiger</artifactId>
@@ -78,6 +78,7 @@
     <module>tiger-maven-plugin</module>
     <module>tiger-uitests</module>
     <module>tiger-spotless-cli</module>
+    <module>tiger-topology-visualizer</module>
   </modules>
 
   <scm>
@@ -97,10 +98,9 @@
     <maven.compiler.target>17</maven.compiler.target>
     <mycila.license-maven-plugin.version>5.0.0</mycila.license-maven-plugin.version>
     <skipSurefire>false</skipSurefire>
-    <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.language>java</sonar.language>
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <excludedTestGroups/>
+    <includedTestGroups/>
     <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
   </properties>
 
@@ -258,6 +258,10 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
@@ -273,6 +277,7 @@
             </property>
           </properties>
           <excludedGroups>${excludedTestGroups}</excludedGroups>
+          <groups>${includedTestGroups}</groups>
           <excludes>
             <exclude>**/integrationtest/Test*.java</exclude>
           </excludes>
@@ -581,6 +586,14 @@
       <properties>
         <!--suppress UnresolvedMavenProperty -->
         <cucumber.filter.tags>@UnitTest or @UiTests</cucumber.filter.tags>
+      </properties>
+    </profile>
+    <profile>
+      <id>Smoke</id>
+      <properties>
+        <cucumber.filter.tags>@Smoke</cucumber.filter.tags>
+        <excludedTestGroups/>
+        <includedTestGroups>de.gematik.test.tiger.common.SmokeTest</includedTestGroups>
       </properties>
     </profile>
     <profile>

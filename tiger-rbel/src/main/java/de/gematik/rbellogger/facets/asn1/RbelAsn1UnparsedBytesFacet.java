@@ -23,15 +23,14 @@ package de.gematik.rbellogger.facets.asn1;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 public class RbelAsn1UnparsedBytesFacet implements RbelFacet {
+  RbelElement unparsedBytes;
 
-  private final RbelElement unparsedBytes;
-
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
 }

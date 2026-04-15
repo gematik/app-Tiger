@@ -28,6 +28,7 @@ import java.io.File;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestSource;
@@ -41,6 +42,7 @@ import org.junit.platform.launcher.TestIdentifier;
 data from DTOs to internal data classes.
 The mapping is partially automagically. The tests here ensure that the mapping works as expected.
  */
+@Tag("de.gematik.test.tiger.common.SmokeTest")
 class TestDescriptionMapperTest {
   private static final TestDescriptionMapper testDescriptionMapper =
       new TestDescriptionMapperImpl();

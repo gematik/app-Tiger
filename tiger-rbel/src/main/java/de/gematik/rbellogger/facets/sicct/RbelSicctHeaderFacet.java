@@ -33,10 +33,11 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-@Data
+@Value
 @Builder
 @Slf4j
 public class RbelSicctHeaderFacet implements RbelFacet {
@@ -86,18 +87,17 @@ public class RbelSicctHeaderFacet implements RbelFacet {
         });
   }
 
-  private RbelElement cla;
-  private RbelElement ins;
-  private RbelElement p1;
-  private RbelElement p2;
-  private RbelSicctCommand command;
+  RbelElement cla;
+  RbelElement ins;
+  RbelElement p1;
+  RbelElement p2;
+  RbelSicctCommand command;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("cla", cla)
-        .with("ins", ins)
-        .with("p1", p1)
-        .with("p2", p2);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("cla", cla)
+          .with("ins", ins)
+          .with("p1", p1)
+          .with("p2", p2);
 }

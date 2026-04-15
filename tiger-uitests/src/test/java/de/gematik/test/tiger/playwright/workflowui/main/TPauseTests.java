@@ -25,11 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Test class for test the pause button. */
 class TPauseTests extends AbstractBase {
   @Test
+  @Tag("screenshot")
   void testPauseButton() {
     openSidebar();
     page.querySelector("#test-sidebar-pause-icon").click();

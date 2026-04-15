@@ -23,6 +23,11 @@ package de.gematik.test.tiger.proxy.controller;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZonedDateTime;
@@ -43,6 +48,14 @@ public class TrafficPushController {
 
   private final TigerProxy tigerProxy;
 
+  @Operation(summary = "Push raw traffic data to be parsed by the proxy")
+  @RequestBody(
+      description = "Raw binary traffic data",
+      content =
+          @Content(
+              mediaType = "application/octet-stream",
+              schema = @Schema(type = "string", format = "binary")))
+  @ApiResponse(responseCode = "200", description = "Traffic accepted", content = @Content)
   @PostMapping(value = "/traffic")
   public void postNewMessage(
       InputStream dataStream,

@@ -26,6 +26,7 @@ import Lara from "@primeuix/themes/lara";
 import App from "./App.vue";
 import { createPinia } from "pinia";
 import "primeicons/primeicons.css";
+import "tiger-topology-visualizer/style.css";
 
 const pinia = createPinia();
 const app = createApp(App);

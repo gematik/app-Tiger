@@ -32,11 +32,12 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import lombok.Data;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
+@Value
 @RequiredArgsConstructor
-@Data
 public class RbelBasicAuthorizationFacet implements RbelFacet {
 
   static {
@@ -59,11 +60,10 @@ public class RbelBasicAuthorizationFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement username;
-  private final RbelElement password;
+  RbelElement username;
+  RbelElement password;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("username", username).with("password", password);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("username", username).with("password", password);
 }

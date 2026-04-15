@@ -29,11 +29,12 @@ import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-@Data
+@Value
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @Slf4j
@@ -43,14 +44,13 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
     RbelHtmlRenderer.registerFacetRenderer(new RbelMessageRenderer());
   }
 
-  private final String receivedFromRemoteWithUrl;
-  private final RbelElement sender;
-  private final RbelElement receiver;
+  String receivedFromRemoteWithUrl;
+  RbelElement sender;
+  RbelElement receiver;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("sender", sender).with("receiver", receiver);
-  }
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>().with("sender", sender).with("receiver", receiver);
 
   public Optional<RbelSocketAddress> getSenderHostname() {
     return hostname(sender).map(RbelHostnameFacet::toRbelSocketAddress);

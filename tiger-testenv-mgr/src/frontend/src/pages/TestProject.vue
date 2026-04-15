@@ -248,6 +248,20 @@
                   v-if="featureFlags.trafficVisualization"
                   >Traffic Visualization
                 </Tab>
+                <Tab
+                  unstyled
+                  value="topology-tab"
+                  as="a"
+                  id="test-topology-tab"
+                  :class="[
+                    'btn',
+                    'execution-pane-buttons',
+                    { active: selectedTab === 'topology-tab' },
+                  ]"
+                  role="button"
+                  tabindex="0"
+                  >Topology
+                </Tab>
               </TabList>
               <div class="navbar-nav justify-content-end px-5">
                 <img
@@ -285,6 +299,9 @@
                 v-if="featureFlags.trafficVisualization"
                 :feature-update-map="featuresStore.featureUpdateMap"
               />
+            </TabPanel>
+            <TabPanel value="topology-tab" class="topology-tab-panel">
+              <TopologyDiagram></TopologyDiagram>
             </TabPanel>
           </TabPanels>
         </Tabs>
@@ -325,7 +342,7 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-import { computed, onMounted, provide, ref, type Ref } from "vue";
+import { computed, onMounted, provide, ref, type Ref, watch } from "vue";
 import SockJS from "sockjs-client";
 import Stomp, { Client, Frame, type Message } from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
@@ -362,7 +379,9 @@ import TabList from "primevue/tablist";
 import Tab from "primevue/tab";
 import TabPanels from "primevue/tabpanels";
 import TabPanel from "primevue/tabpanel";
+import { TopologyDiagram, useDiagramModel } from "tiger-topology-visualizer";
 
+const topologyStore = useDiagramModel();
 const { loadSubsetOfProperties } = useConfigurationLoader();
 const featureFlags = ref(new FeatureFlags());
 const baseURL = import.meta.env.BASE_URL;
@@ -371,6 +390,13 @@ let stompClient: Client;
 
 const selectedTab = ref("execution-pane-tab");
 const started = ref(new Date());
+
+// Load topology diagram from the live backend when the tab is selected
+watch(selectedTab, (tab) => {
+  if (tab === "topology-tab") {
+    topologyStore.loadFromLiveEndpoint(baseURL + "topology");
+  }
+});
 
 let fetchedInitialStatus = false;
 
@@ -1017,5 +1043,13 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 .no-border.ag-cell:focus {
   border: none !important;
   outline: none;
+}
+
+#main-content {
+  overflow-y: auto;
+}
+
+.topology-tab-panel {
+  height: calc(100vh - 80px);
 }
 </style>

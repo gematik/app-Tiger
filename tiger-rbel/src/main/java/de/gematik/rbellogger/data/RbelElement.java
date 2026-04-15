@@ -286,9 +286,9 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public Optional<RbelElement> getFirst(String key) {
-    return getChildNodesWithKeyStream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Map.Entry::getValue)
+    return facets.stream()
+        .map(facet -> facet.getChildElements().get(key))
+        .filter(Objects::nonNull)
         .findFirst();
   }
 
@@ -301,10 +301,7 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelElement> getAll(String key) {
-    return getChildNodesWithKeyStream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Map.Entry::getValue)
-        .toList();
+    return facets.stream().flatMap(facet -> facet.getChildElements().getAll(key).stream()).toList();
   }
 
   @Override

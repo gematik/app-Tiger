@@ -25,6 +25,8 @@ tiger-uitests/mvn-playwright-log.txt
 *.xml.versionsBackup
 **/*.xml.versionsBackup
 application.yaml
+releasenotes/scripts/target/
+.github
 
 /.idea/
 /.vscode/

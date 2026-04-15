@@ -21,6 +21,7 @@
 package de.gematik.test.tiger;
 
 import java.lang.instrument.Instrumentation;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
@@ -29,12 +30,16 @@ import net.bytebuddy.matcher.ElementMatchers;
 public class TigerAgent {
 
   public static TigerMasterSecretListeners listener = s -> {};
+  private static final AtomicBoolean agentInstalled = new AtomicBoolean(false);
 
   public static void main(String[] args) {
     System.err.println("This is a Java Agent and should be attached to a running JVM process.");
   }
 
   public static void premain(String args, Instrumentation inst) {
+    if (!agentInstalled.compareAndSet(false, true)) {
+      return;
+    }
     System.out.println("Tiger Agent loaded! TLS master secrets can now be stored to file 🐯");
 
     new AgentBuilder.Default()

@@ -38,10 +38,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
 @Builder
-@Data
+@Value
 public class RbelUriFacet implements RbelFacet {
 
   static {
@@ -107,21 +108,25 @@ public class RbelUriFacet implements RbelFacet {
         });
   }
 
-  private final RbelElement basicPath;
-  private final RbelElement scheme;
-  private final RbelElement path;
-  private final RbelElement authority;
-  private final RbelElement userInfo;
-  private final RbelElement query;
-  private final RbelElement host;
-  private final RbelElement port;
-  private final List<RbelElement> queryParameters;
+  RbelElement basicPath;
+  RbelElement scheme;
+  RbelElement path;
+  RbelElement authority;
+  RbelElement userInfo;
+  RbelElement query;
+  RbelElement host;
+  RbelElement port;
+  List<RbelElement> queryParameters;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements = buildChildElements();
+
+  private RbelMultiMap<RbelElement> buildChildElements() {
     RbelMultiMap<RbelElement> result = new RbelMultiMap<>();
-    queryParameters.forEach(
-        el -> result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
+    Optional.ofNullable(queryParameters).stream()
+        .flatMap(List::stream)
+        .forEach(
+            el -> result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
     result.put("basicPath", basicPath);
     result.putIfNotNull("scheme", scheme);
     result.putIfNotNull("path", path);

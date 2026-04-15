@@ -38,26 +38,19 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.GetMessagesFilterScrollableDto;
-import de.gematik.test.tiger.proxy.data.GetMessagesWithHtmlScrollableDto;
-import de.gematik.test.tiger.proxy.data.GetMessagesWithMetaScrollableDto;
-import de.gematik.test.tiger.proxy.data.HtmlMessageScrollableDto;
-import de.gematik.test.tiger.proxy.data.JexlQueryResponseScrollableDto;
-import de.gematik.test.tiger.proxy.data.MetaMessageScrollableDto;
-import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
-import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
-import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
+import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,13 +71,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @Data
@@ -122,12 +109,21 @@ public class TigerWebUiController implements ApplicationContextAware {
     this.applicationContext = appContext;
   }
 
+  @Operation(summary = "Serve the Web UI index page")
+  @ApiResponse(
+      responseCode = "200",
+      content = @Content(mediaType = "text/html", schema = @Schema(type = "string")))
   @GetMapping(value = {"", "/"})
   public ResponseEntity<Resource> getIndex() {
     final var resource = new ClassPathResource("/static/webui/index.html");
     return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/html")).body(resource);
   }
 
+  @Operation(summary = "Serve a static Web UI asset (JS, CSS, images, fonts, etc.)")
+  @ApiResponse(
+      responseCode = "200",
+      content = @Content(schema = @Schema(type = "string", format = "binary")))
+  @ApiResponse(responseCode = "404", content = @Content)
   @GetMapping(value = "/assets/{asset}")
   public ResponseEntity<Resource> getAsset(@PathVariable("asset") String assetFile) {
     final var resource = new ClassPathResource("/static/webui/assets/" + assetFile);
@@ -300,6 +296,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
 
+    val renderingToolkit = new RbelHtmlRenderingToolkit(renderer);
     result.setMessages(
         messageStream
             .skip(fromOffset)
@@ -307,8 +304,7 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(
                 msg ->
                     HtmlMessageScrollableDto.builder()
-                        .content(
-                            new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+                        .content(renderingToolkit.convertMessage(msg).render())
                         .uuid(msg.getUuid())
                         .sequenceNumber(getElementSequenceNumber(msg))
                         .build())
@@ -442,6 +438,14 @@ public class TigerWebUiController implements ApplicationContextAware {
         .orElse(null);
   }
 
+  @Operation(summary = "Download recorded traffic as a .tgr file")
+  @ApiResponse(
+      responseCode = "200",
+      description = "Raw binary .tgr traffic log",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+              schema = @Schema(type = "string", format = "binary")))
   @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<InputStreamResource> downloadTraffic(
       @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
@@ -503,6 +507,14 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   private record MatchingMessages(List<RbelElement> matching, int uncheckedMessageCount) {}
 
+  @Operation(summary = "Download the raw byte content of a message by UUID")
+  @ApiResponse(
+      responseCode = "200",
+      description = "Raw binary content of the message",
+      content =
+          @Content(
+              mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+              schema = @Schema(type = "string", format = "binary")))
   @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public RbelContent downloadMessageContent(@PathVariable(name = "uuid") final String uuid) {
     log.trace("Downloading content of message with UUID: {}", uuid);
@@ -583,6 +595,10 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   // Serve index.html for single message view routes to enable frontend routing
+  @Operation(summary = "Forwards single-message view routes to the Web UI index page (SPA routing)")
+  @ApiResponse(
+      responseCode = "200",
+      content = @Content(mediaType = "text/html", schema = @Schema(type = "string")))
   @GetMapping(value = "/message/{uuid}")
   public ResponseEntity<Resource> forwardMessageRoute(@PathVariable("uuid") String uuid) {
     return getIndex();
@@ -592,8 +608,8 @@ public class TigerWebUiController implements ApplicationContextAware {
   public TigerVersionResponse getVersion() {
     String version = versionService.tigerVersionAsString();
     String buildDate = versionService.tigerBuildDateAsString();
-    return new TigerVersionResponse(version, buildDate);
+    return new TigerVersionResponse(version, buildDate, tigerProxy.getName().orElse(""));
   }
 
-  public record TigerVersionResponse(String version, String buildDate) {}
+  public record TigerVersionResponse(String version, String buildDate, String proxyName) {}
 }

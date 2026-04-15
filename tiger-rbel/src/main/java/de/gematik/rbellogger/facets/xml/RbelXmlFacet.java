@@ -32,12 +32,9 @@ import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.JsonNoteEntry;
 import j2html.tags.ContainerTag;
 import j2html.tags.Text;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
 
@@ -63,24 +60,8 @@ public class RbelXmlFacet implements RbelFacet {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            String formattedXml = RbelHtmlRenderingToolkit.prettyPrintXml(element);
-            for (final Entry<UUID, JsonNoteEntry> entry :
-                renderingToolkit.getNoteTags().entrySet()) {
-              if (formattedXml.contains(entry.getValue().getStringToMatch() + ",")) {
-                formattedXml =
-                    formattedXml.replace(
-                        entry.getValue().getStringToMatch() + ",",
-                        entry.getValue().getTagForKeyReplacement().render()
-                            + ","
-                            + entry.getValue().getTagForValueReplacement().render());
-              } else if (formattedXml.contains(entry.getValue().getStringToMatch())) {
-                formattedXml =
-                    formattedXml.replace(
-                        entry.getValue().getStringToMatch(),
-                        entry.getValue().getTagForKeyReplacement().render()
-                            + entry.getValue().getTagForValueReplacement().render());
-              }
-            }
+            String xml = RbelHtmlRenderingToolkit.prettyPrintXml(element);
+            String formattedXml = renderingToolkit.replaceNoteTags(xml);
             return ancestorTitle()
                 .with(
                     vertParentTitle()
