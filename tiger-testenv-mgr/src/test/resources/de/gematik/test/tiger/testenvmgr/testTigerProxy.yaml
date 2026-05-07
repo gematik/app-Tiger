@@ -2,5 +2,5 @@ servers:
   testTigerProxy:
     type: tigerProxy
     tigerProxyConfiguration:
-      adminPort: 9999
-      proxyPort: 10020
+      adminPort: ${free.port.0}
+      proxyPort: ${free.port.1}
