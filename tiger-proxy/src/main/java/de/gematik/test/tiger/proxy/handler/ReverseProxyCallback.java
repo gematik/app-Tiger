@@ -41,6 +41,7 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
   @Override
   public HttpRequest handleRequest(HttpRequest httpRequest) {
+    getTigerProxy().applyJwtManipulationIfConfigured(httpRequest);
     applyModifications(httpRequest);
     final HttpRequest request =
         cloneRequest(httpRequest)

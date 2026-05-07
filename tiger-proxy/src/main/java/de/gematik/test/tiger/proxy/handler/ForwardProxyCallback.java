@@ -42,6 +42,7 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   @Override
   @SuppressWarnings("java:S1075")
   public HttpRequest handleRequest(HttpRequest req) {
+    getTigerProxy().applyJwtManipulationIfConfigured(req);
     applyModifications(req);
     if (!getTigerRoute().isPreserveHostHeader()) {
       req.replaceHeader(header("Host", getTargetUrl().getHost() + ":" + getPort()));
