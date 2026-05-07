@@ -33,17 +33,20 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
+import de.gematik.test.tiger.proxy.data.JwtManipulationConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
+import de.gematik.test.tiger.proxy.handler.JwtManipulationCallback;
 import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
@@ -65,6 +68,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -82,6 +86,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
   private final Map<String, TigerProxyRoute> tigerRouteMap = new HashMap<>();
   private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+  private final Object jwtManipulationStateMonitor = new Object();
+  @Nullable private JwtManipulationConfiguration jwtManipulationConfiguration;
+  private int jwtManipulationExecutionCount = 0;
 
   /**
    * Tiger Proxy health endpoint performs http get requests towards the local server port of the
@@ -338,6 +345,72 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Override
   public List<RbelModificationDescription> getModifications() {
     return getRbelLogger().getRbelModifier().getModifications();
+  }
+
+  /**
+   * Stores the active JWT manipulation on this proxy instance and resets the execution counter
+   * used for {@code deleteAfterNExecutions}.
+   */
+  public void configureJwtManipulation(JwtManipulationConfiguration configuration) {
+    synchronized (jwtManipulationStateMonitor) {
+      jwtManipulationConfiguration = configuration;
+      jwtManipulationExecutionCount = 0;
+    }
+  }
+
+  /** Clears the active JWT manipulation and its execution counter. */
+  public void clearJwtManipulation() {
+    synchronized (jwtManipulationStateMonitor) {
+      jwtManipulationConfiguration = null;
+      jwtManipulationExecutionCount = 0;
+    }
+  }
+
+  /** Clears both JWT manipulation state and classic RBEL modifications. */
+  public void clearAllManipulations() {
+    clearJwtManipulation();
+    getRbelLogger().getRbelModifier().deleteAllModifications();
+  }
+
+  /** Returns the currently configured proxy-scoped JWT manipulation, if any. */
+  public Optional<JwtManipulationConfiguration> getJwtManipulationConfiguration() {
+    synchronized (jwtManipulationStateMonitor) {
+      return Optional.ofNullable(jwtManipulationConfiguration);
+    }
+  }
+
+  /** Returns whether a JWT manipulation is currently active on this proxy instance. */
+  public boolean hasActiveJwtManipulation() {
+    synchronized (jwtManipulationStateMonitor) {
+      return jwtManipulationConfiguration != null;
+    }
+  }
+
+  /**
+   * Records one execution of the active JWT manipulation and clears it when the configured limit
+   * is reached.
+   *
+   * @return {@code true} when the manipulation was cleared after reaching its execution limit
+   */
+  public boolean recordJwtManipulationExecutionAndClearIfNeeded() {
+    synchronized (jwtManipulationStateMonitor) {
+      if (jwtManipulationConfiguration == null
+          || jwtManipulationConfiguration.getDeleteAfterNExecutions() == null) {
+        return false;
+      }
+      jwtManipulationExecutionCount++;
+      if (jwtManipulationExecutionCount >= jwtManipulationConfiguration.getDeleteAfterNExecutions()) {
+        jwtManipulationConfiguration = null;
+        jwtManipulationExecutionCount = 0;
+        return true;
+      }
+      return false;
+    }
+  }
+
+  /** Applies the currently configured JWT manipulation to the given request, if one is active. */
+  public void applyJwtManipulationIfConfigured(HttpRequest request) {
+    JwtManipulationCallback.applyJwtManipulationIfConfigured(this, request);
   }
 
   @Override
