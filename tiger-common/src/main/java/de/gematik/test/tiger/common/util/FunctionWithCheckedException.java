@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.common.util;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 @FunctionalInterface
 public interface FunctionWithCheckedException<T, R> {
@@ -52,8 +53,7 @@ public interface FunctionWithCheckedException<T, R> {
     };
   }
 
-  static <T> java.util.function.Predicate<T> falseOnException(
-      FunctionWithCheckedException<T, Boolean> f) {
+  static <T> Predicate<T> falseOnException(FunctionWithCheckedException<T, Boolean> f) {
     return t -> {
       try {
         return f.apply(t);

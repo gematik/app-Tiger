@@ -42,9 +42,6 @@ import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
 import de.gematik.test.tiger.testenvmgr.env.*;
-import io.cucumber.core.plugin.FeatureFileLoader;
-import io.cucumber.core.plugin.IScenarioContext;
-import io.cucumber.core.plugin.SerenityUtils;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.messages.types.*;
@@ -90,6 +87,9 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.serenitybdd.core.Serenity;
 import net.serenitybdd.core.listeners.AbstractStepListener;
+import net.serenitybdd.cucumber.core.plugin.FeatureFileLoader;
+import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
+import net.serenitybdd.cucumber.core.plugin.SerenityUtils;
 import net.thucydides.model.domain.TestOutcome;
 import net.thucydides.model.screenshots.ScreenshotAndHtmlSource;
 import net.thucydides.model.steps.ExecutedStepDescription;
@@ -225,7 +225,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   }
 
   private Optional<Feature> featureFrom(URI currentFeaturePath) {
-    return Optional.ofNullable(featureLoader.getFeature(currentFeaturePath));
+    return featureLoader.featureFrom(currentFeaturePath);
   }
 
   private void informWorkflowUiAboutCurrentScenario(

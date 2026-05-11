@@ -129,7 +129,7 @@ public class TlsFacet implements RbelFacet {
         List<byte[]> clientCertificateChainValue) {
       addTlsFacet(msg, converter, tlsVersion, cipherSuite, clientCertificateChainValue);
       msg.getFacet(TracingMessagePairFacet.class)
-          .filter(pair -> pair.getResponse() == msg)
+          .filter(pair -> pair.getResponses().contains(msg))
           .map(TracingMessagePairFacet::getRequest)
           .ifPresent(
               req ->

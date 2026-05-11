@@ -21,12 +21,12 @@
 
 package io.cucumber.core.plugin.report.merging;
 
-import io.cucumber.core.plugin.SerenityReporter;
 import io.cucumber.core.plugin.report.merging.outcome.OutcomesProvider;
 import io.cucumber.core.plugin.report.merging.outcome.PreviousOutcomes;
 import io.cucumber.core.plugin.report.merging.outcome.TestOutcomeMerger;
 import java.util.List;
 import java.util.Objects;
+import net.serenitybdd.cucumber.core.plugin.SerenityReporter;
 import net.thucydides.model.domain.TestOutcome;
 
 public class MergingSerenityReporter extends SerenityReporter {

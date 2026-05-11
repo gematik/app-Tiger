@@ -109,9 +109,28 @@ public class RbelMessageRetriever {
   // contains either currentRequest or currentResponse
   private RbelElement lastFoundMessage;
 
-  @Setter(AccessLevel.PROTECTED)
-  @Getter
-  protected RbelElement currentResponse;
+  @Getter protected RbelElement currentResponse;
+
+  /**
+   * All responses paired with the current request. For the common single-response case this list
+   * contains exactly one element (same as {@link #currentResponse}). For multi-response protocols
+   * like LDAP SEARCH it may contain multiple entries.
+   */
+  @Getter protected List<RbelElement> currentResponses = new ArrayList<>();
+
+  /**
+   * Sets the current response and keeps {@link #currentResponses} in sync. If the response is
+   * non-null and {@code currentResponses} does not already contain it, the list is reset to contain
+   * only this response. If the response is null, the list is cleared.
+   */
+  protected void setCurrentResponse(RbelElement response) {
+    this.currentResponse = response;
+    if (response == null) {
+      currentResponses = new ArrayList<>();
+    } else if (!currentResponses.contains(response)) {
+      currentResponses = new ArrayList<>(List.of(response));
+    }
+  }
 
   private RbelMessageRetriever() {
     this(
@@ -182,6 +201,7 @@ public class RbelMessageRetriever {
   public void clearCurrentMessages() {
     setCurrentRequest(null);
     setCurrentResponse(null);
+    currentResponses = new ArrayList<>();
     lastFoundMessage = null;
   }
 
@@ -228,11 +248,19 @@ public class RbelMessageRetriever {
   }
 
   private boolean findAndStoreCorrespondingResponse(RbelElement message) {
-    return findAndStoreCorrespondingOtherMessage(
-        message,
-        RbelResponseFacet.class,
-        TracingMessagePairFacet::getResponse,
-        this::setCurrentResponse);
+    return message
+        .getFacet(TracingMessagePairFacet.class)
+        .map(
+            pair -> {
+              var responses = pair.getResponses();
+              if (!responses.isEmpty() && pair.isResponseComplete()) {
+                setCurrentResponse(responses.get(0));
+                currentResponses = new ArrayList<>(responses);
+                return true;
+              }
+              return false;
+            })
+        .orElse(false);
   }
 
   private boolean findAndStoreCorrespondingRequest(RbelElement message) {
@@ -464,13 +492,7 @@ public class RbelMessageRetriever {
       RbelElement req,
       Integer port,
       Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
-    if (arePortsEqual(req, port)) {
-      return true;
-    } else {
-      addMismatchNote(
-          mismatchNotes, req, FILTER_MISMATCH, String.format("Port '%s' didn't match!", port));
-      return false;
-    }
+    return checkFilterMatch(req, arePortsEqual(req, port), "Port '" + port + "'", mismatchNotes);
   }
 
   public boolean arePortsEqual(RbelElement req, Integer port) {
@@ -538,32 +560,33 @@ public class RbelMessageRetriever {
       RbelElement req,
       String hostFilter,
       Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
-    if (hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter)) {
-      return true;
-    } else {
-      addMismatchNote(
-          mismatchNotes,
-          req,
-          FILTER_MISMATCH,
-          String.format("Host '%s' didn't match!", hostFilter));
-      return false;
-    }
+    return StringUtils.isEmpty(hostFilter)
+        || checkFilterMatch(
+            req, doesHostMatch(req, hostFilter), "Host '" + hostFilter + "'", mismatchNotes);
   }
 
   private boolean methodFilterMatches(
       RbelElement req,
       String methodFilter,
       Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
-    if (methodFilter == null || methodFilter.isEmpty() || doesMethodMatch(req, methodFilter)) {
+    return StringUtils.isEmpty(methodFilter)
+        || checkFilterMatch(
+            req,
+            doesMethodMatch(req, methodFilter),
+            "Method '" + methodFilter + "'",
+            mismatchNotes);
+  }
+
+  private static boolean checkFilterMatch(
+      RbelElement req,
+      boolean matches,
+      String filterLabel,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    if (matches) {
       return true;
-    } else {
-      addMismatchNote(
-          mismatchNotes,
-          req,
-          FILTER_MISMATCH,
-          String.format("Method '%s' didn't match!", methodFilter));
-      return false;
     }
+    addMismatchNote(mismatchNotes, req, FILTER_MISMATCH, filterLabel + " didn't match!");
+    return false;
   }
 
   private static void addMismatchNote(
@@ -659,7 +682,7 @@ public class RbelMessageRetriever {
   public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
     val host =
         req.getFacet(RbelTcpIpMessageFacet.class)
-            .flatMap(e -> RbelHostnameFacet.tryToExtractServerName(e.getReceiver()))
+            .flatMap(e -> RbelSocketAddressFacet.tryToExtractServerName(e.getReceiver()))
             .orElse("");
 
     return areHostsEqual(host, hostFilter) || doesItMatch(host, hostFilter);
@@ -699,49 +722,52 @@ public class RbelMessageRetriever {
   }
 
   public RbelElement findElementInCurrentResponse(final String rbelPath) {
-    try {
-      assertCurrentResponseFound();
-      return findElementInMessage(rbelPath, currentResponse);
-    } catch (final Exception e) {
-      val note =
-          new RbelMismatchNoteFacet(
-              UNKNOWN,
-              "Unable to find element in last response for rbel path '" + rbelPath + "'",
-              currentResponse);
-      throw new ValidatorAssertionError(
-          "Unable to find element in last response for rbel path '"
-              + rbelPath
-              + printMessageTree(currentResponse),
-          mismatchNotes(currentResponse, note));
-    }
+    assertMessagePresent(currentResponse, "response");
+    return findElementAcrossMessages(rbelPath, currentResponses, "response");
   }
 
   private static @NotNull String printMessageTree(RbelElement msg) {
     return "' in message\n " + msg.printTreeStructure();
   }
 
-  private void assertCurrentResponseFound() {
-    if (currentResponse == null) {
-      throw new AssertionError("No current response message found!");
+  private static void assertMessagePresent(RbelElement message, String messageType) {
+    if (message == null) {
+      throw new AssertionError("No current " + messageType + " message found!");
     }
   }
 
   public RbelElement findElementInCurrentRequest(final String rbelPath) {
-    try {
-      assertCurrentRequestFound();
-      return findElementInMessage(rbelPath, currentRequest);
-    } catch (final Exception e) {
-      val note =
-          new RbelMismatchNoteFacet(
-              UNKNOWN,
-              "Unable to find element in last request for rbel path '" + rbelPath + "'",
-              currentRequest);
-      throw new ValidatorAssertionError(
-          "Unable to find element in last request for rbel path '"
-              + rbelPath
-              + printMessageTree(currentRequest),
-          mismatchNotes(currentResponse, note));
+    assertMessagePresent(currentRequest, "request");
+    return findElementAcrossMessages(rbelPath, List.of(currentRequest), "request");
+  }
+
+  /**
+   * Tries to find an element at the given rbelPath in each of the provided messages, returning the
+   * first successful match. If none match, throws a {@link ValidatorAssertionError} with collected
+   * mismatch notes from all attempted messages.
+   */
+  private static RbelElement findElementAcrossMessages(
+      String rbelPath, List<RbelElement> messages, String messageType) {
+    Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> allMismatchNotes = new LinkedHashMap<>();
+    for (RbelElement message : messages) {
+      try {
+        return findElementInMessage(rbelPath, message);
+      } catch (final ValidatorAssertionError e) {
+        if (messages.size() == 1) {
+          throw e;
+        }
+        allMismatchNotes.putAll(e.getMismatchNotes());
+      } catch (final Exception | AssertionError e) {
+        addMismatchNoteForMessage(
+            allMismatchNotes,
+            message,
+            new RbelMismatchNoteFacet(
+                UNKNOWN,
+                elementNotFoundMsg(1, messageType, rbelPath) + ": " + e.getMessage(),
+                message));
+      }
     }
+    throw elementNotFoundError(messages.size(), messageType, rbelPath, allMismatchNotes);
   }
 
   private static RbelElement findElementInMessage(String rbelPath, RbelElement message) {
@@ -773,48 +799,66 @@ public class RbelMessageRetriever {
     return Map.of(message, new TreeSet<>(List.of(note)));
   }
 
+  private static void addMismatchNoteForMessage(
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> target,
+      RbelElement message,
+      RbelMismatchNoteFacet note) {
+    target.put(message, new TreeSet<>(List.of(note)));
+  }
+
+  private static ValidatorAssertionError elementNotFoundError(
+      int count,
+      String messageType,
+      String rbelPath,
+      Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> mismatchNotes) {
+    return new ValidatorAssertionError(
+        elementNotFoundMsg(count, messageType, rbelPath), mismatchNotes);
+  }
+
   public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
     final List<RbelElement> elems = findElementsInCurrentResponseOrEmpty(rbelPath);
-    if (elems.isEmpty()) {
-      val errorMsg = "Unable to find element in response for rbel path '" + rbelPath + "'";
-      val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentResponse);
-      throw new ValidatorAssertionError(
-          "Unable to find element in response for rbel path '"
-              + rbelPath
-              + printMessageTree(currentResponse),
-          mismatchNotes(currentResponse, note));
-    }
+    throwIfNoElementsFound(elems, rbelPath, currentResponses, "response");
     return elems;
   }
 
   public List<RbelElement> findElementsInCurrentResponseOrEmpty(final String rbelPath) {
-    assertCurrentResponseFound();
-    return currentResponse.findRbelPathMembers(rbelPath);
+    assertMessagePresent(currentResponse, "response");
+    return currentResponses.stream()
+        .flatMap(response -> response.findRbelPathMembers(rbelPath).stream())
+        .toList();
   }
 
   public List<RbelElement> findElementsInCurrentRequestOrEmpty(final String rbelPath) {
-    assertCurrentRequestFound();
+    assertMessagePresent(currentRequest, "request");
     return currentRequest.findRbelPathMembers(rbelPath);
   }
 
   public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
     final List<RbelElement> elems = findElementsInCurrentRequestOrEmpty(rbelPath);
-    if (elems.isEmpty()) {
-      val errorMsg = "Unable to find element in request for rbel path '" + rbelPath + "'";
-      val note = new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, currentRequest);
-      throw new ValidatorAssertionError(
-          "Unable to find element in request for rbel path '"
-              + rbelPath
-              + printMessageTree(currentRequest),
-          mismatchNotes(currentRequest, note));
-    }
+    throwIfNoElementsFound(elems, rbelPath, List.of(currentRequest), "request");
     return elems;
   }
 
-  private void assertCurrentRequestFound() {
-    if (currentRequest == null) {
-      throw new AssertionError("No current request message found!");
+  private static void throwIfNoElementsFound(
+      List<RbelElement> elements, String rbelPath, List<RbelElement> messages, String messageType) {
+    if (!elements.isEmpty()) {
+      return;
     }
+    Map<RbelElement, SortedSet<RbelMismatchNoteFacet>> allMismatchNotes = new LinkedHashMap<>();
+    for (RbelElement message : messages) {
+      val errorMsg = elementNotFoundMsg(1, messageType, rbelPath) + printMessageTree(message);
+      addMismatchNoteForMessage(
+          allMismatchNotes, message, new RbelMismatchNoteFacet(MISSING_NODE, errorMsg, message));
+    }
+    throw elementNotFoundError(messages.size(), messageType, rbelPath, allMismatchNotes);
+  }
+
+  private static String elementNotFoundMsg(int count, String messageType, String rbelPath) {
+    return "Unable to find element in "
+        + (count > 1 ? "any of " + count + " " + messageType + "s" : messageType)
+        + " for rbel path '"
+        + rbelPath
+        + "'";
   }
 
   public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
@@ -866,11 +910,10 @@ public class RbelMessageRetriever {
             .findLast(msg -> msg.hasFacet(RbelRequestFacet.class))
             .orElseThrow(() -> new TigerLibraryException("No Request found."));
     setCurrentRequest(lastRequest);
-    setCurrentResponse(
-        lastRequest
-            .getFacet(TracingMessagePairFacet.class)
-            .map(TracingMessagePairFacet::getResponse)
-            .orElse(null));
+    var pairFacet = lastRequest.getFacet(TracingMessagePairFacet.class);
+    setCurrentResponse(pairFacet.map(TracingMessagePairFacet::getResponse).orElse(null));
+    currentResponses =
+        pairFacet.map(f -> new ArrayList<>(f.getResponses())).orElseGet(ArrayList::new);
   }
 
   public class JexlToolbox {

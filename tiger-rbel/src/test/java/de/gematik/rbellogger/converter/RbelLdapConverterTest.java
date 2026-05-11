@@ -61,18 +61,31 @@ import org.apache.directory.api.ldap.model.entry.DefaultAttribute;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.entry.DefaultModification;
 import org.apache.directory.api.ldap.model.entry.ModificationOperation;
+import org.apache.directory.api.ldap.model.message.AbandonRequestImpl;
 import org.apache.directory.api.ldap.model.message.AddRequestImpl;
 import org.apache.directory.api.ldap.model.message.AliasDerefMode;
+import org.apache.directory.api.ldap.model.message.BindRequestImpl;
+import org.apache.directory.api.ldap.model.message.BindResponseImpl;
+import org.apache.directory.api.ldap.model.message.CompareRequestImpl;
+import org.apache.directory.api.ldap.model.message.CompareResponseImpl;
+import org.apache.directory.api.ldap.model.message.DeleteRequestImpl;
+import org.apache.directory.api.ldap.model.message.ModifyDnRequestImpl;
+import org.apache.directory.api.ldap.model.message.ModifyDnResponseImpl;
 import org.apache.directory.api.ldap.model.message.ModifyRequestImpl;
 import org.apache.directory.api.ldap.model.message.ResultCodeEnum;
 import org.apache.directory.api.ldap.model.message.SearchRequestImpl;
+import org.apache.directory.api.ldap.model.message.SearchResultDoneImpl;
 import org.apache.directory.api.ldap.model.message.SearchScope;
+import org.apache.directory.api.ldap.model.message.UnbindRequestImpl;
+import org.apache.directory.api.ldap.model.message.controls.OpaqueControl;
 import org.apache.directory.api.ldap.model.name.Dn;
 import org.apache.directory.api.ldap.model.name.Rdn;
 import org.apache.directory.api.util.FileUtils;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -330,7 +343,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderSaslBindRequest() {
-    var bindReq = new org.apache.directory.api.ldap.model.message.BindRequestImpl();
+    var bindReq = new BindRequestImpl();
     bindReq.setMessageId(51);
     bindReq.setVersion3(true);
     bindReq.setSimple(false);
@@ -468,7 +481,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void protocolOp_shouldProvideModifyDnRequestFields() {
-    var modDnReq = new org.apache.directory.api.ldap.model.message.ModifyDnRequestImpl();
+    var modDnReq = new ModifyDnRequestImpl();
     modDnReq.setMessageId(102);
     modDnReq.setName(new Dn("cn=Old Name,dc=example,dc=com"));
     modDnReq.setNewRdn(new Rdn("cn=New Name"));
@@ -496,7 +509,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void protocolOp_shouldProvideBindRequestFields() {
-    var bindReq = new org.apache.directory.api.ldap.model.message.BindRequestImpl();
+    var bindReq = new BindRequestImpl();
     bindReq.setMessageId(103);
     bindReq.setVersion3(true);
     bindReq.setName("cn=admin,dc=example,dc=com");
@@ -520,7 +533,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void protocolOp_shouldProvideCompareRequestFields() {
-    var compareReq = new org.apache.directory.api.ldap.model.message.CompareRequestImpl();
+    var compareReq = new CompareRequestImpl();
     compareReq.setMessageId(104);
     compareReq.setName(new Dn("cn=test,dc=example,dc=com"));
     compareReq.setAttributeId("userPassword");
@@ -544,7 +557,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void protocolOp_shouldProvideResultResponseFields() {
-    var bindResp = new org.apache.directory.api.ldap.model.message.BindResponseImpl(105);
+    var bindResp = new BindResponseImpl(105);
     bindResp.getLdapResult().setResultCode(ResultCodeEnum.SUCCESS);
     bindResp.getLdapResult().setDiagnosticMessage("Bind successful");
 
@@ -563,7 +576,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void protocolOp_shouldProvideMatchedDnOnError() {
-    var searchResp = new org.apache.directory.api.ldap.model.message.SearchResultDoneImpl(106);
+    var searchResp = new SearchResultDoneImpl(106);
     searchResp.getLdapResult().setResultCode(ResultCodeEnum.NO_SUCH_OBJECT);
     searchResp.getLdapResult().setMatchedDn(new Dn("dc=example,dc=com"));
     searchResp.getLdapResult().setDiagnosticMessage("Entry not found");
@@ -716,7 +729,7 @@ class RbelLdapConverterTest {
   @Test
   void convertMessage_shouldConvertBindRequestAndResponse() {
     // BindRequest
-    var bindReq = new org.apache.directory.api.ldap.model.message.BindRequestImpl();
+    var bindReq = new BindRequestImpl();
     bindReq.setMessageId(10);
     bindReq.setVersion3(true);
     bindReq.setName("cn=admin,dc=example,dc=com");
@@ -730,7 +743,7 @@ class RbelLdapConverterTest {
         .extractChildWithPath("$.protocolOp.operationType")
         .hasValueEqualTo(LdapOperationType.BIND_REQUEST);
     // BindResponse
-    var bindResp = new org.apache.directory.api.ldap.model.message.BindResponseImpl(11);
+    var bindResp = new BindResponseImpl(11);
     Asn1Buffer bufferResp = new Asn1Buffer();
     LdapEncoder.encodeMessage(bufferResp, codec, bindResp);
     RbelElement respElem = rbelConverter.convertElement(bufferResp.getBytes().array(), null);
@@ -743,7 +756,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertUnbindRequest() {
-    var unbindReq = new org.apache.directory.api.ldap.model.message.UnbindRequestImpl();
+    var unbindReq = new UnbindRequestImpl();
     unbindReq.setMessageId(12);
     Asn1Buffer buffer = new Asn1Buffer();
     LdapEncoder.encodeMessage(buffer, codec, unbindReq);
@@ -757,7 +770,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertSaslBindRequest() {
-    var bindReq = new org.apache.directory.api.ldap.model.message.BindRequestImpl();
+    var bindReq = new BindRequestImpl();
     bindReq.setMessageId(50);
     bindReq.setVersion3(true);
     bindReq.setName("cn=admin,dc=example,dc=com");
@@ -785,7 +798,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertModifyDnRequestAndResponse() {
-    var modDnReq = new org.apache.directory.api.ldap.model.message.ModifyDnRequestImpl();
+    var modDnReq = new ModifyDnRequestImpl();
     modDnReq.setMessageId(13);
     modDnReq.setName(new Dn("cn=John Doe,dc=example,dc=com"));
     modDnReq.setNewRdn(new Rdn("cn=Jane Doe"));
@@ -798,7 +811,7 @@ class RbelLdapConverterTest {
         .extractChildWithPath("$.protocolOp.operationType")
         .hasValueEqualTo(LdapOperationType.MODIFY_DN_REQUEST);
     // Response
-    var modDnResp = new org.apache.directory.api.ldap.model.message.ModifyDnResponseImpl(14);
+    var modDnResp = new ModifyDnResponseImpl(14);
     Asn1Buffer bufferResp = new Asn1Buffer();
     LdapEncoder.encodeMessage(bufferResp, codec, modDnResp);
     RbelElement respElem = rbelConverter.convertElement(bufferResp.getBytes().array(), null);
@@ -811,7 +824,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertCompareRequestAndResponse() {
-    var compareReq = new org.apache.directory.api.ldap.model.message.CompareRequestImpl();
+    var compareReq = new CompareRequestImpl();
     compareReq.setMessageId(15);
     compareReq.setName(new Dn("cn=John Doe,dc=example,dc=com"));
     compareReq.setAttributeId("cn");
@@ -824,7 +837,7 @@ class RbelLdapConverterTest {
         .extractChildWithPath("$.protocolOp.operationType")
         .hasValueEqualTo(LdapOperationType.COMPARE_REQUEST);
     // Response
-    var compareResp = new org.apache.directory.api.ldap.model.message.CompareResponseImpl(16);
+    var compareResp = new CompareResponseImpl(16);
     Asn1Buffer bufferResp = new Asn1Buffer();
     LdapEncoder.encodeMessage(bufferResp, codec, compareResp);
     RbelElement respElem = rbelConverter.convertElement(bufferResp.getBytes().array(), null);
@@ -837,7 +850,7 @@ class RbelLdapConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertAbandonRequest() {
-    var abandonReq = new org.apache.directory.api.ldap.model.message.AbandonRequestImpl();
+    var abandonReq = new AbandonRequestImpl();
     abandonReq.setMessageId(17);
     abandonReq.setAbandoned(5);
     Asn1Buffer buffer = new Asn1Buffer();
@@ -910,11 +923,10 @@ class RbelLdapConverterTest {
   void convertMessage_shouldHandleComplexControl() {
     codec.registerRequestControl(new OpaqueControlFactory(codec, "1.2.3.4.5"));
     codec.registerResponseControl(new OpaqueControlFactory(codec, "1.2.3.4.5"));
-    var delReq = new org.apache.directory.api.ldap.model.message.DeleteRequestImpl();
+    var delReq = new DeleteRequestImpl();
     delReq.setMessageId(24);
     delReq.setName(new Dn("cn=John Doe,dc=example,dc=com"));
-    var control =
-        new org.apache.directory.api.ldap.model.message.controls.OpaqueControl("1.2.3.4.5");
+    var control = new OpaqueControl("1.2.3.4.5");
     control.setCritical(true);
     control.setEncodedValue(new byte[] {9, 8, 7});
     delReq.addControl(control);
@@ -987,7 +999,7 @@ class RbelLdapConverterTest {
         .extractChildWithPath("$.protocolOp.newPassword")
         .hasValueEqualTo("newpass".getBytes());
 
-    var genPasswordSeq = new org.bouncycastle.asn1.ASN1EncodableVector();
+    var genPasswordSeq = new ASN1EncodableVector();
     genPasswordSeq.add(new DERTaggedObject(false, 0, new DEROctetString("generated".getBytes())));
     byte[] responseValue = new DERSequence(genPasswordSeq).getEncoded(ASN1Encoding.DER);
 
@@ -1097,7 +1109,7 @@ class RbelLdapConverterTest {
     DEROctetString diagnosticMessage = new DEROctetString(new byte[0]); // empty
 
     // Build Extended Response components
-    var components = new org.bouncycastle.asn1.ASN1EncodableVector();
+    var components = new ASN1EncodableVector();
     components.add(resultCode);
     components.add(matchedDN);
     components.add(diagnosticMessage);
@@ -1120,10 +1132,10 @@ class RbelLdapConverterTest {
     DERSequence responseContent = new DERSequence(components);
     byte[] extRespDer = responseContent.getEncoded(ASN1Encoding.DER);
     extRespDer[0] = 0x78;
-    var extendedResponse = org.bouncycastle.asn1.ASN1Primitive.fromByteArray(extRespDer);
+    var extendedResponse = ASN1Primitive.fromByteArray(extRespDer);
 
     // Build complete LDAP message
-    var messageComponents = new org.bouncycastle.asn1.ASN1EncodableVector();
+    var messageComponents = new ASN1EncodableVector();
     messageComponents.add(new ASN1Integer(messageId));
     messageComponents.add(extendedResponse);
 

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -44,8 +45,8 @@ class TestAbstractRouteProxyCallback {
     }
 
     @Override
-    protected String extractProtocolAndHostForRequest(HttpRequest request) {
-      return "";
+    protected RbelSocketAddress extractReceiverAddressForRequest(HttpRequest request) {
+      return null;
     }
 
     @Override

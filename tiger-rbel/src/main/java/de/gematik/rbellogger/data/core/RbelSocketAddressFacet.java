@@ -39,18 +39,18 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(toBuilder = true)
 @Slf4j
-public class RbelHostnameFacet implements RbelFacet {
+public class RbelSocketAddressFacet implements RbelFacet {
 
   private final RbelElement port;
   private final RbelElement domain;
   @Builder.Default private Optional<RbelElement> bundledServerName = Optional.empty();
 
-  public static RbelElement buildRbelHostnameFacet(
+  public static RbelElement buildRbelSocketAddressFacet(
       RbelElement parentNode, RbelSocketAddress rbelSocketAddress) {
-    return buildRbelHostnameFacet(parentNode, rbelSocketAddress, null);
+    return buildRbelSocketAddressFacet(parentNode, rbelSocketAddress, null);
   }
 
-  public static RbelElement buildRbelHostnameFacet(
+  public static RbelElement buildRbelSocketAddressFacet(
       RbelElement parentNode, RbelSocketAddress rbelSocketAddress, String bundledServerName) {
     if (rbelSocketAddress == null) {
       return new RbelElement(null, parentNode);
@@ -58,7 +58,7 @@ public class RbelHostnameFacet implements RbelFacet {
     final RbelElement result =
         new RbelElement(rbelSocketAddress.toString().getBytes(StandardCharsets.UTF_8), parentNode);
     result.addFacet(
-        RbelHostnameFacet.builder()
+        RbelSocketAddressFacet.builder()
             .port(RbelElement.wrap(result, rbelSocketAddress.getPort()))
             .domain(RbelElement.wrap(result, rbelSocketAddress.printHostname()))
             .bundledServerName(
@@ -107,25 +107,26 @@ public class RbelHostnameFacet implements RbelFacet {
   }
 
   public static Optional<String> tryToExtractServerName(RbelElement element) {
-    final Optional<RbelHostnameFacet> hostnameFacet = element.getFacet(RbelHostnameFacet.class);
-    if (hostnameFacet.isEmpty()) {
+    final Optional<RbelSocketAddressFacet> socketAddressFacet =
+        element.getFacet(RbelSocketAddressFacet.class);
+    if (socketAddressFacet.isEmpty()) {
       return Optional.empty();
     }
-    return hostnameFacet
-        .flatMap(RbelHostnameFacet::getBundledServerName)
+    return socketAddressFacet
+        .flatMap(RbelSocketAddressFacet::getBundledServerName)
         .filter(e -> e.getRawStringContent() != null)
         .flatMap(e -> Optional.of(e.getRawStringContent()))
         .or( // try to get a clear hostname from the socket address
             () ->
-                hostnameFacet
-                    .map(RbelHostnameFacet::toRbelSocketAddress)
+                socketAddressFacet
+                    .map(RbelSocketAddressFacet::toRbelSocketAddress)
                     .map(RbelSocketAddress::getAddress)
                     .map(RbelInternetAddress::printValidHostname)
                     .filter(StringUtils::isNotEmpty))
         .or( // fallback, might be an IP address
             () ->
-                hostnameFacet
-                    .map(RbelHostnameFacet::getDomain)
+                socketAddressFacet
+                    .map(RbelSocketAddressFacet::getDomain)
                     .map(RbelElement::getRawStringContent)
                     .filter(StringUtils::isNotEmpty));
   }
@@ -143,14 +144,14 @@ public class RbelHostnameFacet implements RbelFacet {
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
-    return equals((RbelHostnameFacet) obj);
+    return equals((RbelSocketAddressFacet) obj);
   }
 
-  public boolean equals(RbelHostnameFacet other) {
+  public boolean equals(RbelSocketAddressFacet other) {
     return domainAndPortEquals(other);
   }
 
-  public boolean domainAndPortEquals(RbelHostnameFacet other) {
+  public boolean domainAndPortEquals(RbelSocketAddressFacet other) {
     return Objects.equals(this.getPort().seekValue(), other.getPort().seekValue())
         && domainMatches(this.getDomain().printValue(), other.getDomain().printValue());
   }
@@ -158,12 +159,12 @@ public class RbelHostnameFacet implements RbelFacet {
   private boolean domainMatches(Optional<String> thisDomain, Optional<String> otherDomain) {
     return thisDomain
         .map(Object::toString)
-        .map(RbelHostnameFacet::canonicalize)
+        .map(RbelSocketAddressFacet::canonicalize)
         .map(
             thisHost ->
                 otherDomain
                     .map(Object::toString)
-                    .map(RbelHostnameFacet::canonicalize)
+                    .map(RbelSocketAddressFacet::canonicalize)
                     .map(thisHost::equals)
                     .orElse(false))
         .orElse(false);

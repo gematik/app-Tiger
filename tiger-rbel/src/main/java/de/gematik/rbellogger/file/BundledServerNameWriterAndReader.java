@@ -26,7 +26,7 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.RbelMessageMetadata.RbelMetadataValue;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import java.util.Optional;
 import java.util.function.Function;
@@ -77,10 +77,11 @@ public class BundledServerNameWriterAndReader {
           .map(targetExtractor)
           .ifPresent(
               target -> {
-                RbelHostnameFacet oldFacet = target.getFacet(RbelHostnameFacet.class).orElse(null);
+                RbelSocketAddressFacet oldFacet =
+                    target.getFacet(RbelSocketAddressFacet.class).orElse(null);
                 if (oldFacet != null) {
                   target.addOrReplaceFacet(
-                      RbelHostnameFacet.builder()
+                      RbelSocketAddressFacet.builder()
                           .domain(oldFacet.getDomain())
                           .port(oldFacet.getPort())
                           .bundledServerName(Optional.of(RbelElement.wrap(target, extractedValue)))
@@ -116,8 +117,8 @@ public class BundledServerNameWriterAndReader {
       return rbelElement
           .getFacet(RbelTcpIpMessageFacet.class)
           .map(targetExtractor)
-          .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-          .flatMap(RbelHostnameFacet::getBundledServerName)
+          .flatMap(el -> el.getFacet(RbelSocketAddressFacet.class))
+          .flatMap(RbelSocketAddressFacet::getBundledServerName)
           .map(RbelElement::getRawStringContent)
           .orElse(null);
     }

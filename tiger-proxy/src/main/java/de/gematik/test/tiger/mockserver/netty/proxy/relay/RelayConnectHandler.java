@@ -80,6 +80,9 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
   private void connectToForwardProxy(
       ChannelHandlerContext proxyClientCtx, T request, InetSocketAddress forwardProxy) {
+    InetSocketAddress targetSocket = InetSocketAddress.createUnresolved(host, port);
+    proxyClientCtx.channel().attr(REMOTE_SOCKET).set(targetSocket);
+
     new Bootstrap()
         .group(proxyClientCtx.channel().eventLoop())
         .channel(NioSocketChannel.class)

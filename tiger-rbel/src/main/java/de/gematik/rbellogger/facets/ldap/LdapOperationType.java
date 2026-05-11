@@ -278,6 +278,40 @@ public enum LdapOperationType {
     return rbelName;
   }
 
+  /** Look up an {@link LdapOperationType} by its display name (rbelName). */
+  public static Optional<LdapOperationType> fromName(String name) {
+    return Arrays.stream(values()).filter(v -> v.rbelName.equals(name)).findFirst();
+  }
+
+  /**
+   * Returns {@code true} if this request type can yield multiple responses before a terminal
+   * response arrives. Currently this includes SEARCH_REQUEST (which yields SEARCH_RESULT_ENTRY /
+   * SEARCH_RESULT_REFERENCE before SEARCH_RESULT_DONE) and all extended request types (which may
+   * yield INTERMEDIATE_RESPONSE before the final EXTENDED_RESPONSE).
+   */
+  public boolean isMultiResponseRequest() {
+    return this == SEARCH_REQUEST
+        || this == EXTENDED_REQUEST
+        || this == START_TLS_REQUEST
+        || this == PASSWORD_MODIFY_REQUEST
+        || this == CANCEL_REQUEST
+        || this == WHO_AM_I_REQUEST;
+  }
+
+  /**
+   * Returns {@code true} if this response type is a terminal response that completes a
+   * multi-response exchange. For SEARCH this is SEARCH_RESULT_DONE; for extended operations this is
+   * EXTENDED_RESPONSE (or any concrete extended response subtype).
+   */
+  public boolean isTerminalResponse() {
+    return this == SEARCH_RESULT_DONE
+        || this == EXTENDED_RESPONSE
+        || this == START_TLS_RESPONSE
+        || this == PASSWORD_MODIFY_RESPONSE
+        || this == CANCEL_RESPONSE
+        || this == WHO_AM_I_RESPONSE;
+  }
+
   public String getExtendedDisplayName() {
     return switch (this) {
       case START_TLS_REQUEST, START_TLS_RESPONSE -> "1.3.6.1.4.1.1466.20037 (StartTLS)";

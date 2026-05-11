@@ -29,12 +29,9 @@ import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.model.SocketAddress;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
 import io.netty.channel.ChannelHandlerContext;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -59,7 +56,7 @@ public class MockServerToRbelConverter {
   public CompletableFuture<RbelElement> convertResponse(
       HttpRequest request,
       HttpResponse response,
-      String senderUrl,
+      RbelSocketAddress senderAddress,
       String receiverUrl,
       Optional<ZonedDateTime> timestamp,
       AtomicReference<String> previousMessageReference) {
@@ -72,7 +69,7 @@ public class MockServerToRbelConverter {
     final RbelElement responseRbelMessage = responseToRbelMessage(response, request);
     val conversionMetadata =
         new RbelMessageMetadata()
-            .withSender(convertUri(senderUrl))
+            .withSender(senderAddress)
             .withReceiver(RbelSocketAddress.fromString(receiverUrl).orElse(null))
             .withPreviousMessage(request.getCorrespondingRbelMessage().getUuid())
             .withPairedMessage(request.getCorrespondingRbelMessage().getUuid())
@@ -84,7 +81,7 @@ public class MockServerToRbelConverter {
 
   public CompletableFuture<RbelElement> convertRequest(
       HttpRequest request,
-      String protocolAndHost,
+      RbelSocketAddress receiverAddress,
       Optional<ZonedDateTime> timestamp,
       AtomicReference<String> previousMessageReference) {
     if (request.getCorrespondingRbelMessage() != null) {
@@ -96,7 +93,7 @@ public class MockServerToRbelConverter {
     val conversionMetadata =
         new RbelMessageMetadata()
             .withSender(RbelSocketAddress.fromString(request.getSenderAddress()).orElse(null))
-            .withReceiver(convertUri(protocolAndHost))
+            .withReceiver(receiverAddress)
             .withTransmissionTime(timestamp.orElse(null))
             .withPreviousMessage(previousMessageReference.getAndSet(unparsedRbelMessage.getUuid()));
 
@@ -110,18 +107,18 @@ public class MockServerToRbelConverter {
 
   public RbelElement convertErrorResponse(
       HttpRequest request,
-      String protocolAndHost,
+      RbelSocketAddress senderAddress,
       TigerProxyRoutingException routingException,
       AtomicReference<String> previousMessageReference) {
     val message = new RbelElement(new byte[] {}, null);
     message.addFacet(new TigerRoutingErrorFacet(routingException));
     RbelMessageMetadata metaData =
         new RbelMessageMetadata()
-            .withSender(convertUri(protocolAndHost))
+            .withSender(senderAddress)
             .withReceiver(
                 Optional.ofNullable(request)
                     .map(HttpRequest::getReceiverAddress)
-                    .map(SocketAddress::toRbelHostname)
+                    .map(SocketAddress::toRbelSocketAddress)
                     .orElse(null))
             .withPairedMessage(
                 Optional.ofNullable(request)
@@ -132,19 +129,6 @@ public class MockServerToRbelConverter {
             .withPreviousMessage(previousMessageReference.getAndSet(message.getUuid()));
 
     return rbelConverter.parseMessage(message, metaData);
-  }
-
-  private RbelSocketAddress convertUri(String protocolAndHost) {
-    if (protocolAndHost == null) {
-      return null;
-    }
-    try {
-      new URI(protocolAndHost);
-      return RbelSocketAddress.generateFromUrl(protocolAndHost).orElse(null);
-    } catch (URISyntaxException e) {
-      throw new TigerProxyParsingException(
-          "Unable to parse hostname from '" + protocolAndHost + "'", e);
-    }
   }
 
   public RbelElement responseToRbelMessage(final HttpResponse response, final HttpRequest request) {
@@ -223,7 +207,8 @@ public class MockServerToRbelConverter {
   public BiConsumer<TigerProxyRoutingException, ChannelHandlerContext> exceptionCallback() {
     return (exception, channelHandlerContext) -> {
       try {
-        convertErrorResponse(null, null, exception, new AtomicReference<>(null));
+        convertErrorResponse(
+            null, (RbelSocketAddress) null, exception, new AtomicReference<>(null));
       } catch (Exception e) {
         log.error("Error while converting error response", e);
       }

@@ -22,6 +22,7 @@ package de.gematik.test.tiger.mockserver.socket.tls;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
@@ -34,6 +35,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.PlatformDependent;
 import java.security.cert.Certificate;
+import java.util.List;
 import java.util.Optional;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -84,11 +86,34 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     if (isNotBlank(hostname)) {
       configuration.addSubjectAlternativeName(hostname);
     }
+
+    // Resolve per-connection ALPN protocols based on the SNI hostname.
+    // This allows the proxy to advertise only the protocols the target backend supports,
+    // making the TLS handshake transparent to the client.
+    List<AlpnProtocol> alpnProtocols = resolveAlpnProtocols(hostname);
+
     val serverContextAndIdentity =
         nettySslContextFactory.createServerSslContext(
-            hostname, ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).get());
+            hostname, ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).get(), alpnProtocols);
     ctx.channel().attr(SERVER_IDENTITY).set(serverContextAndIdentity.getValue());
     return ctx.executor().newSucceededFuture(serverContextAndIdentity.getKey());
+  }
+
+  private List<AlpnProtocol> resolveAlpnProtocols(String hostname) {
+    var resolver = configuration.alpnProtocolsForSniHostname();
+    if (resolver != null && isNotBlank(hostname)) {
+      try {
+        var resolved = resolver.apply(hostname);
+        if (resolved != null && !resolved.isEmpty()) {
+          log.trace("ALPN for SNI hostname '{}': {}", hostname, resolved);
+          return resolved;
+        }
+      } catch (RuntimeException e) {
+        log.debug(
+            "ALPN resolution failed for '{}', using defaults: {}", hostname, e.getMessage(), e);
+      }
+    }
+    return configuration.serverAlpnProtocols();
   }
 
   @Override
@@ -120,7 +145,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
           val serverIdentity = ctx.channel().attr(SERVER_IDENTITY).get();
           openSslEngine.setOcspResponse(
               configuration.ocspResponseSupplier().apply(serverIdentity.getCertificate()));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           log.warn("Failed to set OCSP response", e);
         }
       }

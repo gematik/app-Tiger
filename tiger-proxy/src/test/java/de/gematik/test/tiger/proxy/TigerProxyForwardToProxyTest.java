@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrAndOut;
 
@@ -177,6 +178,37 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
           .extractChildWithPath("$.body.html.head.title.text")
           .hasStringContentEqualTo("Example Domain");
     }
+  }
+
+  @Test
+  @SuppressWarnings("resource")
+  void createProxyWithUnresolvableForwardProxyHostname_shouldThrowException() throws Exception {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .name("proxy with unresolvable forward proxy")
+            .forwardToProxy(
+                ForwardProxyInfo.builder()
+                    .hostname("this.hostname.does.not.exist.invalid")
+                    .port(8080)
+                    .type(TigerProxyType.HTTP)
+                    .build())
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("http://unresolvablehost")
+                        .to("http://example.com")
+                        .build()))
+            .build());
+    proxyRest.config().requestTimeout(5_000).connectTimeout(5_000).verifySsl(false);
+    String logs =
+        tapSystemErrAndOut(
+            () -> {
+              assertThatExceptionOfType(UnirestException.class)
+                  .isThrownBy(() -> proxyRest.get("http://unresolvablehost").asString());
+            });
+    assertThat(logs)
+        .contains(
+            "The configured forward proxy hostname 'this.hostname.does.not.exist.invalid' cannot be resolved");
   }
 
   public static String encodeBasicAuth(String username, String password) {

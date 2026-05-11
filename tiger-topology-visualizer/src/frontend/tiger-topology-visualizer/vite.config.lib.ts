@@ -61,8 +61,8 @@ export default defineConfig({
       formats: ["es"],
       fileName: "tiger-topology-visualizer",
     },
-    rollupOptions: {
-      external: ["vue", "pinia"],
+    rolldownOptions: {
+      external: ["vue", "pinia", /^primevue\//, /^@primeuix\//],
       output: {
         globals: {
           vue: "Vue",

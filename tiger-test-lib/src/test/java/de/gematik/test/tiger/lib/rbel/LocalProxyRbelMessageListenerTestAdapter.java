@@ -25,7 +25,7 @@ import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
@@ -107,7 +107,7 @@ public class LocalProxyRbelMessageListenerTestAdapter {
             TigerGlobalConfiguration.resolveRelativePathToTigerYaml(".")
                 .resolve(Path.of("src", "test", "resources", "testdata", fileName)),
             StandardCharsets.UTF_8);
-    return new RbelFileWriter(RbelLogger.build().getRbelConverter())
+    return new RbelFileReader(RbelLogger.build().getRbelConverter())
         .convertFromRbelFile(fileContent, Optional.empty());
   }
 }

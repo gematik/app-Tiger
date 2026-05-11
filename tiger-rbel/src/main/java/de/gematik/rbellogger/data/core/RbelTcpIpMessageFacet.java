@@ -53,15 +53,15 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
       new RbelMultiMap<RbelElement>().with("sender", sender).with("receiver", receiver);
 
   public Optional<RbelSocketAddress> getSenderHostname() {
-    return hostname(sender).map(RbelHostnameFacet::toRbelSocketAddress);
+    return hostname(sender).map(RbelSocketAddressFacet::toRbelSocketAddress);
   }
 
   public Optional<RbelSocketAddress> getReceiverHostname() {
-    return hostname(receiver).map(RbelHostnameFacet::toRbelSocketAddress);
+    return hostname(receiver).map(RbelSocketAddressFacet::toRbelSocketAddress);
   }
 
-  private Optional<RbelHostnameFacet> hostname(RbelElement element) {
-    return element.getFacet(RbelHostnameFacet.class);
+  private Optional<RbelSocketAddressFacet> hostname(RbelElement element) {
+    return element.getFacet(RbelSocketAddressFacet.class);
   }
 
   public boolean isSameDirectionAs(RbelElement previousMessage) {
@@ -97,7 +97,7 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
   }
 
   private RbelSocketAddress getAddress(RbelElement address) {
-    return hostname(address).map(RbelHostnameFacet::toUnbundledRbelSocketAddress).orElse(null);
+    return hostname(address).map(RbelSocketAddressFacet::toUnbundledRbelSocketAddress).orElse(null);
   }
 
   public TcpIpConnectionIdentifier getTcpIpConnectionIdentifier() {

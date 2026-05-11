@@ -26,7 +26,7 @@ import de.gematik.rbellogger.util.RbelSocketAddress;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class RbelHostnameTest {
+class RbelSocketAddressTest {
 
   private static final String IPV4_REGEX = "\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}";
 
@@ -59,8 +59,8 @@ class RbelHostnameTest {
       value = {
         "'lufxrqwe:80',        'lufxrqwe',              80",
         "'lufxrqwe',           'lufxrqwe',              0",
-        "'127.0.0.1:543',      '(view-|)localhost',     543",
-        "'127.0.0.1',          '(view-|)localhost',     0",
+        "'127.0.0.1:543',      '(view-|)localhost|127\\.0\\.0\\.\\d+',     543",
+        "'127.0.0.1',          '(view-|)localhost|127\\.0\\.0\\.\\d+',     0",
         "'1.2.3.4',            '1.2.3.4',               0",
         "'lufxrqwe:-1',        'lufxrqwe',              -1",
         "'lufxrqwe__',         'lufxrqwe__',            0",

@@ -32,10 +32,6 @@ import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.TigerProxyMasterSecretListener;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.ApplicationProtocolConfig.Protocol;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import java.util.*;
@@ -205,12 +201,8 @@ public class MockServerTlsConfigurator {
                         new BouncyCastleJsseProvider();
 
                     builder.sslContextProvider(sslContextProvider);
-                    builder.applicationProtocolConfig(
-                        new ApplicationProtocolConfig(
-                            Protocol.ALPN,
-                            SelectorFailureBehavior.NO_ADVERTISE,
-                            SelectedListenerFailureBehavior.ACCEPT,
-                            List.of("h2", "http/1.1")));
+                    // ALPN is already configured by NettySslContextFactory.configureALPN()
+                    // with the per-connection protocol list. Do NOT override it here.
                   });
 
           return builder;

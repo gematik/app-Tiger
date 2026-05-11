@@ -40,7 +40,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
 
   private EmbeddedHttpbin httpbin;
 
-  public HttpBinServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
+  public HttpBinServer(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     super(serverId, configuration, tigerTestEnvMgr);
   }
 

@@ -118,8 +118,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
           .submit(() -> configuration.addSubjectAlternativeName(request.getPath()));
     }
     String[] hostParts = request.getPath().split(":");
-    final int port = determinePort(ctx, hostParts);
-    ctx.pipeline().addLast(new HttpConnectHandler(configuration, server, hostParts[0], port));
+    int port = determinePort(ctx, hostParts);
+    String host = hostParts[0];
+
+    ctx.pipeline().addLast(new HttpConnectHandler(configuration, server, host, port));
     ctx.pipeline().remove(this);
     ctx.fireChannelRead(request);
   }

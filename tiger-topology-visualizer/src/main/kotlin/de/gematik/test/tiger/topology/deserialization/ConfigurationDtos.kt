@@ -24,6 +24,7 @@ package de.gematik.test.tiger.topology.deserialization
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 // The reason for keeping the Map as a backing structure is for
 // easier resolving of placeholders. e.g. ${tiger.servers.something} can be directly retrieved.
 
-class LightTigerConfigModel : SerializableWithAdditionalFields() {
+class LightTigerConfigModel : SerializableMap() {
     val tigerProxy: LightTigerProxyConfiguration? get() = typed("tigerProxy")
     val localProxyActive: Boolean get() = properties["localProxyActive"]?.toString()?.toBoolean() ?: true
     val additionalConfigurationFiles: List<LightAdditionalConfigurationFile>
@@ -47,8 +48,9 @@ class LightTigerConfigModel : SerializableWithAdditionalFields() {
  * resolution where paths like `${tiger.servers.x}` and `${config_ports.y}` must both work.
  */
 class GlobalConfig(
-    val tigerConfig: LightTigerConfigModel,
-    private val fullTree: Map<String, Any?>
+    val tigerConfig: LightTigerConfigModel = LightTigerConfigModel(),
+    private val fullTree: Map<String, Any?> = emptyMap(),
+    val warnings : List<String> = listOf()
 ) {
     /** Resolves a dot-separated path against the full configuration tree. */
     operator fun get(path: String): Any? = resolvePathInMap(path, fullTree)
@@ -65,7 +67,7 @@ class LightRoute(
     val to: List<String>
 )
 
-class LightConfigServer : SerializableWithAdditionalFields() {
+class LightConfigServer : SerializableMap() {
     val hostname: String get() = properties["hostname"] as? String ?: ""
     val type: String get() = properties["type"] as? String ?: ""
     val source: List<String>
@@ -76,24 +78,14 @@ class LightConfigServer : SerializableWithAdditionalFields() {
     val dockerOptions: LightDockerOptions? get() = typed("dockerOptions")
     val zionConfiguration: LightZionConfiguration? get() = typed("zionConfiguration")
 
-    override val additionalFields: Map<String, Any?>
-        get() = additionalFields(KNOWN_KEYS)
-
-    companion object {
-        private val KNOWN_KEYS = setOf(
-            "hostname", "type", "source",
-            "tigerProxyConfiguration", "externalJarOptions",
-            "dockerOptions", "zionConfiguration"
-        )
-    }
 }
 
-class LightZionConfiguration : SerializableWithAdditionalFields() {
+class LightZionConfiguration : SerializableMap() {
     val mockResponses: Map<String, LightMockResponse> get() = typedMap("mockResponses")
 
     fun collectBackendRequestUrls(): List<String> {
         fun collect(response: LightMockResponse): List<String> {
-            val fromThis = response.backendRequests.values.mapNotNull { it.url.takeIf { it.isNotBlank() } }
+            val fromThis = response.backendRequests.values.mapNotNull { backendRequest -> backendRequest.url.takeIf { it.isNotBlank() } }
             val fromNested = response.nestedResponses.values.flatMap { collect(it) }
             return fromThis + fromNested
         }
@@ -101,23 +93,26 @@ class LightZionConfiguration : SerializableWithAdditionalFields() {
     }
 }
 
-class LightMockResponse : SerializableWithAdditionalFields() {
+class LightMockResponse : SerializableMap() {
     val nestedResponses: Map<String, LightMockResponse> get() = typedMap("nestedResponses")
     val backendRequests: Map<String, LightBackendRequest> get() = typedMap("backendRequests")
 }
 
-class LightBackendRequest : SerializableWithAdditionalFields() {
+class LightBackendRequest : SerializableMap() {
     val url: String get() = properties["url"] as? String ?: ""
 }
 
-class LightDockerOptions : SerializableWithAdditionalFields()
+class LightDockerOptions : SerializableMap() {
+    val ports: List<String>
+        get() = (properties["ports"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+}
 
-class LightExternalJarOptions : SerializableWithAdditionalFields() {
+class LightExternalJarOptions : SerializableMap() {
     val options: List<String>
         get() = (properties["options"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
 }
 
-class LightTigerProxyConfiguration : SerializableWithAdditionalFields() {
+class LightTigerProxyConfiguration : SerializableMap() {
     val adminPort: String? get() = properties["adminPort"] as? String
     val proxyPort: String? get() = properties["proxyPort"] as? String
     val directReverseProxy: LightDirectReverseProxyInfo? get() = typed("directReverseProxy")
@@ -125,17 +120,9 @@ class LightTigerProxyConfiguration : SerializableWithAdditionalFields() {
     val trafficEndpoints: List<String>
         get() = (properties["trafficEndpoints"] as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
 
-    override val additionalFields: Map<String, Any?>
-        get() = additionalFields(KNOWN_KEYS)
-
-    companion object {
-        private val KNOWN_KEYS = setOf(
-            "adminPort", "proxyPort", "directReverseProxy", "proxyRoutes", "trafficEndpoints"
-        )
-    }
 }
 
-class LightDirectReverseProxyInfo : SerializableWithAdditionalFields() {
+class LightDirectReverseProxyInfo : SerializableMap() {
     val hostname: String? get() = properties["hostname"] as? String
     val port: String? get() = properties["port"] as? String
 }
@@ -183,12 +170,10 @@ internal fun resolvePathInMap(path: String, map: Map<*, *>): Any? {
     isGetterVisibility = JsonAutoDetect.Visibility.NONE,
     fieldVisibility = JsonAutoDetect.Visibility.NONE
 )
-open class SerializableWithAdditionalFields {
+open class SerializableMap {
     // Single source of truth for ALL fields
-    val properties: MutableMap<String, Any?> = mutableMapOf()
-
-    /** All properties by default; subclasses with known keys override to exclude them. */
-    open val additionalFields: Map<String, Any?> get() = properties
+    @get:JsonValue
+    val properties: MutableMap<String, Any> = mutableMapOf()
 
     /** Supports dot-separated path traversal, e.g. "servers.serverA.port" */
     operator fun get(path: String): Any? {
@@ -202,7 +187,9 @@ open class SerializableWithAdditionalFields {
 
     @JsonAnySetter
     fun set(name: String, value: Any?) {
-        properties[name] = value
+        if (value != null) {
+            properties[name] = value
+        }
     }
 
     /** Typed access helper — lazily converts nested Maps to typed objects */
@@ -211,7 +198,7 @@ open class SerializableWithAdditionalFields {
             is T -> raw
             is Map<*, *> -> SHARED_MAPPER
                 .convertValue(raw, T::class.java)
-                .also { properties[key] = it }
+                .also { properties[key] = it as Any}
             else -> null
         }
     }
@@ -233,10 +220,6 @@ open class SerializableWithAdditionalFields {
         val javaType = SHARED_MAPPER.typeFactory.constructMapType(Map::class.java, String::class.java, V::class.java)
         return SHARED_MAPPER.convertValue<Map<String, V>>(raw, javaType).also { properties[key] = it }
     }
-
-    /** additionalFields = everything NOT in the set of known keys */
-    protected fun additionalFields(knownKeys: Set<String>): Map<String, Any?> =
-        properties.filterKeys { it !in knownKeys }
 
     companion object {
         val SHARED_MAPPER: ObjectMapper = ObjectMapper()

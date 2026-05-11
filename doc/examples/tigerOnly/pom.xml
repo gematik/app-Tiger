@@ -15,95 +15,100 @@
   ~ limitations under the License.
   ~
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <groupId>de.gematik.test.tiger.examples</groupId>
+  <artifactId>TigerTestBDD</artifactId>
+  <version>1.2.0-SNAPSHOT</version>
 
-    <groupId>de.gematik.test.tiger.examples</groupId>
-    <artifactId>TigerTestBDD</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-
-        <version.maven.failsafe>3.3.1</version.maven.failsafe>
-        <!-- please adapt Tiger version property to the most current one obtained from -->
-        <!-- maven central:
+    <version.maven.failsafe>3.3.1</version.maven.failsafe>
+    <!-- please adapt Tiger version property to the most current one obtained from -->
+    <!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>4.2.5</version.tiger>
-    </properties>
+    <version.tiger>4.2.7</version.tiger>
+  </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-bom</artifactId>
-                <version>${version.tiger}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <!-- tag::dependencies[] -->
+  <dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
+      <dependency>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-bom</artifactId>
+        <version>${version.tiger}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
-    <!-- end::dependencies[] -->
+  </dependencyManagement>
 
-    <build>
-        <plugins>
-            <!-- tag::generator-plugin[] -->
-            <!-- optional plugin to dynamically create JUnit driver classes on the fly.
+  <!-- tag::dependencies[] -->
+  <dependencies>
+    <dependency>
+      <groupId>de.gematik.test</groupId>
+      <artifactId>tiger-test-lib</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <!-- end::dependencies[] -->
+
+  <build>
+    <plugins>
+      <!-- tag::generator-plugin[] -->
+      <!-- optional plugin to dynamically create JUnit driver classes on the fly.
             You may omit this plugin if you have written your driver classes manually.
             -->
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-maven-plugin</artifactId>
-                <version>${version.tiger}</version>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <!-- optional -->
-                            <glues>
-                                <glue>de.gematik.test.tiger.glue</glue>
-                                <!-- add your packages here -->
-                            </glues>
-                            <!-- optional -->
-                            <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
-                            <!-- optional -->
-                            <includes>
-                                <include>**/*.feature</include>
-                            </includes>
-                            <!-- optional -->
-                            <driverPackage>
-                                de.gematik.test.tiger.examples.bdd.drivers
-                            </driverPackage>
-                            <!-- optional -->
-                            <!--suppress UnresolvedMavenProperty -->
-                            <driverClassName>Driver${ctr}IT</driverClassName>
-                            <!-- optional, defaults to the templated located at
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-maven-plugin</artifactId>
+        <version>${version.tiger}</version>
+        <executions>
+          <execution>
+            <id>generate-tiger-drivers</id>
+            <goals>
+              <!-- mandatory -->
+              <goal>generate-drivers</goal>
+              <!-- optional. This will attach the Tiger-Agent to the VM running the
+                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
+                            connections. This can be used to decipher TLS-traffic in wireshark. -->
+              <goal>attach-tiger-agent</goal>
+            </goals>
+            <phase>generate-test-sources</phase>
+            <configuration>
+              <!-- optional -->
+              <glues>
+                <glue>de.gematik.test.tiger.glue</glue>
+                <!-- add your packages here -->
+              </glues>
+              <!-- optional -->
+              <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+              <!-- optional -->
+              <includes>
+                <include>**/*.feature</include>
+              </includes>
+              <!-- optional -->
+              <driverPackage>de.gematik.test.tiger.examples.bdd.drivers</driverPackage>
+              <!-- optional -->
+              <!--suppress UnresolvedMavenProperty -->
+              <driverClassName>Driver${ctr}IT</driverClassName>
+              <!-- optional, defaults to the templated located at
                             /src/main/resources/driver4ClassTemplate.jtmpl
                             in the tiger-maven-plugin module.
                             This template will create a junit4 compliant driver class.
@@ -111,66 +116,54 @@
                             or need to do some more fancy set up stuff.
                             <templateFile>${project.basedir}/..../XXXX.jtmpl</templateFile>
                             -->
-                            <!-- optional -->
-                            <skip>false</skip>
-                        </configuration>
-                        <phase>generate-test-sources</phase>
-                        <id>generate-tiger-drivers</id>
-                        <goals>
-                            <!-- mandatory -->
-                            <goal>generate-drivers</goal>
-                            <!-- optional. This will attach the Tiger-Agent to the VM running the
-                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
-                            connections. This can be used to decipher TLS-traffic in wireshark. -->
-                            <goal>attach-tiger-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>generate-tiger-report</id>
-                        <goals>
-                            <goal>
-                                generate-serenity-reports
-                            </goal>
-                        </goals>
-                        <configuration>
-                            <!-- optional - directory where serenity reports are created -->
-                            <reportDirectory>${project.build.directory}/site/serenity</reportDirectory>
-                            <!-- optional - directory with the .feature files being executed -->
-                            <requirementsBaseDir>src/test/resources/features</requirementsBaseDir>
-                            <!--optional - when set to true, the serenity report is automatically open in the default browser -->
-                            <openSerenityReportInBrowser>false</openSerenityReportInBrowser>
-                            <!-- optional - A comma separated list of report types to be generated. -->
-                            <reports>html,single-page-html,json-summary</reports>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- end::generator-plugin[] -->
+              <!-- optional -->
+              <skip>false</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-tiger-report</id>
+            <goals>
+              <goal>generate-serenity-reports</goal>
+            </goals>
+            <configuration>
+              <!-- optional - directory where serenity reports are created -->
+              <reportDirectory>${project.build.directory}/site/serenity</reportDirectory>
+              <!-- optional - directory with the .feature files being executed -->
+              <requirementsBaseDir>src/test/resources/features</requirementsBaseDir>
+              <!--optional - when set to true, the serenity report is automatically open in the default browser -->
+              <openSerenityReportInBrowser>false</openSerenityReportInBrowser>
+              <!-- optional - A comma separated list of report types to be generated. -->
+              <reports>html,single-page-html,json-summary</reports>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- end::generator-plugin[] -->
 
-            <!-- tag::failsafe-plugin[] -->
-            <!-- Runs the tests by calling the JUnit driver classes -->
-            <!-- To filter features / scenarios use the system property
+      <!-- tag::failsafe-plugin[] -->
+      <!-- Runs the tests by calling the JUnit driver classes -->
+      <!-- To filter features / scenarios use the system property
                  -Dcucumber.filter.tags -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${version.maven.failsafe}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <includes>
-                        <!-- adapt to the class names of your driver classes -->
-                        <include>**/Driver*IT.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-            <!-- end::failsafe-plugin[] -->
-        </plugins>
-    </build>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${version.maven.failsafe}</version>
+        <configuration>
+          <includes>
+            <!-- adapt to the class names of your driver classes -->
+            <include>**/Driver*IT.java</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- end::failsafe-plugin[] -->
+    </plugins>
+  </build>
 </project>

@@ -480,7 +480,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
             "src/test/resources/testdata/sampleCurlMessages/getChallenge.curl");
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
-    rbelMessageRetriever.currentResponse = convertedMessage;
+    rbelMessageRetriever.setCurrentResponse(convertedMessage);
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 
     // validate
@@ -946,7 +946,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
             "src/test/resources/testdata/sampleCurlMessages/getChallenge.curl");
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
-    rbelMessageRetriever.currentResponse = convertedMessage;
+    rbelMessageRetriever.setCurrentResponse(convertedMessage);
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 
     return validator;

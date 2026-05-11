@@ -55,11 +55,16 @@ function extractTimeFromISO(isoDatetime: string): string {
 
 const seqLabel = computed(() => {
   let out = `${message.sequenceNumber + 1}`;
-  if (message.pairedSequenceNumber >= 0) {
-    out += "\u00A0";
-    out += message.request ? "⇢" : "⇠";
-    out += "\u00A0";
-    out += `${message.pairedSequenceNumber + 1}`;
+  const paired = message.pairedSequenceNumbers;
+  if (paired && paired.length > 0) {
+    if (message.request) {
+      out += "\u00A0⇢\u00A0";
+      out += paired.map((s) => s + 1).join(",\u00A0");
+    } else {
+      // response: point to the request (first entry)
+      out += "\u00A0⇠\u00A0";
+      out += `${paired[0] + 1}`;
+    }
   }
   return out;
 });

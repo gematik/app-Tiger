@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,12 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package io.cucumber.core.plugin;
+package de.gematik.rbellogger.file;
 
-import java.net.URI;
-import lombok.Getter;
-import lombok.experimental.Delegate;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 
-@SuppressWarnings({"java:S1172", "java:S1874"})
-public class ScenarioContextParallelDelegate implements IScenarioContext {
-
-  @Getter private final URI featureURI;
-
-  public ScenarioContextParallelDelegate(URI featureURI, ScenarioContextParallel context) {
-    this.featureURI = featureURI;
-    this.context = context;
+class RbelFileReadingException extends GenericTigerException {
+  public RbelFileReadingException(String s, Exception e) {
+    super(s, e);
   }
-
-  @Delegate private final ScenarioContextParallel context;
 }

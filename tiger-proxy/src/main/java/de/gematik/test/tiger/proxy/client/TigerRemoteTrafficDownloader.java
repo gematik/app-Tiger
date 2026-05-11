@@ -72,7 +72,7 @@ public class TigerRemoteTrafficDownloader {
   private void parseTrafficChunk(InputStream rawTraffic) {
     final List<RbelElement> convertedMessages =
         tigerRemoteProxyClient
-            .getRbelFileWriter()
+            .getRbelFileReader()
             .convertRbelFileEntries(
                 new BufferedReader(new InputStreamReader(rawTraffic)).lines(),
                 Optional.empty(),

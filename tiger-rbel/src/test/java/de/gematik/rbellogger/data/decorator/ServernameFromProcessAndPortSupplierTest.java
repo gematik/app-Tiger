@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
@@ -44,7 +44,8 @@ class ServernameFromProcessAndPortSupplierTest {
   void testApply_whenProcessIdExists_shouldReturnServerName() {
     // setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, RbelSocketAddress.create("localhost", 1234));
+        RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+            null, RbelSocketAddress.create("localhost", 1234));
 
     // Configure GlobalServerMap to return a mock process id
     GlobalServerMap.updateGlobalServerMap(1234, 51234, "someTestServer");
@@ -61,7 +62,8 @@ class ServernameFromProcessAndPortSupplierTest {
   void testApply_whenProcessIdDoesNotExist_shouldReturnEmpty() {
     // setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, RbelSocketAddress.create("localhost", 1234));
+        RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+            null, RbelSocketAddress.create("localhost", 1234));
 
     // Do not add anything to the global server map
     ServernameFromProcessAndPortSupplier supplier = new ServernameFromProcessAndPortSupplier();

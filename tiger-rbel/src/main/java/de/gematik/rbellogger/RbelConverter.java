@@ -21,7 +21,7 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.RbelConversionPhase.*;
-import static de.gematik.rbellogger.data.core.RbelHostnameFacet.buildRbelHostnameFacet;
+import static de.gematik.rbellogger.data.core.RbelSocketAddressFacet.buildRbelSocketAddressFacet;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -199,16 +199,16 @@ public class RbelConverter implements RbelConverterInterface {
             .orElseGet(
                 () ->
                     RbelTcpIpMessageFacet.builder()
-                        .sender(buildRbelHostnameFacet(rbelElement, null))
-                        .receiver(buildRbelHostnameFacet(rbelElement, null)));
+                        .sender(buildRbelSocketAddressFacet(rbelElement, null))
+                        .receiver(buildRbelSocketAddressFacet(rbelElement, null)));
     if (conversionMetadata != null) {
       RbelMessageMetadata.MESSAGE_SENDER
           .getValue(conversionMetadata)
-          .map(sender -> buildRbelHostnameFacet(rbelElement, sender))
+          .map(sender -> buildRbelSocketAddressFacet(rbelElement, sender))
           .ifPresent(facetBuilder::sender);
       RbelMessageMetadata.MESSAGE_RECEIVER
           .getValue(conversionMetadata)
-          .map(receiver -> buildRbelHostnameFacet(rbelElement, receiver))
+          .map(receiver -> buildRbelSocketAddressFacet(rbelElement, receiver))
           .ifPresent(facetBuilder::receiver);
     }
     rbelElement.addOrReplaceFacet(facetBuilder.build());

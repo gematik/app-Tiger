@@ -18,25 +18,27 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package io.cucumber.core.plugin;
+package net.serenitybdd.cucumber.core.plugin;
 
+import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.Step;
 import io.cucumber.plugin.event.TestCase;
+import java.net.URI;
+import net.thucydides.core.steps.StepEventBus;
+import net.thucydides.model.domain.DataTable;
 
-public class SerenityUtils {
+public interface IScenarioContext {
+  Scenario getCurrentScenarioDefinition(String scenarioId);
 
-  private SerenityUtils() {}
+  DataTable getTable(String scenarioId);
 
-  public static String scenarioIdFrom(FeatureFileLoader featureLoader, TestCase testCase) {
-    var featureUri = testCase.getUri();
-    var node = featureLoader.getAstNode(featureUri, testCase.getLocation().getLine());
-    var scenario = TestSourcesModel.getScenarioDefinition(node);
-    var feature = featureLoader.getFeature(featureUri);
-    return scenarioIdFrom(feature.getName(), TestSourcesModel.convertToId(scenario.getName()));
-  }
+  Step getCurrentStep(TestCase testCase);
 
-  private static String scenarioIdFrom(String featureId, String scenarioIdOrExampleId) {
-    return (featureId != null && scenarioIdOrExampleId != null)
-        ? String.format("%s;%s", featureId, scenarioIdOrExampleId)
-        : "";
-  }
+  Scenario currentScenarioOutline(String scenarioId);
+
+  boolean isAScenarioOutline(String scenarioId);
+
+  URI getFeatureURI();
+
+  StepEventBus stepEventBus();
 }

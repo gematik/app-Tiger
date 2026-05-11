@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.mockserver.socket.tls;
 
+import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
@@ -45,7 +46,9 @@ public class NettySslContextFactory {
   private final KeyAndCertificateFactory keyAndCertificateFactory;
   private final Map<Pair<HttpProtocol, String>, SslContext> clientSslContexts =
       new ConcurrentHashMap<>();
-  private Pair<SslContext, TigerPkiIdentity> serverSslContextAndIdentity = null;
+  private final Map<List<AlpnProtocol>, Pair<SslContext, TigerPkiIdentity>>
+      serverSslContextsByAlpn = new ConcurrentHashMap<>();
+
   private final boolean forServer;
 
   public NettySslContextFactory(MockServerConfiguration configuration, boolean forServer) {
@@ -100,7 +103,7 @@ public class NettySslContextFactory {
               .keyManager(
                   clientIdentity.getPrivateKey(), clientIdentity.buildChainWithCertificate());
       if (protocol == HttpProtocol.HTTP_2) {
-        configureALPN(sslContextBuilder);
+        configureAlpn(sslContextBuilder);
       }
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       var clientSslContext =
@@ -108,8 +111,8 @@ public class NettySslContextFactory {
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
       clientSslContexts.put(Pair.of(protocol, hostName), clientSslContext);
       return clientSslContext;
-    } catch (Exception e) {
-      throw new RuntimeException("Exception creating SSL context for client", e);
+    } catch (RuntimeException | SSLException e) {
+      throw new TigerProxySslException("Exception creating SSL context for client", e);
     }
   }
 
@@ -123,21 +126,37 @@ public class NettySslContextFactory {
 
   public synchronized Pair<SslContext, TigerPkiIdentity> createServerSslContext(
       String hostname, KeyAlgorithmPreference clientAlgorithmPreference) {
+    return createServerSslContext(
+        hostname, clientAlgorithmPreference, configuration.serverAlpnProtocols());
+  }
+
+  public synchronized Pair<SslContext, TigerPkiIdentity> createServerSslContext(
+      String hostname,
+      KeyAlgorithmPreference clientAlgorithmPreference,
+      List<AlpnProtocol> alpnProtocols) {
     val algorithmPreference =
         KeyAlgorithmPreference.determineEffectivePreference(
             clientAlgorithmPreference, configuration.keyAlgorithmPreference());
-    if (serverSslContextAndIdentity != null
-        // re-create x509 and private key if SAN list has been updated and dynamic update has not
-        // been disabled
+
+    // Check per-ALPN cache first
+    var cached = serverSslContextsByAlpn.get(alpnProtocols);
+    if (cached != null
         && (!configuration.rebuildServerTlsContext())
-        && keyPreferenceMatches(algorithmPreference)) {
-      log.info(
-          "Using existing server SSL context for {} with key-algorithm {}",
-          hostname,
-          serverSslContextAndIdentity.getValue().getPrivateKey().getAlgorithm());
-      return serverSslContextAndIdentity;
+        && keyPreferenceMatches(cached, algorithmPreference)) {
+      log.atDebug()
+          .addArgument(hostname)
+          .addArgument(alpnProtocols)
+          .addArgument(
+              () ->
+                  Optional.ofNullable(cached.getValue())
+                      .map(TigerPkiIdentity::getPrivateKey)
+                      .map(java.security.Key::getAlgorithm)
+                      .orElse("<?>"))
+          .log("Using existing server SSL context for {} with ALPN {} and key-algorithm {}");
+      return cached;
     }
-    log.info("Creating new server SSL context for {}", hostname);
+
+    log.debug("Creating new server SSL context for {} with ALPN {}", hostname, alpnProtocols);
     try {
       val serverIdentity =
           keyAndCertificateFactory.resolveIdentityForHostname(hostname, algorithmPreference);
@@ -152,34 +171,40 @@ public class NettySslContextFactory {
                   serverIdentity.getPrivateKey(), serverIdentity.buildChainWithCertificate())
               .protocols(configuration.tlsProtocols().split(","))
               .clientAuth(ClientAuth.OPTIONAL);
-      configureALPN(sslContextBuilder);
+      configureAlpn(sslContextBuilder, alpnProtocols);
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       val serverContext =
           configuration.sslServerContextBuilderCustomizer().apply(sslContextBuilder).build();
-      serverSslContextAndIdentity = Pair.of(serverContext, serverIdentity);
+      var result = Pair.of(serverContext, serverIdentity);
+      serverSslContextsByAlpn.put(List.copyOf(alpnProtocols), result);
       configuration.rebuildServerTlsContext(false);
-      return serverSslContextAndIdentity;
+      return result;
     } catch (RuntimeException | SSLException e) {
       log.error("Exception creating SSL context for server", e);
       throw new TigerProxySslException("exception creating SSL context for server", e);
     }
   }
 
-  private boolean keyPreferenceMatches(KeyAlgorithmPreference algorithmPreference) {
+  private boolean keyPreferenceMatches(
+      Pair<SslContext, TigerPkiIdentity> contextPair, KeyAlgorithmPreference algorithmPreference) {
     if (algorithmPreference == KeyAlgorithmPreference.MIXED
         || algorithmPreference == KeyAlgorithmPreference.UNKNOWN) {
       return true;
-    } else {
-      val serverIdentity = serverSslContextAndIdentity.getValue();
-      if (serverIdentity == null) {
-        return false;
-      } else {
-        return algorithmPreference.matches(serverIdentity);
-      }
     }
+    val serverIdentity = contextPair.getValue();
+    if (serverIdentity == null) {
+      return false;
+    }
+    return algorithmPreference.matches(serverIdentity);
   }
 
-  private static void configureALPN(SslContextBuilder sslContextBuilder) {
+  private static void configureAlpn(SslContextBuilder sslContextBuilder) {
+    configureAlpn(sslContextBuilder, List.of(AlpnProtocol.H2, AlpnProtocol.HTTP_1_1));
+  }
+
+  private static void configureAlpn(
+      SslContextBuilder sslContextBuilder, List<AlpnProtocol> protocols) {
+    List<String> wireProtocols = protocols.stream().map(AlpnProtocol::getValue).toList();
     Consumer<SslContextBuilder> configureALPN =
         contextBuilder ->
             contextBuilder
@@ -193,8 +218,7 @@ public class NettySslContextFactory {
                         // ACCEPT is currently the only mode supported by both OpenSsl and JDK
                         // providers.
                         ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                        ApplicationProtocolNames.HTTP_2,
-                        ApplicationProtocolNames.HTTP_1_1));
+                        wireProtocols));
     if (SslProvider.isAlpnSupported(SslContext.defaultServerProvider())) {
       configureALPN.accept(sslContextBuilder.sslProvider(SslContext.defaultServerProvider()));
     } else if (SslProvider.isAlpnSupported(SslProvider.JDK)) {

@@ -21,7 +21,7 @@
 package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.rbellogger.util.PortToProcessMapper;
 import de.gematik.rbellogger.util.RbelSocketAddress;
@@ -60,8 +60,8 @@ public class ServernameFromProcessAndPortSupplier
 
   private Optional<Integer> extractPort(RbelElement hostNameElement) {
     return hostNameElement
-        .getFacet(RbelHostnameFacet.class)
-        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .getFacet(RbelSocketAddressFacet.class)
+        .map(RbelSocketAddressFacet::toRbelSocketAddress)
         .map(RbelSocketAddress::getPort);
   }
 }

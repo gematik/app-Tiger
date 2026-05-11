@@ -72,14 +72,13 @@ internal fun mergeGlobalConfig(uploadedFiles: List<UploadedYamlFile>): GlobalCon
     }
 
     val rootFile = rootFiles.singleOrNull()
-        ?: return GlobalConfig(LightTigerConfigModel(), emptyMap())
+        ?: return GlobalConfig(LightTigerConfigModel())
 
-    val tree = buildRootedTree(rootFile, yamlByFileName)
-        ?: return GlobalConfig(LightTigerConfigModel(), emptyMap())
+    val (tree, warnings) = buildRootedTree(rootFile, yamlByFileName)
 
     val tigerSection = tree[TIGER_KEY] as? Map<*, *> ?: emptyMap<String, Any?>()
     val tigerConfig = yamlMapper.convertValue(normalizeMap(tigerSection), LightTigerConfigModel::class.java)
-    return GlobalConfig(tigerConfig, tree)
+    return GlobalConfig(tigerConfig, tree, warnings)
 }
 
 
@@ -122,6 +121,22 @@ private fun collectAdditionalFileNames(files: List<UploadedYamlFile>): Set<Strin
     files.flatMap { readAdditionalFiles(parseYamlDocument(it.content)).map { acf -> extractFileName(acf.filename) } }
         .toSet()
 
+/** Result of [buildRootedTree]: the merged tree plus any warnings collected during resolution. */
+private data class TreeBuildResult(
+    val tree: LinkedHashMap<String, Any?>,
+    val warnings: List<String>) {
+
+    companion object {
+        fun emptyResult() : TreeBuildResult =
+             TreeBuildResult(linkedMapOf(), emptyList())
+
+        fun justWarnings(warnings: List<String>) : TreeBuildResult =
+            TreeBuildResult(linkedMapOf(), warnings)
+
+    }
+
+}
+
 /**
  * Builds a rooted configuration tree for a single uploaded file, including any
  * additionalConfigurationFiles it references (resolved transitively).
@@ -129,19 +144,24 @@ private fun collectAdditionalFileNames(files: List<UploadedYamlFile>): Set<Strin
 private fun buildRootedTree(
     file: UploadedYamlFile,
     yamlByFileName: Map<String, String>
-): LinkedHashMap<String, Any?>? {
+): TreeBuildResult {
     val document = parseYamlDocument(file.content)
-    val tree = rootAsTigerConfig(document) ?: return null
+    val tree = rootAsTigerConfig(document)
     val processed = mutableSetOf<String>()
+    val warnings = mutableListOf<String>()
 
     while (true) {
         val pending = readAdditionalFiles(tree)
             .filter { it.filename.isNotBlank() }
             .filter { processed.add(extractFileName(it.filename)) }
-        if (pending.isEmpty()) return tree
+        if (pending.isEmpty()) return TreeBuildResult(tree, warnings)
 
         pending.forEach { ref ->
-            val yaml = resolveYamlContent(ref.filename, yamlByFileName) ?: return@forEach
+            val yaml = resolveYamlContent(ref.filename, yamlByFileName)
+            if (yaml == null) {
+                warnings += "Additional configuration file not found: ${ref.filename}"
+                return@forEach
+            }
             val additional = buildAdditionalTree(yaml, ref.baseKey)
             ensureNoDuplicateServers(tree[TIGER_KEY] as? Map<*, *>, additional[TIGER_KEY] as? Map<*, *>)
             deepMerge(tree, additional)
@@ -150,10 +170,10 @@ private fun buildRootedTree(
 }
 
 /** Wraps a parsed document under the "tiger" key if it isn't already. */
-private fun rootAsTigerConfig(document: Map<String, Any?>): LinkedHashMap<String, Any?>? = when {
+private fun rootAsTigerConfig(document: Map<String, Any?>): LinkedHashMap<String, Any?> = when {
     document[TIGER_KEY] is Map<*, *> -> normalizeMap(document)
     document.keys.any { it in TIGER_ROOT_KEYS } -> linkedMapOf(TIGER_KEY to normalizeMap(document))
-    else -> null
+    else -> error("The root configuration file must contain a 'tiger' section or at least one of the following keys: ${TIGER_ROOT_KEYS.joinToString(", ")}")
 }
 
 /** Returns true if the document looks like a tiger configuration. */
@@ -240,7 +260,6 @@ private fun ensureNoDuplicateServers(existing: Map<*, *>?, incoming: Map<*, *>?)
 
 private fun resolveYamlContent(referencePath: String, yamlByFileName: Map<String, String>): String? =
     yamlByFileName[extractFileName(referencePath)]
-        ?: runCatching { java.io.File(referencePath).readText() }.getOrNull()
 
 internal fun extractFileName(path: String): String =
     path.substringAfterLast('/').substringAfterLast('\\')

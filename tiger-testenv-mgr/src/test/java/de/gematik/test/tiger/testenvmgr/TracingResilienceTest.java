@@ -164,7 +164,7 @@ class TracingResilienceTest {
   private void giveAggregatingProxyTimeToCatchUpIfRunning(TigerTestEnvMgr testEnvMgr, int round) {
     if (aggregatingProxyContext != null) {
       try {
-        waitAtMost(2, TimeUnit.SECONDS)
+        waitAtMost(10, TimeUnit.SECONDS)
             .until(
                 () ->
                     testEnvMgr.getLocalTigerProxyOrFail().getMessageHistory().size()

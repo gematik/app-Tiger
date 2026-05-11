@@ -21,7 +21,8 @@
 
 -->
 <script setup lang="ts">
-import mermaid, { RenderResult } from "mermaid";
+import mermaid from "mermaid";
+import type { RenderResult } from "mermaid";
 import { computed, onMounted, ref, watch } from "vue";
 
 mermaid.initialize({ startOnLoad: false });

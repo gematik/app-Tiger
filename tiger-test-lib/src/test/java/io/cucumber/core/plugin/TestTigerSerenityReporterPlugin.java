@@ -62,6 +62,7 @@ import java.util.Optional;
 import java.util.UUID;
 import junit.framework.AssertionFailedError;
 import net.minidev.json.JSONArray;
+import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
 import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;

@@ -25,7 +25,7 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
@@ -77,8 +77,8 @@ public class RbelHttpPairingInBinaryChannelConverter extends RbelConverterPlugin
 
   private static RbelSocketAddress getHostname(RbelElement hostnameElement) {
     return hostnameElement
-        .getFacet(RbelHostnameFacet.class)
-        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .getFacet(RbelSocketAddressFacet.class)
+        .map(RbelSocketAddressFacet::toRbelSocketAddress)
         .orElse(null);
   }
 }

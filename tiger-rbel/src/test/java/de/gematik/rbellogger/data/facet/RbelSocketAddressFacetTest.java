@@ -24,21 +24,23 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class RbelHostnameFacetTest {
+class RbelSocketAddressFacetTest {
 
   @ParameterizedTest
   @CsvSource({"https://foo,foo,443", "http://foo,foo,80", "https://foo:8080,foo,8080"})
   void generateRbelHostnameFacet(String url, String hostname, String port) {
     assertThat(
             RbelSocketAddress.generateFromUrl(url)
-                .map(adr -> RbelHostnameFacet.buildRbelHostnameFacet(new RbelElement(), adr))
+                .map(
+                    adr ->
+                        RbelSocketAddressFacet.buildRbelSocketAddressFacet(new RbelElement(), adr))
                 .orElseThrow())
-        .hasFacet(RbelHostnameFacet.class)
+        .hasFacet(RbelSocketAddressFacet.class)
         .hasStringContentEqualToAtPosition("$.domain", hostname)
         .hasStringContentEqualToAtPosition("$.port", port);
   }

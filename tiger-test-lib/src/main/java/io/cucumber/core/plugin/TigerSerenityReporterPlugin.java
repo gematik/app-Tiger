@@ -28,6 +28,8 @@ import io.cucumber.plugin.event.*;
 import java.net.URI;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
+import net.serenitybdd.cucumber.core.plugin.ISerenityReporter;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j

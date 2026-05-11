@@ -90,9 +90,12 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
     val virtualAddress = incomingChannel.attr(VIRTUAL_SERVER_ADDRESS).get();
     if (virtualAddress != null) {
       return virtualAddress;
-    } else {
-      return RbelSocketAddress.create(outgoingChannel.remoteAddress());
     }
+    val remoteSocket = incomingChannel.attr(NettyHttpClient.REMOTE_SOCKET).get();
+    if (remoteSocket != null) {
+      return RbelSocketAddress.create(remoteSocket);
+    }
+    return RbelSocketAddress.create(outgoingChannel.remoteAddress());
   }
 
   @Override

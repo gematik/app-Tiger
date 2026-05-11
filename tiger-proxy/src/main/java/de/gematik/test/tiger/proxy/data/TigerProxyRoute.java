@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRouteAuthenticationConfiguration;
@@ -49,6 +50,7 @@ public class TigerProxyRoute implements Serializable {
   private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
+  private List<AlpnProtocol> alpnProtocols;
 
   /**
    * Should the route be matched for both forward- and reverse-proxy-requests? If true only requests
@@ -71,6 +73,7 @@ public class TigerProxyRoute implements Serializable {
         .disableRbelLogging(tigerRoute.isDisableRbelLogging())
         .matchForProxyType(tigerRoute.isMatchForProxyType())
         .preserveHostHeader(tigerRoute.isPreserveHostHeader())
+        .alpnProtocols(tigerRoute.getAlpnProtocols())
         .build();
   }
 

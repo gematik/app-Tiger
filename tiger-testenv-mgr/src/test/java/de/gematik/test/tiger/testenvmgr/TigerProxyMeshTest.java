@@ -941,7 +941,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     .asString());
 
     await()
-        .atMost(cycles * maxDelay, TimeUnit.MILLISECONDS)
+        .atMost(cycles * (maxDelay + 50), TimeUnit.MILLISECONDS)
         .until(
             () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size(),
             size -> size == 2 * cycles);

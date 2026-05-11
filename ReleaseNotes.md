@@ -1,5 +1,104 @@
 # Changelog Tiger Test platform
 
+# Release 4.2.7
+
+## Dependencies
+
+* Serenity BDD updated to 5.3.10 (TGR-2133)
+* JUnit updated to 6.0.3 (TGR-2133)
+
+## Breaking Changes
+
+* TGR-2116: The internal method `extractProtocolAndHostForRequest` in `AbstractTigerRouteCallback` has been
+  renamed to `extractReceiverAddressForRequest` and now returns `RbelSocketAddress` instead of
+  `String`. Custom implementations extending `AbstractTigerRouteCallback` must be updated accordingly.
+
+  The class `RbelHostnameFacet` has been renamed to `RbelSocketAddressFacet` and
+  its method `toRbelHostname` has been renamed to `toRbelSocketAddress`.
+
+## Features
+
+* TGR-2116: Tiger-Proxy now supports `honorHostHeaderRouting`. When enabled, reverse-proxy requests that do not match any configured route are forwarded to the host specified in the incoming `Host` header.
+  This acts as a lowest-priority fallback — configured routes always take precedence.
+  ```yaml
+  tigerProxy:
+    honorHostHeaderRouting: true   # default: false
+  ```
+* TGR-2119: Topology Visualizer: in standalone mode, user gets now a warning for missing files of referenced additionalConfiguration entries and docker compose configurations.
+* TGR-2123: Tiger now supports **multi-response protocols** such as LDAP SEARCH, where a single
+  request can yield multiple responses (e.g. several `SEARCH_RESULT_ENTRY` messages
+  followed by a `SEARCH_RESULT_DONE`).
+
+  - **Message pairing**: A request is now paired with an ordered list of responses and
+    waits for all of them (including the terminal response) before being considered
+    complete.
+  - **Validator steps**: The "current response" assertion steps now loop over all paired
+    responses and succeed if **any** response matches the assertion. For the common
+    single-response case (HTTP) the behaviour is unchanged. When no response matches,
+    a mismatch note is reported for each response.
+  - **WebUI**: Request labels show all paired response sequence numbers
+    (e.g. `#3 ⇢ 4, 5, 6`). Response labels point back to the request
+    (e.g. `#5 ⇠ 3`). The partner-message button cycles through all participants
+    (request → response₁ → response₂ → … → request).
+* TGR-2127: Topology Visualizer: each node contains an info button that opens a popover panel containing the yaml configuration of the node.
+* TGR-2129: Tiger-Proxy: HTTPS backends are now probed for ALPN at route setup, so clients see the same
+  `h2` / `http/1.1` negotiation as a direct connection. Routes can override the probe explicitly
+  when needed:
+
+  ```yaml
+  tigerProxy:
+    proxyRoutes:
+      - from: /api
+        to: https://h2-server:443
+        alpnProtocols: ["h2", "http/1.1"]
+      - from: /legacy
+        to: https://h1-server:443
+        alpnProtocols: ["http/1.1"]
+  ```
+* TGR-2136: Tiger-Proxy Docker image: several improvements aimed at external users.
+
+  * Bundles the `tiger-java-agent` and attaches it automatically via
+    `-javaagent:/app/agent.jar`.
+  * Much less aggressive `HEALTHCHECK` (`--start-period=20s --interval=30s
+    --retries=3`); the previous values flooded the recorded traffic.
+  * Docker-Hub-style README next to the Dockerfile with usage examples.
+  * The working directory `/app` is owned by the unprivileged runtime user
+    (UID/GID `10000:10000`) and writable, so relative paths in the
+    configuration (e.g. `tiger-proxy.tls.masterSecretsFile`) just work.
+    `app.jar` and `agent.jar` ship as mode `0444` as a small speed-bump
+    against accidental overwrites; operators that want stronger guarantees
+    can run the container with `--read-only` plus a writable `tmpfs` /
+    `emptyDir` mounted at the desired output path.
+  * The image can now also be built from Maven via the `docker` profile:
+    `mvn -Pdocker -pl tiger-proxy -am package`.
+  * Documented the actual Spring environment-variable binding for the
+    `tiger-proxy.*` configuration prefix: hyphens are dropped, so
+    `tiger-proxy.proxyPort` → `TIGERPROXY_PROXYPORT` (the previously documented
+    `TIGER_TIGERPROXY_PROXYPORT` did not bind to anything).
+
+## Bugfixes
+
+* TGR-2128: Provide proper exception message when a ForwardToProxy hostname is unresolvable.
+* TGR-2134: Tiger-Proxy: When a reverse proxy was chained with a forward proxy, the forwarded request contained the
+  reverse proxy's own address instead of the actual target domain, causing a routing loop.
+* TGR-2135: Tiger-Proxy: Fixed a bug where WebSocket (especially WSS) traffic through a reverse proxy chained
+  with a forward proxy would break shortly after the upgrade, because subsequent frames were mis-routed
+  to the forward proxy's own address instead of the real backend.
+* TGR-2136: Tiger-Proxy Docker image: writing the TLS master-secrets file
+  (`tiger-proxy.tls.masterSecretsFile`) now works inside the container. The
+  working directory `/app` is owned by the runtime user and writable, so
+  relative paths in the configuration just work; bind-mount a host directory
+  onto a subdirectory of `/app` (e.g. `/app/output`) to persist the file:
+
+  ```bash
+  docker run --rm \
+      -p 8080:8080 -p 9090:9090 \
+      -v "$(pwd)/tiger-data:/app/output" \
+      -e TIGERPROXY_TLS_MASTERSECRETSFILE=output/master-secrets.txt \
+      gematik1/tiger-proxy:latest
+  ```
+
+
 # Release 4.2.6
 
 ## Breaking Changes

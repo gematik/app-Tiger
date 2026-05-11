@@ -26,6 +26,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 
 import de.gematik.rbellogger.facets.http.RbelHttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
@@ -44,7 +45,9 @@ import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
+import de.gematik.test.tiger.proxy.handler.HostHeaderForwardCallback;
 import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
+import de.gematik.test.tiger.proxy.tls.BackendAlpnRegistry;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
 import jakarta.annotation.PreDestroy;
@@ -77,11 +80,14 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, RbelMessagesSupplier {
 
   private static final String CA_CERT_ALIAS = "caCert";
+  public static final int FORWARD_ALL_CALLBACK_PRIORITY = Integer.MIN_VALUE;
   private final List<KeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
   private final Map<String, TigerProxyRoute> tigerRouteMap = new HashMap<>();
   private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+
+  private final BackendAlpnRegistry alpnRegistry = new BackendAlpnRegistry();
 
   /**
    * Tiger Proxy health endpoint performs http get requests towards the local server port of the
@@ -91,7 +97,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
    */
   @Getter private final UUID healthEndpointRequestUuid = UUID.randomUUID();
 
-  private MockServer mockServer;
+  @EqualsAndHashCode.Exclude private MockServer mockServer;
   private TigerPkiIdentity serverRootCa;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
@@ -150,9 +156,19 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       mockServer.addRoute(
           Expectation.builder()
               .requestPattern(request().setPath("/").setForwardProxyRequest(true))
-              .priority(Integer.MIN_VALUE)
+              .priority(FORWARD_ALL_CALLBACK_PRIORITY)
               .hostRegexes(List.of())
               .expectationCallback(new ForwardAllCallback(this))
+              .build());
+    }
+
+    if (getTigerProxyConfiguration().isHonorHostHeaderRouting()) {
+      mockServer.addRoute(
+          Expectation.builder()
+              .requestPattern(request().setPath("/").setForwardProxyRequest(false))
+              .priority(FORWARD_ALL_CALLBACK_PRIORITY + 1)
+              .hostRegexes(List.of())
+              .expectationCallback(new HostHeaderForwardCallback(this))
               .build());
     }
 
@@ -192,7 +208,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
               getMockServerToRbelConverter()
                   .convertRequest(
                       request,
-                      request.getPath(),
+                      RbelSocketAddress.fromUrl(request.getPath()),
                       Optional.of(ZonedDateTime.now()),
                       new AtomicReference<>(null)));
     }
@@ -200,6 +216,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.http2FrameParsingActive(
         getTigerProxyConfiguration().getActivateRbelParsingFor() != null
             && getTigerProxyConfiguration().getActivateRbelParsingFor().contains("http2frames"));
+
+    mockServerConfiguration.alpnProtocolsForSniHostname(
+        sni -> alpnRegistry.resolveAlpnForSniHostname(sni, tigerRouteMap.values()).orElse(null));
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -357,6 +376,16 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       throw new TigerConfigurationException("Route '" + tigerRoute.getTo() + "' is not permitted!");
     }
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
+    if (tigerRoute.getAlpnProtocols() == null || tigerRoute.getAlpnProtocols().isEmpty()) {
+      var forwardProxy =
+          ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+                  getTigerProxyConfiguration())
+              .orElse(null);
+      alpnRegistry.probeBackendAlpnIfHttps(tigerRoute.getTo(), forwardProxy);
+    } else {
+      log.info(
+          "Route has explicit ALPN declaration {}, skipping probe", tigerRoute.getAlpnProtocols());
+    }
     final Expectation expectation = buildRouteAndReturnExpectation(tigerRoute);
     expectation.setTigerRoute(tigerRoute);
 

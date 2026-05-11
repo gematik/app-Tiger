@@ -21,7 +21,7 @@
 package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import java.util.Optional;
@@ -81,12 +81,13 @@ public class AddBundledServerNamesModifier implements MessageMetadataModifier {
     log.atTrace()
         .addArgument(serverNameElement)
         .addArgument(
-            () -> hostNameElement.getFacetOrFail(RbelHostnameFacet.class).toRbelSocketAddress())
+            () ->
+                hostNameElement.getFacetOrFail(RbelSocketAddressFacet.class).toRbelSocketAddress())
         .log("Adding bundled server name '{}' to hostname facet of element: {}");
     hostNameElement
-        .getFacet(RbelHostnameFacet.class)
+        .getFacet(RbelSocketAddressFacet.class)
         .ifPresent(
-            rbelHostnameFacet ->
-                rbelHostnameFacet.setBundledServerName(Optional.of(serverNameElement)));
+            socketAddressFacet ->
+                socketAddressFacet.setBundledServerName(Optional.of(serverNameElement)));
   }
 }

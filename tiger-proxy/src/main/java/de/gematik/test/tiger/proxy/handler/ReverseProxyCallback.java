@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -49,8 +50,9 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
             .setSecure(getTigerRoute().getTo().startsWith("https"))
             .setPath(patchPath(httpRequest.getPath()));
 
-    if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()
-        && !getTigerRoute().isPreserveHostHeader()) {
+    if (!getTigerRoute().isPreserveHostHeader()
+        && (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()
+            || getTigerProxy().getTigerProxyConfiguration().getForwardToProxy() != null)) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());
     }
     if (getTigerRoute().getAuthentication() != null) {
@@ -78,8 +80,8 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
   }
 
   @Override
-  protected String extractProtocolAndHostForRequest(HttpRequest request) {
-    return getTigerRoute().getTo();
+  protected RbelSocketAddress extractReceiverAddressForRequest(HttpRequest request) {
+    return RbelSocketAddress.fromUrl(getTigerRoute().getTo());
   }
 
   @Override

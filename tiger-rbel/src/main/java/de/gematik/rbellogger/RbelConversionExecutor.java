@@ -192,7 +192,11 @@ public class RbelConversionExecutor {
     }
     var request = lastMessages.get(lastMessages.size() - 1);
 
-    var pair = TracingMessagePairFacet.builder().request(request).response(response).build();
+    var pair =
+        TracingMessagePairFacet.builder()
+            .request(request)
+            .responses(new ArrayList<>(List.of(response)))
+            .build();
     response.addFacet(pair);
     request.addFacet(pair);
     return Optional.of(request);

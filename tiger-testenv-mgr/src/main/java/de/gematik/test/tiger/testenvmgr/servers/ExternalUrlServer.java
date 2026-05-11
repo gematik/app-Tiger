@@ -35,7 +35,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
   @Builder
   public ExternalUrlServer(
-      TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
+      String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     super(serverId, configuration, tigerTestEnvMgr);
     if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
       getConfiguration().setHealthcheckUrl(getConfiguration().getSource().get(0));
@@ -69,10 +69,10 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
   @Override
   public void addServerToLocalProxyRouteMap(URL url) {
     addRoute(
-            TigerConfigurationRoute.builder()
-                    .from(TigerTestEnvMgr.HTTP + getHostname())
-                    .to(url.toString())
-                    .build());
+        TigerConfigurationRoute.builder()
+            .from(TigerTestEnvMgr.HTTP + getHostname())
+            .to(url.toString())
+            .build());
   }
 
   @Override

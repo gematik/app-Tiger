@@ -25,6 +25,7 @@ import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
@@ -80,6 +81,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   @Getter private final TigerProxyConfiguration tigerProxyConfiguration;
   @Getter private RbelLogger rbelLogger;
   @Getter private RbelFileWriter rbelFileWriter;
+  @Getter private RbelFileReader rbelFileReader;
   @Getter private Optional<String> name;
   @Getter protected final Logger log;
   @Getter private boolean isShuttingDown = false;
@@ -165,7 +167,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   private void initializeFileWriter() {
-    rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
+    rbelFileWriter = new RbelFileWriter();
+    rbelFileReader = new RbelFileReader(rbelLogger.getRbelConverter());
   }
 
   private void readTrafficFromSourceFile(String sourceFile) {
@@ -194,7 +197,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public synchronized List<RbelElement> readTrafficFromString(String tgrFileContent) {
-    return rbelFileWriter.convertFromRbelFile(
+    return rbelFileReader.convertFromRbelFile(
         tgrFileContent,
         Optional.ofNullable(getTigerProxyConfiguration().getFileSaveInfo())
             .map(TigerFileSaveInfo::getReadFilter)
@@ -202,7 +205,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public synchronized List<RbelElement> readTraffic(File tgrFileContent) throws IOException {
-    return rbelFileWriter.convertFromRbelFile(
+    return rbelFileReader.convertFromRbelFile(
         new FileReader(tgrFileContent),
         Optional.ofNullable(getTigerProxyConfiguration().getFileSaveInfo())
             .map(TigerFileSaveInfo::getReadFilter)

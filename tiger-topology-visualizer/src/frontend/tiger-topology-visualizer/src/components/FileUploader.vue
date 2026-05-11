@@ -28,15 +28,6 @@ import Message from "primevue/message";
 const diagramModel = useDiagramModel();
 const isFileListExpanded = ref(true);
 
-function getUploadError(): string | null {
-  const store = diagramModel as typeof diagramModel & {
-    uploadError?: string | null;
-    getUploadError?: () => string | null;
-  };
-
-  return store.getUploadError?.() ?? store.uploadError ?? null;
-}
-
 function isFileStatus(file: File, status: string): boolean {
   const store = diagramModel as typeof diagramModel & {
     isFileStatus?: (candidate: File, expectedStatus: string) => boolean;
@@ -125,8 +116,11 @@ function fileStatusLabel(file: File): string {
   >
     <template #content="{ files, removeFileCallback }">
       <div v-if="files.length" class="uploaded-files">
-        <Message v-if="getUploadError()" severity="error">
-          {{ getUploadError() }}
+        <Message v-for="(warning, index) in diagramModel.model.warnings" :key="index" severity="warn">
+          {{ warning }}
+        </Message>
+        <Message v-if="diagramModel.uploadError" severity="error">
+          {{ diagramModel.uploadError }}
         </Message>
         <button
           type="button"

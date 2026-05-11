@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package io.cucumber.core.plugin;
+package net.serenitybdd.cucumber.core.plugin;
 
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;

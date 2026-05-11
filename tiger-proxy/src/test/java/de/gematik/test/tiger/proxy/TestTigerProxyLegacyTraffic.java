@@ -28,7 +28,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
-import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import java.util.Arrays;
 import java.util.List;
@@ -111,9 +111,9 @@ class TestTigerProxyLegacyTraffic {
               .get(containerAdminUrl(oldProxyContainer) + "/webui/trafficLog-oldProxy.tgr")
               .asString();
       val rbelLogger = RbelLogger.build(new RbelConfiguration());
-      val rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
+      val rbelFileReader = new RbelFileReader(rbelLogger.getRbelConverter());
 
-      return rbelFileWriter.convertFromRbelFile(trafficLogOldProxy.getBody(), Optional.empty());
+      return rbelFileReader.convertFromRbelFile(trafficLogOldProxy.getBody(), Optional.empty());
     }
   }
 

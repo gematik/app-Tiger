@@ -26,6 +26,7 @@ import de.gematik.test.tiger.topology.deserialization.LightRoute
 import de.gematik.test.tiger.topology.deserialization.LightTigerConfigModel
 import de.gematik.test.tiger.topology.util.extractPortFromUrl
 import java.net.URI
+import kotlin.collections.emptyMap
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Pure functions that build diagram nodes and edges from a LightTigerConfigModel.
@@ -35,7 +36,7 @@ import java.net.URI
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** Convenience typealias for placeholder resolution. Identity (`{ it }`) when no resolver is available. */
-internal typealias Resolve = (String) -> String
+internal typealias ResolvePlaceholders = (String) -> String
 
 private const val DOCKER_HOST = "docker-host"
 private const val LOCAL_PROXY = "localTigerProxy"
@@ -45,19 +46,19 @@ private const val LOCAL_PROXY = "localTigerProxy"
 
 internal fun createDiagramNode(
     server: Map.Entry<String, LightConfigServer>,
-    uploadedYaml: Map<String, String>,
-    resolve: Resolve
+    yamlResolver: YamlResolver,
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel = when (server.value.type) {
     "tigerProxy" -> createTigerProxyNode(server)
     "docker" -> createDockerNode(server)
-    "compose" -> createComposeNode(server, uploadedYaml)
-    "externalJar" -> createExternalJarNode(server, resolve)
+    "compose" -> createComposeNode(server, yamlResolver)
+    "externalJar" -> createExternalJarNode(server, resolvePlaceholders)
     "externalUrl" -> createExternalUrlNode(server)
     "zion" -> createZionNode(server)
     else -> DiagramNode(
         id = NodeId(server.key),
-        type = NodeType(server.value.type.ifBlank { "unknown" }),
-        data = NodeData(mapOf("label" to server.key))
+        type = NodeType.fromServerType(server.value.type),
+        data = NodeData(server.key, server.value.properties)
     ).singletonModel()
 }
 
@@ -66,26 +67,21 @@ internal fun createDiagramNode(
 
 internal fun createLocalProxyNode(config: LightTigerConfigModel) = DiagramNode(
     id = NodeId(LOCAL_PROXY),
-    type = NodeType("tigerProxy"),
-    data = NodeData(buildMap {
-        put("label", "Local Tiger Proxy")
-        put("host", config.tigerProxy?.get("hostname") ?: "localhost")
-        put("additionalFields", config.tigerProxy?.additionalFields ?: emptyMap<String, Any?>())
-    })
+    type = NodeType.TIGER_PROXY,
+    data = NodeData( "Local Tiger Proxy",
+        config.tigerProxy?.properties ?: emptyMap<String, Any>()
+    )
 ).singletonModel()
 
 private fun createTigerProxyNode(server: Map.Entry<String, LightConfigServer>): ConfigurationDiagramModel {
     val node = DiagramNode(
         id = NodeId(server.key),
-        type = NodeType("tigerProxy"),
+        type = NodeType.TIGER_PROXY,
         data = NodeData(
-            mapOf<String, Any>(
-                "label" to server.key,
-                "host" to server.value.hostname.ifBlank { server.key },
-                "additionalFields" to server.value.additionalFields
+            server.key,
+                server.value.properties
             )
         )
-    )
     return node.singletonModel() +
             createRouteNodesAndEdges(server.key, server.value.tigerProxyConfiguration?.proxyRoutes.orEmpty()) +
             createReverseProxyNodeAndEdge(server)
@@ -99,8 +95,8 @@ private fun createReverseProxyNodeAndEdge(server: Map.Entry<String, LightConfigS
     val nodeId = NodeId("${server.key}-directReverseTarget")
     return DiagramNode(
         id = nodeId,
-        type = NodeType("directReverseTarget"),
-        data = NodeData(mapOf("label" to "$host:$port", "hostname" to host, "port" to port))
+        type = NodeType.DIRECT_REVERSE_TARGET,
+        data = NodeData("$host:$port", mapOf("hostname" to host, "port" to port))
     ).singletonModel() + DiagramEdge(
         id = EdgeId("${server.key}-to-directReverseTarget"),
         source = NodeId(server.key),
@@ -118,7 +114,7 @@ internal fun createRouteNodesAndEdges(proxyName: String, routes: List<LightRoute
 
     routes.forEachIndexed { i, route ->
         val id = NodeId("$proxyName-route-$i")
-        nodes += DiagramNode(id, NodeType("route"), NodeData(mapOf("label" to route.from, "additionalFields" to route)))
+        nodes += DiagramNode(id, NodeType.ROUTE, NodeData(route.from, mapOf("from" to route.from, "to" to route.to)))
         edges += DiagramEdge(EdgeId("$proxyName-to-route-$i"), NodeId(proxyName), id)
     }
     return ConfigurationDiagramModel(nodes, edges)
@@ -129,67 +125,69 @@ internal fun createRouteNodesAndEdges(proxyName: String, routes: List<LightRoute
 
 internal fun createDockerHostNode() = DiagramNode(
     id = NodeId(DOCKER_HOST),
-    type = NodeType("group"),
-    data = NodeData(mapOf("label" to "docker host"))
+    type = NodeType.GROUP,
+    data = NodeData("docker host")
 ).singletonModel()
 
 private fun createDockerNode(server: Map.Entry<String, LightConfigServer>) = DiagramNode(
     id = NodeId(server.key),
-    type = NodeType("docker"),
-    data = NodeData(mapOf("label" to server.key, "additionalFields" to server.value.additionalFields)),
+    type = NodeType.DOCKER,
+    data = NodeData(server.key, server.value.properties),
     parentNode = NodeId(DOCKER_HOST),
     expandParent = true
 ).singletonModel()
 
 private fun createComposeNode(
     server: Map.Entry<String, LightConfigServer>,
-    uploadedYaml: Map<String, String>
+    yamlResolver: YamlResolver
 ): ConfigurationDiagramModel {
     val groupNode = DiagramNode(
         id = NodeId(server.key),
-        type = NodeType("group"),
-        data = NodeData(mapOf("label" to server.key, "additionalFields" to server.value.additionalFields)),
+        type = NodeType.GROUP,
+        data = NodeData(server.key, server.value.properties),
         parentNode = NodeId(DOCKER_HOST),
         expandParent = true
     )
     val composeFilePath = server.value.source.firstOrNull()
-    val services = composeFilePath?.let { parseComposeServices(resolveYaml(it, uploadedYaml)) } ?: emptyList()
-    val serviceNodes = services.mapIndexed { i, name ->
+    val resolvedYaml = composeFilePath?.let { yamlResolver.resolve(it) }
+    val warnings = if (resolvedYaml == null) {
+        listOf("Could not resolve docker-file: $composeFilePath")
+    }else{
+        emptyList()
+    }
+    val services = resolvedYaml?.let { parseComposeServices(it) }.orEmpty()
+
+    val serviceNodes = services.entries.mapIndexed { index, entry ->
         DiagramNode(
-            id = NodeId("${server.key}-service-$i"),
-            type = NodeType("composeService"),
-            data = NodeData(mapOf("label" to name)),
+            id = NodeId("${server.key}-service-$index"),
+            type = NodeType.COMPOSE_SERVICE,
+            data = NodeData(entry.key, entry.value as Map<*,*>),
             parentNode = NodeId(server.key),
             expandParent = true
         )
     }
-    return ConfigurationDiagramModel(listOf(groupNode) + serviceNodes, emptyList())
+    return ConfigurationDiagramModel(listOf(groupNode) + serviceNodes, emptyList(), warnings)
 }
 
-private fun parseComposeServices(yaml: String?): List<String> = try {
-    if (yaml == null) emptyList()
-    else {
-        val data = yamlMapper.readValue(yaml, Map::class.java) as Map<*, *>
-        (data["services"] as? Map<*, *>)?.keys?.map { it.toString() } ?: emptyList()
-    }
+private fun parseComposeServices(yaml: String): Map<String, Any?> = try {
+    val data = yamlMapper.readValue(yaml, Map::class.java) as Map<*, *>
+    @Suppress("UNCHECKED_CAST")
+    (data["services"] as? Map<String, Any?>) ?: emptyMap()
 } catch (_: Exception) {
-    emptyList()
+    emptyMap()
 }
-
-private fun resolveYaml(path: String, uploaded: Map<String, String>): String? =
-    uploaded[extractFileName(path)] ?: runCatching { java.io.File(path).readText() }.getOrNull()
 
 
 // ── External JAR ────────────────────────────────────────────────────────────
 
 private fun createExternalJarNode(
     server: Map.Entry<String, LightConfigServer>,
-    resolve: Resolve
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
-    val resolved = server.value.externalJarOptions?.options.orEmpty().map(resolve)
+    val resolved = server.value.externalJarOptions?.options.orEmpty().map(resolvePlaceholders)
     val usesProxy = resolved.any { "-Dhttp.proxyHost=127.0.0.1" in it || "-Dhttp.proxyHost=localhost" in it }
             && resolved.any { "-Dhttp.proxyPort=" in it }
-    return serverNodeWithOptionalProxyEdge(server, "externalJar", usesProxy)
+    return serverNodeWithOptionalProxyEdge(server, NodeType.EXTERNAL_JAR, usesProxy)
 }
 
 
@@ -200,12 +198,11 @@ private fun createExternalUrlNode(server: Map.Entry<String, LightConfigServer>):
     val host = url?.let(::extractHost)
     return DiagramNode(
         id = NodeId(server.key),
-        type = NodeType("externalUrl"),
-        data = NodeData(buildMap {
-            put("label", server.key)
+        type = NodeType.EXTERNAL_URL,
+        data = NodeData(server.key, buildMap {
             url?.let { put("url", it) }
             host?.let { put("hostname", it) }
-            put("additionalFields", server.value.additionalFields)
+            putAll(server.value.properties)
         })
     ).singletonModel()
 }
@@ -214,12 +211,12 @@ private fun createExternalUrlNode(server: Map.Entry<String, LightConfigServer>):
 // ── Zion ────────────────────────────────────────────────────────────────────
 
 private fun createZionNode(server: Map.Entry<String, LightConfigServer>) =
-    serverNodeWithOptionalProxyEdge(server, "zion", usesLocalProxy = true)
+    serverNodeWithOptionalProxyEdge(server, NodeType.ZION, usesLocalProxy = true)
 
 internal fun createZionBackendEdges(
     config: LightTigerConfigModel,
     existingModel: ConfigurationDiagramModel,
-    resolve: Resolve
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
     val nodes = mutableListOf<DiagramNode>()
     val edges = mutableListOf<DiagramEdge>()
@@ -227,7 +224,7 @@ internal fun createZionBackendEdges(
 
     config.servers.filter { it.value.type == "zion" }.forEach { (name, server) ->
         server.zionConfiguration?.collectBackendRequestUrls().orEmpty().forEach { url ->
-            val resolved = resolve(url)
+            val resolved = resolvePlaceholders(url)
             val target = existingModel.findNodeMatchingUrl(resolved)
                 ?: syntheticByUrl.getOrPut(resolved) { createSyntheticExternalNode(resolved) }.id
             edges += DiagramEdge(
@@ -246,9 +243,9 @@ private fun createSyntheticExternalNode(url: String): DiagramNode {
     val host = extractHost(url)
     return DiagramNode(
         id = NodeId("external-backend-${sanitizeId(url)}"),
-        type = NodeType("externalUrl"),
-        data = NodeData(buildMap {
-            put("label", url); put("url", url)
+        type = NodeType.EXTERNAL_URL,
+        data = NodeData(url, buildMap {
+            put("url", url)
             host?.let { put("hostname", it) }
         })
     )
@@ -259,21 +256,21 @@ private fun createSyntheticExternalNode(url: String): DiagramNode {
 
 internal fun createTrafficEndpointEdges(
     config: LightTigerConfigModel,
-    resolve: Resolve
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
     val endpoints = config.tigerProxy?.trafficEndpoints.orEmpty()
     if (endpoints.isEmpty()) return ConfigurationDiagramModel.empty()
 
     // Extract the port from each endpoint URL after resolving placeholders.
     val endpointPorts = endpoints.mapNotNull { endpoint ->
-        extractPortFromUrl(resolve(endpoint))?.let { endpoint to it }
+        extractPortFromUrl(resolvePlaceholders(endpoint))?.let { endpoint to it }
     }
 
     val edges = mutableListOf<DiagramEdge>()
     config.servers
         .filter { it.value.type == "tigerProxy" && it.value.tigerProxyConfiguration?.adminPort != null }
         .forEach { (serverName, server) ->
-            val adminPort = server.tigerProxyConfiguration?.adminPort?.let(resolve) ?: return@forEach
+            val adminPort = server.tigerProxyConfiguration?.adminPort?.let(resolvePlaceholders) ?: return@forEach
             endpointPorts.filter { (_, port) -> port == adminPort }.forEach { _ ->
                 edges += DiagramEdge(
                     EdgeId("$LOCAL_PROXY-to-$serverName-trafficEndpoint"),
@@ -296,11 +293,11 @@ internal fun createTrafficEndpointEdges(
  */
 internal fun createRouteToServerEdges(
     config: LightTigerConfigModel,
-    resolve: Resolve
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
     // Collect all servers' resolved serverPort → serverName
     val serversByPort = config.servers.mapNotNull { (name, server) ->
-        val port = server["serverPort"]?.toString()?.let(resolve)?.takeIf { it.isNotBlank() }
+        val port = server["serverPort"]?.toString()?.let(resolvePlaceholders)?.takeIf { it.isNotBlank() }
             ?: return@mapNotNull null
         port to name
     }.groupBy({ it.first }, { it.second })
@@ -313,7 +310,7 @@ internal fun createRouteToServerEdges(
         routes.forEachIndexed { i, route ->
             val routeNodeId = "$proxyName-route-$i"
             route.to.forEach { toUrl ->
-                val port = extractPortFromUrl(resolve(toUrl)) ?: return@forEach
+                val port = extractPortFromUrl(resolvePlaceholders(toUrl)) ?: return@forEach
                 serversByPort[port]?.forEach { serverName ->
                     edges += DiagramEdge(
                         EdgeId("$routeNodeId-to-$serverName"),
@@ -342,7 +339,7 @@ internal fun createRouteToServerEdges(
 
 internal fun createRouteToDockerEdges(
     config: LightTigerConfigModel,
-    resolve: Resolve
+    resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
     val routes = config.tigerProxy?.proxyRoutes.orEmpty()
     if (routes.isEmpty()) return ConfigurationDiagramModel.empty()
@@ -351,16 +348,16 @@ internal fun createRouteToDockerEdges(
     val dockerPorts = config.servers
         .filter { it.value.type == "docker" }
         .mapNotNull { (name, server) ->
-            val ports = (server.dockerOptions?.get("ports") as? List<*>)
-                ?.mapNotNull { resolve(it.toString().substringBefore(":").trim()).takeIf { p -> p.isNotBlank() } }
-                ?: emptyList()
+            val ports = server.dockerOptions?.ports.orEmpty()
+                .map { resolvePlaceholders(it.substringBefore(":").trim()) }
+                .filter { it.isNotBlank() }
             ports.takeIf { it.isNotEmpty() }?.let { name to it }
         }
 
     val edges = mutableListOf<DiagramEdge>()
     routes.forEachIndexed { i, route ->
         route.to.forEach { toUrl ->
-            val port = extractPortFromUrl(resolve(toUrl)) ?: return@forEach
+            val port = extractPortFromUrl(resolvePlaceholders(toUrl)) ?: return@forEach
             dockerPorts.filter { (_, ports) -> port in ports }.forEach { (docker, _) ->
                 edges += DiagramEdge(
                     EdgeId("$LOCAL_PROXY-route-$i-to-$docker"),
@@ -405,13 +402,13 @@ internal fun createImplicitProxyToServerEdges(
 
 private fun serverNodeWithOptionalProxyEdge(
     server: Map.Entry<String, LightConfigServer>,
-    nodeType: String,
+    nodeType: NodeType,
     usesLocalProxy: Boolean
 ): ConfigurationDiagramModel {
     val node = DiagramNode(
         id = NodeId(server.key),
-        type = NodeType(nodeType),
-        data = NodeData(mapOf("label" to server.key, "additionalFields" to server.value.additionalFields))
+        type = nodeType,
+        data = NodeData(server.key, server.value.properties)
     )
     return if (usesLocalProxy) {
         node.singletonModel() + DiagramEdge(

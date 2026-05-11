@@ -50,7 +50,6 @@ import java.util.function.ObjLongConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -425,17 +424,10 @@ public class TigerWebUiController implements ApplicationContextAware {
         : stream;
   }
 
-  private static RbelElement findPartner(RbelElement msg) {
+  private static List<RbelElement> findAllPartners(RbelElement msg) {
     return msg.getFacet(TracingMessagePairFacet.class)
-        .map(
-            pairFacet -> {
-              if (pairFacet.getRequest() == msg) {
-                return pairFacet.getResponse();
-              } else {
-                return pairFacet.getRequest();
-              }
-            })
-        .orElse(null);
+        .map(f -> f.getOtherMessages(msg))
+        .orElseGet(List::of);
   }
 
   @Operation(summary = "Download recorded traffic as a .tgr file")
@@ -472,9 +464,7 @@ public class TigerWebUiController implements ApplicationContextAware {
       headers.add("last-uuid", resultMessages.get(resultMessageCount - 1).getUuid());
     }
 
-    val writer =
-        new RbelFileWriter(tigerProxy.getRbelLogger().getRbelConverter())
-            .setWriteVersionHeader(includeVersion);
+    val writer = new RbelFileWriter().setWriteVersionHeader(includeVersion);
     val finalSkipContentThreshold =
         skipContentThreshold >= 0 ? skipContentThreshold : Integer.MAX_VALUE;
 
@@ -555,12 +545,16 @@ public class TigerWebUiController implements ApplicationContextAware {
       final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
       return msg ->
           RbelJexlExecutor.matchAsTextExpression(msg, textFilter)
-              || RbelJexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
+              || findAllPartners(msg).stream()
+                  .anyMatch(p -> RbelJexlExecutor.matchAsTextExpression(p, textFilter));
     } else {
       return msg ->
           TigerJexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
-              || TigerJexlExecutor.matchesAsJexlExpression(
-                  findPartner(msg), filterCriterion, Optional.empty());
+              || findAllPartners(msg).stream()
+                  .anyMatch(
+                      p ->
+                          TigerJexlExecutor.matchesAsJexlExpression(
+                              p, filterCriterion, Optional.empty()));
     }
   }
 

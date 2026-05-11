@@ -27,6 +27,7 @@ import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,20 +48,20 @@ public class MetaMessageScrollableDto {
   private String infoString;
   private List<String> additionalInfoStrings;
   private ZonedDateTime timestamp;
-  private String pairedUuid;
-  private long pairedSequenceNumber;
+  @Builder.Default private List<Long> pairedSequenceNumbers = new ArrayList<>();
   private String recipient;
   private String sender;
 
   public static MetaMessageScrollableDto createFrom(RbelElement el) {
-    final var paired =
-        el.getFacet(TracingMessagePairFacet.class).flatMap(f -> f.getOtherMessage(el));
+    final var allPaired =
+        el.getFacet(TracingMessagePairFacet.class)
+            .map(f -> f.getOtherMessages(el))
+            .orElseGet(ArrayList::new);
     return MetaMessageScrollableDto.builder()
         .uuid(el.getUuid())
         .sequenceNumber(getElementSequenceNumber(el))
-        .pairedUuid(paired.map(RbelElement::getUuid).orElse(null))
-        .pairedSequenceNumber(
-            paired.map(MetaMessageScrollableDto::getElementSequenceNumber).orElse(-1L))
+        .pairedSequenceNumbers(
+            allPaired.stream().map(MetaMessageScrollableDto::getElementSequenceNumber).toList())
         .sender(
             el.getFacet(RbelTcpIpMessageFacet.class)
                 .map(RbelTcpIpMessageFacet::getSender)

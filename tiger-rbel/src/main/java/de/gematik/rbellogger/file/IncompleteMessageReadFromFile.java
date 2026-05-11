@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,12 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package io.cucumber.core.plugin;
+package de.gematik.rbellogger.file;
 
-import io.cucumber.messages.types.Scenario;
-import io.cucumber.messages.types.Step;
-import io.cucumber.plugin.event.TestCase;
-import java.net.URI;
-import net.thucydides.core.steps.StepEventBus;
-import net.thucydides.model.domain.DataTable;
+import de.gematik.rbellogger.data.core.RbelFacet;
 
-public interface IScenarioContext {
-  Scenario getCurrentScenarioDefinition(String scenarioId);
-
-  DataTable getTable(String scenarioId);
-
-  Step getCurrentStep(TestCase testCase);
-
-  Scenario currentScenarioOutline(String scenarioId);
-
-  boolean isAScenarioOutline(String scenarioId);
-
-  URI getFeatureURI();
-
-  StepEventBus stepEventBus();
-}
+/**
+ * Simple marker facet to indicate that the message was read from a file. Should always be deleted
+ * after parsing is complete.
+ */
+public class IncompleteMessageReadFromFile implements RbelFacet {}
