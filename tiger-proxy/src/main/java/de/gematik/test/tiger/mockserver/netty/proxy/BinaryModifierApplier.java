@@ -28,7 +28,7 @@ import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
@@ -180,13 +180,23 @@ public class BinaryModifierApplier {
                 .receiver(
                     RbelMessageMetadata.MESSAGE_RECEIVER
                         .getValue(messageMetadata)
-                        .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
-                        .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
+                        .map(
+                            h ->
+                                RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+                                    messageElement, h))
+                        .orElse(
+                            RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+                                messageElement, null)))
                 .sender(
                     RbelMessageMetadata.MESSAGE_SENDER
                         .getValue(messageMetadata)
-                        .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
-                        .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
+                        .map(
+                            h ->
+                                RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+                                    messageElement, h))
+                        .orElse(
+                            RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+                                messageElement, null)))
                 .build());
       }
       messageElement.addFacet(messageMetadata);
@@ -196,7 +206,9 @@ public class BinaryModifierApplier {
           .ifPresent(
               pairFacet -> {
                 pairFacet.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
-                pairFacet.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
+                pairFacet
+                    .getResponses()
+                    .forEach(r -> r.removeFacetsOfType(TracingMessagePairFacet.class));
               });
       return result;
     }

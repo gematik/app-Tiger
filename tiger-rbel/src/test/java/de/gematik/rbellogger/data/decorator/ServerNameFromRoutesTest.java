@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
@@ -75,7 +75,7 @@ class ServerNameFromHostnameTest {
   private static RbelElement addHostnameElementToMessageWithAddress(
       RbelSocketAddress socketAddress) {
     RbelElement hostnameElement =
-        RbelHostnameFacet.buildRbelHostnameFacet(exampleMessage, socketAddress);
+        RbelSocketAddressFacet.buildRbelSocketAddressFacet(exampleMessage, socketAddress);
     exampleMessage.addOrReplaceFacet(
         RbelTcpIpMessageFacet.builder().receiver(hostnameElement).build());
     return hostnameElement;

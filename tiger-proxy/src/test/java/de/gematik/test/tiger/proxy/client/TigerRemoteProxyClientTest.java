@@ -237,7 +237,8 @@ class TigerRemoteProxyClientTest {
               return invocation.callRealMethod();
             })
         .when(spyConverter)
-        .convertRequest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        .convertRequest(
+            Mockito.any(), Mockito.any(RbelSocketAddress.class), Mockito.any(), Mockito.any());
 
     ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter", spyConverter);
   }

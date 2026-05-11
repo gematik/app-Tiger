@@ -21,7 +21,7 @@
 package de.gematik.rbellogger.captures;
 
 import de.gematik.rbellogger.RbelConverter;
-import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -44,7 +44,7 @@ public class RbelFileReaderCapturer extends RbelCapturer {
   @Override
   public RbelCapturer initialize() {
     try {
-      new RbelFileWriter(getRbelConverter())
+      new RbelFileReader(getRbelConverter())
           .convertFromRbelFile(
               Files.readString(Paths.get(rbelFile), StandardCharsets.UTF_8), Optional.empty());
       return this;

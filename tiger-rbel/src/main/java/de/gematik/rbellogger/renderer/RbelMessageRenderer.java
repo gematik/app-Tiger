@@ -55,14 +55,14 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     String senderHostname =
         messageFacet
             .map(RbelTcpIpMessageFacet::getSender)
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .map(RbelHostnameFacet::toString)
+            .flatMap(f -> f.getFacet(RbelSocketAddressFacet.class))
+            .map(RbelSocketAddressFacet::toString)
             .orElse(null);
     String receiverHostname =
         messageFacet
             .map(RbelTcpIpMessageFacet::getReceiver)
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .map(RbelHostnameFacet::toString)
+            .flatMap(f -> f.getFacet(RbelSocketAddressFacet.class))
+            .map(RbelSocketAddressFacet::toString)
             .orElse(null);
 
     if (senderHostname == null && receiverHostname == null) {

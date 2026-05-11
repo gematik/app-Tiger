@@ -21,9 +21,9 @@
 package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class ServerNameFromHostname implements Function<RbelElement, Optional<St
 
   @Override
   public Optional<String> apply(RbelElement hostNameElement) {
-    val hostnameFacet = hostNameElement.getFacet(RbelHostnameFacet.class);
+    val hostnameFacet = hostNameElement.getFacet(RbelSocketAddressFacet.class);
     if (hostnameFacet.isEmpty()) {
       return Optional.empty();
     }

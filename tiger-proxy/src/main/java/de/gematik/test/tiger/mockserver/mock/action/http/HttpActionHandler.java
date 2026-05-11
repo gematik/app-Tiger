@@ -259,10 +259,7 @@ public class HttpActionHandler {
     if (ctx != null && ctx.channel() != null) {
       val remoteSocket = ctx.channel().attr(REMOTE_SOCKET).get();
       val outgoingChannel = ctx.channel().attr(OUTGOING_CHANNEL).get();
-      if (outgoingChannel != null
-          && outgoingChannel.remoteAddress() instanceof InetSocketAddress socketAddress) {
-        return socketAddress;
-      } else if (remoteSocket != null) {
+      if (remoteSocket != null) {
         final SocketAddress localAddress = ctx.channel().localAddress();
         if (remoteSocket.getAddress() != null
             && remoteSocket.getAddress().isLoopbackAddress()
@@ -273,6 +270,14 @@ public class HttpActionHandler {
               .toInetAddress()
               .map(inetAdr -> new InetSocketAddress(inetAdr, remoteSocket.getPort()))
               .orElse(remoteSocket);
+        }
+      } else if (outgoingChannel != null) {
+        val outgoingRemoteSocket = outgoingChannel.attr(REMOTE_SOCKET).get();
+        if (outgoingRemoteSocket != null) {
+          return outgoingRemoteSocket;
+        }
+        if (outgoingChannel.remoteAddress() instanceof InetSocketAddress socketAddress) {
+          return socketAddress;
         }
       }
     }

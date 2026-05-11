@@ -99,8 +99,8 @@ class RbelConverterTest {
     RbelElement pair2A = new RbelElement("foo".getBytes(), null);
     RbelElement pair2B = new RbelElement("foo".getBytes(), null);
 
-    pair1A.addFacet(new TracingMessagePairFacet(null, null));
-    pair2A.addFacet(new TracingMessagePairFacet(null, null));
+    pair1A.addFacet(new TracingMessagePairFacet(null, (RbelElement) null));
+    pair2A.addFacet(new TracingMessagePairFacet(null, (RbelElement) null));
     pair1B.addFacet(new TracingMessagePairFacet(null, pair1A));
     pair2B.addFacet(new TracingMessagePairFacet(null, pair2A));
 

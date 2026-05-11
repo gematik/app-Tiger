@@ -78,6 +78,7 @@ public class TigerProxyConfiguration {
   @Builder.Default private boolean parsingShouldBlockCommunication = false;
   @Builder.Default private boolean rewriteHostHeader = false;
   @Builder.Default private boolean rewriteLocationHeader = true;
+  @Builder.Default private boolean honorHostHeaderRouting = false;
   @Builder.Default private boolean activateTrafficLogging = true;
   @Builder.Default private boolean logConnectMessages = false;
   @Builder.Default private List<TigerProxyNoteCommand> notes = new ArrayList<>();

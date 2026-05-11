@@ -292,7 +292,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .getMockServerToRbelConverter()
         .convertRequest(
             request,
-            extractProtocolAndHostForRequest(request),
+            extractReceiverAddressForRequest(request),
             Optional.of(ZonedDateTime.now()),
             previousMessageUuid)
         .exceptionally(
@@ -315,7 +315,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .convertResponse(
             request,
             response,
-            extractProtocolAndHostForRequest(request),
+            extractReceiverAddressForRequest(request),
             request.getSenderAddress(),
             Optional.of(ZonedDateTime.now()),
             previousMessageUuid)
@@ -339,9 +339,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
     return !getTigerRoute().isDisableRbelLogging();
   }
 
-  protected abstract String extractProtocolAndHostForRequest(HttpRequest request);
+  abstract RbelSocketAddress extractReceiverAddressForRequest(HttpRequest request);
 
-  HttpRequest cloneRequest(HttpRequest req) {
+  protected HttpRequest cloneRequest(HttpRequest req) {
     final HttpOverrideForwardedRequest clonedRequest = forwardOverriddenRequest(req);
     if (req.getBody() != null) {
       return clonedRequest.getRequestOverride().withBody(req.getBody());
@@ -420,12 +420,32 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
 
   @Override
   public Action handleException(Throwable exception, HttpRequest request) {
+    Throwable root = ExceptionUtils.getRootCause(exception);
+    String message;
+    String hostname = null;
+    if (tigerProxy != null
+        && tigerProxy.getTigerProxyConfiguration() != null
+        && tigerProxy.getTigerProxyConfiguration().getForwardToProxy() != null) {
+      hostname = tigerProxy.getTigerProxyConfiguration().getForwardToProxy().getHostname();
+    }
+    if ((root instanceof java.nio.channels.UnresolvedAddressException
+            || root instanceof java.net.UnknownHostException)
+        && hostname != null) {
+      message =
+          "The configured forward proxy hostname '"
+              + hostname
+              + "' cannot be resolved. "
+              + "Please check the 'tigerProxy.forwardToProxy.hostname' configuration.";
+    } else {
+      message =
+          "Exception during handling of HTTP request: " + ExceptionUtils.getMessage(exception);
+    }
     final TigerProxyRoutingException routingException =
         new TigerProxyRoutingException(
-            "Exception during handling of HTTP request: " + ExceptionUtils.getMessage(exception),
+            message,
             // sender and receiver are switched here, because the exception acts as a response
             Optional.ofNullable(request.getReceiverAddress())
-                .map(SocketAddress::toRbelHostname)
+                .map(SocketAddress::toRbelSocketAddress)
                 .orElse(null),
             RbelSocketAddress.fromString(request.getSenderAddress()).orElse(null),
             exception);
@@ -437,7 +457,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .getMockServerToRbelConverter()
         .convertErrorResponse(
             request,
-            extractProtocolAndHostForRequest(request),
+            extractReceiverAddressForRequest(request),
             routingException,
             previousMessageUuid);
     return new CloseChannel();

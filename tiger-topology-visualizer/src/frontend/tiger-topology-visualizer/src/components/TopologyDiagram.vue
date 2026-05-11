@@ -21,12 +21,14 @@
 
 <script setup lang="ts">
 import { VueFlow } from "@vue-flow/core";
-import { ref, watchEffect } from "vue";
+import { markRaw, ref, watchEffect } from "vue";
 import { useDiagramModel } from "../stores/diagramModel.ts";
 import { Background } from "@vue-flow/background";
 import { layoutWithElk } from "../layout/useLayoutElk.ts";
 import { MiniMap } from "@vue-flow/minimap";
 import Message from "primevue/message";
+import DefaultNode from "../nodes/DefaultNode.vue";
+import GroupNode from "../nodes/GroupNode.vue";
 
 const diagramModel = useDiagramModel();
 const nodes = ref<any[]>([]);
@@ -47,6 +49,10 @@ watchEffect(async () => {
       error instanceof Error ? error.message : "Layout failed";
   }
 });
+
+const nodeTypes: Record<string, any> = {
+  default: markRaw(DefaultNode),
+};
 </script>
 
 <template>
@@ -56,9 +62,12 @@ watchEffect(async () => {
       {{ layoutError }}
     </Message>
   </div>
-  <VueFlow v-else :nodes="nodes" :edges="edges">
+  <VueFlow v-else :nodes="nodes" :edges="edges" :nodeTypes="nodeTypes">
     <Background></Background>
     <MiniMap pannable zoomable></MiniMap>
+    <template #node-group="props">
+      <GroupNode :id="props.id" :data="props.data" />
+    </template>
   </VueFlow>
 </template>
 
@@ -74,10 +83,28 @@ watchEffect(async () => {
 }
 
 /* Make group nodes transparent so edges show through */
-:deep(.vue-flow__node.parent) {
+:deep(.vue-flow__node.parent),
+:deep(.vue-flow__node-group) {
   background: transparent !important;
-  border: 2px solid #999;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Strip VueFlow's default node style — BaseNode handles all styling */
+:deep(.vue-flow__node-default) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+:deep(.vue-flow__node-default.selectable:hover),
+:deep(.vue-flow__node-input.selectable:hover),
+:deep(.vue-flow__node-output.selectable:hover) {
+  box-shadow: none;
 }
 </style>

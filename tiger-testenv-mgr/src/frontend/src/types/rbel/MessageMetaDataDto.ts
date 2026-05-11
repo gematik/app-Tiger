@@ -29,7 +29,6 @@ export default class MessageMetaDataDto {
   bundledServerNameReceiver: string = "";
   sequenceNumber: number = -1;
   timestamp: Date | string = "";
-  pairedUuid: string = "";
   removed: boolean = false;
 
   public toString() {

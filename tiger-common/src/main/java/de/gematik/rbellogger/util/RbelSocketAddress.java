@@ -43,8 +43,8 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 @Builder
 @Slf4j
-@JsonSerialize(using = RbelSocketAddress.RbelHostnameSerializer.class)
-@JsonDeserialize(using = RbelSocketAddress.RbelHostnameDeserializer.class)
+@JsonSerialize(using = RbelSocketAddress.RbelSocketAddressSerializer.class)
+@JsonDeserialize(using = RbelSocketAddress.RbelSocketAddressDeserializer.class)
 public class RbelSocketAddress implements Serializable {
 
   private final RbelInternetAddress address;
@@ -159,6 +159,11 @@ public class RbelSocketAddress implements Serializable {
     }
   }
 
+  /** Convenience method equivalent to {@code generateFromUrl(url).orElse(null)}. */
+  public static RbelSocketAddress fromUrl(String url) {
+    return generateFromUrl(url).orElse(null);
+  }
+
   public static RbelSocketAddress create(String address, int port) {
     return new RbelSocketAddress(RbelInternetAddressParser.parseInetAddress(address), port);
   }
@@ -176,7 +181,7 @@ public class RbelSocketAddress implements Serializable {
     return address.printValidHostname();
   }
 
-  public static class RbelHostnameSerializer extends JsonSerializer<RbelSocketAddress> {
+  public static class RbelSocketAddressSerializer extends JsonSerializer<RbelSocketAddress> {
     @Override
     public void serialize(
         RbelSocketAddress value, JsonGenerator gen, SerializerProvider serializers)
@@ -185,7 +190,7 @@ public class RbelSocketAddress implements Serializable {
     }
   }
 
-  public static class RbelHostnameDeserializer extends JsonDeserializer<RbelSocketAddress> {
+  public static class RbelSocketAddressDeserializer extends JsonDeserializer<RbelSocketAddress> {
 
     @Override
     public RbelSocketAddress deserialize(JsonParser p, DeserializationContext ctxt)

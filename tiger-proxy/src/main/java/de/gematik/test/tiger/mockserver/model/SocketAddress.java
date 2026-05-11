@@ -78,7 +78,7 @@ public class SocketAddress extends ObjectWithJsonToString {
     return this;
   }
 
-  public RbelSocketAddress toRbelHostname() {
+  public RbelSocketAddress toRbelSocketAddress() {
     return RbelSocketAddress.create(host, port);
   }
 

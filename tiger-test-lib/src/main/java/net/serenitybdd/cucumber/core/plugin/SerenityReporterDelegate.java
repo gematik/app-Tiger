@@ -18,8 +18,10 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package io.cucumber.core.plugin;
+package net.serenitybdd.cucumber.core.plugin;
 
+import io.cucumber.core.plugin.report.merging.MergingSerenityReporter;
+import io.cucumber.core.plugin.report.merging.outcome.TestOutcomeMerger;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
@@ -29,14 +31,20 @@ import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
 import io.cucumber.plugin.event.WriteEvent;
 import java.net.URI;
+import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
+import lombok.extern.slf4j.Slf4j;
 
-public class SerenityReporterParallelDelegate implements ISerenityReporter {
+@SuppressWarnings("java:S1874")
+@Slf4j
+public class SerenityReporterDelegate implements ISerenityReporter {
 
-  @Delegate private final SerenityReporterParallel reporter = new SerenityReporterParallel();
+  @Delegate
+  private final SerenityReporter reporter = new MergingSerenityReporter(new TestOutcomeMerger());
 
+  @SneakyThrows
   public IScenarioContext getContext(URI featureURI) {
-    return new ScenarioContextParallelDelegate(featureURI, reporter.getContext(featureURI));
+    return new ScenarioContextDelegate(featureURI, reporter.getContext());
   }
 
   @Override

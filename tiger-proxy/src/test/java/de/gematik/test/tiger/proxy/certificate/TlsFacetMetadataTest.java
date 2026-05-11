@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -221,7 +222,7 @@ class TlsFacetMetadataTest {
             "192.168.1.200:443");
 
     // Write messages to a TGR file
-    RbelFileWriter fileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
+    RbelFileWriter fileWriter = new RbelFileWriter();
     Path tgrFile = tempDir.resolve("test-tls-metadata.tgr");
 
     String tgrContent =
@@ -233,11 +234,11 @@ class TlsFacetMetadataTest {
 
     log.info("Wrote TGR file to: {}", tgrFile);
 
-    // Read the file back using RbelFileWriter's reading facilities
+    // Read the file back using RbelFileReader
     RbelLogger readerLogger = RbelLogger.build();
     String fileContent = Files.readString(tgrFile);
     var readMessages =
-        new RbelFileWriter(readerLogger.getRbelConverter())
+        new RbelFileReader(readerLogger.getRbelConverter())
             .convertFromRbelFile(fileContent, java.util.Optional.empty());
 
     assertThat(readMessages).hasSize(3);

@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -103,7 +104,7 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
     public CompletableFuture<RbelElement> convertResponse(
         HttpRequest request,
         HttpResponse response,
-        String senderUrl,
+        RbelSocketAddress senderAddress,
         String clientAddress,
         Optional<ZonedDateTime> timestamp,
         AtomicReference<String> previousMessageReference) {

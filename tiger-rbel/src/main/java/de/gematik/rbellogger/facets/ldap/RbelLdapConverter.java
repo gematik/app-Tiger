@@ -119,7 +119,7 @@ public class RbelLdapConverter extends RbelConverterPlugin {
       element.addFacet(rbelLdapFacet);
 
       element.addFacet(new RbelRootFacet<>(rbelLdapFacet));
-      handleRequestResponse(element, ldapMessage);
+      handleRequestResponse(element, ldapMessage, operationType);
 
       element.setUsedBytes(actualLdapMessageBytes.length);
     } catch (final DecoderException | IOException e) {
@@ -514,10 +514,12 @@ public class RbelLdapConverter extends RbelConverterPlugin {
     return sb.toString();
   }
 
-  private void handleRequestResponse(RbelElement rbelElement, Message ldapMessage) {
+  private void handleRequestResponse(
+      RbelElement rbelElement, Message ldapMessage, LdapOperationType operationType) {
     val messageTypeName = ldapMessage.getType().name();
     if (ldapMessage instanceof Request) {
-      rbelElement.addFacet(new RbelRequestFacet(messageTypeName, false));
+      boolean responseRequired = operationType.isMultiResponseRequest();
+      rbelElement.addFacet(new RbelRequestFacet(messageTypeName, responseRequired));
     } else {
       rbelElement.addFacet(new RbelResponseFacet(messageTypeName));
     }

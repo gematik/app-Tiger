@@ -35,6 +35,7 @@ export interface DiagramEdgeDto {
 export interface ConfigurationDiagramDto {
   nodes: DiagramNodeDto[];
   edges: DiagramEdgeDto[];
+  warnings: string[];
 }
 
 export function createDiagramNodeDto(

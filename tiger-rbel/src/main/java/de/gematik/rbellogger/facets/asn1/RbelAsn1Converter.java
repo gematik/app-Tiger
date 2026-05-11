@@ -27,9 +27,7 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -45,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.apache.commons.io.input.BoundedInputStream;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -100,24 +97,16 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
 
   @SneakyThrows
   private InputStream trimmedInputStream(RbelElement element) {
-    byte[] data = element.getContent().toByteArray();
+    var data = element.getContent();
     int start = 0;
-    int end = data.length;
-    while (start < end && Character.isWhitespace((char) data[start])) {
+    int end = data.size();
+    while (start < end && Character.isWhitespace((char) data.get(start))) {
       start++;
     }
-    while (end > start && Character.isWhitespace((char) data[end - 1])) {
+    while (end > start && Character.isWhitespace((char) data.get(end - 1))) {
       end--;
     }
-    final BoundedInputStream result =
-        BoundedInputStream.builder()
-            .setInputStream(new ByteArrayInputStream(data))
-            .setMaxCount(end)
-            .get();
-    if (start != result.skip(start)) {
-      throw new RbelConversionException("Error while skipping whitespace", element, this);
-    }
-    return result;
+    return data.subArray(start, end).toInputStream();
   }
 
   @SneakyThrows

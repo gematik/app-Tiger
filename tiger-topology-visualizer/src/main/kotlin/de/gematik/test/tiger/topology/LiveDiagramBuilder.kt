@@ -51,7 +51,8 @@ fun buildDiagramFromLiveConfiguration(): ConfigurationDiagramModel {
 
     return convertConfigurationToDiagramModel(
         config = tigerConfig,
-        resolve = TigerGlobalConfiguration::resolvePlaceholders
+        yamlResolver = FilesystemYamlResolver(),
+        resolvePlaceholders = TigerGlobalConfiguration::resolvePlaceholders
     )
 }
 

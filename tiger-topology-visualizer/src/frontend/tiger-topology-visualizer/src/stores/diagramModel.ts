@@ -71,6 +71,7 @@ export const useDiagramModel = defineStore("diagramModel", () => {
   const model = ref<ConfigurationDiagramDto>({
     nodes: [],
     edges: [],
+    warnings: [],
   });
   const uploadedFiles = ref<File[]>([]);
   const uploadedFileStatuses = ref<Record<string, UploadedFileStatus>>({});
@@ -80,6 +81,7 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     return {
       nodes: [],
       edges: [],
+      warnings: [],
     };
   }
 
@@ -146,8 +148,8 @@ export const useDiagramModel = defineStore("diagramModel", () => {
         { method: "POST", body: form },
       );
       model.value = {
+        ...receivedModel,
         nodes: receivedModel.nodes.map((item) => createDiagramNodeDto(item)),
-        edges: receivedModel.edges,
       };
       updateStatuses(uploadedFiles.value, "processed");
     } catch (error) {
@@ -192,8 +194,8 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     try {
       const receivedModel = await fetchJson<ConfigurationDiagramDto>(url);
       model.value = {
+        ...receivedModel,
         nodes: receivedModel.nodes.map((item) => createDiagramNodeDto(item)),
-        edges: receivedModel.edges,
       };
       uploadError.value = null;
     } catch (error) {

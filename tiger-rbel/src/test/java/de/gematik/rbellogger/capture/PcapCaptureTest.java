@@ -65,12 +65,12 @@ class PcapCaptureTest {
         .hasStringContentEqualToAtPosition("$.sender.port", "51441")
         .extractChildWithPath("$.sender.domain")
         .asString()
-        .matches("(view-|)localhost");
+        .matches("(view-|)localhost|127\\.0\\.0\\.\\d+");
     assertThat(history.getFirst())
         .hasStringContentEqualToAtPosition("$.receiver.port", "8080")
         .extractChildWithPath("$.receiver.domain")
         .asString()
-        .matches("(view-|)localhost");
+        .matches("(view-|)localhost|127\\.0\\.0\\.\\d+");
   }
 
   @SneakyThrows

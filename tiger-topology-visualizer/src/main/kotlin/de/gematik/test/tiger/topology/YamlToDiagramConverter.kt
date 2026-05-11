@@ -36,8 +36,7 @@ import de.gematik.test.tiger.topology.util.requireThat
 data class UploadedYamlFile(val fileName: String, val content: String)
 
 /**
- * Main entry point: takes a list of uploaded YAML files, merges them into a
- * [GlobalConfig], resolves placeholders, and builds the full diagram model.
+ * Main entry point: takes a list of uploaded YAML files, merges them, resolves placeholders, and builds the full diagram model.
  */
 fun convertUploadedFilesToDiagramModel(uploadedFiles: List<UploadedYamlFile>): ConfigurationDiagramModel {
     if (uploadedFiles.isEmpty()) return ConfigurationDiagramModel.empty()
@@ -53,20 +52,20 @@ fun convertUploadedFilesToDiagramModel(uploadedFiles: List<UploadedYamlFile>): C
 
     return convertConfigurationToDiagramModel(
         config = globalConfig.tigerConfig,
-        uploadedYaml = uploadedYaml,
-        resolve = { resolvePlaceholders(it, globalConfig) }
-    )
+        yamlResolver = UploadedYamlResolver(uploadedYaml),
+        resolvePlaceholders = { resolvePlaceholders(it, globalConfig) }
+    ).withWarnings(globalConfig.warnings)
 }
 
 /**
  * Builds a [ConfigurationDiagramModel] from a [LightTigerConfigModel].
  *
- * @param resolve resolves `${…}` placeholders before port/URL comparisons. Defaults to identity.
+ * @param resolvePlaceholders resolves `${…}` placeholders before port/URL comparisons. Defaults to identity.
  */
 fun convertConfigurationToDiagramModel(
     config: LightTigerConfigModel,
-    uploadedYaml: Map<String, String> = emptyMap(),
-    resolve: Resolve = { it }
+    yamlResolver: YamlResolver,
+    resolvePlaceholders: ResolvePlaceholders = { it }
 ): ConfigurationDiagramModel {
     var model = ConfigurationDiagramModel.empty()
 
@@ -83,24 +82,24 @@ fun convertConfigurationToDiagramModel(
 
     // 3. All server nodes
     config.servers.forEach { server ->
-        model += createDiagramNode(server, uploadedYaml, resolve)
+        model += createDiagramNode(server, yamlResolver, resolvePlaceholders)
     }
 
     // 4. Edges from local proxy to remote proxies (traffic endpoints) and docker containers (routes)
     if (config.localProxyActive) {
-        model += createTrafficEndpointEdges(config, resolve)
-        model += createRouteToDockerEdges(config, resolve)
+        model += createTrafficEndpointEdges(config, resolvePlaceholders)
+        model += createRouteToDockerEdges(config, resolvePlaceholders)
     }
 
     // 5. Edges from route nodes to the servers they target (by serverPort match)
-    model += createRouteToServerEdges(config, resolve)
+    model += createRouteToServerEdges(config, resolvePlaceholders)
 
     // 6. Implicit edges from local proxy to servers that auto-register routes at runtime
     //TODO: not sure if useful
     //model += createImplicitProxyToServerEdges(config)
 
     // 7. Zion backend request edges
-    model += createZionBackendEdges(config, model, resolve)
+    model += createZionBackendEdges(config, model, resolvePlaceholders)
 
     return model
 }

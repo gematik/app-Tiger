@@ -98,7 +98,7 @@ class YamlToDiagramConverterTest {
             )
         )
 
-        assertThat(diagramModel.nodes.filter { it.parentNode?.value == "dockerComposeTest" }.map { it.data.value["label"] })
+        assertThat(diagramModel.nodes.filter { it.parentNode?.value == "dockerComposeTest" }.map { it.data.label })
             .containsExactlyInAnyOrder("alpha", "beta")
     }
 
@@ -119,6 +119,71 @@ class YamlToDiagramConverterTest {
 
         assertThat(diagramModel.nodes.map { it.id.value }).contains("docker-host", "dockerComposeTest")
         assertThat(diagramModel.nodes.map { it.type.value }).doesNotContain("composeService")
+    }
+
+    // ── Warnings for missing files ──────────────────────────────────────────
+
+    @Test
+    fun `missing additional configuration file should produce a warning`() {
+        val mainYaml = """
+            additionalConfigurationFiles:
+              - filename: C:/tmp/missing-file.yaml
+                baseKey: tiger
+            servers: {}
+        """.trimIndent()
+
+        val diagramModel = convertUploadedFilesToDiagramModel(
+            listOf(UploadedYamlFile("main.yaml", mainYaml))
+        )
+
+        assertThat(diagramModel.warnings).hasSize(1)
+        assertThat(diagramModel.warnings.first()).contains("missing-file.yaml")
+    }
+
+    @Test
+    fun `no warnings when all additional configuration files are present`() {
+        val mainYaml = """
+            additionalConfigurationFiles:
+              - filename: extra.yaml
+                baseKey: tiger
+            servers: {}
+        """.trimIndent()
+        val extraYaml = """
+            servers:
+              myService:
+                type: externalUrl
+                source:
+                  - https://example.test
+        """.trimIndent()
+
+        val diagramModel = convertUploadedFilesToDiagramModel(
+            listOf(
+                UploadedYamlFile("main.yaml", mainYaml),
+                UploadedYamlFile("extra.yaml", extraYaml)
+            )
+        )
+
+        assertThat(diagramModel.warnings).isEmpty()
+    }
+
+    @Test
+    fun `multiple missing additional files should produce multiple warnings`() {
+        val mainYaml = """
+            additionalConfigurationFiles:
+              - filename: missing-a.yaml
+                baseKey: tiger
+              - filename: missing-b.yaml
+                baseKey: tiger
+            servers: {}
+        """.trimIndent()
+
+        val diagramModel = convertUploadedFilesToDiagramModel(
+            listOf(UploadedYamlFile("main.yaml", mainYaml))
+        )
+
+        assertThat(diagramModel.warnings).hasSize(2)
+        assertThat(diagramModel.warnings).anyMatch { it.contains("missing-a.yaml") }
+        assertThat(diagramModel.warnings).anyMatch { it.contains("missing-b.yaml") }
     }
 
     @Test
@@ -185,7 +250,7 @@ class YamlToDiagramConverterTest {
 
         assertThat(diagramModel.nodes).hasSize(1)
         assertThat(diagramModel.nodes.get(0).id.value).isEqualTo("localTigerProxy")
-        assertThat(diagramModel.nodes.get(0).data.value["label"]).isEqualTo("Local Tiger Proxy")
+        assertThat(diagramModel.nodes.get(0).data.label).isEqualTo("Local Tiger Proxy")
         assertThat(diagramModel.edges).hasSize(0)
     }
 
@@ -393,7 +458,7 @@ class YamlToDiagramConverterTest {
 
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
 
-        val syntheticNode = diagramModel.nodes.find { it.data.value["url"] == "https://unknown-service.example.com/api" }
+        val syntheticNode = diagramModel.nodes.find { it.data.config["url"] == "https://unknown-service.example.com/api" }
         assertThat(syntheticNode).isNotNull
         assertThat(syntheticNode!!.type.value).isEqualTo("externalUrl")
         assertThat(diagramModel.edges.any { it.source == NodeId("mockServer") && it.target == syntheticNode.id }).isTrue()
@@ -421,8 +486,8 @@ class YamlToDiagramConverterTest {
         val reverseNode = diagramModel.nodes.find { it.id.value == "myProxy-directReverseTarget" }
         assertThat(reverseNode).isNotNull
         assertThat(reverseNode!!.type.value).isEqualTo("directReverseTarget")
-        assertThat(reverseNode.data.value["hostname"]).isEqualTo("127.0.0.1")
-        assertThat(reverseNode.data.value["port"]).isEqualTo("3000")
+        assertThat(reverseNode.data.config["hostname"]).isEqualTo("127.0.0.1")
+        assertThat(reverseNode.data.config["port"]).isEqualTo("3000")
 
         // Should have the edge from proxy to reverse target
         val reverseEdge = diagramModel.edges.find { it.id.value == "myProxy-to-directReverseTarget" }

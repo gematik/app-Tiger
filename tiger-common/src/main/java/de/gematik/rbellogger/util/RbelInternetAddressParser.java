@@ -33,13 +33,10 @@ public class RbelInternetAddressParser {
 
   private static final Map<String, RbelInternetAddress> CACHE = new ConcurrentHashMap<>();
 
-  private static String cachedLoopbackHostname;
+  private static final String cachedLoopbackHostname = initLoopbackHostname();
 
-  private static String getLoopbackHostname(InetAddress address) {
-    if (cachedLoopbackHostname == null) {
-      cachedLoopbackHostname = address.getHostName();
-    }
-    return cachedLoopbackHostname;
+  private static String initLoopbackHostname() {
+    return InetAddress.getLoopbackAddress().getHostName();
   }
 
   public static RbelInternetAddress parseInetAddress(String addressString) {
@@ -74,6 +71,10 @@ public class RbelInternetAddressParser {
       String hostname = computeHostname(addressString, inetAddress);
       return new RbelInternetAddress(hostname, ipBytes);
     } catch (UnknownHostException e) {
+      if (addressString.equals(cachedLoopbackHostname)) {
+        return new RbelInternetAddress(
+            addressString, InetAddress.getLoopbackAddress().getAddress());
+      }
       return new RbelInternetAddress(addressString, null);
     }
   }
@@ -82,7 +83,7 @@ public class RbelInternetAddressParser {
     String hostname;
     if (isLikelyIpAddress(addressString)) {
       if (inetAddress.isLoopbackAddress()) {
-        hostname = getLoopbackHostname(inetAddress);
+        hostname = cachedLoopbackHostname;
       } else {
         hostname = null;
       }

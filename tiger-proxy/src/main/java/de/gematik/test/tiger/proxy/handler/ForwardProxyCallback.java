@@ -22,12 +22,12 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 
 /** Callback used for all Forward-Proxy routes in the TigerProxy. */
 @Slf4j
@@ -62,13 +62,12 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   }
 
   @Override
-  protected String extractProtocolAndHostForRequest(HttpRequest request) {
-    val builder = new StringBuilder();
-    builder.append(getSourceUri().getScheme()).append("://").append(getSourceUri().getHost());
-    if (getSourceUri().getPort() != -1) {
-      builder.append(":").append(getSourceUri().getPort());
+  protected RbelSocketAddress extractReceiverAddressForRequest(HttpRequest request) {
+    int port = getSourceUri().getPort();
+    if (port == -1) {
+      port = "https".equals(getSourceUri().getScheme()) ? 443 : 80;
     }
-    return builder.toString();
+    return RbelSocketAddress.create(getSourceUri().getHost(), port);
   }
 
   @Override

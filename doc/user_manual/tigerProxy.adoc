@@ -250,6 +250,56 @@ curl -x localhost:59163 http://backend.domain/foobar
 curl http://localhost:59163/foobar
 ```
 
+==== alpnProtocols
+
+The Tiger Proxy automatically probes each HTTPS backend at route-add time to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.
+Based on the result, the proxy restricts the protocols it advertises to clients during the TLS handshake — ensuring transparent behavior (the client sees the same protocol it would with a direct connection).
+
+In most cases this works automatically and requires no configuration.
+However, for ambiguous setups — such as two routes on the same hostname pointing to different backends with different protocol support — you can explicitly declare the ALPN protocols per route using the `alpnProtocols` property:
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      - from: /api
+        to: https://h2-server:443
+        alpnProtocols:
+          - "h2"
+          - "http/1.1"
+      - from: /legacy
+        to: https://h1-server:443
+        alpnProtocols:
+          - "http/1.1"
+----
+
+When `alpnProtocols` is set, the declaration **overrides the automatic probe** for that route — no probe is performed.
+If multiple routes with explicit `alpnProtocols` declarations match the same client connection (same SNI hostname), the proxy computes the **intersection** of the declared lists (conservative approach).
+
+Valid protocol identifiers are `h2` (HTTP/2) and `http/1.1`.
+
+===== Automatic behavior (no `alpnProtocols` set)
+
+[%autowidth]
+|===
+|Backend probe result |Proxy advertises to client |Rationale
+
+|Backend prefers `h2` |`[h2, http/1.1]` |Backend supports h2; also offer h1 for h1-only clients
+|Backend only speaks `http/1.1` |`[http/1.1]` |Backend can't do h2 — don't offer it to the client
+|Probe failed (unreachable) |`[h2, http/1.1]` |Fail-open — keep default, fall back to protocol translation
+|HTTP backend (no TLS) |`[h2, http/1.1]` |No TLS → no probe possible → keep default
+|Mixed backends (h2 + h1) |`[http/1.1]` |Conservative — only offer what ALL backends support
+|===
+
+===== When to use explicit `alpnProtocols`
+
+* **Path-ambiguous routes:** Two routes with different paths on the same hostname but different backends.
+The automatic probe can't know which path the client will request at TLS time, so it falls back to the conservative approach (only h1 if any backend is h1-only).
+Use `alpnProtocols` to resolve this explicitly.
+* **Backend unreachable at startup:** If the backend is not reachable when the route is added, the probe fails and the proxy defaults to `[h2, http/1.1]`.
+Use `alpnProtocols` to declare the correct protocols.
+* **Force a specific protocol:** For testing purposes you may want to force h2 or h1, regardless of what the backend actually supports.
+
 === TLS, keys, certificates a quick tour on proxies
 
 A fundamental part of a proxy setup is TLS.
@@ -994,6 +1044,27 @@ Default is false.
 
 This flag activates the rewriting of the host-header.
 If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).
+Default is false.
+
+==== honorHostHeaderRouting
+
+When enabled, reverse proxy requests that do not match any configured route will be forwarded to the host specified in the incoming `Host` header.
+This is useful when the TigerProxy acts as a transparent reverse proxy in front of a dynamic set of backends, or when clients already set the `Host` header correctly to the actual backend.
+
+The fallback has the lowest priority: if a configured route matches the request, that route is always used.
+Only when no route matches does the Host header fallback kick in.
+
+If the `Host` header points back to the TigerProxy itself (e.g. `localhost` on the proxy port), the connection will be closed to prevent infinite loops.
+
+NOTE: When this option is enabled, the TigerProxy can potentially forward requests to arbitrary hosts specified by a client in the `Host` header.
+For test environments (the primary use case of TigerProxy) this is generally not a concern.
+
+[source,yaml]
+----
+tigerProxy:
+    honorHostHeaderRouting: true
+----
+
 Default is false.
 
 ==== rewriteLocationHeader

@@ -52,7 +52,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
   @Getter private TigerProxy tigerProxyBean;
 
   public TigerProxyServer(
-      TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
+      String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     super(serverId, configuration, tigerTestEnvMgr);
   }
 

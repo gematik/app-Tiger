@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.2.6</version>
+  <version>4.2.7</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -55,8 +55,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- work around for owasp plugin requiring yarn to perform its task, alas we don't use yarn at all
-                                 https://service.gematik.de/browse/DEVOPS-1233
-                            -->
+                                     https://service.gematik.de/browse/DEVOPS-1233
+                                -->
 
     <version.apache-mime4j>0.8.13</version.apache-mime4j>
     <version.asm>9.9.1</version.asm>
@@ -102,10 +102,10 @@
     <version.json-unit>5.1.0</version.json-unit>
     <version.jsonschema-generator>4.38.0</version.jsonschema-generator>
     <version.jsoup>1.22.1</version.jsoup>
-    <!-- junit 5 and junit-platform should be in sync -->
-    <version.junit-minor-version>14.1</version.junit-minor-version>
-    <version.junit-platform>1.${version.junit-minor-version}</version.junit-platform>
-    <version.junit5>5.${version.junit-minor-version}</version.junit5>
+    <!-- junit 6: platform and jupiter now share the same version -->
+    <version.junit>6.0.3</version.junit>
+    <version.junit-platform>${version.junit}</version.junit-platform>
+    <version.junit5>${version.junit}</version.junit5>
     <version.kotlin>2.3.0</version.kotlin>
     <version.kotlin-io>0.8.2</version.kotlin-io>
     <version.kotlin-serialization>1.10.0</version.kotlin-serialization>
@@ -135,8 +135,8 @@
     <version.okhttp>5.3.2</version.okhttp>
     <version.org.glassfish.jaxb>4.0.6</version.org.glassfish.jaxb>
     <version.selenium>4.38.0</version.selenium>
-    <version.serenity.core>4.3.2</version.serenity.core>
-    <version.serenity.maven.plugin>4.3.2</version.serenity.maven.plugin>
+    <version.serenity.core>5.3.10</version.serenity.core>
+    <version.serenity.maven.plugin>5.3.10</version.serenity.maven.plugin>
     <version.slf4j>2.0.17</version.slf4j>
     <version.snakeyaml>2.5</version.snakeyaml>
     <version.sockjs-client>1.5.1</version.sockjs-client>
@@ -343,63 +343,63 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.2.6</version>
+        <version>4.2.7</version>
       </dependency>
       <dependency>
         <groupId>io.github.classgraph</groupId>
@@ -433,9 +433,9 @@
       </dependency>
 
       <!-- make sure that only one version of jakarta.xml.bind
-                                               with a compatible version of the org.glassfish.jaxb
-                                               implementation is available to all modules
-                                               to avoid conflicts -->
+                                                     with a compatible version of the org.glassfish.jaxb
+                                                     implementation is available to all modules
+                                                     to avoid conflicts -->
       <dependency>
         <groupId>jakarta.xml.bind</groupId>
         <artifactId>jakarta.xml.bind-api</artifactId>
@@ -823,10 +823,10 @@
       </dependency>
       <dependency>
         <!-- because of a bug in spring-webmvc which is not yet fixed in spring-boot-dependencies.
-                                when spring-boot includes this version, we can remove it from here.
-                                Problem manifests in zion, but since zion reads dependencies from here, it is
-                                safer to set it directly in bom - See TGRZ-8
-                                -->
+                                        when spring-boot includes this version, we can remove it from here.
+                                        Problem manifests in zion, but since zion reads dependencies from here, it is
+                                        safer to set it directly in bom - See TGRZ-8
+                                        -->
         <groupId>org.springframework</groupId>
         <artifactId>spring-webmvc</artifactId>
         <version>6.2.16</version>

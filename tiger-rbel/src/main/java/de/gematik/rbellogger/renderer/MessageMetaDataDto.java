@@ -51,7 +51,6 @@ public class MessageMetaDataDto {
   private long sequenceNumber;
   private ZonedDateTime timestamp;
   private boolean isRequest;
-  private String pairedUuid;
   private String color;
   private String symbol;
   private String abbrev;
@@ -78,38 +77,33 @@ public class MessageMetaDataDto {
             .bundledServerNameSender(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
-                    .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
-                    .map(RbelHostnameFacet::toRbelSocketAddress)
+                    .flatMap(e -> e.getFacet(RbelSocketAddressFacet.class))
+                    .map(RbelSocketAddressFacet::toRbelSocketAddress)
                     .map(RbelSocketAddress::printHostname)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .or(
                         () ->
                             el.getFacet(RbelTcpIpMessageFacet.class)
                                 .map(RbelTcpIpMessageFacet::getSender)
-                                .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
-                                .map(RbelHostnameFacet::toString)
+                                .flatMap(e -> e.getFacet(RbelSocketAddressFacet.class))
+                                .map(RbelSocketAddressFacet::toString)
                                 .map(s -> s.replace(":", "#58;")))
                     .orElse(""))
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
-                    .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
-                    .map(RbelHostnameFacet::toRbelSocketAddress)
+                    .flatMap(e -> e.getFacet(RbelSocketAddressFacet.class))
+                    .map(RbelSocketAddressFacet::toRbelSocketAddress)
                     .map(RbelSocketAddress::printHostname)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .or(
                         () ->
                             el.getFacet(RbelTcpIpMessageFacet.class)
                                 .map(RbelTcpIpMessageFacet::getReceiver)
-                                .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
-                                .map(RbelHostnameFacet::toString)
+                                .flatMap(e -> e.getFacet(RbelSocketAddressFacet.class))
+                                .map(RbelSocketAddressFacet::toString)
                                 .map(s -> s.replace(":", "#58;")))
-                    .orElse(""))
-            .pairedUuid(
-                el.getFacet(TracingMessagePairFacet.class)
-                    .flatMap(f -> f.getOtherMessage(el))
-                    .map(RbelElement::getUuid)
-                    .orElse(null));
+                    .orElse(""));
 
     builder.additionalInformation(
         el.findAllNestedFacetsStream(RbelMessageInfoFacet.class)

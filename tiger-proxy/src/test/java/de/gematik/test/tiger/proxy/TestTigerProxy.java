@@ -30,7 +30,7 @@ import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
@@ -291,20 +291,20 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getRbelMessagesList()
                 .get(0)
                 .findElement("$.receiver")
-                .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-                .map(RbelHostnameFacet::toRbelSocketAddress)
+                .flatMap(el -> el.getFacet(RbelSocketAddressFacet.class))
+                .map(RbelSocketAddressFacet::toRbelSocketAddress)
                 .map(RbelSocketAddress::asSocketAddress))
         .get()
         .matches(
             adr ->
                 adr instanceof InetSocketAddress
                     && ((InetSocketAddress) adr).getAddress().isLoopbackAddress());
-    RbelHostnameFacet senderHostname =
+    RbelSocketAddressFacet senderHostname =
         tigerProxy
             .getRbelMessagesList()
             .get(1)
             .findElement("$.sender")
-            .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+            .flatMap(el -> el.getFacet(RbelSocketAddressFacet.class))
             .orElseThrow();
     assertThat(senderHostname.getPort()).hasStringContentEqualTo("" + fakeBackendServerPort);
     assertThat(senderHostname.toRbelSocketAddress().isLoopbackAddress()).isTrue();
@@ -367,7 +367,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getRbelMessagesList()
                 .get(0)
                 .findElement("$.receiver")
-                .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+                .flatMap(el -> el.getFacet(RbelSocketAddressFacet.class))
                 .map(Object::toString))
         .get()
         .isEqualTo("foo.bar:80");
@@ -376,7 +376,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getRbelMessagesList()
                 .get(1)
                 .findElement("$.sender")
-                .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+                .flatMap(el -> el.getFacet(RbelSocketAddressFacet.class))
                 .map(Object::toString))
         .get()
         .isEqualTo("foo.bar:80");
@@ -1013,10 +1013,10 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .map(msg -> msg.getFacetOrFail(RbelTcpIpMessageFacet.class))
         .map(hostnameExtractor)
         .filter(Objects::nonNull)
-        .map(el -> el.getFacet(RbelHostnameFacet.class))
+        .map(el -> el.getFacet(RbelSocketAddressFacet.class))
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .map(RbelSocketAddressFacet::toRbelSocketAddress)
         .map(RbelSocketAddress::getAddress);
   }
 

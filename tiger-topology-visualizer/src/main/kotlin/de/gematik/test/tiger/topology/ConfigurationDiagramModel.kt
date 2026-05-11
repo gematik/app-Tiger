@@ -22,6 +22,7 @@
 package de.gematik.test.tiger.topology
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonValue
 import java.net.URI
 
 @JvmInline
@@ -30,16 +31,43 @@ value class NodeId(val value: String)
 @JvmInline
 value class EdgeId(val value: String)
 
-@JvmInline
-value class NodeType(val value: String)
+sealed class NodeType(
+    @get:JsonValue val value: String
+) {
+    data object TIGER_PROXY : NodeType("tigerProxy")
+    data object DOCKER : NodeType("docker")
+    data object GROUP : NodeType("group")
+    data object COMPOSE_SERVICE : NodeType("composeService")
+    data object EXTERNAL_JAR : NodeType("externalJar")
+    data object EXTERNAL_URL : NodeType("externalUrl")
+    data object HTTP_BIN : NodeType("httpbin")
+    data object ZION : NodeType("zion")
+    data object ROUTE : NodeType("route")
+    data object DIRECT_REVERSE_TARGET : NodeType("directReverseTarget")
+    data class OTHER(val originalType: String) : NodeType(originalType)
 
-@JvmInline
-value class NodeData(val value: Map<String, Any>)
+    companion object {
+        private val knownTypes by lazy { listOf(
+            TIGER_PROXY, DOCKER, GROUP, COMPOSE_SERVICE, HTTP_BIN,
+            EXTERNAL_JAR, EXTERNAL_URL, ZION, ROUTE, DIRECT_REVERSE_TARGET
+        )}
+
+        fun fromServerType(type: String): NodeType =
+            knownTypes.find { it.value == type } ?: OTHER(type.ifBlank { "unknown" })
+    }
+}
+
+
+data class NodeData(
+    val label: String,
+    val config: Map<*, *> = emptyMap<String, Any>())
 
 
 data class ConfigurationDiagramModel(
     val nodes: List<DiagramNode>,
-    val edges: List<DiagramEdge>
+    val edges: List<DiagramEdge>,
+    @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
+    val warnings: List<String> = emptyList()
 ){
 
     operator fun plus(other: ConfigurationDiagramModel): ConfigurationDiagramModel {
@@ -49,15 +77,20 @@ data class ConfigurationDiagramModel(
     fun merge(other: ConfigurationDiagramModel): ConfigurationDiagramModel {
         val mergedNodes = this.nodes + other.nodes
         val mergedEdges = this.edges + other.edges
-        return ConfigurationDiagramModel(mergedNodes, mergedEdges)
+        val mergedWarnings = this.warnings + other.warnings
+        return ConfigurationDiagramModel(mergedNodes, mergedEdges, mergedWarnings)
     }
 
 
     fun findNodeMatchingUrl(url: String): NodeId? {
         val urlHost = URI.create(url).host
 
-        return this.nodes.find { it.data.value["hostname"].toString() == urlHost || it.id.value == urlHost }?.id
+        return this.nodes.find { it.data.config["hostname"].toString() == urlHost || it.id.value == urlHost }?.id
     }
+
+    fun withWarnings(additionalWarnings: List<String>): ConfigurationDiagramModel =
+        if (additionalWarnings.isEmpty()) this
+        else copy(warnings = warnings + additionalWarnings)
 
     companion object {
         fun empty(): ConfigurationDiagramModel {

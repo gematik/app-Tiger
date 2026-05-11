@@ -24,7 +24,7 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -44,10 +44,10 @@ class AddBundledServerNamesModifierTest {
     messageWithTcpFacet.addFacet(
         RbelTcpIpMessageFacet.builder()
             .receiver(
-                RbelHostnameFacet.buildRbelHostnameFacet(
+                RbelSocketAddressFacet.buildRbelSocketAddressFacet(
                     messageWithTcpFacet, RbelSocketAddress.create("receiver", 1)))
             .sender(
-                RbelHostnameFacet.buildRbelHostnameFacet(
+                RbelSocketAddressFacet.buildRbelSocketAddressFacet(
                     messageWithTcpFacet, RbelSocketAddress.create("sender", 1)))
             .build());
   }

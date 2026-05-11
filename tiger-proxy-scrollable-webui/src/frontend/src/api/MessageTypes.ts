@@ -53,8 +53,7 @@ export type MetaMessageDto = BaseMessageDto & {
   additionalInfoStrings: string[];
   timestamp: string;
   request: boolean;
-  pairedUuid: string;
-  pairedSequenceNumber: number;
+  pairedSequenceNumbers: number[];
   recipient: string | null;
   sender: string | null;
 };

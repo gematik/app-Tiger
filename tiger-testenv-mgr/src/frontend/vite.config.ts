@@ -28,7 +28,7 @@ import envCompatible from "vite-plugin-env-compatible";
 export default defineConfig(() => {
   return {
     resolve: {
-      dedupe: ["vue", "pinia", "@vue-flow/core"],
+      dedupe: ["vue", "pinia", "@vue-flow/core", "primevue"],
       alias: [
         {
           find: /^~/,
@@ -62,6 +62,7 @@ export default defineConfig(() => {
     build: {
       minify: true,
       target: "ES2022",
+      cssTarget: ["chrome111", "firefox128", "safari17"],
       sourcemap: true,
     },
     test: {
