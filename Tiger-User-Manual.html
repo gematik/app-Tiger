@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.2.6 - 2026-04-15</span>
+<span id="revdate">Version 4.2.7 - 2026-05-11</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -744,95 +744,100 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
   ~ limitations under the License.
   ~
   --&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
 
-&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
-    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;de.gematik.test.tiger.examples&lt;/groupId&gt;
+  &lt;artifactId&gt;TigerTestBDD&lt;/artifactId&gt;
+  &lt;version&gt;1.2.0-SNAPSHOT&lt;/version&gt;
 
-    &lt;groupId&gt;de.gematik.test.tiger.examples&lt;/groupId&gt;
-    &lt;artifactId&gt;TigerTestBDD&lt;/artifactId&gt;
-    &lt;version&gt;1.2.0-SNAPSHOT&lt;/version&gt;
+  &lt;properties&gt;
+    &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
 
-    &lt;properties&gt;
-        &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
-        &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
-
-        &lt;version.maven.failsafe&gt;3.3.1&lt;/version.maven.failsafe&gt;
-        &lt;!-- please adapt Tiger version property to the most current one obtained from --&gt;
-        &lt;!-- maven central:
+    &lt;version.maven.failsafe&gt;3.3.1&lt;/version.maven.failsafe&gt;
+    &lt;!-- please adapt Tiger version property to the most current one obtained from --&gt;
+    &lt;!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;
-        &lt;version.tiger&gt;4.2.5&lt;/version.tiger&gt;
-    &lt;/properties&gt;
+    &lt;version.tiger&gt;4.2.7&lt;/version.tiger&gt;
+  &lt;/properties&gt;
 
-    &lt;dependencyManagement&gt;
-        &lt;dependencies&gt;
-            &lt;dependency&gt;
-                &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-                &lt;artifactId&gt;tiger-bom&lt;/artifactId&gt;
-                &lt;version&gt;${version.tiger}&lt;/version&gt;
-                &lt;type&gt;pom&lt;/type&gt;
-                &lt;scope&gt;import&lt;/scope&gt;
-            &lt;/dependency&gt;
-        &lt;/dependencies&gt;
-    &lt;/dependencyManagement&gt;
-
-    &lt;!-- tag::dependencies[] --&gt;
+  &lt;dependencyManagement&gt;
     &lt;dependencies&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-            &lt;artifactId&gt;tiger-test-lib&lt;/artifactId&gt;
-        &lt;/dependency&gt;
-        &lt;dependency&gt;
-            &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
-            &lt;artifactId&gt;cucumber-junit-platform-engine&lt;/artifactId&gt;
-            &lt;scope&gt;test&lt;/scope&gt;
-        &lt;/dependency&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+        &lt;artifactId&gt;tiger-bom&lt;/artifactId&gt;
+        &lt;version&gt;${version.tiger}&lt;/version&gt;
+        &lt;type&gt;pom&lt;/type&gt;
+        &lt;scope&gt;import&lt;/scope&gt;
+      &lt;/dependency&gt;
     &lt;/dependencies&gt;
-    &lt;!-- end::dependencies[] --&gt;
+  &lt;/dependencyManagement&gt;
 
-    &lt;build&gt;
-        &lt;plugins&gt;
-            &lt;!-- tag::generator-plugin[] --&gt;
-            &lt;!-- optional plugin to dynamically create JUnit driver classes on the fly.
+  &lt;!-- tag::dependencies[] --&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+      &lt;artifactId&gt;tiger-test-lib&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+      &lt;artifactId&gt;cucumber-junit-platform-engine&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+  &lt;!-- end::dependencies[] --&gt;
+
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;!-- tag::generator-plugin[] --&gt;
+      &lt;!-- optional plugin to dynamically create JUnit driver classes on the fly.
             You may omit this plugin if you have written your driver classes manually.
             --&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;com.mycila&lt;/groupId&gt;
-                &lt;artifactId&gt;license-maven-plugin&lt;/artifactId&gt;
-                &lt;configuration&gt;
-                    &lt;skip&gt;true&lt;/skip&gt;
-                &lt;/configuration&gt;
-            &lt;/plugin&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-                &lt;artifactId&gt;tiger-maven-plugin&lt;/artifactId&gt;
-                &lt;version&gt;${version.tiger}&lt;/version&gt;
-                &lt;executions&gt;
-                    &lt;execution&gt;
-                        &lt;configuration&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;glues&gt;
-                                &lt;glue&gt;de.gematik.test.tiger.glue&lt;/glue&gt;
-                                &lt;!-- add your packages here --&gt;
-                            &lt;/glues&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;featuresDir&gt;${project.basedir}/src/test/resources/features&lt;/featuresDir&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;includes&gt;
-                                &lt;include&gt;**/*.feature&lt;/include&gt;
-                            &lt;/includes&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;driverPackage&gt;
-                                de.gematik.test.tiger.examples.bdd.drivers
-                            &lt;/driverPackage&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;!--suppress UnresolvedMavenProperty --&gt;
-                            &lt;driverClassName&gt;Driver${ctr}IT&lt;/driverClassName&gt;
-                            &lt;!-- optional, defaults to the templated located at
+      &lt;plugin&gt;
+        &lt;groupId&gt;com.mycila&lt;/groupId&gt;
+        &lt;artifactId&gt;license-maven-plugin&lt;/artifactId&gt;
+        &lt;configuration&gt;
+          &lt;skip&gt;true&lt;/skip&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+        &lt;artifactId&gt;tiger-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;${version.tiger}&lt;/version&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;!-- mandatory --&gt;
+              &lt;goal&gt;generate-drivers&lt;/goal&gt;
+              &lt;!-- optional. This will attach the Tiger-Agent to the VM running the
+                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
+                            connections. This can be used to decipher TLS-traffic in wireshark. --&gt;
+              &lt;goal&gt;attach-tiger-agent&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;phase&gt;generate-test-sources&lt;/phase&gt;
+            &lt;configuration&gt;
+              &lt;!-- optional --&gt;
+              &lt;glues&gt;
+                &lt;glue&gt;de.gematik.test.tiger.glue&lt;/glue&gt;
+                &lt;!-- add your packages here --&gt;
+              &lt;/glues&gt;
+              &lt;!-- optional --&gt;
+              &lt;featuresDir&gt;${project.basedir}/src/test/resources/features&lt;/featuresDir&gt;
+              &lt;!-- optional --&gt;
+              &lt;includes&gt;
+                &lt;include&gt;**/*.feature&lt;/include&gt;
+              &lt;/includes&gt;
+              &lt;!-- optional --&gt;
+              &lt;driverPackage&gt;de.gematik.test.tiger.examples.bdd.drivers&lt;/driverPackage&gt;
+              &lt;!-- optional --&gt;
+              &lt;!--suppress UnresolvedMavenProperty --&gt;
+              &lt;driverClassName&gt;Driver${ctr}IT&lt;/driverClassName&gt;
+              &lt;!-- optional, defaults to the templated located at
                             /src/main/resources/driver4ClassTemplate.jtmpl
                             in the tiger-maven-plugin module.
                             This template will create a junit4 compliant driver class.
@@ -840,68 +845,56 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
                             or need to do some more fancy set up stuff.
                             &lt;templateFile&gt;${project.basedir}/..../XXXX.jtmpl&lt;/templateFile&gt;
                             --&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;skip&gt;false&lt;/skip&gt;
-                        &lt;/configuration&gt;
-                        &lt;phase&gt;generate-test-sources&lt;/phase&gt;
-                        &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
-                        &lt;goals&gt;
-                            &lt;!-- mandatory --&gt;
-                            &lt;goal&gt;generate-drivers&lt;/goal&gt;
-                            &lt;!-- optional. This will attach the Tiger-Agent to the VM running the
-                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
-                            connections. This can be used to decipher TLS-traffic in wireshark. --&gt;
-                            &lt;goal&gt;attach-tiger-agent&lt;/goal&gt;
-                        &lt;/goals&gt;
-                    &lt;/execution&gt;
-                    &lt;execution&gt;
-                        &lt;id&gt;generate-tiger-report&lt;/id&gt;
-                        &lt;goals&gt;
-                            &lt;goal&gt;
-                                generate-serenity-reports
-                            &lt;/goal&gt;
-                        &lt;/goals&gt;
-                        &lt;configuration&gt;
-                            &lt;!-- optional - directory where serenity reports are created --&gt;
-                            &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
-                            &lt;!-- optional - directory with the .feature files being executed --&gt;
-                            &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
-                            &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
-                            &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
-                            &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
-                            &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
-                        &lt;/configuration&gt;
-                    &lt;/execution&gt;
-                &lt;/executions&gt;
-            &lt;/plugin&gt;
-            &lt;!-- end::generator-plugin[] --&gt;
+              &lt;!-- optional --&gt;
+              &lt;skip&gt;false&lt;/skip&gt;
+            &lt;/configuration&gt;
+          &lt;/execution&gt;
+          &lt;execution&gt;
+            &lt;id&gt;generate-tiger-report&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;generate-serenity-reports&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+              &lt;!-- optional - directory where serenity reports are created --&gt;
+              &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
+              &lt;!-- optional - directory with the .feature files being executed --&gt;
+              &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
+              &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
+              &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
+              &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
+              &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
+            &lt;/configuration&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;
+      &lt;!-- end::generator-plugin[] --&gt;
 
-            &lt;!-- tag::failsafe-plugin[] --&gt;
-            &lt;!-- Runs the tests by calling the JUnit driver classes --&gt;
-            &lt;!-- To filter features / scenarios use the system property
+      &lt;!-- tag::failsafe-plugin[] --&gt;
+      &lt;!-- Runs the tests by calling the JUnit driver classes --&gt;
+      &lt;!-- To filter features / scenarios use the system property
                  -Dcucumber.filter.tags --&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-                &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
-                &lt;version&gt;${version.maven.failsafe}&lt;/version&gt;
-                &lt;executions&gt;
-                    &lt;execution&gt;
-                        &lt;goals&gt;
-                            &lt;goal&gt;integration-test&lt;/goal&gt;
-                            &lt;goal&gt;verify&lt;/goal&gt;
-                        &lt;/goals&gt;
-                    &lt;/execution&gt;
-                &lt;/executions&gt;
-                &lt;configuration&gt;
-                    &lt;includes&gt;
-                        &lt;!-- adapt to the class names of your driver classes --&gt;
-                        &lt;include&gt;**/Driver*IT.java&lt;/include&gt;
-                    &lt;/includes&gt;
-                &lt;/configuration&gt;
-            &lt;/plugin&gt;
-            &lt;!-- end::failsafe-plugin[] --&gt;
-        &lt;/plugins&gt;
-    &lt;/build&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
+        &lt;version&gt;${version.maven.failsafe}&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;includes&gt;
+            &lt;!-- adapt to the class names of your driver classes --&gt;
+            &lt;include&gt;**/Driver*IT.java&lt;/include&gt;
+          &lt;/includes&gt;
+        &lt;/configuration&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;integration-test&lt;/goal&gt;
+              &lt;goal&gt;verify&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;
+      &lt;!-- end::failsafe-plugin[] --&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
 &lt;/project&gt;</code></pre>
 </div>
 </div>
@@ -972,42 +965,50 @@ You may decide to manually write your own JUnit driver classes in which case you
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">            &lt;!-- optional plugin to dynamically create JUnit driver classes on the fly.
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">      &lt;!-- optional plugin to dynamically create JUnit driver classes on the fly.
             You may omit this plugin if you have written your driver classes manually.
             --&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;com.mycila&lt;/groupId&gt;
-                &lt;artifactId&gt;license-maven-plugin&lt;/artifactId&gt;
-                &lt;configuration&gt;
-                    &lt;skip&gt;true&lt;/skip&gt;
-                &lt;/configuration&gt;
-            &lt;/plugin&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
-                &lt;artifactId&gt;tiger-maven-plugin&lt;/artifactId&gt;
-                &lt;version&gt;${version.tiger}&lt;/version&gt;
-                &lt;executions&gt;
-                    &lt;execution&gt;
-                        &lt;configuration&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;glues&gt;
-                                &lt;glue&gt;de.gematik.test.tiger.glue&lt;/glue&gt;
-                                &lt;!-- add your packages here --&gt;
-                            &lt;/glues&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;featuresDir&gt;${project.basedir}/src/test/resources/features&lt;/featuresDir&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;includes&gt;
-                                &lt;include&gt;**/*.feature&lt;/include&gt;
-                            &lt;/includes&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;driverPackage&gt;
-                                de.gematik.test.tiger.examples.bdd.drivers
-                            &lt;/driverPackage&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;!--suppress UnresolvedMavenProperty --&gt;
-                            &lt;driverClassName&gt;Driver${ctr}IT&lt;/driverClassName&gt;
-                            &lt;!-- optional, defaults to the templated located at
+      &lt;plugin&gt;
+        &lt;groupId&gt;com.mycila&lt;/groupId&gt;
+        &lt;artifactId&gt;license-maven-plugin&lt;/artifactId&gt;
+        &lt;configuration&gt;
+          &lt;skip&gt;true&lt;/skip&gt;
+        &lt;/configuration&gt;
+      &lt;/plugin&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+        &lt;artifactId&gt;tiger-maven-plugin&lt;/artifactId&gt;
+        &lt;version&gt;${version.tiger}&lt;/version&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;!-- mandatory --&gt;
+              &lt;goal&gt;generate-drivers&lt;/goal&gt;
+              &lt;!-- optional. This will attach the Tiger-Agent to the VM running the
+                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
+                            connections. This can be used to decipher TLS-traffic in wireshark. --&gt;
+              &lt;goal&gt;attach-tiger-agent&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;phase&gt;generate-test-sources&lt;/phase&gt;
+            &lt;configuration&gt;
+              &lt;!-- optional --&gt;
+              &lt;glues&gt;
+                &lt;glue&gt;de.gematik.test.tiger.glue&lt;/glue&gt;
+                &lt;!-- add your packages here --&gt;
+              &lt;/glues&gt;
+              &lt;!-- optional --&gt;
+              &lt;featuresDir&gt;${project.basedir}/src/test/resources/features&lt;/featuresDir&gt;
+              &lt;!-- optional --&gt;
+              &lt;includes&gt;
+                &lt;include&gt;**/*.feature&lt;/include&gt;
+              &lt;/includes&gt;
+              &lt;!-- optional --&gt;
+              &lt;driverPackage&gt;de.gematik.test.tiger.examples.bdd.drivers&lt;/driverPackage&gt;
+              &lt;!-- optional --&gt;
+              &lt;!--suppress UnresolvedMavenProperty --&gt;
+              &lt;driverClassName&gt;Driver${ctr}IT&lt;/driverClassName&gt;
+              &lt;!-- optional, defaults to the templated located at
                             /src/main/resources/driver4ClassTemplate.jtmpl
                             in the tiger-maven-plugin module.
                             This template will create a junit4 compliant driver class.
@@ -1015,40 +1016,28 @@ You may decide to manually write your own JUnit driver classes in which case you
                             or need to do some more fancy set up stuff.
                             &lt;templateFile&gt;${project.basedir}/..../XXXX.jtmpl&lt;/templateFile&gt;
                             --&gt;
-                            &lt;!-- optional --&gt;
-                            &lt;skip&gt;false&lt;/skip&gt;
-                        &lt;/configuration&gt;
-                        &lt;phase&gt;generate-test-sources&lt;/phase&gt;
-                        &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
-                        &lt;goals&gt;
-                            &lt;!-- mandatory --&gt;
-                            &lt;goal&gt;generate-drivers&lt;/goal&gt;
-                            &lt;!-- optional. This will attach the Tiger-Agent to the VM running the
-                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
-                            connections. This can be used to decipher TLS-traffic in wireshark. --&gt;
-                            &lt;goal&gt;attach-tiger-agent&lt;/goal&gt;
-                        &lt;/goals&gt;
-                    &lt;/execution&gt;
-                    &lt;execution&gt;
-                        &lt;id&gt;generate-tiger-report&lt;/id&gt;
-                        &lt;goals&gt;
-                            &lt;goal&gt;
-                                generate-serenity-reports
-                            &lt;/goal&gt;
-                        &lt;/goals&gt;
-                        &lt;configuration&gt;
-                            &lt;!-- optional - directory where serenity reports are created --&gt;
-                            &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
-                            &lt;!-- optional - directory with the .feature files being executed --&gt;
-                            &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
-                            &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
-                            &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
-                            &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
-                            &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
-                        &lt;/configuration&gt;
-                    &lt;/execution&gt;
-                &lt;/executions&gt;
-            &lt;/plugin&gt;</code></pre>
+              &lt;!-- optional --&gt;
+              &lt;skip&gt;false&lt;/skip&gt;
+            &lt;/configuration&gt;
+          &lt;/execution&gt;
+          &lt;execution&gt;
+            &lt;id&gt;generate-tiger-report&lt;/id&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;generate-serenity-reports&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+              &lt;!-- optional - directory where serenity reports are created --&gt;
+              &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
+              &lt;!-- optional - directory with the .feature files being executed --&gt;
+              &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
+              &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
+              &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
+              &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
+              &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
+            &lt;/configuration&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;</code></pre>
 </div>
 </div>
 <div class="ulist">
@@ -1236,28 +1225,28 @@ The same counts for own tag settings in the IntelliJ run configuration.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">            &lt;!-- Runs the tests by calling the JUnit driver classes --&gt;
-            &lt;!-- To filter features / scenarios use the system property
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">      &lt;!-- Runs the tests by calling the JUnit driver classes --&gt;
+      &lt;!-- To filter features / scenarios use the system property
                  -Dcucumber.filter.tags --&gt;
-            &lt;plugin&gt;
-                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-                &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
-                &lt;version&gt;${version.maven.failsafe}&lt;/version&gt;
-                &lt;executions&gt;
-                    &lt;execution&gt;
-                        &lt;goals&gt;
-                            &lt;goal&gt;integration-test&lt;/goal&gt;
-                            &lt;goal&gt;verify&lt;/goal&gt;
-                        &lt;/goals&gt;
-                    &lt;/execution&gt;
-                &lt;/executions&gt;
-                &lt;configuration&gt;
-                    &lt;includes&gt;
-                        &lt;!-- adapt to the class names of your driver classes --&gt;
-                        &lt;include&gt;**/Driver*IT.java&lt;/include&gt;
-                    &lt;/includes&gt;
-                &lt;/configuration&gt;
-            &lt;/plugin&gt;</code></pre>
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+        &lt;artifactId&gt;maven-failsafe-plugin&lt;/artifactId&gt;
+        &lt;version&gt;${version.maven.failsafe}&lt;/version&gt;
+        &lt;configuration&gt;
+          &lt;includes&gt;
+            &lt;!-- adapt to the class names of your driver classes --&gt;
+            &lt;include&gt;**/Driver*IT.java&lt;/include&gt;
+          &lt;/includes&gt;
+        &lt;/configuration&gt;
+        &lt;executions&gt;
+          &lt;execution&gt;
+            &lt;goals&gt;
+              &lt;goal&gt;integration-test&lt;/goal&gt;
+              &lt;goal&gt;verify&lt;/goal&gt;
+            &lt;/goals&gt;
+          &lt;/execution&gt;
+        &lt;/executions&gt;
+      &lt;/plugin&gt;</code></pre>
 </div>
 </div>
 <div class="admonitionblock tip">
@@ -3099,6 +3088,102 @@ curl http://localhost:59163/foobar</code></pre>
 </div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="alpnprotocols"><a class="anchor" href="#alpnprotocols"></a>4.3.10. alpnProtocols</h4>
+<div class="paragraph">
+<p>The Tiger Proxy automatically probes each HTTPS backend at route-add time to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.<br>
+Based on the result, the proxy restricts the protocols it advertises to clients during the TLS handshake — ensuring transparent behavior (the client sees the same protocol it would with a direct connection).</p>
+</div>
+<div class="paragraph">
+<p>In most cases this works automatically and requires no configuration.<br>
+However, for ambiguous setups — such as two routes on the same hostname pointing to different backends with different protocol support — you can explicitly declare the ALPN protocols per route using the <code>alpnProtocols</code> property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    proxyRoutes:
+      - from: /api
+        to: https://h2-server:443
+        alpnProtocols:
+          - "h2"
+          - "http/1.1"
+      - from: /legacy
+        to: https://h1-server:443
+        alpnProtocols:
+          - "http/1.1"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When <code>alpnProtocols</code> is set, the declaration <strong>overrides the automatic probe</strong> for that route — no probe is performed.<br>
+If multiple routes with explicit <code>alpnProtocols</code> declarations match the same client connection (same SNI hostname), the proxy computes the <strong>intersection</strong> of the declared lists (conservative approach).</p>
+</div>
+<div class="paragraph">
+<p>Valid protocol identifiers are <code>h2</code> (HTTP/2) and <code>http/1.1</code>.</p>
+</div>
+<div class="sect4">
+<h5 id="automatic-behavior-no-alpnprotocols-set"><a class="anchor" href="#automatic-behavior-no-alpnprotocols-set"></a>Automatic behavior (no <code>alpnProtocols</code> set)</h5>
+<table class="tableblock frame-all grid-all fit-content">
+<colgroup>
+<col>
+<col>
+<col>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Backend probe result</th>
+<th class="tableblock halign-left valign-top">Proxy advertises to client</th>
+<th class="tableblock halign-left valign-top">Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backend prefers <code>h2</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[h2, http/1.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backend supports h2; also offer h1 for h1-only clients</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backend only speaks <code>http/1.1</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[http/1.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backend can&#8217;t do h2 — don&#8217;t offer it to the client</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Probe failed (unreachable)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[h2, http/1.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fail-open — keep default, fall back to protocol translation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP backend (no TLS)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[h2, http/1.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No TLS → no probe possible → keep default</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mixed backends (h2 + h1)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>[http/1.1]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Conservative — only offer what ALL backends support</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="when-to-use-explicit-alpnprotocols"><a class="anchor" href="#when-to-use-explicit-alpnprotocols"></a>When to use explicit <code>alpnProtocols</code></h5>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Path-ambiguous routes:</strong> Two routes with different paths on the same hostname but different backends.<br>
+The automatic probe can&#8217;t know which path the client will request at TLS time, so it falls back to the conservative approach (only h1 if any backend is h1-only).<br>
+Use <code>alpnProtocols</code> to resolve this explicitly.</p>
+</li>
+<li>
+<p><strong>Backend unreachable at startup:</strong> If the backend is not reachable when the route is added, the probe fails and the proxy defaults to <code>[h2, http/1.1]</code>.<br>
+Use <code>alpnProtocols</code> to declare the correct protocols.</p>
+</li>
+<li>
+<p><strong>Force a specific protocol:</strong> For testing purposes you may want to force h2 or h1, regardless of what the backend actually supports.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="tls-keys-certificates-a-quick-tour-on-proxies"><a class="anchor" href="#tls-keys-certificates-a-quick-tour-on-proxies"></a>4.4. TLS, keys, certificates a quick tour on proxies</h3>
@@ -4121,7 +4206,43 @@ Default is false.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.6. rewriteLocationHeader</h4>
+<h4 id="honorhostheaderrouting"><a class="anchor" href="#honorhostheaderrouting"></a>4.11.6. honorHostHeaderRouting</h4>
+<div class="paragraph">
+<p>When enabled, reverse proxy requests that do not match any configured route will be forwarded to the host specified in the incoming <code>Host</code> header.<br>
+This is useful when the TigerProxy acts as a transparent reverse proxy in front of a dynamic set of backends, or when clients already set the <code>Host</code> header correctly to the actual backend.</p>
+</div>
+<div class="paragraph">
+<p>The fallback has the lowest priority: if a configured route matches the request, that route is always used.<br>
+Only when no route matches does the Host header fallback kick in.</p>
+</div>
+<div class="paragraph">
+<p>If the <code>Host</code> header points back to the TigerProxy itself (e.g. <code>localhost</code> on the proxy port), the connection will be closed to prevent infinite loops.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+When this option is enabled, the TigerProxy can potentially forward requests to arbitrary hosts specified by a client in the <code>Host</code> header.<br>
+For test environments (the primary use case of TigerProxy) this is generally not a concern.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    honorHostHeaderRouting: true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Default is false.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.7. rewriteLocationHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the location-header for 3xx responses.<br>
 If activated the location-header will be modified so the client will still use the proxy to reach the new location.<br>
@@ -4129,7 +4250,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.7. maxLoopCounter</h4>
+<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.8. maxLoopCounter</h4>
 <div class="paragraph">
 <p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself).<br>
 If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
@@ -9631,7 +9752,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-04-15 15:27:30 +0200
+Last updated 2026-05-11 09:42:01 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
