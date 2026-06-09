@@ -1,0 +1,13 @@
+tigerProxy:
+  proxyPort: ${free.port.1}
+servers:
+  externalJar:
+    type: externalJar
+    healthcheckUrl:
+      http://127.0.0.1:${free.port.30}
+    externalJarOptions:
+      options:
+        - -Dhttp.proxyHost=127.0.0.1
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
+    source:
+      - local:something/local.jar

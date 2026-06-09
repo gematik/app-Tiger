@@ -955,14 +955,10 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    * @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to
-   *     comparison of the two XML sources
-   *     <ul>
-   *       <li>nocomment ... {@link DiffBuilder#ignoreComments()}
-   *       <li>txtignoreempty ... {@link DiffBuilder#ignoreElementContentWhitespace()}
-   *       <li>txttrim ... {@link DiffBuilder#ignoreWhitespace()}
-   *       <li>txtnormalize ... {@link DiffBuilder#normalizeWhitespace()}
-   *     </ul>
-   *
+   *     comparison of the two XML sources -nocomment ... {@link DiffBuilder#ignoreComments()}
+   *     -txtignoreempty ... {@link DiffBuilder#ignoreElementContentWhitespace()} -txttrim ...
+   *     {@link DiffBuilder#ignoreWhitespace()} -txtnormalize ... {@link
+   *     DiffBuilder#normalizeWhitespace()}
    * @param xmlDocStr value / regex that should equal or match as JSON content
    * @see <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">More on
    *     DifferenceEvaluator</a>

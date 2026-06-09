@@ -1,0 +1,13 @@
+tigerProxy:
+servers:
+  docker:
+    type: docker
+    source:
+      - kennethreitz/httpbin
+    version: latest
+    healthcheckUrl:
+      http://host.docker.internal:8080/status/200
+    dependsUpon: dockerComposeTest
+    dockerOptions:
+      ports:
+        - "8080:80"

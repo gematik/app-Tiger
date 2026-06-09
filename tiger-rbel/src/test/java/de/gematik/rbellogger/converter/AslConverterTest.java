@@ -59,7 +59,7 @@ class AslConverterTest {
   void testDecryption() {
     final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/aslDecryption.html").toPath(), html.getBytes());
-    assertThat(rbelLogger.getMessageList().get(4))
+    assertThat(rbelLogger.getMessagesByOrder().get(4))
         .extractChildWithPath("$.body.decrypted.path")
         .hasStringContentEqualTo("/vsdservice/v1/vsdmbundle")
         .andTheInitialElement()

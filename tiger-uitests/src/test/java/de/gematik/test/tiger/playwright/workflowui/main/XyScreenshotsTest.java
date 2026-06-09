@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -199,6 +200,21 @@ class XyScreenshotsTest extends AbstractBase {
     screenshotRouteButton(externalPage);
     screenshotRawContentButton(externalPage);
     externalPage.close();
+  }
+
+  @Test
+  void screenshotTopology() {
+    page.querySelector("#test-topology-tab").click();
+
+    screenshotOnlyElementByClassname(
+        page, "topology_visualizer_button.png", "execution-pane-nav", "#test-topology-tab");
+
+    var diagram = page.locator(".vue-flow");
+    PlaywrightAssertions.assertThat(diagram).isVisible();
+
+    page.locator(".vue-flow__controls-fitview").click();
+
+    screenshotOnlyElementByClassname(page, "topology_visualizer_example_diagram.png", "vue-flow");
   }
 
   private void screenshotFullMessageButtonAndPage(Page externalPage) {

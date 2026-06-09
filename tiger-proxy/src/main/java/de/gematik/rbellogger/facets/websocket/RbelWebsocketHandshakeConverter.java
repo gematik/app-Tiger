@@ -33,6 +33,7 @@ import de.gematik.test.tiger.proxy.TigerProxyPairingConverter;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
@@ -59,23 +60,31 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
     if (httpMessageFacet.isEmpty()) {
       return;
     }
-    if (rbelElement.hasFacet(RbelHttpRequestFacet.class)
-        && hasWebsocketHandshakeHeaders(httpMessageFacet)) {
-      rbelElement.addFacet(
-          new RbelWebsocketHandshakeFacet(extractWebSocketExtensions(rbelElement)));
-    } else if (rbelElement.getFacet(RbelHttpResponseFacet.class).stream()
-            .anyMatch(resp -> "101".equals(resp.getResponseCode().getRawStringContent()))
-        && hasWebsocketHandshakeHeaders(httpMessageFacet)) {
-      converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
-      val wsHandshakeRequest =
-          rbelElement
-              .getFacet(TracingMessagePairFacet.class)
-              .map(TracingMessagePairFacet::getRequest);
-      if (wsHandshakeRequest
-          .map(r -> r.hasFacet(RbelWebsocketHandshakeFacet.class))
-          .orElse(false)) {
+    if (rbelElement.hasFacet(RbelHttpRequestFacet.class)) {
+      if (hasWebsocketHandshakeHeaders(httpMessageFacet)) {
         rbelElement.addFacet(
             new RbelWebsocketHandshakeFacet(extractWebSocketExtensions(rbelElement)));
+      }
+    } else if (rbelElement.getFacet(RbelHttpResponseFacet.class).stream()
+        .anyMatch(resp -> "101".equals(resp.getResponseCode().getRawStringContent()))) {
+      if (hasWebsocketHandshakeHeaders(httpMessageFacet)) {
+        converter.waitForAllElementsBeforeGivenToBeParsed(rbelElement);
+        val wsHandshakeRequest =
+            rbelElement
+                .getFacet(TracingMessagePairFacet.class)
+                .map(TracingMessagePairFacet::getRequest);
+        val previousHandshakeRequest =
+            wsHandshakeRequest
+                .filter(r -> r.hasFacet(RbelWebsocketHandshakeFacet.class))
+                .or(() -> getPreviousMessage(rbelElement, converter))
+                .filter(
+                    previousMessage ->
+                        previousMessage.hasFacet(RbelWebsocketHandshakeFacet.class)
+                            && previousMessage.hasFacet(RbelHttpRequestFacet.class));
+        if (previousHandshakeRequest.isPresent()) {
+          rbelElement.addFacet(
+              new RbelWebsocketHandshakeFacet(extractWebSocketExtensions(rbelElement)));
+        }
       }
     }
   }
@@ -91,7 +100,15 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
             .filter(e -> e.getKey().equalsIgnoreCase("Sec-WebSocket-Extensions"))
             .map(Entry::getValue)
             .map(RbelElement::getRawStringContent)
-            .map(name -> Pair.of(name, RbelElement.wrap(result, "")))
+            .filter(Objects::nonNull)
+            .flatMap(headerValue -> Stream.of(headerValue.split(",")))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(
+                ext -> {
+                  String name = ext.split(";", 2)[0].trim();
+                  return Pair.of(name, RbelElement.wrap(result, ext));
+                })
             .collect(RbelMultiMap.COLLECTOR);
     result.addFacet(new RbelMapFacet(map));
     return result;
@@ -99,23 +116,32 @@ public class RbelWebsocketHandshakeConverter extends RbelConverterPlugin {
 
   private static boolean hasWebsocketHandshakeHeaders(
       Optional<RbelHttpMessageFacet> httpMessageFacet) {
-    return httpMessageFacet
-        .map(RbelHttpMessageFacet::getHeader)
-        .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
-        .filter(
-            headers ->
-                headers
-                    .getCaseInsensitiveMatches("upgrade")
-                    .map(RbelElement::getRawStringContent)
-                    .filter(Objects::nonNull)
-                    .anyMatch(header -> header.equalsIgnoreCase("websocket")))
-        .filter(
-            values ->
-                values
-                    .getCaseInsensitiveMatches("connection")
-                    .map(RbelElement::getRawStringContent)
-                    .filter(Objects::nonNull)
-                    .anyMatch(header -> header.equalsIgnoreCase("upgrade")))
-        .isPresent();
+    boolean hasUpgrade =
+        httpMessageFacet
+            .map(RbelHttpMessageFacet::getHeader)
+            .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
+            .map(
+                headers ->
+                    headers
+                        .getCaseInsensitiveMatches("upgrade")
+                        .map(RbelElement::getRawStringContent)
+                        .filter(Objects::nonNull)
+                        .anyMatch(header -> header.equalsIgnoreCase("websocket")))
+            .orElse(false);
+
+    boolean hasConnection =
+        httpMessageFacet
+            .map(RbelHttpMessageFacet::getHeader)
+            .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
+            .map(
+                headers ->
+                    headers
+                        .getCaseInsensitiveMatches("connection")
+                        .map(RbelElement::getRawStringContent)
+                        .filter(Objects::nonNull)
+                        .anyMatch(header -> header.equalsIgnoreCase("upgrade")))
+            .orElse(false);
+
+    return hasUpgrade && hasConnection;
   }
 }

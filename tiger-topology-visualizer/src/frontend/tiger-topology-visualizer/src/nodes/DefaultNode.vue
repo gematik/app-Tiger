@@ -25,6 +25,8 @@ The DefaultNode exists as a fallback for nodes which have no specific implementa
 <script setup lang="ts">
 import { Position } from "@vue-flow/core";
 import BaseNode from "./BaseNode.vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { getNodeVisual } from "./nodeVisuals";
 
 defineProps<{
   id: string;
@@ -32,15 +34,25 @@ defineProps<{
   sourcePosition?: Position;
   targetPosition?: Position;
 }>();
+
+const visual = getNodeVisual("default");
 </script>
 
 <template>
   <BaseNode
+    :style="{
+      background: visual.colors.background,
+      borderColor: visual.colors.border,
+      borderStyle: visual.colors.borderStyle,
+      color: visual.colors.text,
+    }"
     :nodeData="data"
     :sourcePosition="sourcePosition"
     :targetPosition="targetPosition"
   >
-    <template #icon>🔗</template>
+    <template #icon>
+      <FontAwesomeIcon :icon="visual.icon!" size="lg" />
+    </template>
   </BaseNode>
 </template>
 

@@ -40,10 +40,13 @@ import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketFrameType;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.concurrent.CompletableFuture;
@@ -1069,5 +1072,28 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
         rbelMessageRetriever.findMessage(
             requestParameter, Optional.empty(), mismatchNotes, checkedCandidates);
     assertThat(secondTry).contains(request);
+  }
+
+  @Test
+  void testWebsocketPayloads() {
+    localProxyRbelMessageListenerTestAdapter.clearMockMessagesList();
+
+    readTgrFileAndStoreForRbelMessageRetriever(
+        "src/test/resources/websocket-payloads.tgr", List.of("websocket"));
+
+    var websocketMessages =
+        localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock().values().stream()
+            .filter(msg -> msg.hasFacet(RbelWebsocketMessageFacet.class))
+            .toList();
+
+    assertThat(websocketMessages).hasSize(12);
+
+    websocketMessages.forEach(
+        msg -> {
+          if (msg.findElement("$.frameType").flatMap(RbelElement::seekValue).orElse(null)
+              != RbelWebsocketFrameType.CLOSE_FRAME) {
+            assertThat(msg).hasChildWithPath("$.payload.type");
+          }
+        });
   }
 }

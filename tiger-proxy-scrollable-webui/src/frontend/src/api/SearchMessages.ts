@@ -23,6 +23,7 @@ import { type DeepReadonly, readonly, ref, type Ref } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useProxyController, type UseProxyControllerOptions } from "./ProxyController.ts";
 import type { SearchMessagesDto } from "./MessageTypes.ts";
+import type { MessageSortOrder } from "@/Settings.ts";
 import { ProxyError } from "@/api/ProxyRepository.ts";
 
 export interface SearchMessagesReturn {
@@ -36,6 +37,7 @@ export interface SearchMessagesOptions extends UseProxyControllerOptions {}
 
 export function useSearchMessages(
   currentFilterRbelPath: Ref<string>,
+  sortOrder: Ref<MessageSortOrder>,
   props: SearchMessagesOptions,
 ): SearchMessagesReturn {
   const { searchMessages } = useProxyController(props);
@@ -52,6 +54,7 @@ export function useSearchMessages(
         {
           filterRbelPath: currentFilterRbelPath.value,
           searchRbelPath,
+          sortOrder: sortOrder.value,
           signal: abortController.signal,
         },
         { suppressError: true, propagateError: true },

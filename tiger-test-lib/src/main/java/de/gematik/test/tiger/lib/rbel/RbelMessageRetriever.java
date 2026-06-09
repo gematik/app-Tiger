@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import de.gematik.rbellogger.MessageSortOrder;
 import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
@@ -61,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.groovy.util.ReversedList;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,6 +75,34 @@ public class RbelMessageRetriever {
   private static final List<String> EMPTY_PATH = List.of("", "/");
   public static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class, 5);
+
+  /**
+   * Order in which the validator iterates over messages when looking for the next request /
+   * response. Defaults to {@link MessageSortOrder#SEQUENCE} (received order in the local Tiger
+   * Proxy) – this is the historical, well-tested behaviour and the only safe default.
+   */
+  public static final TigerTypedConfigurationKey<String> VALIDATION_MESSAGE_SORT_ORDER =
+      new TigerTypedConfigurationKey<>(
+          "tiger.lib.validation.messageSortOrder", String.class, MessageSortOrder.SEQUENCE.name());
+
+  /**
+   * Resolve the configured {@link MessageSortOrder}. Unknown values fall back to the safe default
+   * {@link MessageSortOrder#SEQUENCE} after logging a warning.
+   */
+  static MessageSortOrder validationMessageSortOrder() {
+    var raw = VALIDATION_MESSAGE_SORT_ORDER.getValueOrDefault();
+    try {
+      return MessageSortOrder.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      log.atWarn()
+          .addArgument(raw)
+          .addArgument(() -> VALIDATION_MESSAGE_SORT_ORDER.getKey().downsampleKey())
+          .addArgument(MessageSortOrder.class::getSimpleName)
+          .addArgument(MessageSortOrder.SEQUENCE)
+          .log("Configured value '{}' for {} is not a valid {} – falling back to {}");
+      return MessageSortOrder.SEQUENCE;
+    }
+  }
 
   private static RbelMessageRetriever instance;
 
@@ -163,7 +193,7 @@ public class RbelMessageRetriever {
         RBEL_NAMESPACE, new RbelMessageRetriever.JexlToolbox());
   }
 
-  public RbelMessageHistory.Facade getMessageHistory() {
+  public RbelMessageHistory.MessageHistory getMessageHistory() {
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
     return localProxyRbelMessageListener.getValidatableMessages();
   }
@@ -180,9 +210,8 @@ public class RbelMessageRetriever {
     } else if (message.hasFacet(RbelResponseFacet.class)) {
       storeResponseAndSearchAndStoreRequest(message);
     } else {
-      log.atInfo()
-          // TODO TGR-1528 use element short description mechanism instead of getRawStringContent
-          .addArgument(message::getRawStringContent)
+      log.atWarn()
+          .addArgument(message::printShortDescription)
           .log("Found message that is neither request nor response:\n\n{}");
     }
   }
@@ -319,12 +348,13 @@ public class RbelMessageRetriever {
     } catch (final ConditionTimeoutException cte) {
       log.error("Didn't find any matching messages!\n  {}", requestParameter);
       printAllPathsOfMessages(checkedCandidates);
-      var rbelMessages =
+      var uncheckedMessages =
           getRbelElementsOptionallyFromGivenMessageInclusively(initialElement, checkedCandidates);
-      if (!rbelMessages.isEmpty()) {
-        log.info(
-            "Found {} messages that were not tried as matching candidates:", rbelMessages.size());
-        printAllPathsOfMessages(rbelMessages);
+      if (!uncheckedMessages.isEmpty()) {
+        log.debug(
+            "Found {} messages that were not tried as matching candidates:",
+            uncheckedMessages.size());
+        printAllPathsOfMessages(uncheckedMessages);
       }
       reportMissingRequest(requestParameter, mismatchNotes);
     }
@@ -382,17 +412,35 @@ public class RbelMessageRetriever {
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
     var validatableRbelMessages = localProxyRbelMessageListener.getValidatableMessages();
+    var sortOrder = validationMessageSortOrder();
     if (requestParameter.isStartFromPreviouslyFoundMessage()) {
       var markerMessage =
           requestParameter.isRequireRequestMessage() ? currentRequest : lastFoundMessage;
       return Optional.ofNullable(markerMessage).stream()
-          .flatMap(msg -> validatableRbelMessages.getMessagesAfter(msg, false).stream())
+          .flatMap(msg -> validatableRbelMessages.getMessagesAfter(msg, false, sortOrder).stream())
           .findFirst();
     } else if (requestParameter.isRequireNewMessage() && !validatableRbelMessages.isEmpty()) {
-      return Optional.ofNullable(validatableRbelMessages.getLast());
+      return latestMessage(validatableRbelMessages, sortOrder);
     } else {
       return Optional.empty();
     }
+  }
+
+  /**
+   * Returns the message that is "the latest" according to the given sort order. For {@link
+   * MessageSortOrder#SEQUENCE} this is the last sequence number; for {@link
+   * MessageSortOrder#TIMESTAMP} it is the chronologically latest message (with sequence number as
+   * tie breaker). Returns an empty {@link Optional} when the history is empty.
+   */
+  static Optional<RbelElement> latestMessage(
+      RbelMessageHistory.MessageHistory history, MessageSortOrder sortOrder) {
+    if (history.isEmpty()) {
+      return Optional.empty();
+    }
+    if (sortOrder == MessageSortOrder.TIMESTAMP) {
+      return new ReversedList<>(history.getMessagesByTimestamp()).stream().findFirst();
+    }
+    return Optional.ofNullable(history.getLast());
   }
 
   protected Optional<RbelElement> findMessage(
@@ -463,9 +511,10 @@ public class RbelMessageRetriever {
   private List<RbelElement> getRbelElementsOptionallyFromGivenMessageInclusively(
       Optional<RbelElement> startFromMessage, Set<RbelElement> checkedCandidates) {
     var messageHistory = getMessageHistory();
+    var sortOrder = validationMessageSortOrder();
     return startFromMessage
-        .map(msg -> messageHistory.getMessagesAfter(msg, true))
-        .orElseGet(messageHistory::getMessages)
+        .map(msg -> messageHistory.getMessagesAfter(msg, true, sortOrder))
+        .orElseGet(() -> messageHistory.getMessages(sortOrder))
         .stream()
         .filter(checkedCandidates::add)
         .toList();
@@ -708,17 +757,18 @@ public class RbelMessageRetriever {
   }
 
   private void printAllPathsOfMessages(final Collection<RbelElement> msgs) {
-    long requests =
-        msgs.stream().filter(msg -> msg.getFacet(RbelHttpRequestFacet.class).isPresent()).count();
-    log.info(
-        "Found the following {} messages:\n{} ",
-        requests,
-        msgs.stream()
-            .map(msg -> msg.getFacet(RbelHttpRequestFacet.class))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .map(req -> "=>\t" + req.getPathAsString() + " : " + req.getChildElements())
-            .collect(Collectors.joining("\n")));
+    log.atDebug()
+        .addArgument(
+            () -> msgs.stream().filter(msg -> msg.hasFacet(RbelHttpRequestFacet.class)).count())
+        .addArgument(
+            () ->
+                msgs.stream()
+                    .map(msg -> msg.getFacet(RbelHttpRequestFacet.class))
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .map(req -> "=>\t" + req.getPathAsString() + " : " + req.getChildElements())
+                    .collect(Collectors.joining("\n")))
+        .log("Found the following {} messages:\n{} ");
   }
 
   public RbelElement findElementInCurrentResponse(final String rbelPath) {
@@ -863,7 +913,7 @@ public class RbelMessageRetriever {
 
   public void findAnyMessageMatchingAtNode(String rbelPath, String value) {
     val mismatchNotes = new HashMap<RbelElement, SortedSet<RbelMismatchNoteFacet>>();
-    if (getMessageHistory().getMessages().stream()
+    if (getMessageHistory().getMessages(validationMessageSortOrder()).stream()
         .map(
             msg -> {
               List<RbelElement> findings = msg.findRbelPathMembers(rbelPath);
@@ -905,10 +955,17 @@ public class RbelMessageRetriever {
   }
 
   public void findLastRequest() {
+    var sortOrder = validationMessageSortOrder();
     var lastRequest =
-        getMessageHistory()
-            .findLast(msg -> msg.hasFacet(RbelRequestFacet.class))
-            .orElseThrow(() -> new TigerLibraryException("No Request found."));
+        sortOrder == MessageSortOrder.TIMESTAMP
+            ? new ReversedList<>(getMessageHistory().getMessagesByTimestamp())
+                .stream()
+                    .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
+                    .findFirst()
+                    .orElseThrow(() -> new TigerLibraryException("No Request found."))
+            : getMessageHistory()
+                .findLast(msg -> msg.hasFacet(RbelRequestFacet.class))
+                .orElseThrow(() -> new TigerLibraryException("No Request found."));
     setCurrentRequest(lastRequest);
     var pairFacet = lastRequest.getFacet(TracingMessagePairFacet.class);
     setCurrentResponse(pairFacet.map(TracingMessagePairFacet::getResponse).orElse(null));

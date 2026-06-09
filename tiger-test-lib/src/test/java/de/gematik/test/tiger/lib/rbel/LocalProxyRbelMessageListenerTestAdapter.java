@@ -59,7 +59,7 @@ public class LocalProxyRbelMessageListenerTestAdapter {
               }
 
               @Override
-              public RbelMessageHistory.Facade getMessageHistory() {
+              public RbelMessageHistory.MessageHistory getMessageHistory() {
                 return new MockHistoryFacade(validatableMessagesMock);
               }
             });

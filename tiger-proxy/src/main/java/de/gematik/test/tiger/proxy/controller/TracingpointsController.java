@@ -45,6 +45,11 @@ public class TracingpointsController {
   private final Optional<BuildProperties> buildProperties;
   private final TigerProxyConfiguration tigerProxyConfiguration;
 
+  @GetMapping(value = "/clock", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ClockResponse getClock() {
+    return new ClockResponse(ZonedDateTime.now());
+  }
+
   @GetMapping(value = "/tracingpoints", produces = MediaType.APPLICATION_JSON_VALUE)
   public TracingpointsInfo[] getTracingpointsInfo() {
     return new TracingpointsInfo[] {
@@ -82,5 +87,11 @@ public class TracingpointsController {
     private final String protocolVersion;
     private final String serverVersion;
     private final ZonedDateTime serverDate;
+  }
+
+  @Getter
+  @RequiredArgsConstructor
+  public static class ClockResponse {
+    private final ZonedDateTime serverTime;
   }
 }

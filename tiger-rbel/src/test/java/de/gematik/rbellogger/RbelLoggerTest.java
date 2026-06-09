@@ -109,10 +109,10 @@ class RbelLoggerTest {
 
     FileUtils.writeStringToFile(
         new File("target/pairingList.html"),
-        new RbelHtmlRenderer().doRender(rbelLogger.getMessageList()),
+        new RbelHtmlRenderer().doRender(rbelLogger.getMessagesByOrder()),
         Charset.defaultCharset());
 
-    assertThat(rbelLogger.getMessageList().get(9))
+    assertThat(rbelLogger.getMessagesByOrder().get(9))
         .extractChildWithPath("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
         .hasValueEqualTo("IDP symmetricEncryptionKey");
   }

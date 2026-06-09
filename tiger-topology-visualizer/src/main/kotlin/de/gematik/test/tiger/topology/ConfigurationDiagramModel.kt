@@ -35,6 +35,9 @@ sealed class NodeType(
     @get:JsonValue val value: String
 ) {
     data object TIGER_PROXY : NodeType("tigerProxy")
+    //represents tiger proxies which are not configured in the yaml, but are targets
+    //of proxy subscriptions: e.g.: standalone proxies started remotely
+    data object TIGER_PROXY_EXTERNAL : NodeType("tigerProxyExternal")
     data object DOCKER : NodeType("docker")
     data object GROUP : NodeType("group")
     data object COMPOSE_SERVICE : NodeType("composeService")
@@ -125,11 +128,55 @@ data class DiagramNode(
 
 data class DiagramEdge(
     val id: EdgeId,
+    val type: EdgeType,
     val source: NodeId,
     val target: NodeId,
-    val label: String? = null
+    val label: String? = null,
+    val markerEnd: String = "arrowclosed",
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
+    val markerStart: String? = null,
+    val data : EdgeData = EdgeData(),
 ) {
     fun singletonModel(): ConfigurationDiagramModel {
         return ConfigurationDiagramModel(emptyList(), listOf(this))
     }
+
+    companion object {
+        fun trafficSubscription(source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}-trafficEndpoint"), EdgeType.TRAFFIC_SUBSCRIPTION, source, target, label = "subscribes to traffic")
+
+        fun usesProxy(source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}"), EdgeType.USES_PROXY, source, target, label = "uses proxy")
+
+        fun implicitRoute(source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}-implicit"), EdgeType.IMPLICIT_ROUTE, source, target, label = "automatic route to")
+
+        fun proxyToRoute(proxyName: String, routeIndex: Int, source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("$proxyName-to-route-$routeIndex"), EdgeType.PROXY_TO_ROUTE, source, target)
+
+        fun routeToTarget(source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}"), EdgeType.ROUTE_TO_TARGET, source, target)
+
+        fun makesBackendRequest(source: NodeId, target: NodeId, proxiedVia: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}-backendRequest"), EdgeType.MAKES_BACKEND_REQUEST, source, target, label = "makes backend request", data = EdgeData(proxiedVia = proxiedVia))
+
+        fun directReverseRoute(source: NodeId, target: NodeId) =
+            DiagramEdge(EdgeId("${source.value}-to-${target.value}-directReverse"), EdgeType.DIRECT_REVERSE_ROUTE, source, target, label = "direct reverse")
+    }
+}
+
+data class EdgeData(
+    val proxiedVia: NodeId? = null)
+
+sealed class EdgeType(
+    @get:JsonValue val value: String
+) {
+    data object TRAFFIC_SUBSCRIPTION : EdgeType("trafficSubscription")
+    data object USES_PROXY : EdgeType("usesProxy")
+    data object IMPLICIT_ROUTE : EdgeType("implicitRoute")
+    data object PROXY_AND_ROUTE : EdgeType("proxyAndRoute")
+    data object PROXY_TO_ROUTE : EdgeType("proxyToRoute")
+    data object ROUTE_TO_TARGET : EdgeType("routeToTarget")
+    data object MAKES_BACKEND_REQUEST : EdgeType("makeBackendRequest")
+    data object DIRECT_REVERSE_ROUTE : EdgeType("directReverseRoute")
 }

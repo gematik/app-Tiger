@@ -51,7 +51,7 @@ class JweConverterTest {
     rbelConverter.getRbelCapturer().initialize();
 
     final RbelElement postChallengeResponse =
-        rbelConverter.getMessageList().stream()
+        rbelConverter.getMessagesByOrder().stream()
             .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
             .filter(
                 request ->

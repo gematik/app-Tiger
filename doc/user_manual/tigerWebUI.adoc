@@ -1,16 +1,16 @@
 [#_web_ui]
 === Standalone Tiger Proxy Log
 
-To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:
+To watch the recorded messages and to be able to analyze issues at test run time already you can visit the tiger proxy web user interface at:
 
 [source,http request]
 ----
 http://127.0.0.1:${ADMINPORT}/webui
 ----
 
-With `ADMINPORT` being the configured server port of the Tiger Proxy.
+With `ADMINPORT` being the configured server port of the tiger proxy.
 
-When the user works with the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] the Tiger Proxy UI can be opened via a link in the Rbel Log Details view in a new browser tab.
+When the user works with the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] the tiger proxy UI can be opened via a link in the Rbel Log Details view in a new browser tab.
 
 ==== Overview
 
@@ -59,10 +59,32 @@ Behind the settings icon are some modals that are explained in more detail in th
 Behind the settings icon several actions can be triggered:
 
 * *Message Options* … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses
+* *Sort messages by* … controls the order in which the messages are displayed in the list (see <<_message_sort_order>> below).
 * *Export* … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
-* *Configure Routes* … allows you to modify and add the routes configured on this Tiger Proxy
+* *Configure Routes* … allows you to modify and add the routes configured on this tiger proxy
 * *Reset Messages* … allows you to reset all the messages and import a previously stored traffic file.
-* *Quit Proxy* … quits the Tiger Proxy.
+* *Quit Proxy* … quits the tiger proxy.
+
+[#_message_sort_order]
+===== Message Sort Order
+
+The Tiger Proxy WebUI offers two ways of ordering the recorded messages.
+The selection is persisted in the browser, so it is remembered across reloads, and can be changed at any time via the *Sort messages by* radio buttons in the settings dropdown:
+
+* *Transmission timestamp* (default) — messages are displayed in chronological order based on the timestamp at which they were transmitted on the wire.
+This is the most intuitive ordering for most use cases, especially when traffic is aggregated from multiple Tiger Proxy instances (proxy mesh setups), where the receive order at the local proxy can differ from the actual chronological order.
+* *Received order* — messages are displayed in the order in which they were registered in the local Tiger Proxy (sequence number).
+This is the same ordering that the test step validation uses internally (e.g. `TGR find request to URL`, `TGR current response …`).
+When debugging a failing validation step it is often useful to switch to this view in order to see exactly the sequence the validator is iterating over.
+
+[NOTE]
+====
+The two orderings only differ when the messages do not arrive at the local Tiger Proxy in chronological order.
+This typically only happens in proxy mesh setups, when traffic is forwarded from several upstream Tiger Proxies and reordering can occur on the way.
+For a single, standalone Tiger Proxy both views show the same sequence.
+====
+
+The orthogonal *Up/Down* button in the header still controls the sort *direction* (oldest first vs. newest first) for whichever sort key is currently selected.
 
 ===== Routing Modal
 

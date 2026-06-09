@@ -1,9 +1,9 @@
 [#_tiger_configuration]
 == Tiger Configuration
 
-Configuration is an integral part of testing.
-To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration.
-It combines properties from multiple source and feeds into various parts of the system.
+Configuration is a key aspect of testing.
+To simplify this process and make configuring different parts of the system as easy as possible, Tiger provides a central configuration store: `TigerGlobalConfiguration`.
+It combines properties from multiple sources and feeds into various parts of the system.
 
 image::media/tiger-configuration-global.svg[title="The TigerGlobalConfiguration with inlets and outlets"]
 
@@ -34,10 +34,43 @@ The following inlets are considered in the TigerGlobalConfiguration (ordered fro
 Tiger resolves the main configuration file as follows:
 
 . If `tiger.testenv.cfgfile` is set, that exact path is used.
-If the file does not exist Tiger fails immediately.
+If the file does not exist, Tiger fails immediately.
 . Otherwise, Tiger searches for `tiger.yaml` (preferred) or `tiger.yml` starting from the current working directory and walking upward through parent directories.
 . The upward search stops when a VCS root directory is encountered (i.e. a directory containing `.git`, `.hg`, or `.svn`).
 The VCS root itself is still checked for a tiger YAML before stopping.
+
+[#_additional_yaml_files]
+=== Additional YAML files
+
+You can specify additional YAML files to be loaded into the TigerGlobalConfiguration.
+This allows you to split your configuration into multiple files, for example to separate default values from environment-specific overrides or to keep sensitive data in a separate file that is not checked into version control.
+
+The following YAML snipplet shows an example of three additional YAML files being loaded:
+
+[source,YAML]
+----
+additionalConfigurationFiles:
+  - filename: defaults.yaml
+  - filename: tiger-${environment}.yaml
+    baseKey: tiger
+  - filename: demoData.yaml
+    baseKey: demo
+----
+
+The attribute `tiger.additionalConfigurationFiles` is a list, each list entry has two properties:
+
+* `filename` pointing to the file to be read.
+This can be relative to the `tiger.yaml` (primary) or relative to the working directory (secondary).
+Keep in mind that placeholders can be used in the filename.
+* `baseKey`, an optional attribute, which allows you to prefix every property from the given file with this key (keep in mind that the `tiger.yaml` has a base key of `tiger`).
+
+The example above would lead to the following behavior:
+
+* `defaults.yaml` is loaded without a `baseKey`, meaning its properties are merged at the root level of the configuration.
+* `tiger-${environment}.yaml` is loaded with the `baseKey: tiger`, so all its properties are prefixed with `tiger.`.
+The `${environment}` placeholder is resolved at runtime from the Tiger Global Configuration or environment variables.
+* `demoData.yaml` is loaded with the `baseKey: demo`, so all its properties are accessible under the `demo.` prefix.
+
 
 === Key-translation
 
@@ -145,6 +178,10 @@ To define such a value, just use the pipe (|) after the key, like so:
 This will first test for the presence of "foo.bar" as a configuration key.
 If that key is not found, the fallback value "orThisValue" will be used.
 
+In cases where no fallback value is desired but the user still wants to avoid unresolved placeholders, the pipe can be used without a value:
+
+`${foo.bar|}`
+
 === Localized configuration
 
 It is possible to set a local variable in the TigerGlobalConfiguration which will only be active for the duration of the test case execution.
@@ -173,17 +210,17 @@ a variable can be set that will be removed from the TigerGlobalConfiguration whe
 
 === Examples
 
-Some examples to clarify:
+Below there are some examples of how to use the TigerGlobalConfiguration in different scenarios.
 
-==== Example 1
+==== Example: Overriding Proxy Routes via Environment Variables
 
 Say you have an environment configured in your testenv.yaml.
-You want the Tiger Proxy to forward traffic on one route to your backend-server.
+You want the tiger proxy to forward traffic on one route to your backend-server.
 This will normally be a local server, but on the build-server you want to address another host.
 You can simply set an environment variable to do the job for you.
 Below are the relevant snippets:
 
-[source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
+[source,YAML,title="tiger.yaml with the tiger proxy routing everything to the local server"]
 ----
 tigerProxy:
     proxyRoutes:
@@ -198,12 +235,12 @@ In the buildserver you can now simply overwrite the "to"-part of this route like
 export TIGERPROXY_PROXYROUTES_0_TO = "http://real.server"
 ----
 
-==== Example 2
+==== Example: Customizing Individual Values via Placeholders
 
 In the above example let's say you only want to customize the port.
 This can be done by using placeholders:
 
-[source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
+[source,YAML,title="tiger.yaml with the tiger proxy routing everything to the local server"]
 ----
 tigerProxy:
     proxyRoutes:
@@ -218,7 +255,7 @@ This time we don't overwrite the complete to-url but only the port like so:
 export BACKEND_SERVER_PORT = "8080"
 ----
 
-==== Example 3
+==== Example: Referencing Dynamic Values in Test Assertions
 
 Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.
 To do this we have to reference the configured URL from above, since the value could be different on every execution.

@@ -76,7 +76,7 @@ public class VauErpConverterTest {
                 .addCapturer(fileReaderCapturer));
     fileReaderCapturer.initialize();
 
-    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(12))
+    RbelElementAssertion.assertThat(rbelLogger.getMessagesByOrder().get(12))
         .hasStringContentEqualToAtPosition(
             "$.body.message.body.Parameters.xmlns", "http://hl7.org/fhir");
   }
@@ -85,7 +85,7 @@ public class VauErpConverterTest {
   void testNestedRbelPathIntoErpRequest() {
     assertThat(
             rbelLogger
-                .getMessageList()
+                .getMessagesByOrder()
                 .get(52)
                 .findRbelPathMembers(
                     "$.body.message.body.Parameters.parameter.valueCoding.system.value")
@@ -114,7 +114,7 @@ public class VauErpConverterTest {
 
     assertThat(
             rbelLogger
-                .getMessageList()
+                .getMessagesByOrder()
                 .get(45)
                 .findElement("$.body.keyId")
                 .get()
@@ -126,7 +126,7 @@ public class VauErpConverterTest {
   void testNestedRbelPathIntoErpVauResponse() {
     assertThat(
             rbelLogger
-                .getMessageList()
+                .getMessagesByOrder()
                 .get(54)
                 .findRbelPathMembers("$.body.message.body.Task.identifier.system.value")
                 .stream()

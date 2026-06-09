@@ -17,19 +17,19 @@ refer to the user manual linked above.
 
 ### Building the image locally
 
-The image is described by [`Dockerfile`](Dockerfile) in this module. You can either invoke
+The image is described by the [`Dockerfile`](../tiger-standalone-proxy/Dockerfile) in the `tiger-standalone-proxy` module. You can either invoke
 `docker build` yourself, or build it through Maven via the `docker` profile (which uses
 the [fabric8 `docker-maven-plugin`](https://dmp.fabric8.io/) under the hood):
 
 ```bash
 # Build jars + image in one go
-mvn -Pdocker -pl tiger-proxy -am package
+mvn -Pdocker -pl tiger-standalone-proxy -am package
 
 # Just the image (jars in target/ must already exist)
-mvn -Pdocker -pl tiger-proxy docker:build
+mvn -Pdocker -pl tiger-standalone-proxy docker:build
 
 # Override name/tag/commit hash if needed
-mvn -Pdocker -pl tiger-proxy package \
+mvn -Pdocker -pl tiger-standalone-proxy package \
     -Ddocker.image.name=my-org/tiger-proxy \
     -Ddocker.image.tag=dev \
     -Ddocker.commit.hash=$(git rev-parse --short HEAD)
@@ -46,7 +46,7 @@ identical.
 docker run --rm \
   -p 8080:8080 \
   -p 9090:9090 \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 * `8080` &mdash; admin / actuator / WebUI / REST API
@@ -61,7 +61,7 @@ container's working directory `/app`. Spring Boot picks it up automatically:
 docker run --rm \
   -p 8080:8080 -p 9090:9090 \
   -v "$(pwd)/application.yaml:/app/application.yaml:ro" \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 A minimal `application.yaml` could look like this:
@@ -86,7 +86,7 @@ docker run --rm \
   -p 8080:8080 -p 9090:9090 \
   -v "$(pwd)/my-config.yaml:/config/my-config.yaml:ro" \
   -e SPRING_CONFIG_ADDITIONAL_LOCATION=/config/my-config.yaml \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 ### How do I set ports without YAML?
@@ -100,7 +100,7 @@ docker run --rm \
   -e TIGERPROXY_PROXYPORT=9091 \
   -p 8081:8081 \
   -p 9091:9091 \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 The Spring Boot configuration root is `tiger-proxy` (kebab-case, see
@@ -122,7 +122,7 @@ and bypasses any binding subtleties:
 docker run --rm \
   -p 8080:8080 -p 9090:9090 \
   -e SPRING_APPLICATION_JSON='{"tiger-proxy":{"proxyPort":9090}}' \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 ### Running as a non-root user
@@ -144,7 +144,7 @@ docker run --rm \
   -p 8080:8080 -p 9090:9090 \
   -v "$(pwd)/tiger-data:/app/output" \
   -e TIGERPROXY_TLS_MASTERSECRETSFILE=output/master-secrets.txt \
-  gematik1/tiger-proxy:latest
+  gematik1/tiger-proxy-image:latest
 ```
 
 Absolute paths (`/app/output/master-secrets.txt`) work just as well.
@@ -163,7 +163,7 @@ Absolute paths (`/app/output/master-secrets.txt`) work just as well.
 >   --tmpfs /app/output:rw,uid=10000,gid=10000 \
 >   -p 8080:8080 -p 9090:9090 \
 >   -e TIGERPROXY_TLS_MASTERSECRETSFILE=output/master-secrets.txt \
->   gematik1/tiger-proxy:latest
+>   gematik1/tiger-proxy-image:latest
 > ```
 
 ### Health-check

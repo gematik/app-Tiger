@@ -26,10 +26,12 @@ import "simple-syntax-highlighter/dist/sshpre.css";
 import { useHtmlExporter } from "@/api/HtmlExporter.ts";
 import { Modal } from "bootstrap";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { settingsSymbol } from "@/Settings.ts";
 
 const filter = inject(rbelFilterSymbol)!;
+const settings = inject(settingsSymbol)!;
 
-const { isLoading, download } = useHtmlExporter(filter.rbelPath, {});
+const { isLoading, download } = useHtmlExporter(filter.rbelPath, settings.messageSortOrder, {});
 
 const modal = ref<Modal | null>(null);
 const exportWithFilterToggle = ref(false);

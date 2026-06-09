@@ -65,7 +65,7 @@ public class TigerRemoteTrafficDownloader {
             + " in local history ({} actual messages)",
         getRemoteProxyUrl(),
         getRbelLogger().getMessages().size(),
-        getRbelLogger().getMessageList().size());
+        getRbelLogger().getMessagesByOrder().size());
   }
 
   @SneakyThrows
@@ -115,6 +115,7 @@ public class TigerRemoteTrafficDownloader {
         msg -> {
           msg.addFacet(new TigerDownloadedMessageFacet());
           addRemoteUrlToTcpIpFacet(msg);
+          applyClockSkewCompensation(msg);
         });
     if (log.isTraceEnabled()) {
       log.trace(
@@ -143,6 +144,10 @@ public class TigerRemoteTrafficDownloader {
         .getFacet(RbelTcpIpMessageFacet.class)
         .map(f -> f.toBuilder().receivedFromRemoteWithUrl(getRemoteProxyUrl()).build())
         .ifPresent(element::addOrReplaceFacet);
+  }
+
+  private void applyClockSkewCompensation(RbelElement element) {
+    ClockSkewEstimator.applyCompensation(element, tigerRemoteProxyClient.getRemoteClockOffset());
   }
 
   private void downloadAllTrafficFromRemote() {

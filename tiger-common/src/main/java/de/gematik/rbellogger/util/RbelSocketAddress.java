@@ -33,6 +33,8 @@ import de.gematik.test.tiger.exceptions.RbelHostnameFormatException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
@@ -47,7 +49,7 @@ import org.apache.commons.lang3.StringUtils;
 @JsonDeserialize(using = RbelSocketAddress.RbelSocketAddressDeserializer.class)
 public class RbelSocketAddress implements Serializable {
 
-  private final RbelInternetAddress address;
+  private final transient RbelInternetAddress address;
   private final int port;
 
   public RbelSocketAddress(RbelInternetAddress address, int port) {
@@ -170,10 +172,21 @@ public class RbelSocketAddress implements Serializable {
 
   @JsonProperty
   public String toString() {
-    if (port > 0) {
-      return printHostname() + ":" + port;
-    } else {
-      return printHostname();
+    try {
+      // Prefer the resolved IP address for stable, deterministic metadata writing
+      return Optional.ofNullable(address)
+          .map(
+              adr ->
+                  adr.toInetAddress()
+                      .map(InetAddress::getHostAddress)
+                      .orElseGet(adr::printValidHostname))
+          .map(host -> normalizeHostPort(host, port))
+          .orElse("");
+    } catch (RuntimeException e) {
+      // Fallback to previous behavior in case of unexpected errors
+      return Optional.of(address)
+          .map(adr -> adr.toInetAddress().map(Object::toString).orElseGet(adr::printValidHostname))
+          .orElse("");
     }
   }
 
@@ -186,8 +199,33 @@ public class RbelSocketAddress implements Serializable {
     public void serialize(
         RbelSocketAddress value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
-      gen.writeString(value.toString());
+      // Prefer the resolved IP address when serializing socket addresses so that
+      // JSON output is stable and environment-independent (e.g. '127.0.0.1:8080'
+      // instead of 'localhost:8080'). Fall back to the printed hostname on error.
+      try {
+        String host =
+            Optional.ofNullable(value.getAddress())
+                .flatMap(adr -> adr.toInetAddress().map(InetAddress::getHostAddress))
+                .orElseGet(value::printHostname);
+        gen.writeString(normalizeHostPort(host, value.getPort()));
+      } catch (RuntimeException e) {
+        gen.writeString(value.toString());
+      }
     }
+  }
+
+  private static String normalizeHostPort(String host, int port) {
+    String hostPort;
+    if (port > 0) {
+      if (host.contains(":")) {
+        hostPort = "[" + host + "]:" + port;
+      } else {
+        hostPort = host + ":" + port;
+      }
+    } else {
+      hostPort = host;
+    }
+    return hostPort;
   }
 
   public static class RbelSocketAddressDeserializer extends JsonDeserializer<RbelSocketAddress> {
@@ -204,6 +242,94 @@ public class RbelSocketAddress implements Serializable {
       return address.toInetAddress().map(InetAddress::isLoopbackAddress).orElse(false);
     } catch (Exception e) {
       return false;
+    }
+  }
+
+  /**
+   * Compares two RbelSocketAddresses for equality, handling hostname aliases by comparing
+   * underlying IP addresses as a fallback.
+   *
+   * @param other the other RbelSocketAddress to compare
+   * @return true if the addresses represent the same host and port, false otherwise
+   */
+  public boolean isSameAddress(RbelSocketAddress other) {
+    if (this == other) {
+      return true;
+    }
+    if (other == null) {
+      return false;
+    }
+    if (this.port != other.port) {
+      return false;
+    }
+    // First try direct hostname comparison
+    if (this.printHostname().equalsIgnoreCase(other.printHostname())) {
+      return true;
+    }
+    // Fallback to IP address comparison
+    val thisIp = this.address.getIpAddress();
+    val otherIp = other.address.getIpAddress();
+    if (thisIp != null && otherIp != null) {
+      return Arrays.equals(thisIp, otherIp);
+    }
+    String h1 = this.printHostname().toLowerCase();
+    String h2 = other.printHostname().toLowerCase();
+    return h1.contains("localhost") && h2.contains("localhost");
+  }
+
+  public static int compareAddresses(RbelSocketAddress a, RbelSocketAddress b) {
+    if (a == b) {
+      return 0;
+    }
+    if (a == null) {
+      return -1;
+    }
+    if (b == null) {
+      return 1;
+    }
+    if (a.getPort() != b.getPort()) {
+      return Integer.compare(a.getPort(), b.getPort());
+    }
+    val aAddress = a.getAddress();
+    val bAddress = b.getAddress();
+    if (aAddress != null
+        && bAddress != null
+        && aAddress.getIpAddress() != null
+        && bAddress.getIpAddress() != null) {
+      // prefer the resolved view, since it is more stable
+      return Arrays.compare(aAddress.getIpAddress(), bAddress.getIpAddress());
+    } else if (aAddress != null
+        && bAddress != null
+        && aAddress.getHostname() != null
+        && bAddress.getHostname() != null) {
+      return compareIpAddresses(aAddress, bAddress);
+    }
+    // stable fallback when address data is incomplete
+    return Objects.toString(a).compareTo(Objects.toString(b));
+  }
+
+  private static int compareIpAddresses(
+      RbelInternetAddress address1, RbelInternetAddress address2) {
+    byte[] aIp = address1.getIpAddress();
+    byte[] bIp = address2.getIpAddress();
+    if (aIp == null) {
+      aIp = tryResolveHostname(address1.getHostname());
+    }
+    if (bIp == null) {
+      bIp = tryResolveHostname(address2.getHostname());
+    }
+    if (aIp != null && bIp != null) {
+      return Arrays.compare(aIp, bIp);
+    }
+    return address1.getHostname().compareToIgnoreCase(address2.getHostname());
+  }
+
+  @SuppressWarnings("java:S1168")
+  private static byte[] tryResolveHostname(String hostname) {
+    try {
+      return InetAddress.getByName(hostname).getAddress();
+    } catch (UnknownHostException e) {
+      return null;
     }
   }
 }

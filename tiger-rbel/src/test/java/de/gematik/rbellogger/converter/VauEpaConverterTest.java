@@ -118,7 +118,7 @@ class VauEpaConverterTest {
 
       rbelFileReaderCapturer.initialize();
 
-      assertThat(epa2Logger.getMessageList().get(24))
+      assertThat(epa2Logger.getMessagesByOrder().get(24))
           .extractChildWithPath(
               "$.body.Data.content.decoded.AuthorizationAssertion.content.decoded.Assertion.Issuer.text")
           .hasStringContentEqualTo("https://aktor-gateway.gematik.de/authz");
@@ -151,7 +151,7 @@ class VauEpaConverterTest {
       capturer.initialize();
     }
 
-    assertThat(epa2Logger.getMessageList().get(9))
+    assertThat(epa2Logger.getMessagesByOrder().get(9))
         .extractChildWithPath("$.body.message.reconstructedMessage.Envelope.Header.Action.text")
         .hasStringContentEqualTo("urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b");
   }
@@ -173,7 +173,7 @@ class VauEpaConverterTest {
       capturer.initialize();
     }
 
-    assertThat(epa2Logger.getMessageList().get(5))
+    assertThat(epa2Logger.getMessagesByOrder().get(5))
         .extractChildWithPath("$.body.message.reconstructedMessage.Envelope.Header.Action.text")
         .hasStringContentEqualTo("urn:ihe:iti:2007:RetrieveDocumentSetResponse");
   }
@@ -189,7 +189,7 @@ class VauEpaConverterTest {
 
   @Test
   void vauClientSigFin_shouldDecipherMessageWithCorrectKeyId() {
-    assertThat(rbelLogger.getMessageList().get(2))
+    assertThat(rbelLogger.getMessagesByOrder().get(2))
         .extractChildWithPath("$.body.FinishedData.content.keyId")
         .hasStringContentEqualTo(
             "f787a8db0b2e0d7c418ea20aba6125349871dfe36ab0f60a3d55bf4d1b556023");
@@ -197,14 +197,14 @@ class VauEpaConverterTest {
 
   @Test
   void clientPayload_shouldParseEncapsulatedXml() {
-    assertThat(rbelLogger.getMessageList().get(4))
+    assertThat(rbelLogger.getMessagesByOrder().get(4))
         .extractChildWithPath("$.body.message.Envelope.Body.sayHello.arg0.text")
         .hasStringContentEqualTo("hello from integration client");
   }
 
   @Test
   void parentKeysForVauKeysShouldBeCorrect() {
-    assertThat(rbelLogger.getMessageList().get(7))
+    assertThat(rbelLogger.getMessagesByOrder().get(7))
         .extractChildWithPath("$.body")
         .extractFacet(RbelVauEpaFacet.class)
         .extracting(facet -> facet.getKeyUsed().get())

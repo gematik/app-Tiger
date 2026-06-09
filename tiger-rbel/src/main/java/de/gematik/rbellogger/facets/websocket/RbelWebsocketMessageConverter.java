@@ -29,12 +29,14 @@ import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.zip.Inflater;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.Arrays;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -57,25 +59,28 @@ public class RbelWebsocketMessageConverter {
 
   public void parseWebsocketMessage() {
     getUsedExtensions();
-    fin0Bit = extractByteNumber(message.getContent().get(0), 7) != 0;
-    rsv1Bit = (extractByteNumber(message.getContent().get(0), 6)) != 0;
-    rsv2Bit = (extractByteNumber(message.getContent().get(0), 5)) != 0;
-    rsv3Bit = (extractByteNumber(message.getContent().get(0), 4)) != 0;
-    opcode = message.getContent().get(0) & 0b00001111;
-    masked = (extractByteNumber(message.getContent().get(1), 7)) != 0;
-    int payloadLength = message.getContent().get(1) & 0b01111111;
+    RbelContent content = message.getContent();
+    byte firstByte = content.get(0);
+    byte secondByte = content.get(1);
+    fin0Bit = isBitSet(firstByte, 7);
+    rsv1Bit = isBitSet(firstByte, 6);
+    rsv2Bit = isBitSet(firstByte, 5);
+    rsv3Bit = isBitSet(firstByte, 4);
+    opcode = firstByte & 0b00001111;
+    masked = isBitSet(secondByte, 7);
+    int payloadLength = secondByte & 0b01111111;
     lengthOfExtendedPayloadLength = calculateExtendedPayloadLength(payloadLength);
 
     val actualPayloadLength = calculateActualPayloadLength(payloadLength);
     val messageLength = 2 + lengthOfExtendedPayloadLength + (masked ? 4 : 0) + actualPayloadLength;
-    if (messageLength > message.getContent().size()) {
+    if (messageLength > content.size()) {
       message.addFacet(
           RbelNoteFacet.builder()
               .value(
                   "Websocket message length ("
                       + messageLength
                       + ") exceeds actual content length ("
-                      + message.getContent().size()
+                      + content.size()
                       + ")")
               .style(NoteStyling.ERROR)
               .build());
@@ -102,10 +107,14 @@ public class RbelWebsocketMessageConverter {
     if (message
         .getFacet(RbelTcpIpMessageFacet.class)
         .flatMap(RbelTcpIpMessageFacet::getReceiverHostname)
-        .map(originalClient::equals)
+        .map(originalClient::isSameAddress)
         .orElse(true)) {
       message.addFacet(new RbelResponseFacet("Websocket"));
-    } else {
+    } else if (message
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .flatMap(RbelTcpIpMessageFacet::getSenderHostname)
+        .map(originalClient::isSameAddress)
+        .orElse(true)) {
       message.addFacet(new RbelRequestFacet("Websocket", false));
     }
     converter.convertElement(payloadElement);
@@ -146,11 +155,13 @@ public class RbelWebsocketMessageConverter {
 
   private void getUsedExtensions() {
     messageCompression =
-        extensionMap.keySet().stream().anyMatch("permessage-deflate"::equalsIgnoreCase);
+        extensionMap.keySet().stream()
+            .map(k -> k == null ? "" : k.toLowerCase())
+            .anyMatch(k -> k.contains("permessage-deflate"));
   }
 
-  private int extractByteNumber(byte value, int target) {
-    return value & ((1 << target) & 0xff);
+  private boolean isBitSet(byte value, int target) {
+    return (value & ((1 << target) & 0xff)) != 0;
   }
 
   private static int calculateExtendedPayloadLength(int payloadLength) {
@@ -173,25 +184,29 @@ public class RbelWebsocketMessageConverter {
           ByteBuffer.wrap(
               message.getContent().subArray(2, 2 + lengthOfExtendedPayloadLength).toByteArray());
       if (payloadLength == 126) {
-        return buffer.getShort();
+        return Short.toUnsignedInt(buffer.getShort());
       } else {
-        return (int) buffer.getLong();
+        long l = buffer.getLong();
+        if (l > Integer.MAX_VALUE) {
+          return Integer.MAX_VALUE;
+        }
+        return (int) l;
       }
     }
   }
 
   private RbelElement extractPayloadElement() {
-    RbelContent rawPayloadBytes =
-        message
-            .getContent()
-            .subArray(
-                2 + (masked ? 4 : 0) + lengthOfExtendedPayloadLength, message.getContent().size());
+    final int extendedLengthOffset = 2;
+    final int extendedLengthBytes = lengthOfExtendedPayloadLength;
+    final int maskingKeyOffset = extendedLengthOffset + extendedLengthBytes;
+    final int payloadOffset = maskingKeyOffset + (masked ? 4 : 0);
+
+    val content = message.getContent();
+
+    RbelContent rawPayloadBytes = content.subArray(payloadOffset, content.size());
+
     if (masked) {
-      val maskingKey =
-          message
-              .getContent()
-              .toByteArray(
-                  2 + lengthOfExtendedPayloadLength, 2 + lengthOfExtendedPayloadLength + 4);
+      val maskingKey = content.toByteArray(maskingKeyOffset, maskingKeyOffset + 4);
       final byte[] maskedPayloadBytes = rawPayloadBytes.toByteArray();
       final byte[] unmaskedPayloadBytes = new byte[maskedPayloadBytes.length];
       for (int i = 0; i < unmaskedPayloadBytes.length; i++) {
@@ -210,16 +225,55 @@ public class RbelWebsocketMessageConverter {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     byte[] buffer = new byte[1024];
 
-    byte[] joined = new byte[compressedData.size() + TAIL.length];
-    System.arraycopy(compressedData.toByteArray(), 0, joined, 0, compressedData.size());
-    System.arraycopy(TAIL, 0, joined, compressedData.size(), TAIL.length);
+    byte[] joined = Arrays.concatenate(compressedData.toByteArray(), TAIL);
+    resetInflaterIfNecessary();
+
     inflater.setInput(joined);
 
-    while (!inflater.needsInput()) {
+    while (!inflater.finished() && !inflater.needsInput()) {
       int count = inflater.inflate(buffer);
+      if (count <= 0) {
+        break; // avoid potential infinite loop
+      }
       outputStream.write(buffer, 0, count);
     }
 
     return RbelContent.of(outputStream.toByteArray());
+  }
+
+  private void resetInflaterIfNecessary() {
+    final boolean clientNoContext =
+        extensionMap.stream()
+            .map(Map.Entry::getValue)
+            .anyMatch(
+                el -> {
+                  if (el == null || el.getRawStringContent() == null) return false;
+                  String lc = el.getRawStringContent().toLowerCase();
+                  return lc.contains("client_no_context_takeover")
+                      || lc.contains("no_context_takeover");
+                });
+    final boolean serverNoContext =
+        extensionMap.stream()
+            .map(Map.Entry::getValue)
+            .anyMatch(
+                el -> {
+                  if (el == null || el.getRawStringContent() == null) return false;
+                  String lc = el.getRawStringContent().toLowerCase();
+                  return lc.contains("server_no_context_takeover")
+                      || lc.contains("no_context_takeover");
+                });
+
+    final boolean fromClient =
+        message
+            .getFacet(RbelTcpIpMessageFacet.class)
+            .flatMap(RbelTcpIpMessageFacet::getSenderHostname)
+            .map(originalClient::isSameAddress)
+            .orElse(false);
+
+    final boolean needReset = (fromClient && clientNoContext) || (!fromClient && serverNoContext);
+
+    if (needReset) {
+      inflater.reset();
+    }
   }
 }

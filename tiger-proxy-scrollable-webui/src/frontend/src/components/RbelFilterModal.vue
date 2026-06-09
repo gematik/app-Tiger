@@ -35,7 +35,7 @@ const toast = inject(toastSymbol)!;
 const rbelHelp = inject(settingsSymbol)!;
 
 const isRbelPathInvalid = ref(false);
-const filter = useRbelTestFilter({
+const filter = useRbelTestFilter(rbelHelp.messageSortOrder, {
   onError: (errMsg: string) => {
     isRbelPathInvalid.value = true;
     toast.showToast(errMsg);

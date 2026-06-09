@@ -28,6 +28,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import de.gematik.test.tiger.topology.deserialization.GlobalConfig
 import de.gematik.test.tiger.topology.deserialization.LightAdditionalConfigurationFile
 import de.gematik.test.tiger.topology.deserialization.LightTigerConfigModel
+import de.gematik.test.tiger.topology.deserialization.resolvePlaceholders
 import de.gematik.test.tiger.topology.util.requireThat
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -48,7 +49,6 @@ internal val yamlMapper: ObjectMapper =
         .registerKotlinModule()
 
 
-// ── Public entry point ──────────────────────────────────────────────────────
 
 /**
  * Merges uploaded YAML files into a single [GlobalConfig].
@@ -66,19 +66,36 @@ internal fun mergeGlobalConfig(uploadedFiles: List<UploadedYamlFile>): GlobalCon
         extractFileName(file.fileName) !in additionalFileNames && isTigerConfig(parseYamlDocument(file.content))
     }
 
-    requireThat(rootFiles.size <= 1) {
-        "Expected exactly one root tiger configuration file, but found ${rootFiles.size}: " +
-                rootFiles.map { extractFileName(it.fileName) }.sorted().joinToString(", ")
+    val rootFile = when (rootFiles.size) {
+        0 -> return GlobalConfig(LightTigerConfigModel())
+        1 -> rootFiles.single()
+        else -> {
+            // Multiple roots detected!!
+            // The root is the one with "additionalConfigurationFiles" configuration.
+            val withAdditionalFiles = rootFiles.filter {
+                readAdditionalFiles(parseYamlDocument(it.content)).isNotEmpty()
+            }
+            requireThat(withAdditionalFiles.size == 1) {
+                "Found multiple tiger configuration files and could not determine the primary root. " +
+                        "Exactly one should declare 'additionalConfigurationFiles'. Candidates: " +
+                        rootFiles.map { extractFileName(it.fileName) }.sorted().joinToString(", ")
+            }
+            withAdditionalFiles.single()
+        }
     }
 
-    val rootFile = rootFiles.singleOrNull()
-        ?: return GlobalConfig(LightTigerConfigModel())
+    val (tree, treeWarnings, includedFiles) = buildRootedTree(rootFile, yamlByFileName)
 
-    val (tree, warnings) = buildRootedTree(rootFile, yamlByFileName)
+    val unincludedWarnings = uploadedFiles
+        .filter { file ->
+            val name = extractFileName(file.fileName)
+            name !in includedFiles && isTigerConfig(parseYamlDocument(file.content))
+        }
+        .map { "File '${extractFileName(it.fileName)}' is a valid tiger configuration but was not included in the model" }
 
     val tigerSection = tree[TIGER_KEY] as? Map<*, *> ?: emptyMap<String, Any?>()
     val tigerConfig = yamlMapper.convertValue(normalizeMap(tigerSection), LightTigerConfigModel::class.java)
-    return GlobalConfig(tigerConfig, tree, warnings)
+    return GlobalConfig(tigerConfig, tree, treeWarnings + unincludedWarnings)
 }
 
 
@@ -121,10 +138,11 @@ private fun collectAdditionalFileNames(files: List<UploadedYamlFile>): Set<Strin
     files.flatMap { readAdditionalFiles(parseYamlDocument(it.content)).map { acf -> extractFileName(acf.filename) } }
         .toSet()
 
-/** Result of [buildRootedTree]: the merged tree plus any warnings collected during resolution. */
+/** Result of [buildRootedTree]: the merged tree, any warnings, and the set of filenames that were actually loaded. */
 private data class TreeBuildResult(
     val tree: LinkedHashMap<String, Any?>,
-    val warnings: List<String>) {
+    val warnings: List<String>,
+    val includedFiles: Set<String> = emptySet()) {
 
     companion object {
         fun emptyResult() : TreeBuildResult =
@@ -149,22 +167,29 @@ private fun buildRootedTree(
     val tree = rootAsTigerConfig(document)
     val processed = mutableSetOf<String>()
     val warnings = mutableListOf<String>()
+    val includedFiles = mutableSetOf(extractFileName(file.fileName))
 
     while (true) {
         val pending = readAdditionalFiles(tree)
             .filter { it.filename.isNotBlank() }
             .filter { processed.add(extractFileName(it.filename)) }
-        if (pending.isEmpty()) return TreeBuildResult(tree, warnings)
+        if (pending.isEmpty()) return TreeBuildResult(tree, warnings, includedFiles)
 
         pending.forEach { ref ->
-            val yaml = resolveYamlContent(ref.filename, yamlByFileName)
+            // Resolve placeholder-based filenames (e.g. tiger-${environment}.yaml → tiger-local.yaml)
+            // using the current tree state, which may have been enriched by earlier merges in this batch.
+            val resolvedFilename = resolvePlaceholders(extractFileName(ref.filename), GlobalConfig(fullTree = tree))
+            val yaml = resolveYamlContent(resolvedFilename, yamlByFileName)
             if (yaml == null) {
-                warnings += "Additional configuration file not found: ${ref.filename}"
+                val detail = if (resolvedFilename != extractFileName(ref.filename))
+                    "${ref.filename} (resolved to $resolvedFilename)" else ref.filename
+                warnings += "Additional configuration file not found: $detail"
                 return@forEach
             }
             val additional = buildAdditionalTree(yaml, ref.baseKey)
             ensureNoDuplicateServers(tree[TIGER_KEY] as? Map<*, *>, additional[TIGER_KEY] as? Map<*, *>)
             deepMerge(tree, additional)
+            includedFiles += resolvedFilename
         }
     }
 }

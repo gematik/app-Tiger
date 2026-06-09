@@ -1,0 +1,20 @@
+servers:
+  zion:
+    type: zion
+    zionConfiguration:
+      serverPort: ${free.port.50}
+      mockResponses:
+        helloZionBackendServer:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/helloZionBackendServer'
+          backendRequests:
+            sayHello:
+              method: POST
+              url: "http://example.com"
+              assignments:
+                backendResponseBody: "$.body"
+              executeAfterSelection: true
+          response:
+            statusCode: 200
+            body: ${backendResponseBody}

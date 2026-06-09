@@ -1,5 +1,68 @@
 # Changelog Tiger Test platform
 
+# Release 4.3.0
+
+## Breaking Changes
+
+* TGR-2069: The legacy `RbelLogger#getMessageList()` accessor was removed.
+  Callers must migrate to one of the explicit successors on `RbelMessageHistory` / `RbelLogger`:
+
+  - `getMessagesByOrder()` – sequence-number order (the previous default behaviour),
+  - `getMessagesByTimestamp()` – ascending transmission-timestamp order (sequence number as tiebreaker),
+  - `getMessages(MessageSortOrder)` – generic form picking one of the two.
+
+  Likewise, the two-arg `MessageHistory#getMessagesAfter(element, includeElement)` was removed in favour of the
+  explicit `getMessagesAfter(element, includeElement, MessageSortOrder)`; pass `MessageSortOrder.SEQUENCE`
+  to keep the previous behavior.
+
+## Features
+
+* TGR-1115: Update/cleanup of the Tiger User Manual.
+* TGR-1571: Release on gitHub with real releases.
+* TGR-2069: Tiger Proxy mesh setups now include **automatic clock-skew compensation** between
+  proxies running on different machines. The clock offset to each remote proxy is
+  determined in an NTP-style fashion at connection time and applied to all received
+  message timestamps, ensuring correct ordering across different system clocks.
+
+  - New configuration property: `tigerProxy.clockSyncSamples` (default: `3`,
+    set to `0` to disable)
+
+  The Tiger test library validator can optionally iterate over messages in transmission-timestamp
+  order instead of received order via the new `tiger.lib.validation.messageSortOrder` configuration
+  property (values: `SEQUENCE` (default) or `TIMESTAMP`). This is mainly useful in proxy-mesh setups
+  where traffic from several upstream proxies can arrive out of chronological order at the local
+  proxy. Use with care – switching to `TIMESTAMP` changes how every `TGR find next request …` and
+  related step pairs up messages.
+* TGR-2124: User Manual: added section describing the topology visualizer.
+* TGR-2126: Improve visual representation of different server types in the topology diagram.
+* TGR-2140: Topology Visualizer now has a legend explaining  each node type.
+* TGR-2141: Topology Visualizer: traffic subscription links from tiger proxies are now also created when the target of the subscription is a remote proxy that has no configuration defined in the tiger.yaml.
+  This is typically the case when a remote tiger proxy runs in a different system or network.
+
+## Bugfixes
+
+* TGR-2069: Tiger Proxy Log GUI: messages are now displayed in correct chronological order based on their transmission timestamp.
+  The previous "received order" (sequence-number based) sort can still be selected via the settings dropdown
+  (Settings → Sort messages by → Received order); this is the same order on which test step validation iterates and is
+  therefore useful when debugging failing validations.
+* TGR-2137: Tiger Topology: in standalone mode, correctly support additionalConfigurationFiles with placeholders in the file name
+* TGR-2138: Exchange eclipse-temurin:17-jre-alpine with gematik1/osadl-alpine-openjdk17-jre.
+* TGR-2142: Topology Visualizer: represent automatic route edges of docker and compose server types.
+* TGR-2145: WebSocket frames arriving from proxy servers on different TCP connections than the handshake are now correctly recognized and parsed.
+  The converter now implements cross-hop handshake detection with three strategies:
+  (1) fast sibling connection lookup for bidirectional sessions, 
+  (2) cross-hop search for frames on different physical connections, and 
+  (3) logical endpoint normalization to show the original server/client addresses instead of proxy addresses in test output.
+  Frames are additionally classified as REQUEST or RESPONSE based on the logical message direction, enabling proper assertion chains in cross-proxy scenarios.
+* TGR-2148: Topology Visualizer: when a route points to a zion server by server port, it is now correctly connected in the diagram.
+* TGR-2149: Topology Visualizer: avoid overlapping edge labels when autolayouting
+* TGR-2151: Tiger Proxy Log GUI: the tiger proxy name is now displayed even when tiger version is not available.
+* TGR-2153: Tiger Proxy Log GUI: the tiger version/build date is now available in tiger proxy standalone
+* TGR-2159: Fixed use of websocket payload inflation, using separate inflaters for each direction and resetting them when required.
+* TGR-2160: Workflow UI - deactivate broken dark mode
+* TGR-2161: Integration Tests fixed.
+
+
 # Release 4.2.7
 
 ## Dependencies
@@ -95,7 +158,7 @@
       -p 8080:8080 -p 9090:9090 \
       -v "$(pwd)/tiger-data:/app/output" \
       -e TIGERPROXY_TLS_MASTERSECRETSFILE=output/master-secrets.txt \
-      gematik1/tiger-proxy:latest
+      gematik1/tiger-proxy-image:latest
   ```
 
 

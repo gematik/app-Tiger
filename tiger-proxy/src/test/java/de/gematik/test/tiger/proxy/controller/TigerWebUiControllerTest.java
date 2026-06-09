@@ -224,6 +224,89 @@ class TigerWebUiControllerTest {
 
   @Test
   @ResourceLock(value = "TigerWebUiController")
+  void getMessagesWithMeta_acceptsSortOrderParameter() {
+    RestAssured.given()
+        .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=TIMESTAMP")
+        .then()
+        .statusCode(200)
+        .body("messages.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES));
+    RestAssured.given()
+        .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=SEQUENCE")
+        .then()
+        .statusCode(200)
+        .body("messages.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES));
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getMessagesWithHtml_acceptsSortOrderParameter() {
+    RestAssured.given()
+        .get(
+            getWebUiUrl()
+                + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100&sortOrder=SEQUENCE")
+        .then()
+        .statusCode(200)
+        .body("messages.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES))
+        .body("messages[0].uuid", equalTo(tigerProxy.getRbelMessagesList().get(0).getUuid()));
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void sortOrder_unknownValue_yieldsBadRequest() {
+    RestAssured.given()
+        .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=NOT_A_VALID_VALUE")
+        .then()
+        .statusCode(400);
+    RestAssured.given()
+        .get(
+            getWebUiUrl()
+                + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100&sortOrder=NOPE")
+        .then()
+        .statusCode(400);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void sortOrder_changesHash_soClientRefetches() {
+    final String hashTimestamp =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=TIMESTAMP")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("hash");
+    final String hashSequence =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=SEQUENCE")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("hash");
+    assertThat(hashTimestamp).isNotEqualTo(hashSequence);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void sortOrder_defaultsToTimestamp() {
+    final String hashDefault =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("hash");
+    final String hashExplicit =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=TIMESTAMP")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("hash");
+    assertThat(hashDefault).isEqualTo(hashExplicit);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkIfFilterMessagesReturnsErrorOnInvalidRbelPath() {
     RestAssured.given()
         .get(getWebUiUrl() + "/testFilterMessages?filterRbelPath=blablub")
@@ -713,6 +796,32 @@ class TigerWebUiControllerTest {
           .body("uuid", equalTo(message.getUuid()))
           .body("content", not(equalTo("")))
           .body("sequenceNumber", not(equalTo(null)));
+    }
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void getMessagesWithMeta_shouldReturnMessagesSortedByTimestamp() {
+    var response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta")
+            .then()
+            .statusCode(200)
+            .extract()
+            .response();
+
+    var timestamps =
+        response.jsonPath().getList("messages.timestamp", String.class).stream()
+            .filter(java.util.Objects::nonNull)
+            .map(java.time.ZonedDateTime::parse)
+            .toList();
+
+    for (int i = 1; i < timestamps.size(); i++) {
+      assertThat(timestamps.get(i))
+          .as(
+              "Message at index %d (timestamp %s) should not be before message at index %d (timestamp %s)",
+              i, timestamps.get(i), i - 1, timestamps.get(i - 1))
+          .isAfterOrEqualTo(timestamps.get(i - 1));
     }
   }
 

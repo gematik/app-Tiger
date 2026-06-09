@@ -131,10 +131,16 @@ public class TracingMessageFrame {
                 val metadata =
                     msg.getFacet(RbelMessageMetadata.class).orElseGet(RbelMessageMetadata::new);
                 facet.getMessage().getAdditionalInformation().forEach(metadata::addMetadata);
+                applyClockSkewCompensation(metadata, facet.getRemoteProxyClient());
                 metadata
                     .withSender(facet.getMessage().getSender())
                     .withReceiver(facet.getMessage().getReceiver());
               });
+    }
+
+    private void applyClockSkewCompensation(
+        RbelMessageMetadata metadata, TigerRemoteProxyClient remoteProxyClient) {
+      ClockSkewEstimator.applyCompensation(metadata, remoteProxyClient.getRemoteClockOffset());
     }
   }
 

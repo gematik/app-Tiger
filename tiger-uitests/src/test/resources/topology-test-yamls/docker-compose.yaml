@@ -1,0 +1,10 @@
+version: '2'
+services:
+  aService:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+  anotherService:
+    image: nginx:latest
+    ports:
+      - "8081:80"

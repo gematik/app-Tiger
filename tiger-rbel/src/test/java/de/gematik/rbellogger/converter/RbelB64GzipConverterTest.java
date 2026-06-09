@@ -66,7 +66,7 @@ class RbelB64GzipConverterTest {
     rbelLogger.getRbelConverter().waitForAllCurrentMessagesToBeParsed();
 
     final RbelElement postFmvsdmResponse =
-        rbelLogger.getMessageList().stream()
+        rbelLogger.getMessagesByOrder().stream()
             .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
             .filter(
                 request ->

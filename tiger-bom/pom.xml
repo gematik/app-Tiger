@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.2.7</version>
+  <version>4.3.0</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -100,7 +100,7 @@
     <version.json-schema-validator>1.5.6</version.json-schema-validator>
     <!-- 20240303 -->
     <version.json-unit>5.1.0</version.json-unit>
-    <version.jsonschema-generator>4.38.0</version.jsonschema-generator>
+    <version.jsonschema-generator>5.0.0</version.jsonschema-generator>
     <version.jsoup>1.22.1</version.jsoup>
     <!-- junit 6: platform and jupiter now share the same version -->
     <version.junit>6.0.3</version.junit>
@@ -343,63 +343,63 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.2.7</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>io.github.classgraph</groupId>

@@ -56,13 +56,18 @@ const toastElement: Ref<HTMLElement | null> = ref(null);
 const toast = useToast(toastElement);
 provide(toastSymbol, toast);
 
-const messageQueue = useMessageQueue(settings.reverseMessageQueue, rbelFilter.rbelPath, {
-  onError: (errMsg: string) => {
-    if (!toast.isShown()) {
-      toast.showToast(errMsg);
-    }
+const messageQueue = useMessageQueue(
+  settings.reverseMessageQueue,
+  rbelFilter.rbelPath,
+  settings.messageSortOrder,
+  {
+    onError: (errMsg: string) => {
+      if (!toast.isShown()) {
+        toast.showToast(errMsg);
+      }
+    },
   },
-});
+);
 provide(messageQueueSymbol, messageQueue);
 
 const proxyController = useProxyController({

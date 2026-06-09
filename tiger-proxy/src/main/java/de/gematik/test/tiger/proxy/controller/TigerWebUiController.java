@@ -23,6 +23,7 @@ package de.gematik.test.tiger.proxy.controller;
 import static de.gematik.rbellogger.renderer.MessageMetaDataDto.getElementSequenceNumber;
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
+import de.gematik.rbellogger.MessageSortOrder;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
@@ -256,11 +257,28 @@ public class TigerWebUiController implements ApplicationContextAware {
         .execute();
   }
 
-  /** Returns a stable hash, even if the message queue is empty. */
-  private String messageHash(Collection<RbelElement> messages) {
-    return messages.isEmpty()
-        ? (new UUID(getTigerProxy().hashCode(), 1234)).toString()
-        : messages.iterator().next().getUuid();
+  /**
+   * Returns a fingerprint that changes whenever the visible message set has been mutated. Combines:
+   *
+   * <ul>
+   *   <li>{@code size} – detects any pure removal;
+   *   <li>{@link de.gematik.rbellogger.RbelMessageHistory.MessageHistory#getMessageSequenceNumber()
+   *       messageSequenceNumber} – strictly monotonic across additions, so it detects any insertion
+   *       even when paired with a same-count eviction (which leaves {@code size}, head and tail
+   *       UUIDs all unchanged – this can happen e.g. in {@link MessageSortOrder#TIMESTAMP} mode
+   *       where a late-arriving message can land mid-list);
+   *   <li>the {@link MessageSortOrder} itself – switching the sort key on the client triggers a
+   *       refresh.
+   * </ul>
+   */
+  private String messageHash(List<RbelElement> messages, MessageSortOrder sortOrder) {
+    long messageSequenceNumber =
+        getTigerProxy().getRbelLogger().getMessageHistory().getMessageSequenceNumber();
+    return messages.size() + "-" + messageSequenceNumber + "-" + sortOrder.name();
+  }
+
+  private List<RbelElement> resolveMessages(MessageSortOrder sortOrder) {
+    return getTigerProxy().getRbelLogger().getMessageHistory().getMessages(sortOrder);
   }
 
   private <T> void addOffsetToMessages(
@@ -274,13 +292,15 @@ public class TigerWebUiController implements ApplicationContextAware {
   public GetMessagesWithHtmlScrollableDto getMessagesWithHtml(
       @RequestParam(name = "fromOffset") int fromOffset,
       @RequestParam(name = "toOffsetExcluding") int toOffsetExcluding,
-      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
+          MessageSortOrder sortOrder) {
 
     if (toOffsetExcluding < fromOffset)
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "`toOffsetExcluding` must be greater or equal than `fromOffset`");
 
-    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+    final var parsedMessages = resolveMessages(sortOrder);
     var total = parsedMessages.size();
 
     var result = new GetMessagesWithHtmlScrollableDto();
@@ -290,7 +310,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     result.setTotal(total);
 
-    result.setHash(messageHash(parsedMessages));
+    result.setHash(messageHash(parsedMessages, sortOrder));
 
     var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
@@ -318,14 +338,16 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   @GetMapping(value = "/getMessagesWithMeta", produces = MediaType.APPLICATION_JSON_VALUE)
   public GetMessagesWithMetaScrollableDto getMessagesWithMeta(
-      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
-    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
+          MessageSortOrder sortOrder) {
+    final var parsedMessages = resolveMessages(sortOrder);
     var total = parsedMessages.size();
 
     var result = new GetMessagesWithMetaScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages));
+    result.setHash(messageHash(parsedMessages, sortOrder));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
     var messageStream = parsedMessages.stream();
@@ -342,14 +364,16 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   @GetMapping(value = "/testFilterMessages", produces = MediaType.APPLICATION_JSON_VALUE)
   public SearchMessagesScrollableDto testFilterMessages(
-      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
-    final var parsedMessages = getTigerProxy().getRbelLogger().getMessageList();
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
+          MessageSortOrder sortOrder) {
+    final var parsedMessages = resolveMessages(sortOrder);
     var total = parsedMessages.size();
 
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages));
+    result.setHash(messageHash(parsedMessages, sortOrder));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
     var messageStream = parsedMessages.stream();
@@ -375,16 +399,17 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/searchMessages", produces = MediaType.APPLICATION_JSON_VALUE)
   public SearchMessagesScrollableDto searchMessages(
       @RequestParam(name = "filterRbelPath") String filterRbelPath,
-      @RequestParam(name = "searchRbelPath") String searchRbelPath) {
+      @RequestParam(name = "searchRbelPath") String searchRbelPath,
+      @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
+          MessageSortOrder sortOrder) {
 
-    var rbelLogger = tigerProxy.getRbelLogger();
-    var parsedMessages = rbelLogger.getMessageList();
+    var parsedMessages = resolveMessages(sortOrder);
     var total = parsedMessages.size();
 
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages));
+    result.setHash(messageHash(parsedMessages, sortOrder));
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
     result.setSearchFilter(
         GetMessagesFilterScrollableDto.builder().rbelPath(searchRbelPath).build());
