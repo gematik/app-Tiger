@@ -85,14 +85,14 @@ class VauEpa3ConverterTest {
   void testDecryption() {
     final String html = RbelHtmlRenderer.render(rbelLogger.getMessages());
     Files.write(new File("target/decryption.html").toPath(), html.getBytes());
-    assertThat(rbelLogger.getMessageList().get(1))
+    assertThat(rbelLogger.getMessagesByOrder().get(1))
         .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
-    assertThat(rbelLogger.getMessageList().get(2))
+    assertThat(rbelLogger.getMessagesByOrder().get(2))
         .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
-    assertThat(rbelLogger.getMessageList().get(4))
+    assertThat(rbelLogger.getMessagesByOrder().get(4))
         .extractChildWithPath("$.body.decrypted")
         .hasStringContentEqualTo("Hello World");
-    assertThat(rbelLogger.getMessageList().get(5))
+    assertThat(rbelLogger.getMessagesByOrder().get(5))
         .extractChildWithPath("$.body.decrypted")
         .hasStringContentEqualTo("Right back at ya!")
         .andTheInitialElement()
@@ -155,7 +155,7 @@ class VauEpa3ConverterTest {
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(9)).extractChildWithPath("$.body.decrypted.path");
+    assertThat(logger.getMessagesByOrder().get(9)).extractChildWithPath("$.body.decrypted.path");
   }
 
   @Test
@@ -172,7 +172,7 @@ class VauEpa3ConverterTest {
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(1))
+    assertThat(logger.getMessagesByOrder().get(1))
         .extractChildWithPath("$.body.decrypted.body.resourceType")
         .hasStringContentEqualTo("Bundle");
   }

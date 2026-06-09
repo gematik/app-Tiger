@@ -1,0 +1,19 @@
+tigerProxy:
+  trafficEndpoints:
+    - http://localhost:${free.port.1}
+    - http://localhost:${free.port.2}
+  proxyRoutes:
+    - from: http://internet
+      to: https://www.example.com
+servers:
+  aForwardProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: ${free.port.1}
+  aReverseProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: ${free.port.2}
+      directReverseProxy:
+        hostname: someWebsite
+        port: 80

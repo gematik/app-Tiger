@@ -39,6 +39,7 @@ public class RbelMessageTimingPlugin extends RbelConverterPlugin {
         .flatMap(RbelMessageMetadata::getTransmissionTime)
         .ifPresent(
             t ->
-                rbelElement.addFacet(RbelMessageTimingFacet.builder().transmissionTime(t).build()));
+                rbelElement.addOrReplaceFacet(
+                    RbelMessageTimingFacet.builder().transmissionTime(t).build()));
   }
 }

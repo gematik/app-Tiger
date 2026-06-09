@@ -1,0 +1,6 @@
+tigerProxy:
+servers:
+  compose:
+    type: compose
+    source:
+      - ./docker-compose.yaml

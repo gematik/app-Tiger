@@ -25,5 +25,5 @@ import de.gematik.rbellogger.RbelMessageHistory;
 public interface RbelMessagesSupplier {
   void addRbelMessageListener(IRbelMessageListener listener);
 
-  RbelMessageHistory.Facade getMessageHistory();
+  RbelMessageHistory.MessageHistory getMessageHistory();
 }

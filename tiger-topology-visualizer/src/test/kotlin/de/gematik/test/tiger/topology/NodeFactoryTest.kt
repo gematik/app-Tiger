@@ -73,7 +73,6 @@ class NodeFactoryTest {
 
             val node = model.nodes.single()
             assertThat(node.type.value).isEqualTo("externalUrl")
-            assertThat(node.data.config["url"]).isEqualTo("https://example.com/api")
             assertThat(node.data.config["hostname"]).isEqualTo("example.com")
         }
 
@@ -83,9 +82,9 @@ class NodeFactoryTest {
             val model = createDiagramNode(entry, noopResolver, identity)
 
             assertThat(model.nodes).anyMatch { it.id.value == "myZion" && it.type.value == "zion" }
-            assertThat(model.edges).anyMatch {
-                it.source.value == "myZion" && it.target.value == "localTigerProxy"
-            }
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.usesProxy(NodeId("myZion"), NodeId("localTigerProxy"))
+            )
         }
 
         @Test
@@ -132,27 +131,6 @@ class NodeFactoryTest {
             assertThat(model.edges.map { it.id.value }).contains(
                 "myProxy-to-route-0", "myProxy-to-route-1"
             )
-        }
-
-        @Test
-        fun `tiger proxy with directReverseProxy creates reverse target node and edge`() {
-            val entry = serverEntry(
-                "myProxy", """
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  directReverseProxy:
-                    hostname: backend.local
-                    port: "443"
-            """.trimIndent()
-            )
-            val model = createDiagramNode(entry, noopResolver, identity)
-
-            assertThat(model.nodes).anyMatch {
-                it.id.value == "myProxy-directReverseTarget" && it.type.value == "directReverseTarget"
-            }
-            assertThat(model.edges).anyMatch {
-                it.id.value == "myProxy-to-directReverseTarget" && it.label == "direct reverse"
-            }
         }
 
 
@@ -235,9 +213,9 @@ class NodeFactoryTest {
             )
             val model = createDiagramNode(entry, noopResolver, identity)
 
-            assertThat(model.edges).anyMatch {
-                it.source.value == "myJar" && it.target.value == "localTigerProxy"
-            }
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.usesProxy(NodeId("myJar"), NodeId("localTigerProxy"))
+            )
         }
 
         @Test
@@ -270,16 +248,16 @@ class NodeFactoryTest {
                       to: http://localhost:8080
                 servers:
                   backend:
-                    type: externalJar
+                    type: httpbin
                     serverPort: "8080"
                 """.trimIndent()
             )
 
             val model = createRouteToServerEdges(config, identity)
 
-            assertThat(model.edges).anyMatch {
-                it.source.value == "localTigerProxy-route-0" && it.target.value == "backend"
-            }
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.routeToTarget(NodeId("localTigerProxy-route-0"), NodeId("backend"))
+            )
         }
 
         @Test
@@ -325,9 +303,9 @@ class NodeFactoryTest {
 
             val model = createRouteToDockerEdges(config, identity)
 
-            assertThat(model.edges).anyMatch {
-                it.source.value == "localTigerProxy-route-0" && it.target.value == "mycontainer"
-            }
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.routeToTarget(NodeId("localTigerProxy-route-0"), NodeId("mycontainer"))
+            )
         }
     }
 
@@ -393,13 +371,14 @@ class NodeFactoryTest {
 
             val model = createTrafficEndpointEdges(config, identity)
 
-            assertThat(model.edges).anyMatch {
-                it.source.value == "localTigerProxy" && it.target.value == "remoteProxy"
-            }
+            assertThat(model.nodes).hasSize(0)
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.trafficSubscription(NodeId("localTigerProxy"), NodeId("remoteProxy"))
+            )
         }
 
         @Test
-        fun `no edges when admin port does not match`() {
+        fun `external proxy edge when endpoint not in configuration`() {
             val config = parseTigerConfig(
                 """
                 tigerProxy:
@@ -415,7 +394,71 @@ class NodeFactoryTest {
 
             val model = createTrafficEndpointEdges(config, identity)
 
-            assertThat(model.edges).isEmpty()
+            //when the endpoint does not exist in tigeryaml we create a synthetic node for it to reprsent
+            //an external tiger proxy
+            assertThat(model.nodes).hasSize(1)
+            assertThat(model.nodes.single().type).isEqualTo(NodeType.TIGER_PROXY_EXTERNAL)
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.trafficSubscription(NodeId("localTigerProxy"), NodeId("http-localhost-7777"))
+            )
+        }
+
+        @Test
+        fun `traffic endpoints match when admin port is an integer in YAML`() {
+            val config = parseTigerConfig(
+                """
+                tigerProxy:
+                  trafficEndpoints:
+                    - http://localhost:123
+                servers:
+                  remoteProxy:
+                    type: tigerProxy
+                    tigerProxyConfiguration:
+                      adminPort: 123
+                """.trimIndent()
+            )
+
+            val model = createTrafficEndpointEdges(config, identity)
+
+            assertThat(model.nodes).hasSize(0)
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.trafficSubscription(NodeId("localTigerProxy"), NodeId("remoteProxy"))
+            )
+
+        }
+
+        @Test
+        fun `traffic endpoints chain of proxies create edges between all involved proxies`() {
+            val config = parseTigerConfig(
+                """
+                tigerProxy:  
+                  trafficEndpoints:
+                    - http://localhost:123
+                servers:
+                  proxyA:
+                    type: tigerProxy
+                    tigerProxyConfiguration:
+                      adminPort: 123
+                      trafficEndpoints:
+                        - http://localhost:456
+                  proxyB:
+                    type: tigerProxy
+                    tigerProxyConfiguration:
+                      adminPort: 456
+                """.trimIndent()
+            )
+
+            val model = createTrafficEndpointEdges(config, identity)
+
+            //2 Edges
+            // tigerProxy -- subscribes --> proxyA
+            // proxyA -- subscribes --> proxyB
+            assertThat(model.edges).hasSize(2)
+
+            assertThat(model.edges).containsExactlyInAnyOrder(
+                DiagramEdge.trafficSubscription(NodeId(LOCAL_PROXY), NodeId("proxyA")),
+                DiagramEdge.trafficSubscription(NodeId("proxyA"), NodeId("proxyB")),
+            )
         }
     }
 
@@ -456,9 +499,9 @@ class NodeFactoryTest {
 
             val model = createZionBackendEdges(config, existingModel, identity)
 
-            assertThat(model.edges).anyMatch {
-                it.source.value == "myZion" && it.target.value == "backendServer"
-            }
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.makesBackendRequest(NodeId("myZion"), NodeId("backendServer"), NodeId(LOCAL_PROXY))
+            )
         }
 
         @Test

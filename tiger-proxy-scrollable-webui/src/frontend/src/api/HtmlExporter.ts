@@ -22,6 +22,7 @@
 import { deflateSync } from "fflate";
 import { useProxyController, type UseProxyControllerOptions } from "@/api/ProxyController.ts";
 import type { DetachedRbelLog } from "@/WindowExt.ts";
+import type { MessageSortOrder } from "@/Settings.ts";
 import { type Ref, ref } from "vue";
 
 let distDetachedHtml: string = "";
@@ -38,6 +39,7 @@ export interface UseHtmlExporterOptions extends UseProxyControllerOptions {}
 
 export function useHtmlExporter(
   currentRbelPath: Ref<string>,
+  messageSortOrder: Ref<MessageSortOrder>,
   options: UseHtmlExporterOptions,
 ): UseHtmlExporterReturn {
   const proxyController = useProxyController(options);
@@ -70,13 +72,15 @@ export function useHtmlExporter(
   }
 
   const downloadHtml = async (filename: string, filterRbelPath?: string) => {
-    const metaResult = await proxyController.getMetaMessages({ filterRbelPath });
+    const sortOrder = messageSortOrder.value;
+    const metaResult = await proxyController.getMetaMessages({ filterRbelPath, sortOrder });
     if (!metaResult) return;
     const htmlResult = await proxyController.getMessages({
       fromOffset: 0,
       toOffsetExcluding: metaResult.total,
       signal: null as any,
       filterRbelPath,
+      sortOrder,
     });
     if (!htmlResult) return;
     const log: DetachedRbelLog = {

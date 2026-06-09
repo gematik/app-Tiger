@@ -30,14 +30,16 @@ import MessageItem from "@/components/MessageItem.vue";
 import { Modal } from "bootstrap";
 import { type SearchMessagesReturn, useSearchMessages } from "@/api/SearchMessages.ts";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { settingsSymbol } from "../Settings.ts";
 
 const messageQueue = inject(messageQueueSymbol)!;
 const rbelFilter = inject(rbelFilterSymbol)!;
+const settings = inject(settingsSymbol)!;
 const toast = inject(toastSymbol)!;
 
 let search: SearchMessagesReturn;
 if (__IS_ONLINE_MODE__) {
-  search = useSearchMessages(rbelFilter.rbelPath, {
+  search = useSearchMessages(rbelFilter.rbelPath, settings.messageSortOrder, {
     onError: (errMsg: string) => {
       toast.showToast(errMsg);
     },

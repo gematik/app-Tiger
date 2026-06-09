@@ -136,6 +136,37 @@ function onClickQuitProxyFn(ev: MouseEvent) {
             <label class="form-check-label" for="hideDetails"> Hide Details </label>
           </div>
         </div>
+        <div class="mb-3">
+          <label class="form-label bold"> Sort messages by </label>
+          <div class="form-check">
+            <input
+              v-model="settings.messageSortOrder.value"
+              type="radio"
+              value="TIMESTAMP"
+              class="form-check-input test-sort-by-timestamp"
+              id="sortByTimestamp"
+              name="messageSortOrder"
+            />
+            <label class="form-check-label" for="sortByTimestamp">
+              Transmission timestamp
+              <small class="text-muted">(default)</small>
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              v-model="settings.messageSortOrder.value"
+              type="radio"
+              value="SEQUENCE"
+              class="form-check-input test-sort-by-sequence"
+              id="sortBySequence"
+              name="messageSortOrder"
+            />
+            <label class="form-check-label" for="sortBySequence">
+              Received order
+              <small class="text-muted">(sequence number)</small>
+            </label>
+          </div>
+        </div>
         <template v-if="__IS_ONLINE_MODE__">
           <div class="border-bottom mb-3" />
           <button

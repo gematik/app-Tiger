@@ -357,7 +357,7 @@ class YamlToDiagramConverterTest {
     // ── External JAR ────────────────────────────────────────────────────────
 
     @Test
-    fun `externalJar with proxy options should create uses-proxy edge`() {
+    fun `externalJar with proxy options should create combined uses-proxy edge -and- implicit route`() {
         val yaml = $$"""
             servers:
               idpServer:
@@ -374,8 +374,10 @@ class YamlToDiagramConverterTest {
 
         assertThat(diagramModel.nodes.map { it.id.value }).contains("localTigerProxy", "idpServer")
         assertThat(diagramModel.nodes.find { it.id.value == "idpServer" }?.type?.value).isEqualTo("externalJar")
-        assertThat(diagramModel.edges.map { it.id.value }).contains("idpServer-to-localTigerProxy")
-        assertThat(diagramModel.edges.find { it.id.value == "idpServer-to-localTigerProxy" }?.label).isEqualTo("uses proxy")
+        assertThat(diagramModel.edges.map { it.id.value }).contains("idpServer-to-localTigerProxy-and-localTigerProxy-to-idpServer-implicit")
+        assertThat(diagramModel.edges.find { it.id.value == "idpServer-to-localTigerProxy-and-localTigerProxy-to-idpServer-implicit" }?.label).isEqualTo(
+            "uses proxy / automatic route to"
+        )
     }
 
     @Test
@@ -397,10 +399,9 @@ class YamlToDiagramConverterTest {
         assertThat(diagramModel.edges.map { it.id.value }).doesNotContain("standaloneApp-to-localTigerProxy")
     }
 
-    // ── Zion ────────────────────────────────────────────────────────────────
 
     @Test
-    fun `zion server should create uses-proxy edge`() {
+    fun `zion server should create combined uses-proxy edge -and- implicit route`() {
         val yaml = """
             servers:
               mockServer:
@@ -413,7 +414,10 @@ class YamlToDiagramConverterTest {
 
         assertThat(diagramModel.nodes.map { it.id.value }).contains("localTigerProxy", "mockServer")
         assertThat(diagramModel.nodes.find { it.id.value == "mockServer" }?.type?.value).isEqualTo("zion")
-        assertThat(diagramModel.edges.map { it.id.value }).contains("mockServer-to-localTigerProxy")
+        assertThat(diagramModel.edges.map { it.id.value }).contains("mockServer-to-localTigerProxy-and-localTigerProxy-to-mockServer-implicit")
+        assertThat(diagramModel.edges.find { it.id.value == "mockServer-to-localTigerProxy-and-localTigerProxy-to-mockServer-implicit" }?.label).isEqualTo(
+            "uses proxy / automatic route to"
+        )
     }
 
     @Test
@@ -436,7 +440,7 @@ class YamlToDiagramConverterTest {
 
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
 
-        assertThat(diagramModel.edges.filter { it.label == "backend request" }).isNotEmpty
+        assertThat(diagramModel.edges.filter { it.label == "makes backend request" }).isNotEmpty
         assertThat(diagramModel.edges.map { it.id.value })
             .contains("mockServer-to-realBackend-backendRequest")
     }
@@ -458,7 +462,7 @@ class YamlToDiagramConverterTest {
 
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
 
-        val syntheticNode = diagramModel.nodes.find { it.data.config["url"] == "https://unknown-service.example.com/api" }
+        val syntheticNode = diagramModel.nodes.find { it.data.config["hostname"] == "unknown-service.example.com" }
         assertThat(syntheticNode).isNotNull
         assertThat(syntheticNode!!.type.value).isEqualTo("externalUrl")
         assertThat(diagramModel.edges.any { it.source == NodeId("mockServer") && it.target == syntheticNode.id }).isTrue()
@@ -490,7 +494,8 @@ class YamlToDiagramConverterTest {
         assertThat(reverseNode.data.config["port"]).isEqualTo("3000")
 
         // Should have the edge from proxy to reverse target
-        val reverseEdge = diagramModel.edges.find { it.id.value == "myProxy-to-directReverseTarget" }
+        val reverseEdge =
+            diagramModel.edges.find { it.id.value == "myProxy-to-myProxy-directReverseTarget-directReverse" }
         assertThat(reverseEdge).isNotNull
         assertThat(reverseEdge!!.source).isEqualTo(NodeId("myProxy"))
         assertThat(reverseEdge.target).isEqualTo(NodeId("myProxy-directReverseTarget"))
@@ -563,10 +568,82 @@ class YamlToDiagramConverterTest {
         assertThat(diagramModel.edges.map { it.id.value }).contains("remoteTigerProxy-route-0-to-httpbin")
     }
 
-    // ── Implicit proxy-to-server routes ──────────────────────────────────────
+    @Test
+    fun `routes should match targets by server name or by serverPort`() {
+        val yaml = """
+        tigerProxy:
+          trafficEndpoints:
+            - http://localhost:${'$'}{free.port.2}
+            - http://localhost:${'$'}{free.port.4}
+            - http://localhost:${'$'}{free.port.6}
+        servers:
+          serverUnderTest:
+            type: externalUrl
+            source:
+              - https://www.example.com
+          zionA:
+            type: zion
+            zionConfiguration:
+              serverPort: ${'$'}{free.port.1}
+          proxyA:
+            type: tigerProxy
+            tigerProxyConfiguration:
+              adminPort: ${'$'}{free.port.2}
+              proxyPort: 8081
+              rewriteHostHeader: true
+              proxyRoutes:
+                - from: /
+                  to: http://localhost:${'$'}{free.port.1}
+          zionB:
+            type: zion
+            zionConfiguration:
+              serverPort: ${'$'}{free.port.3}
+          proxyB:
+            type: tigerProxy
+            tigerProxyConfiguration:
+              adminPort: ${'$'}{free.port.4}
+              proxyPort: 8082
+              rewriteHostHeader: true
+              proxyRoutes:
+                - from: /
+                  to: http://localhost:${'$'}{free.port.3}
+          zionC:
+            type: zion
+            zionConfiguration:
+              serverPort: ${'$'}{free.port.5}
+          proxyC:
+            type: tigerProxy
+            tigerProxyConfiguration:
+              adminPort: ${'$'}{free.port.6}
+              proxyPort: 8083
+              proxyRoutes:
+                - from: /
+                  to: http://localhost:${'$'}{free.port.5}
+        """.trimIndent()
+
+        val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
+
+        assertThat(diagramModel.nodes).hasSize(11)
+
+        assertThat(diagramModel.edges.map { it.id.value })
+            .containsExactlyInAnyOrder(
+                "localTigerProxy-to-proxyA-trafficEndpoint",
+                "proxyA-to-route-0",
+                "proxyA-route-0-to-zionA",
+                "zionA-to-localTigerProxy-and-localTigerProxy-to-zionA-implicit",
+                "localTigerProxy-to-proxyB-trafficEndpoint",
+                "proxyB-to-route-0",
+                "proxyB-route-0-to-zionB",
+                "zionB-to-localTigerProxy-and-localTigerProxy-to-zionB-implicit",
+                "localTigerProxy-to-proxyC-trafficEndpoint",
+                "proxyC-to-route-0",
+                "proxyC-route-0-to-zionC",
+                "zionC-to-localTigerProxy-and-localTigerProxy-to-zionC-implicit",
+                "localTigerProxy-to-serverUnderTest-implicit",
+            )
+    }
 
     @Test
-    @Disabled("TODO: Currently not active - will decide later if good idea to add implicit edges")
     fun `httpbin server should have implicit route edge from local proxy`() {
         val yaml = """
             servers:
@@ -577,11 +654,11 @@ class YamlToDiagramConverterTest {
 
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
 
-        assertThat(diagramModel.edges.map { it.id.value }).contains("localTigerProxy-implicit-to-httpbin")
-        val edge = diagramModel.edges.find { it.id.value == "localTigerProxy-implicit-to-httpbin" }!!
+        assertThat(diagramModel.edges.map { it.id.value }).contains("localTigerProxy-to-httpbin-implicit")
+        val edge = diagramModel.edges.find { it.id.value == "localTigerProxy-to-httpbin-implicit" }!!
         assertThat(edge.source).isEqualTo(NodeId("localTigerProxy"))
         assertThat(edge.target).isEqualTo(NodeId("httpbin"))
-        assertThat(edge.label).isEqualTo("implicit route")
+        assertThat(edge.label).isEqualTo("automatic route to")
     }
 
     @Test
@@ -626,10 +703,12 @@ class YamlToDiagramConverterTest {
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("tiger-httpbin.yaml", yaml)))
 
         // Nodes
-        assertThat(diagramModel.nodes.map { it.id.value }).containsAll(listOf(
-            "localTigerProxy", "httpbin", "remoteTigerProxy",
-            "remoteTigerProxy-route-0", "remoteTigerProxy-route-1"
-        ))
+        assertThat(diagramModel.nodes.map { it.id.value }).containsAll(
+            listOf(
+                "localTigerProxy", "httpbin", "remoteTigerProxy",
+                "remoteTigerProxy-route-0", "remoteTigerProxy-route-1"
+            )
+        )
 
         // Traffic endpoint: local proxy → remote tiger proxy
         assertThat(diagramModel.edges.map { it.id.value }).contains("localTigerProxy-to-remoteTigerProxy-trafficEndpoint")

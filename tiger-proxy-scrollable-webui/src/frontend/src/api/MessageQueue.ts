@@ -35,6 +35,7 @@ import {
 } from "vue";
 import { computedWithControl, useDebounceFn, useIntervalFn } from "@vueuse/core";
 import { useProxyController, type UseProxyControllerOptions } from "@/api/ProxyController.ts";
+import type { MessageSortOrder } from "@/Settings.ts";
 
 type MessageBase = {
   type: "loading" | "error" | "loaded";
@@ -101,6 +102,7 @@ export const messageQueueSymbol: InjectionKey<UseMessageQueueReturn> = Symbol("m
 export function useMessageQueue(
   reversedMessageQueue: Ref<boolean>,
   rbelFilter: Ref<string>,
+  messageSortOrder: Ref<MessageSortOrder>,
   options: UseMessageQueueOptions,
 ): UseMessageQueueReturn {
   const proxyController = useProxyController(options);
@@ -124,6 +126,7 @@ export function useMessageQueue(
     const oldResult = latestMessageOverview.value;
     const newResult = await proxyController.getMetaMessages({
       filterRbelPath: filterRbelPath.value,
+      sortOrder: messageSortOrder.value,
     });
     // by preventing from setting unnecessarily a new value we keep side effects small
     if (
@@ -137,6 +140,16 @@ export function useMessageQueue(
   watch(filterRbelPath, async (newRbelPath, oldRbelPath) => {
     if (newRbelPath !== oldRbelPath) {
       latestMessage.value = null;
+      await loadMessageOverview();
+    }
+  });
+
+  // When the user toggles the sort key, drop cached chunks and force a refetch so
+  // that the displayed order matches the new selection immediately.
+  watch(messageSortOrder, async (newOrder, oldOrder) => {
+    if (newOrder !== oldOrder) {
+      latestMessage.value = null;
+      latestMessageOverview.value = null;
       await loadMessageOverview();
     }
   });
@@ -191,7 +204,8 @@ export function useMessageQueue(
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
-  } = { fromOffset: -1, toOffsetExcluding: -1, filterRbelPath: "" };
+    sortOrder?: MessageSortOrder;
+  } = { fromOffset: -1, toOffsetExcluding: -1, filterRbelPath: "", sortOrder: undefined };
   let messageFetchAbortController = new AbortController();
   const update = async (orderedStartIndex: number, orderedEndIndex: number) => {
     // prevent an endless loading loop if we're already inside the current view
@@ -209,7 +223,8 @@ export function useMessageQueue(
     const isSame =
       messageFetchParams?.fromOffset === startIndex &&
       messageFetchParams?.toOffsetExcluding === endIndex + 1 &&
-      messageFetchParams?.filterRbelPath === filterRbelPath.value;
+      messageFetchParams?.filterRbelPath === filterRbelPath.value &&
+      messageFetchParams?.sortOrder === messageSortOrder.value;
 
     if (latestMessage.value == null || !isSame) {
       try {
@@ -219,6 +234,7 @@ export function useMessageQueue(
           fromOffset: startIndex,
           toOffsetExcluding: endIndex + 1,
           filterRbelPath: filterRbelPath.value,
+          sortOrder: messageSortOrder.value,
         };
         const result = await proxyController.getMessages(
           {

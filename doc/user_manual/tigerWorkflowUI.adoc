@@ -30,6 +30,7 @@ As seen in the following screenshot the background color of the status bar chang
 Once the Workflow UI has quit, searches and filtering on the xref:_rbel_logs[Rbel log details] as well as on the xref:tigerWebUI.adoc#_web_ui[Web UI] are no longer possible.
 
 image::screenshots/workflowui_quit.png[title="test execution has stopped on user request"]
+[#_banner_in_workflowui]
 
 By clicking on the second button the test execution pauses.
 The background color of the status bar and the pause button change to indicate the pause as shown in the following picture.
@@ -159,12 +160,12 @@ When the user clicks on the light blue rectangle with the number (whereas uneven
 image::screenshots/maincontent_rbelpath.png[title="Rbel Log Details"]
 
 In the Rbel Log Details view the RbelMessages are displayed that are also saved as HTML files as described in the xref:tigerTestLibrary.adoc#_cucumber_hooks[Cucumber and Hooks] section.
-Next to the headline there is a link to the xref:tigerWebUI.adoc#_web_ui[WebUI (aka Tiger Proxy UI)] which opens the WebUI in a new tab as shown in the picture below.
+Next to the headline there is a link to the xref:tigerWebUI.adoc#_web_ui[WebUI (aka tiger proxy UI)] which opens the WebUI in a new tab as shown in the picture below.
 
 image::screenshots/maincontent_rbelpath_urllink_highlight.png[title="Link to open the Tiger Proxy Log"]
 
-The Rbel Log Details view is described in the xref:tigerWebUI.adoc#_web_ui[WebUI] section as it is a slimmed down version of the WebUI.
-In order to increase/decrease the width of the Rbel Log Details view the user can drag the border between the main window and the Rbel Log Details view.
+The Rbel Log Details view is described in the xref:tigerWebUI.adoc#_web_ui[WebUI] section as it is a slimmed-down version of the WebUI.
+In order to increase/decrease the width of the Rbel Log Details view, the user can drag the border between the main window and the Rbel Log Details view.
 The Rbel Log Details can be minimized by clicking on the double arrow on the top left of the Rbel Log Details section.
 
 ==== Traffic Visualization
@@ -188,9 +189,9 @@ By clicking on a message in the sequence diagram, the corresponding Rbel Log Det
 
 The traffic visualization currently supports the following server types: `externalJar`, `externalUrl`, `zion`, `docker` and `compose`.
 
-For messages to show up in the sequence diagram they need to be routed through the Tiger Proxy.
+For messages to show up in the sequence diagram they need to be routed through the tiger proxy.
 This is the case for all the messages originating in the local tiger client and their responses.
-If there are additional messages originating on one the servers under test, they need to be routed through the Tiger Proxy as well.
+If there are additional messages originating on one the servers under test, they need to be routed through the tiger proxy as well.
 In Zion servers this is automatically configured.
 For external jars this can be achieved by configuring the servers with the following VM options:
 
@@ -205,7 +206,7 @@ externalJarOptions:
 For the server types docker and compose, we do not yet support the visualization of messages originating on a client port of these servers.
 
 [#_runTestsOnStart]
-=== Postpone start of test scenarios
+==== Postpone start of test scenarios
 
 It is possible to configure the Workflow UI to not start all tests automatically at startup.
 When setting the following configuration option in the `tiger.yaml`:
@@ -224,7 +225,7 @@ This can be done by clicking the play buttons in either the Test Execution pane 
 
 image::screenshots/play_button.png[title="Play Buttons"]
 
-=== Select a subset of tests to run
+==== Select a subset of tests to run
 
 Tests can be selected in the sidebar, or an advanced selection modal can be opened by clicking the "Advanced selection..." button in the Status Bar.
 
@@ -262,6 +263,10 @@ Otherwise, we cannot unambiguously identify the tests.
 After selecting the tests, the user can click the "Run selected tests" button to start their execution.
 
 image::screenshots/testselector_run_button.png[title="Run selected tests button"]
+
+
+
+include::tigerTopologyVisualizer.adoc[]
 
 
 

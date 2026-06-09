@@ -97,10 +97,84 @@ E.g.:
 This is transitively included if you are importing the `tiger-test-lib`.
 But it is not included if you just import the `tiger-testenv-mgr`.
 
-The following section provides an overview of the available endpoints and their functionality.
-Additionally, the OpenApi specification yaml can be found in the https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml[tiger repository].
+The following section provides an overview of the available endpoints and their functionality. The endpoints are followed by the Workflow UI URL, for example: `<workflui_url>/tests`.
+Additionally, the OpenApi specification YAML can be found and tried out in the https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml[tiger repository].
+When the YAML file is opened in a compatible editor (e.g. IntelliJ) you can directly trigger the API calls and see the responses.
 
 include::rest_api/index.adoc[leveloffset=+1,lines=13..-1]
+
+<<<
+
+[#_maven_plugin_deep_dive]
+== Maven Plugin Deep Dive
+
+This section is for the ones that love to know all the details. Here the Tiger maven plugin and the FailSafe plugin are explained in detail.
+
+=== Maven plugin details
+
+include::../../tiger-maven-plugin/README.adoc[leveloffset=+3]
+
+=== Failsafe plugin
+
+The failsafe plugin will trigger the test run.
+It is important to activate the **testFailureIgnore** property, to ensure that even if the test fails, the serenity report is created.
+
+To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags.
+You can do so either within the <systemPropertyVariables> tag or via the command line using -Dcucumber.filter.tags
+
+The "not @Ignore" is the default setting for maven verify as well as for IntelliJ, therefore scenarios that should be ignored are to be tagged with @Ignore.
+If the user uses the cucumber option "-Dcucumber.options" to set own tags then the default setting of "not @Ignore" is overridden.
+The same counts for own tag settings in the IntelliJ run configuration.
+
+For more details about how to use filter tags see https://cucumber.io/docs/cucumber/api/#tags
+
+[source,xml]
+----
+include::../../doc/examples/tigerOnly/pom.xml[tag="failsafe-plugin"]
+----
+
+TIP: We do not recommend the parallel test execution with Tiger at the moment.
+
+Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages from different threads / forked processes ending up in the wrong listening queue making it very complicated to make sure your validations are working as expected in different timing situations.
+
+[#_intellij]
+=== IntelliJ
+
+We recommend to use latest version of IntelliJ at least version 2021.1.
+
+==== Run/Debug settings
+
+To be able to successfully start scenarios/features you first need to configure the Run/Debug settings of your project:
+
+.Run/Debug settings for Java Cucumber template
+* Main class: io.cucumber.junit.TigerCucumberRunner
+* Glue:
+** de.gematik.test.tiger.glue
+** net.serenitybdd.cucumber.actors +
+if you are using the screenplay pattern (PREFERRED!)
+** additional packages specific to your test suite
+* VM Options:
+** Java proxy system properties (see xref:_proxy_configuration[] below)
+* Environment variables:
+** Proxy environment variables (see xref:_proxy_configuration[] below)
+
+
+Best is to add these settings to the **Configuration Templates** for Cucumber Java.
+Depending on the version of IntelliJ these settings are located either on the top icon bar or at the bottom left as link.
+
+Else you would have to apply these settings to any new Debug/Run Configuration, like when you start a new scenario, which was never executed before.
+
+image::media/tiger-intellij-run-settings.png[title="Run/Debug settings for IntelliJ"]
+
+[#_proxy_configuration]
+==== Proxy configuration
+
+If you are located behind a proxy please make sure to set the environment variables HTTPS_PROXY and HTTP_PROXY as well as the Java system properties http.proxyHost, http.proxyPort, https.proxyHost and https.proxyPort appropriately so that the internet connections are routed properly through your **company proxy**.
+
+Please also make sure IntelliJ has its proxy settings configured appropriately for HTTP and HTTPS so that it can download the dependencies for the IntelliJ build environment too.
+
+TIP: BOTH settings (environment variables and system properties) are required as Maven and Java code and HTTP client libraries use both settings.
+
 
 <<<
 

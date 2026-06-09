@@ -64,15 +64,27 @@ function toggle(event: Event) {
 </script>
 
 <template>
-  <div class="base-node" :class="{ 'base-node--transparent': transparent }">
+  <div
+    class="base-node"
+    :class="{
+      'base-node--transparent': transparent,
+      'base-node--highlighted': nodeData.isHighlighted,
+    }"
+  >
     <!-- Node body -->
     <div class="base-node-body">
       <span v-if="$slots.icon" class="base-node-icon"
         ><slot name="icon"
       /></span>
-      <span class="base-node-label">{{ nodeData.label }}</span>
+      <slot v-if="$slots.content" name="content"></slot>
+      <span v-else class="base-node-label">{{ nodeData.label }}</span>
     </div>
-    <button v-if="hasContent" class="detail-btn" @click="toggle" title="Show details">
+    <button
+      v-if="hasContent"
+      class="detail-btn"
+      @click="toggle"
+      title="Show details"
+    >
       ℹ
     </button>
 
@@ -90,22 +102,96 @@ function toggle(event: Event) {
       </Card>
     </Popover>
 
-    <Handle type="target" :position="targetPosition" />
-    <Handle type="source" :position="sourcePosition" />
+    <!-- Multi-side handles for dynamic edge routing -->
+    <Handle
+      id="target-top"
+      type="target"
+      :position="Position.Top"
+      class="node-handle"
+    />
+    <Handle
+      id="target-right"
+      type="target"
+      :position="Position.Right"
+      class="node-handle"
+    />
+    <Handle
+      id="target-bottom"
+      type="target"
+      :position="Position.Bottom"
+      class="node-handle"
+    />
+    <Handle
+      id="target-left"
+      type="target"
+      :position="Position.Left"
+      class="node-handle"
+    />
+
+    <Handle
+      id="source-top"
+      type="source"
+      :position="Position.Top"
+      class="node-handle"
+    />
+    <Handle
+      id="source-right"
+      type="source"
+      :position="Position.Right"
+      class="node-handle"
+    />
+    <Handle
+      id="source-bottom"
+      type="source"
+      :position="Position.Bottom"
+      class="node-handle"
+    />
+    <Handle
+      id="source-left"
+      type="source"
+      :position="Position.Left"
+      class="node-handle"
+    />
   </div>
 </template>
 
 <style scoped>
+.node-handle {
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.base-node--highlighted {
+  border-color: #f97316;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+/* Reset inherited styles from host apps (e.g. Bootstrap in Workflow UI) */
+.base-node,
+.base-node * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  line-height: 1.4;
+  font-size: 14px;
+  font-family: monospace;
+}
+
 .base-node {
   position: relative;
   padding: 10px 32px 10px 16px;
   border-radius: 8px;
-  background: #fff;
-  border: 2px solid #94a3b8;
-  font-family: monospace;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border: 2px solid #1e3a8a;
   min-width: 120px;
   text-align: center;
-  height: 100%;
+  min-height: 100%;
 }
 
 .base-node-body {
@@ -130,14 +216,18 @@ function toggle(event: Event) {
   cursor: pointer;
   color: #64748b;
   font-size: 14px;
-  width: 22px;
-  height: 22px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
   line-height: 1;
+  padding: 0;
+  margin: 0;
 }
 
 .detail-btn:hover {

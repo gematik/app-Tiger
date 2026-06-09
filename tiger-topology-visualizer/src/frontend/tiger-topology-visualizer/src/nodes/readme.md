@@ -2,27 +2,22 @@ A vueflow node is an object with the the following form:
 
 ```ts
 const exampleNode = {
-    id: "this_shall_be_unique",
-    data: {"whatever": "you want"},
-    position: {x: 0, y: 0},
-    type: "example-type"
-}
+  id: "this_shall_be_unique",
+  data: { whatever: "you want" },
+  position: { x: 0, y: 0 },
+  type: "example-type",
+};
 ```
 
-The type is a string which will be matched with a corresponding node template. The template needs to be declared in the VueFlow component.
-See ../components/TopologyDiagram.vue.
+The type is a string which will be matched with a corresponding node type. The node type needs to be added to the nodeTypes list which is used as configuration source to the VueFlow component.
 
 As an example:
 
-```vue
-<VueFlow v-else :nodes="nodes" :edges="edges">
-    <Background></Background>
-    <MiniMap pannable zoomable></MiniMap>
-    <template #node-example-type="props">
-      <ExampleNode v-bind="props" />
-    </template>
-</VueFlow>
+```ts
+const nodeTypes: Record<string, any> = {
+  default: markRaw(DefaultNode),
+  "example-type": markRaw(ExampleNode),
+};
 ```
 
-The template as the slot #node-example-type which will be matched per name with the type "example-type". When this matches, then the given template is used instead of the default node type. In this example, we would then need to create the ExampleNode.vue component which would be used to render the node.
-The "props" passed include the node data, its position, id and several other properties which may be useful to render the node. See https://vueflow.dev/guide/node.html#node-props for full list of props.
+Based on the type property of the node, the corresponding node type is used. All props are passed to the corresponding node type component. It is important to use the markRaw function. See https://vueflow.dev/guide/node.html#node-types-object for more information.

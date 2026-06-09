@@ -1,38 +1,59 @@
+[#_tiger_extensions]
 == Tiger Extensions
 
 Tiger has certain extensions that fulfil certain tasks.
 The different extensions are shortly described in the following sections.
 
-=== Tiger Konnektor Management Extension
+=== Public Tiger Extensions
 
-The Tiger-Konnektor-Management-Extension provides an interface to the KMS system of different connector providers.
-It also provides cucumber feature steps to access the different connectors.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-konnektor-management-extensions.
+==== Zion Extension
 
-=== Tiger On FHIR Extension
+Tiger Zion Extension is a highly configurable mock server designed to simulate a real backend.
+It supports the communication protocol HTTP and allows you to define, manipulate, and replay requests and responses.
+With Tiger Zion, you can create complex test scenarios, simulate error cases, and validate the integration of your application with Zion systems.
+It is ideal for automated, reproducible integration and interface testing, enabling dynamic scenario definition and message manipulation for robust test automation.
+
+More information and source code can be found on GitHub: https://github.com/gematik/tiger-zion
+
+==== Mail Extension
+
+The Tiger-Mail-Extension enables automated testing of email flows within test scenarios.
+It provides steps and utilities to send, receive, and validate emails as part of your test cases.
+More information and source code can be found on GitLab: https://gitlab.prod.ccs.gematik.solutions/tiger/tiger-mail-extension
+
+[#_tiger_cloud_extension]
+==== Tiger Cloud Extension
+
+The Tiger-Cloud-Extension allows to embed docker-image-based containers, docker compose scripts and even helm charts to local or remote kubernetes clusters.
+The GitHub repo is https://github.com/gematik/tiger-cloud-extension.
+
+==== Tiger On FHIR Extension
 
 The Tiger-On-Fhir-extension provides a set of simple BDD steps which can be used to check for valid FHIR content therein.
 FHIR stands for Fast Healthcare Interoperability Resources.
 The tiger-on-fhir can be found on GitHub https://github.com/gematik/tiger-on-fhir and it uses the Gematik Referenzvalidator located on GitHub https://github.com/gematik/app-referencevalidator.
 
-=== Tiger CATS Extension
+=== Gematik intern Extensions
+
+==== Tiger Konnektor Management Extension
+
+The Tiger-Konnektor-Management-Extension provides an interface to the KMS system of different connector providers.
+It also provides cucumber feature steps to access the different connectors.
+This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-konnektor-management-extensions.
+
+==== Tiger CATS Extension
 
 CATS stands for Card Terminal Simulator.
 Tiger-Cats-Extensions offers the option to use the REST interface of CATS as Java functionality or as BDD steps.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/cats/tiger-cats-extensions.
+This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/cats/tiger-cats-extensions.
 
-=== Tiger Cloud Extension
-
-The Tiger-Cloud-Extension allows to embed docker image based containers, docker compose scripts and even helm charts to local or remote kubernetes clusters.
-The GitHub repo is https://github.com/gematik/tiger-cloud-extension.
-
-=== Tiger PSSIM Extension
+==== Tiger PSSIM Extension
 
 The Tiger-PSSIM-Extension is an extension for simulating a Primärsystem (PS) in your tests.
 It provides a wide range of BDD Steps and covers the majority of PS functionalities.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-pssim-extension.
+This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/konnektor/tiger-pssim-extension.
 
-=== Tiger Robot Extension
+==== Tiger Robot Extension
 
 The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.
-This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension.
+This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension.

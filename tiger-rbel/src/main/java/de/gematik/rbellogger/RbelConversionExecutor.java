@@ -156,9 +156,15 @@ public class RbelConversionExecutor {
     return converter.isActivateRbelParsing();
   }
 
+  public Optional<RbelElement> findPreviousMessage(
+      @NonNull RbelElement targetElement, @NonNull Predicate<RbelElement> additionalFilter) {
+    waitForAllElementsBeforeGivenToBeParsed(targetElement.findRootElement());
+    return converter.findPreviousMessage(targetElement, additionalFilter);
+  }
+
   public Optional<RbelElement> findPreviousMessageInSameConnectionAs(
       @NonNull RbelElement targetElement, @NonNull Predicate<RbelElement> additionalFilter) {
-    return converter.findPreviousMessage(
+    return findPreviousMessage(
         targetElement,
         msg ->
             RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement)

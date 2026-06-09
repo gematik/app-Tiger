@@ -36,7 +36,7 @@ app.use(PrimeVue, {
     preset: Lara, //theme inspired in bootstrap
     options: {
       prefix: "p",
-      darkModeSelector: "system",
+      darkModeSelector: false,
       cssLayer: false,
     },
   },

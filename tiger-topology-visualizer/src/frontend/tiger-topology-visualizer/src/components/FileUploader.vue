@@ -116,7 +116,11 @@ function fileStatusLabel(file: File): string {
   >
     <template #content="{ files, removeFileCallback }">
       <div v-if="files.length" class="uploaded-files">
-        <Message v-for="(warning, index) in diagramModel.model.warnings" :key="index" severity="warn">
+        <Message
+          v-for="(warning, index) in diagramModel.model.warnings"
+          :key="index"
+          severity="warn"
+        >
           {{ warning }}
         </Message>
         <Message v-if="diagramModel.uploadError" severity="error">

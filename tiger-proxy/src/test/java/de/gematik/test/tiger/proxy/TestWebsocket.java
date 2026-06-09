@@ -86,8 +86,13 @@ class TestWebsocket {
   @Autowired private TigerProxy tigerProxy;
 
   private void addWebsocketConverters(RbelConverter rbelConverter) {
+    addWebsocketConverters(rbelConverter, tigerProxy);
+  }
+
+  private void addWebsocketConverters(RbelConverter rbelConverter, AbstractTigerProxy proxy) {
     rbelConverter.reinitializeConverters(
         RbelConfiguration.builder().activateRbelParsingFor(List.of("websocket")).build());
+    rbelConverter.addConverter(new TigerProxyRemoteTransmissionConversionPlugin(proxy));
   }
 
   @BeforeEach

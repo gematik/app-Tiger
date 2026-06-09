@@ -24,8 +24,11 @@ import { useStorage } from "@vueuse/core";
 
 export const settingsSymbol: InjectionKey<SettingsReturn> = Symbol("settingsSymbol");
 
+export type MessageSortOrder = "TIMESTAMP" | "SEQUENCE";
+
 export interface SettingsReturn {
   reverseMessageQueue: Ref<boolean>;
+  messageSortOrder: Ref<MessageSortOrder>;
   hideMessageHeaders: Ref<boolean>;
   hideMessageDetails: Ref<boolean>;
   hideRbelHelp: Ref<boolean>;
@@ -33,12 +36,14 @@ export interface SettingsReturn {
 
 export function useSettings(): SettingsReturn {
   const reverseMessageQueue = useStorage("reverseMessageQueue", false);
+  const messageSortOrder = useStorage<MessageSortOrder>("messageSortOrder", "TIMESTAMP");
   const hideMessageHeaders = useStorage("hideMessageHeaders", false);
   const hideMessageDetails = useStorage("hideMessageDetails", false);
   const hideRbelHelp = useStorage("hideRbelHelp", true);
 
   return {
     reverseMessageQueue,
+    messageSortOrder,
     hideMessageHeaders,
     hideMessageDetails,
     hideRbelHelp,

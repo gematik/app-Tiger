@@ -36,6 +36,7 @@ import de.gematik.rbellogger.util.RbelValueShader;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Predicate;
@@ -182,8 +183,12 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   public void addMessageToHistory(RbelElement rbelElement, RbelMessageMetadata conversionMetadata) {
-    getHistory().addMessageToHistory(rbelElement);
     addTcpIpFacet(rbelElement, conversionMetadata);
+    var timestamp =
+        Optional.ofNullable(conversionMetadata)
+            .flatMap(RbelMessageMetadata::getTransmissionTime)
+            .orElseGet(ZonedDateTime::now);
+    getHistory().addMessageToHistory(rbelElement, timestamp);
   }
 
   public void addMessageToHistory(RbelElement rbelElement) {
@@ -279,7 +284,7 @@ public class RbelConverter implements RbelConverterInterface {
    * Gives a view of the current messages. This view includes messages that are not yet fully
    * parsed.
    */
-  public RbelMessageHistory.Facade getMessageHistoryAsync() {
+  public RbelMessageHistory.MessageHistory getMessageHistoryAsync() {
     return getHistory().getMessageHistoryAsync();
   }
 

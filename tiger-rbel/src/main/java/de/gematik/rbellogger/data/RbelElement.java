@@ -301,7 +301,10 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelElement> getAll(String key) {
-    return facets.stream().flatMap(facet -> facet.getChildElements().getAll(key).stream()).toList();
+    return facets.stream()
+        .flatMap(facet -> facet.getChildElements().getAll(key).stream())
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   @Override

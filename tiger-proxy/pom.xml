@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.2.7</version>
+    <version>4.3.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -38,13 +38,6 @@
   <properties>
     <build.date>${maven.build.timestamp}</build.date>
     <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
-    <!-- Docker image build (see the `docker` profile at the bottom of this pom). Properties
-             can be overridden on the command line, e.g. `-Ddocker.image.tag=dev`. The README
-             has the full set of recipes. -->
-    <docker.image.name>gematik1/tiger-proxy</docker.image.name>
-    <docker.image.tag>${project.version}</docker.image.tag>
-    <docker.commit.hash>unknown</docker.commit.hash>
-    <version.docker-maven-plugin>0.46.0</version.docker-maven-plugin>
   </properties>
 
   <dependencies>
@@ -280,50 +273,6 @@
         </executions>
       </plugin>
       <plugin>
-        <!-- stage tiger-java-agent jar into target/ so the Dockerfile (build context = tiger-proxy/)
-                     can COPY it into the image as /app/agent.jar -->
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-tiger-java-agent</id>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <phase>prepare-package</phase>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>de.gematik.test</groupId>
-                  <artifactId>tiger-java-agent</artifactId>
-                  <version>${project.version}</version>
-                  <type>jar</type>
-                  <overWrite>true</overWrite>
-                  <outputDirectory>${project.build.directory}</outputDirectory>
-                  <destFileName>tiger-java-agent.jar</destFileName>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <!-- create repackaged jar with docker classifier to be executed in docker container -->
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>${version.spring-boot}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
-            <configuration>
-              <classifier>docker</classifier>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
@@ -342,57 +291,4 @@
     </plugins>
   </build>
 
-  <profiles>
-    <!--
-      Builds the tiger-proxy Docker image from the existing Dockerfile in this module.
-      Activate explicitly so developer machines without a Docker daemon are not affected
-      by the default `mvn package` build:
-
-          mvn -Pdocker -pl tiger-proxy -am package
-          mvn -Pdocker -pl tiger-proxy docker:build         # only the image (jars must exist)
-          mvn -Pdocker -pl tiger-proxy docker:push          # push to the configured registry
-
-      The plugin uses the local Docker daemon (DOCKER_HOST env var honored). The image
-      is also picked up by Jenkins' shared-library build (which still calls `docker build`
-      directly) - both paths produce the same image because both consume the same
-      Dockerfile.
-    -->
-    <profile>
-      <id>docker</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>io.fabric8</groupId>
-            <artifactId>docker-maven-plugin</artifactId>
-            <version>${version.docker-maven-plugin}</version>
-            <configuration>
-              <images>
-                <image>
-                  <name>${docker.image.name}:${docker.image.tag}</name>
-                  <build>
-                    <contextDir>${project.basedir}</contextDir>
-                    <dockerFile>Dockerfile</dockerFile>
-                    <args>
-                      <APP>tiger-proxy</APP>
-                      <VERSION>${project.version}</VERSION>
-                      <COMMIT_HASH>${docker.commit.hash}</COMMIT_HASH>
-                    </args>
-                  </build>
-                </image>
-              </images>
-            </configuration>
-            <executions>
-              <execution>
-                <id>build-docker-image</id>
-                <goals>
-                  <goal>build</goal>
-                </goals>
-                <phase>package</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

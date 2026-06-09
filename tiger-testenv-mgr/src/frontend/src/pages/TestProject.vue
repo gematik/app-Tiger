@@ -342,7 +342,7 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-import { computed, onMounted, provide, ref, type Ref, watch } from "vue";
+import { computed, onMounted, provide, ref, type Ref } from "vue";
 import SockJS from "sockjs-client";
 import Stomp, { Client, Frame, type Message } from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
@@ -390,13 +390,6 @@ let stompClient: Client;
 
 const selectedTab = ref("execution-pane-tab");
 const started = ref(new Date());
-
-// Load topology diagram from the live backend when the tab is selected
-watch(selectedTab, (tab) => {
-  if (tab === "topology-tab") {
-    topologyStore.loadFromLiveEndpoint(baseURL + "topology");
-  }
-});
 
 let fetchedInitialStatus = false;
 
@@ -474,7 +467,12 @@ onMounted(() => {
   fetchTigerVersion();
   fetchTigerBuild();
   loadFeatureFlags();
+  loadTopology();
 });
+
+function loadTopology() {
+  topologyStore.loadFromLiveEndpoint(baseURL + "topology");
+}
 
 const dialog = useDialog();
 const openTestSelectorDialog = () => {

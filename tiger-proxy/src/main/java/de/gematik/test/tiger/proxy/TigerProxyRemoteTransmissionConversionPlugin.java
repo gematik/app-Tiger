@@ -27,6 +27,8 @@ import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeFacet;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -48,8 +50,13 @@ public class TigerProxyRemoteTransmissionConversionPlugin extends RbelConverterP
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
     val metadataFacet = rbelElement.getFacet(RbelMessageMetadata.class);
-    if (metadataFacet.isPresent() && !rbelElement.hasFacet(RbelNonTransmissionMarkerFacet.class)) {
-      tigerProxy.triggerListener(rbelElement, metadataFacet.get());
+    val hasWebsocketFrameFacet = rbelElement.hasFacet(RbelWebsocketMessageFacet.class);
+    val hasWebsocketHandshakeFacet = rbelElement.hasFacet(RbelWebsocketHandshakeFacet.class);
+    val isWebsocketMessage = hasWebsocketFrameFacet || hasWebsocketHandshakeFacet;
+    val hasNonTransmissionMarker = rbelElement.hasFacet(RbelNonTransmissionMarkerFacet.class);
+
+    if ((metadataFacet.isPresent() || isWebsocketMessage) && !hasNonTransmissionMarker) {
+      tigerProxy.triggerListener(rbelElement, metadataFacet.orElseGet(RbelMessageMetadata::new));
     }
   }
 }

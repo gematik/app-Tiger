@@ -86,12 +86,12 @@ public class RbelLogger {
   }
 
   /**
-   * Returns a list of all fully parsed messages. This list does not include messages that are not
-   * parsed yet. To guarantee consistent sequence numbers the list stops before the first unparsed
-   * message.
+   * Returns a list of all fully parsed messages in sequence number order. This list does not
+   * include messages that are not parsed yet. To guarantee consistent sequence numbers the list
+   * stops before the first unparsed message.
    */
-  public List<RbelElement> getMessageList() {
-    return getRbelConverter().getMessageList();
+  public List<RbelElement> getMessagesByOrder() {
+    return getRbelConverter().getMessageHistory().getMessagesByOrder();
   }
 
   /**
@@ -100,6 +100,24 @@ public class RbelLogger {
    */
   public Collection<RbelElement> getMessages() {
     return rbelConverter.getMessageHistoryAsync().getMessages();
+  }
+
+  /**
+   * Returns a {@link RbelMessageHistory.MessageHistory} view that exposes the parsed messages.
+   * Callers can use {@link RbelMessageHistory.MessageHistory#getMessagesByOrder()} to iterate by
+   * sequence number or {@link RbelMessageHistory.MessageHistory#getMessagesByTimestamp()} to
+   * iterate in chronological order.
+   */
+  public RbelMessageHistory.MessageHistory getMessageHistory() {
+    return rbelConverter.getMessageHistory();
+  }
+
+  /**
+   * Convenience for {@code getMessageHistory().getMessagesByTimestamp()} – returns the parsed
+   * messages in ascending order of transmission timestamps.
+   */
+  public List<RbelElement> getMessagesByTimestamp() {
+    return getMessageHistory().getMessagesByTimestamp();
   }
 
   public void clearAllMessages() {

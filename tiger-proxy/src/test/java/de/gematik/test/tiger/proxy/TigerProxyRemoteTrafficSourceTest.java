@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
+import static de.gematik.test.tiger.util.TestConstants.LOCALHOST_REGEXP;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.Objects;
 import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,19 +68,30 @@ class TigerProxyRemoteTrafficSourceTest {
         .asEmpty();
 
     assertThat(tigerProxy.getMessages()).hasSize(2);
+    String senderRegex = LOCALHOST_REGEXP + "54321";
+    String receiverRegex = LOCALHOST_REGEXP + "8080";
     assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("localhost:54321");
+        .matches(
+            sender -> Objects.requireNonNull(sender.getRawStringContent()).matches(senderRegex),
+            "sender matches '" + senderRegex + "'");
     assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.receiver")
-        .hasStringContentEqualTo("localhost:8080");
+        .matches(
+            receiver ->
+                Objects.requireNonNull(receiver.getRawStringContent()).matches(receiverRegex),
+            "receiver matches '" + receiverRegex + "'");
     assertThat(tigerProxy.getMessageHistory().getFirst()).hasFacet(RbelMessageTimingFacet.class);
     assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("localhost:8080");
+        .matches(
+            sender -> Objects.requireNonNull(sender.getRawStringContent()).matches(receiverRegex),
+            "sender matches '" + receiverRegex + "'");
     assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.receiver")
-        .hasStringContentEqualTo("localhost:54321");
+        .matches(
+            receiver -> Objects.requireNonNull(receiver.getRawStringContent()).matches(senderRegex),
+            "receiver matches '" + senderRegex + "'");
     assertThat(tigerProxy.getMessageHistory().getLast()).hasFacet(RbelMessageTimingFacet.class);
   }
 
@@ -97,19 +110,15 @@ class TigerProxyRemoteTrafficSourceTest {
     assertThat(tigerProxy.getMessages()).hasSize(2);
     assertThat(tigerProxy.getMessageHistory().getFirst())
         .extractChildWithPath("$.sender")
-        .hasNullContent();
-    assertThat(tigerProxy.getMessageHistory().getFirst())
+        .hasNullContent()
+        .andTheInitialElement()
         .extractChildWithPath("$.receiver")
         .hasNullContent();
-    assertThat(tigerProxy.getMessageHistory().getFirst())
-        .doesNotHaveFacet(RbelMessageTimingFacet.class);
     assertThat(tigerProxy.getMessageHistory().getLast())
         .extractChildWithPath("$.sender")
-        .hasNullContent();
-    assertThat(tigerProxy.getMessageHistory().getLast())
+        .hasNullContent()
+        .andTheInitialElement()
         .extractChildWithPath("$.receiver")
         .hasNullContent();
-    assertThat(tigerProxy.getMessageHistory().getLast())
-        .doesNotHaveFacet(RbelMessageTimingFacet.class);
   }
 }

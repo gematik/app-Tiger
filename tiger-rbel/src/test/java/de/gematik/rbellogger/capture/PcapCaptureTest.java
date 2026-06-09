@@ -133,12 +133,14 @@ class PcapCaptureTest {
         new File("target/pairingList.html"), render, Charset.defaultCharset());
     log.info("completed rendering " + LocalDateTime.now());
 
-    assertThat(rbelLogger.getMessageList().get(0).hasFacet(RbelHttpRequestFacet.class)).isTrue();
-    assertThat(rbelLogger.getMessageList().get(1).hasFacet(RbelHttpResponseFacet.class)).isTrue();
-    assertThat(rbelLogger.getMessageList().get(0).getNotes())
+    assertThat(rbelLogger.getMessagesByOrder().get(0).hasFacet(RbelHttpRequestFacet.class))
+        .isTrue();
+    assertThat(rbelLogger.getMessagesByOrder().get(1).hasFacet(RbelHttpResponseFacet.class))
+        .isTrue();
+    assertThat(rbelLogger.getMessagesByOrder().get(0).getNotes())
         .extracting("value")
         .containsExactly("Discovery Document anfragen");
-    assertThat(rbelLogger.getMessageList().get(1).getNotes())
+    assertThat(rbelLogger.getMessagesByOrder().get(1).getNotes())
         .extracting("value")
         .containsExactly("Discovery Document Response");
     assertThat(render)

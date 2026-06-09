@@ -1,0 +1,3 @@
+servers:
+  httpbin:
+    type: httpbin

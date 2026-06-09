@@ -284,7 +284,8 @@ class XmlConverterTest {
       capturer.initialize();
     }
 
-    assertThat(rbelLogger.getMessageList().get(14).findRbelPathMembers("$..xml-stylesheet").get(0))
+    assertThat(
+            rbelLogger.getMessagesByOrder().get(14).findRbelPathMembers("$..xml-stylesheet").get(0))
         .hasStringContentEqualTo("<?xml-stylesheet type=\"text/xsl\" href=\"vhitg-cda-v3.xsl\"?>")
         .hasFacet(RbelXmlProcessingInstructionFacet.class)
         .extractChildWithPath("$.href")

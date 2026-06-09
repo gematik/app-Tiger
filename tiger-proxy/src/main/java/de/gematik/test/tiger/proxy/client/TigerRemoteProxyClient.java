@@ -264,6 +264,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                   stompSessionInCallback.getSessionId(),
                   tracingWebSocketUrl);
               webSocketConnectionStartTime.set(ZonedDateTime.now());
+              remoteClockOffset =
+                  ClockSkewEstimator.estimateOffset(
+                          connectedRemoteProxyUrl,
+                          getTigerProxyConfiguration().getClockSyncSamples())
+                      .orElse(Duration.ZERO);
               tigerStompSessionHandler.setOnConnectedCallback(
                   () -> {
                     log.info(
@@ -605,6 +610,12 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   private final AtomicReference<ZonedDateTime> webSocketConnectionStartTime =
       new AtomicReference<>();
 
+  /**
+   * Estimated clock offset ({@code remoteClock - localClock}). Subtract this from remote timestamps
+   * to obtain local-equivalent times.
+   */
+  @Getter private volatile Duration remoteClockOffset = Duration.ZERO;
+
   private void handleMessageRemovalFromHistory(RbelElement element) {
     if (!element.hasFacet(NextMessageParsedFacet.class)) {
       removedMessageUuids.add(element.getUuid());
@@ -778,14 +789,24 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   public void signalNewCompletedMessage(RbelElement msg) {
     signalNewCompletedMessage(msg.getUuid());
-    msg
-        .getFacet(SingleConnectionParser.SingleConnectionParserMarkerFacet.class)
+    msg.getFacet(SingleConnectionParser.SingleConnectionParserMarkerFacet.class)
         .map(SingleConnectionParser.SingleConnectionParserMarkerFacet::getSourceUuids)
-        .stream()
-        .flatMap(Collection::stream)
-        .distinct()
-        .filter(uuid -> !uuid.equals(msg.getUuid()))
-        .forEach(this::signalNewCompletedMessage);
+        .ifPresent(
+            sourceUuids -> {
+              List<String> sourceUuidsToSignal =
+                  sourceUuids.stream()
+                      .distinct()
+                      .filter(uuid -> !uuid.equals(msg.getUuid()))
+                      .toList();
+              if (!sourceUuidsToSignal.isEmpty()) {
+                log.atDebug()
+                    .addArgument(msg::getUuid)
+                    .addArgument(() -> String.join(", ", sourceUuidsToSignal))
+                    .log(
+                        "Signaling source UUIDs for transformed message effectiveUuid={} sourceUuids=[{}]");
+                sourceUuidsToSignal.forEach(this::signalNewCompletedMessage);
+              }
+            });
   }
 
   private void signalNewCompletedMessage(String uuid) {
@@ -803,7 +824,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                                 .getRbelConverter()
                                 .findMessageByUuid(uuid)
                                 .map(RbelElement::getConversionPhase))
-                    .log("Signal new completed message {} (Phase {}) from {}", remoteProxyUrl);
+                    .addArgument(waitingParsingTasks::size)
+                    .log(
+                        "Signal new completed message {} (Phase {}) from {} - releasing {} queued tasks",
+                        remoteProxyUrl);
                 if (removedMessageUuids.contains(uuid)) {
                   removedMessageUuids.remove(uuid);
                 } else {

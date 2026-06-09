@@ -105,17 +105,29 @@ public class TracingPushService {
 
   private void sendMessageToRemotes(RbelElement msg, RbelMessageMetadata metadata) {
     try {
-      RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
+      final Optional<RbelTcpIpMessageFacet> rbelTcpIpMessageFacetOpt =
+          msg.getFacet(RbelTcpIpMessageFacet.class);
+
       final RbelSocketAddress sender =
-          Optional.ofNullable(rbelTcpIpMessageFacet.getSender())
-              .map(RbelElement::getRawStringContent)
-              .flatMap(RbelSocketAddress::fromString)
-              .orElse(null);
+          RbelMessageMetadata.MESSAGE_SENDER
+              .getValue(metadata)
+              .orElseGet(
+                  () ->
+                      rbelTcpIpMessageFacetOpt
+                          .map(RbelTcpIpMessageFacet::getSender)
+                          .map(RbelElement::getRawStringContent)
+                          .flatMap(RbelSocketAddress::fromString)
+                          .orElse(null));
       final RbelSocketAddress receiver =
-          Optional.ofNullable(rbelTcpIpMessageFacet.getReceiver())
-              .map(RbelElement::getRawStringContent)
-              .flatMap(RbelSocketAddress::fromString)
-              .orElse(null);
+          RbelMessageMetadata.MESSAGE_RECEIVER
+              .getValue(metadata)
+              .orElseGet(
+                  () ->
+                      rbelTcpIpMessageFacetOpt
+                          .map(RbelTcpIpMessageFacet::getReceiver)
+                          .map(RbelElement::getRawStringContent)
+                          .flatMap(RbelSocketAddress::fromString)
+                          .orElse(null));
 
       log.atTrace().addArgument(msg::getUuid).log("Propagating message via mesh... (ID: {})");
 

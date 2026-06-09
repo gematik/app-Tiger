@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static de.gematik.test.tiger.util.TestConstants.LOCALHOST_REGEXP;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
@@ -28,6 +29,7 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.util.Objects;
 import kong.unirest.core.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -93,9 +95,12 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
 
     renderTrafficTo("error.html");
 
+    String localhostRegex = LOCALHOST_REGEXP + fakeBackendServerPort;
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort)
+        .matches(
+            sender -> Objects.requireNonNull(sender.getRawStringContent()).matches(localhostRegex),
+            "sender matches '" + localhostRegex + "'")
         .andTheInitialElement()
         .hasFacet(TigerRoutingErrorFacet.class)
         .extractChildWithPath("$.error.message")
@@ -129,11 +134,11 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
 
       awaitMessagesInTigerProxy(2);
 
-      final String localhostRegex = "(view-|)localhost:" + fakeBackendServerPort;
+      final String localhostRegex = LOCALHOST_REGEXP + fakeBackendServerPort;
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.sender")
           .matches(
-              el -> el.getRawStringContent().matches(localhostRegex),
+              el -> Objects.requireNonNull(el.getRawStringContent()).matches(localhostRegex),
               "sender matches '" + localhostRegex + "'")
           .andTheInitialElement()
           .hasFacet(TigerRoutingErrorFacet.class)

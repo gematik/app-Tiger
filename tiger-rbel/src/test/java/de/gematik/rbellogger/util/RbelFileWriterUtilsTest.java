@@ -56,7 +56,7 @@ class RbelFileWriterUtilsTest {
     rbelFileReader.convertFromRbelFile(tgrContent, Optional.empty());
 
     var requests =
-        rbelLogger.getRbelConverter().getMessageList().stream()
+        rbelLogger.getRbelConverter().getMessageHistory().getMessagesByOrder().stream()
             .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
             .toList();
 

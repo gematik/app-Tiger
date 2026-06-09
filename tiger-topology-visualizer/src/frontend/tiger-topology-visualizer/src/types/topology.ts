@@ -23,13 +23,20 @@ export interface DiagramNodeDto {
   id: string;
   type: string;
   data: Record<string, any>;
+  parentNode: string | undefined;
+  expandParent: boolean | undefined;
   position: { x: number; y: number };
 }
 
 export interface DiagramEdgeDto {
   id: string;
+  type: string;
   source: string;
   target: string;
+  label: string | undefined;
+  markerEnd: string;
+  markerStart: string | undefined;
+  data: Record<string, any>;
 }
 
 export interface ConfigurationDiagramDto {

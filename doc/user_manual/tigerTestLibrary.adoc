@@ -1,14 +1,15 @@
+[#_tiger_test_library]
 == Tiger Test library
 
-As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the Tiger test library is one of the three core components of the Tiger test framework.
-Its main goal is to provide extensive support for BDD/Cucumber testing and integrating the local Tiger Proxy with the test environment manager and the started test environment.
+As outlined in xref:tiger_user_manual.adoc#_overview[the overview section], the Tiger test library is one of the three core components of the Tiger test framework.
+Its main goal is to provide extensive support for BDD/Cucumber testing and to integrate the local tiger proxy with the test environment manager and the started test environment.
 
-CAUTION: As of now we do not support multithreaded / parallel test runs.
+CAUTION: Currently, multithreaded or parallel test runs are not supported.
 
 [#_tiger_test_lib_configuration]
 === Tiger test lib configuration
 
-In the root folder of your test project you may place a _tiger.yaml_ configuration file to customize the Tiger test library integration and activate / deactivate certain features.
+You can place a `tiger.yaml` configuration file in the root folder of your test project to customize the Tiger test library integration and activate or deactivate certain features.
 
 [source,yaml]
 ----
@@ -37,7 +38,7 @@ lib:
     # some other way. The time to be waited for the Workflow UI to be
     # active can be configured via option workflowUiStartTimeoutInSeconds
     startBrowser: true
-    # If the activateBrowser option is false and the workflowUI
+    # If the activateBrowser option is false and the Workflow UI
     # is supposed to be opened by some other process
     # this option allows to configure how many seconds
     # the test system will wait until the UI has been started
@@ -54,7 +55,7 @@ lib:
     # Customize your Rbel-Logs with your own logo. Must be PNG format.
     # Path should be relative to execution-location
     rbelLogoFilePath: "myLogo.png"
-    # If you want to use a fixed port for the workflowUI you can set it here.
+    # If you want to use a fixed port for the Workflow UI you can set it here.
     workflowUiPort: 8123
     # Flag whether to clear the initial traffic after the environment startup phase
     # activated by default
@@ -63,8 +64,8 @@ lib:
     # environment variable, default is an emtpy string, meaning no additional configuration file is loaded
     defaultProfile: "my-default"
 
-# flag whether to start the local Tiger Proxy (default) or to omit it completely.
-# if you have the local Tiger Proxy deactivated you will NOT be able to
+# flag whether to start the local tiger proxy (default) or to omit it completely.
+# if you have the local tiger proxy deactivated you will NOT be able to
 # validate / log any traffic data from test requests / responses.
 localProxyActive: true
 
@@ -75,7 +76,7 @@ logging:
     de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr: TRACE
     # activate tracing for all classes and subpackages of a package
     de.gematik.test.tiger.proxy: TRACE
-    # activate tracing for the local Tiger Proxy. This logger has a special name due to its importance in the tiger test framework
+    # activate tracing for the local tiger proxy. This logger has a special name due to its importance in the tiger test framework
     localTigerProxy: TRACE
 ----
 
@@ -139,10 +140,10 @@ As Tiger focuses on BDD and Cucumber based test suites all the setup and tear do
 
 That's why it is mandatory to use the TigerCucumberRunner, which internally registers the plugin `io.cucumber.core.pluginTigerSerenityReporterPlugin` to the plugins list.
 
-The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local Tiger Proxy and provides those messages via a getter method to the Tiger filter and validation steps.
+The LocalProxyRbelMessageListener class initializes a static single RBelMessage listener to collect all messages received by the local tiger proxy and provides those messages via a getter method to the Tiger filter and validation steps.
 
-At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local Tiger Proxy (unless it's configured to be not active) and optionally the workflow UI.
-It adds a RbelMessage Listener once to the local Tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
+At startup of the TigerCucumberRunner the TigerDirector gets called once to initiate the Tiger test environment manager, the local tiger proxy (unless it's configured to be not active) and optionally the workflow UI.
+It adds a RbelMessage Listener once to the local tiger proxy and also clears the RbelMessages queue before each scenario / scenario outline variant.
 Utilizing the close integration of SerenityBDD and RestAssured at startup also a Restassured request filter, which parses the details and adds a curl Command details button to the Serenity BDD report, is registered.
 The curl command shown in that section in the report allows to repeat the performed REST request, for manual test failure analysis.
 
@@ -154,7 +155,7 @@ The current test run state (success/failed rate) is logged to the console.
 The Tiger validation steps are a set of Cucumber steps that enable you to search for requests and associated responses matching certain criteria.
 All of that without need to write your own code.
 Basic knowledge about RBelPath and regular expressions are sufficient.
-In order to use these steps you must ensure that the relevant traffic is routed via the local Tiger Proxy of the test suite or construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[Tiger Proxy mesh] set up.
+In order to use these steps you must ensure that the relevant traffic is routed via the local tiger proxy of the test suite or construct a xref:tigerProxy.adoc#_mesh_setup_traffic_endpoints[tiger proxy mesh] set up.
 
 ==== Filtering requests
 
@@ -167,6 +168,18 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 * Specify timeout for filtering request
 
 With the `TGR find next request ...` steps you can validate a complete workflow of requests to exist in a specific order and validate each of their responses (see next chapter).
+
+[#_validation_message_sort_order]
+==== Validation iteration order
+
+By default the validator iterates messages in registration order (sequence number).
+In proxy-mesh setups where upstream traffic can arrive out of chronological order, switch to transmission-timestamp order via `tiger.lib.validation.messageSortOrder`:
+
+* `SEQUENCE` (default) – sequence number order
+* `TIMESTAMP` – ascending transmission timestamp, sequence number as tiebreaker
+
+WARNING: `TIMESTAMP` changes how every validator step pairs requests/responses; existing suites may need review.
+For a single, standalone Tiger Proxy both modes are equivalent.
 
 ==== Validating responses
 
@@ -215,10 +228,10 @@ include::./RBelValidatorGlueCommentsOnly.adoc[]
 
 === Writing your own Glue code
 
-You can define your own BDD steps and write the corresponding glue code in your own project.
+You can define your own BDD steps and write the corresponding glue code in your own project. The glue code files should be placed either in the test/java directory or in the main/java directory depending on your project structure and needs.
 You must remember to configure the packages where your glue code is defined in the xref:maven-plugin-generate-drivers[tiger-maven-plugin] configuration.
 
-Additionally, you can use some tiger specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.
+Additionally, you can use some tiger-specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.
 
 ==== Resolving Variables
 
@@ -299,16 +312,17 @@ image::media/table-first-row-keys.png[width=800,alt="a table with 2 columns and 
 
 ==== Introduction
 
-Tiger supports modifying JSON, XML and several token formats.
-After loading in an object from a string or a file the RbelObject can be modified in multiple ways:
+RBelObjects are internal data structures used by the Tiger test framework to represent and manipulate parsed message content, such as JSON, XML, or token formats. They allow you to access, modify, and assert values at specific paths within a message using RBelPath expressions (see xref:tigerProxy.adoc#_rbel_path_details[Understanding RBelPath]). RBelObjects enable flexible validation, transformation, and serialization of message data during automated tests.
+
+After loading in an object from a string or a file, the RbelObject can be modified in multiple ways:
 
 * Changing a primitive value at a certain path
-* replacing a primitive node by an object node and vice versa
-* adding new nodes and primitive values as child path of an existing path
+* replacing a primitive node with an object node and vice versa
+* adding new nodes and primitive values as a child path of an existing path
 * adding new nodes to an array/list
 
-After the adjustments the values of the modified RbelElements can be asserted.
-The object can be serialised back to a string.
+After the adjustments, the values of the modified RbelElements can be asserted.
+The object can be serialized back to a string.
 Jexl Expressions are implemented, as for reading a file or for serializing:
 `'!{rbelObject:serialize("myRbelObject")}'`
 
@@ -415,7 +429,7 @@ The example above shows three main features of the JSONChecker.
 
 * Value specified as $NULL, meaning this value of this key is equal to null.
 * Usage of regular expression (e.g. ".\*" and "[\\d]*") to match values.
-* Usage of "____" preceeding a json key: This indicates that the entry is optional but if it exists it must match the given value.
+* Usage of "____" preceeding a JSON key: This indicates that the entry is optional but if it exists it must match the given value.
 * if a value is specified as "${json-unit.ignore}", there is no check performed at all.
 This applies also to objects and arrays as seen in the dummyarray2 entry.
 * if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
@@ -538,7 +552,7 @@ assuming that the value of `${tiger.value.from.config}` set in the Tiger Global 
 
 The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.
-Any message that is forwarded by any of these proxies is forwarded to an aggregating Tiger Proxy which in turn forwards all the received messages to the local Tiger Proxy for assertion via the validation test suite.
+Any message that is forwarded by any of these proxies is forwarded to an aggregating tiger proxy which in turn forwards all the received messages to the local tiger proxy for assertion via the validation test suite.
 
 image::media/tiger-integration-eau-testenv.svg[title="Tiger EAU Konnektorfarm test environment"]
 
@@ -564,9 +578,12 @@ include::./TigerGlueCommentsOnly.adoc[]
 
 ==== Banner
 
-If you want to use large ASCII art style log banners you may find this class very helpful.
+If you want to use large ASCII art style log banners you may find this class very helpful, for example take a look at the following figure.
+
+image::screenshots/bannerInLog.jpg[title="Banner in log",width=800]
+
 Supports ANSI coloring and a set of different fonts.
-Furthermore, all banner messages are displayed and highlighted in the Workflow UI For more details please check the code and its usages in the Tiger test framework.
+Furthermore, all banner messages are displayed and highlighted in the Workflow UI, as seen in xref:tigerWorkflowUI.adoc#_banner_in_workflowui[this] figure.
 
 ==== TigerSerializationUtil
 

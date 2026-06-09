@@ -39,7 +39,7 @@ public class DoNothingSupplier implements RbelMessagesSupplier {
   }
 
   @Override
-  public RbelMessageHistory.Facade getMessageHistory() {
+  public RbelMessageHistory.MessageHistory getMessageHistory() {
     return new MockHistoryFacade(new TreeMap<>());
   }
 }

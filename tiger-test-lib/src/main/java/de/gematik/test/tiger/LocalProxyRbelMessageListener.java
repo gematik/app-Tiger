@@ -21,6 +21,7 @@
 package de.gematik.test.tiger;
 
 import com.google.common.annotations.VisibleForTesting;
+import de.gematik.rbellogger.MessageSortOrder;
 import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.IRbelMessageListener;
@@ -30,8 +31,10 @@ import de.gematik.test.tiger.lib.rbel.MockHistoryFacade;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -146,22 +149,29 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
    * Map of sequence numbers to messages received via local Tiger Proxy. It is used by the TGR
    * validation steps. The list is not cleared at the end of / start of new scenarios!
    */
-  public RbelMessageHistory.Facade getValidatableMessages() {
+  public RbelMessageHistory.MessageHistory getValidatableMessages() {
     // we make a new unmodifiable list that is read directly from the tiger proxy messageHistory
     // but without the elements that should habe been deleted by the clearValidatableRbelMessages()
     // call.
     return Optional.ofNullable(lastDeletedElement)
         .map(
-            element ->
-                new MockHistoryFacade(
-                    messagesSupplier.getMessageHistory().getMessagesAfter(element, false).stream()
-                        .collect(
-                            Collectors.toMap(
-                                e -> e.getSequenceNumber().get(),
-                                e -> e,
-                                (e1, e2) -> e1,
-                                TreeMap::new))))
-        .map(RbelMessageHistory.Facade.class::cast)
+            element -> {
+              var sourceHistory = messagesSupplier.getMessageHistory();
+              var sequenceMap =
+                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.SEQUENCE).stream()
+                      .collect(
+                          Collectors.toMap(
+                              e -> e.getSequenceNumber().get(),
+                              e -> e,
+                              (e1, e2) -> e1,
+                              TreeMap::new));
+              NavigableSet<RbelElement> timestampSorted =
+                  new TreeSet<>(RbelMessageHistory.TIMESTAMP_SEQ_COMPARATOR);
+              timestampSorted.addAll(
+                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.TIMESTAMP));
+              return new MockHistoryFacade(sequenceMap, timestampSorted);
+            })
+        .map(RbelMessageHistory.MessageHistory.class::cast)
         .orElseGet(messagesSupplier::getMessageHistory);
   }
 }

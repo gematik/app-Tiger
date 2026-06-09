@@ -20,19 +20,49 @@
  */
 package de.gematik.test.tiger.lib.rbel;
 
+import de.gematik.rbellogger.MessageSortOrder;
 import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Predicate;
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
-@AllArgsConstructor
-public class MockHistoryFacade implements RbelMessageHistory.Facade {
+public class MockHistoryFacade implements RbelMessageHistory.MessageHistory {
   private final NavigableMap<Long, RbelElement> messages;
+  private final NavigableSet<RbelElement> timestampSortedMessages;
+
+  /**
+   * Creates a facade that provides both a sequence-based and a timestamp-based view of the given
+   * messages. The timestamp-based view is derived from the sequence-keyed map using the standard
+   * {@link RbelMessageHistory#TIMESTAMP_SEQ_COMPARATOR}.
+   */
+  public MockHistoryFacade(NavigableMap<Long, RbelElement> messages) {
+    this(messages, deriveTimestampSortedMessages(messages));
+  }
+
+  /**
+   * Creates a facade that exposes the given sequence-keyed map and the given timestamp-sorted set
+   * verbatim. Both collections are expected to contain the same elements; the caller is responsible
+   * for keeping them in sync.
+   */
+  public MockHistoryFacade(
+      NavigableMap<Long, RbelElement> messages, NavigableSet<RbelElement> timestampSortedMessages) {
+    this.messages = messages;
+    this.timestampSortedMessages = timestampSortedMessages;
+  }
+
+  private static NavigableSet<RbelElement> deriveTimestampSortedMessages(
+      NavigableMap<Long, RbelElement> messages) {
+    NavigableSet<RbelElement> set = new TreeSet<>(RbelMessageHistory.TIMESTAMP_SEQ_COMPARATOR);
+    set.addAll(messages.values());
+    return set;
+  }
 
   @Override
   public RbelElement getFirst() {
@@ -85,7 +115,19 @@ public class MockHistoryFacade implements RbelMessageHistory.Facade {
   }
 
   @Override
-  public Collection<RbelElement> getMessagesAfter(RbelElement element, boolean includeElement) {
+  public long getMessageSequenceNumber() {
+    // The mock has no real sequence-number generator; the largest known sequence number + 1 is
+    // the closest analogue (the value the next "real" registration would receive).
+    return messages.isEmpty() ? 0L : messages.lastKey() + 1L;
+  }
+
+  @Override
+  public Collection<RbelElement> getMessagesAfter(
+      RbelElement element, boolean includeElement, MessageSortOrder sortOrder) {
+    if (sortOrder == MessageSortOrder.TIMESTAMP) {
+      return RbelMessageHistory.getLongestFinishedMessagesPrefix(
+          timestampSortedMessages.tailSet(element, includeElement).stream());
+    }
     var candidates =
         element
             .getSequenceNumber()
@@ -96,7 +138,17 @@ public class MockHistoryFacade implements RbelMessageHistory.Facade {
 
   @Override
   public Collection<RbelElement> getMessages() {
+    return getMessagesByOrder();
+  }
+
+  @Override
+  public List<RbelElement> getMessagesByOrder() {
     return RbelMessageHistory.getLongestFinishedMessagesPrefix(messages.values().stream());
+  }
+
+  @Override
+  public List<RbelElement> getMessagesByTimestamp() {
+    return RbelMessageHistory.getLongestFinishedMessagesPrefix(timestampSortedMessages.stream());
   }
 
   @Override

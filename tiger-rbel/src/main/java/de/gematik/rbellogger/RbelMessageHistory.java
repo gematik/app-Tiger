@@ -23,6 +23,8 @@ package de.gematik.rbellogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -42,6 +44,17 @@ public class RbelMessageHistory {
   private final NavigableMap<Long, RbelElement> messageHistory = new TreeMap<>();
   private final Map<String, RbelElement> messageByUuid = new HashMap<>();
   private final NavigableMap<Long, RbelElement> unfinishedMessages = new TreeMap<>();
+  public static final Comparator<RbelElement> TIMESTAMP_SEQ_COMPARATOR =
+      Comparator.<RbelElement, ZonedDateTime>comparing(
+              el ->
+                  el.getFacet(RbelMessageTimingFacet.class)
+                      .map(RbelMessageTimingFacet::getTransmissionTime)
+                      .orElse(null),
+              Comparator.nullsLast(Comparator.naturalOrder()))
+          .thenComparingLong(el -> el.getSequenceNumber().orElse(Long.MAX_VALUE));
+
+  private final TreeSet<RbelElement> timestampSortedMessages =
+      new TreeSet<>(TIMESTAMP_SEQ_COMPARATOR);
   @Getter private final KnownUuidsContainer knownMessageUuids;
   private final RbelMultiMap<CompletableFuture<RbelElement>> messagesWaitingForCompletion =
       new RbelMultiMap<>();
@@ -63,12 +76,12 @@ public class RbelMessageHistory {
    * Returns an unmodifiable view of the parsed messages in the message history in ascending order
    * of sequence numbers.
    */
-  public Facade getMessageHistory() {
-    return new FacadeImpl(false);
+  public MessageHistory getMessageHistory() {
+    return new MessageHistoryImpl(false);
   }
 
-  public Facade getMessageHistoryAsync() {
-    return new FacadeImpl(true);
+  public MessageHistory getMessageHistoryAsync() {
+    return new MessageHistoryImpl(true);
   }
 
   public void addClearHistoryCallback(Runnable runnable) {
@@ -79,12 +92,17 @@ public class RbelMessageHistory {
     messageRemovedFromHistoryCallbacks.add(consumer);
   }
 
-  public synchronized void addMessageToHistory(RbelElement rbelElement) {
+  synchronized void addMessageToHistory(RbelElement rbelElement, ZonedDateTime transmissionTime) {
     long seqNumber = addSequenceNumber(rbelElement);
     currentBufferSize += rbelElement.getSize();
     knownMessageUuids.markAsConverted(rbelElement.getUuid());
     messageHistory.put(seqNumber, rbelElement);
     messageByUuid.put(rbelElement.getUuid(), rbelElement);
+
+    rbelElement.addOrReplaceFacet(
+        RbelMessageTimingFacet.builder().transmissionTime(transmissionTime).build());
+    timestampSortedMessages.add(rbelElement);
+
     if (!rbelElement.getConversionPhase().isFinished()) {
       unfinishedMessages.put(seqNumber, rbelElement);
     }
@@ -122,6 +140,7 @@ public class RbelMessageHistory {
         knownMessageUuids.clear();
         messageByUuid.clear();
         unfinishedMessages.clear();
+        timestampSortedMessages.clear();
       }
       if (rbelBufferSizeInMb > 0) {
         long exceedingLimit = currentBufferSize - ((long) rbelBufferSizeInMb * 1024 * 1024);
@@ -140,6 +159,7 @@ public class RbelMessageHistory {
           knownMessageUuids.remove(messageToDrop.getUuid());
           messageByUuid.remove(messageToDrop.getUuid());
           messageToDrop.getSequenceNumber().ifPresent(unfinishedMessages::remove);
+          timestampSortedMessages.remove(messageToDrop);
         }
       }
     }
@@ -147,12 +167,6 @@ public class RbelMessageHistory {
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
     return messageHistory.descendingMap().values().stream();
-  }
-
-  public synchronized List<RbelElement> getMessageList() {
-    return getLongestFinishedMessagesPrefix(
-        messageHistory.values().stream()
-            .filter(e -> !e.hasFacet(RbelNonTransmissionMarkerFacet.class)));
   }
 
   public synchronized Optional<RbelElement> findMessageByUuid(String uuid) {
@@ -165,7 +179,10 @@ public class RbelMessageHistory {
         .flatMap(
             uuid ->
                 findMessageByUuid(lastMsgUuid)
-                    .map(msg -> getMessageHistory().getMessagesAfter(msg, false)))
+                    .map(
+                        msg ->
+                            getMessageHistory()
+                                .getMessagesAfter(msg, false, MessageSortOrder.SEQUENCE)))
         .orElseGet(getMessageHistory()::getMessages);
   }
 
@@ -175,6 +192,7 @@ public class RbelMessageHistory {
     knownMessageUuids.clear();
     messageByUuid.clear();
     unfinishedMessages.clear();
+    timestampSortedMessages.clear();
     historyClearCallbacks.forEach(Runnable::run);
   }
 
@@ -190,6 +208,7 @@ public class RbelMessageHistory {
                 knownMessageUuids.remove(rbelMessage.getUuid());
                 messageByUuid.remove(rbelMessage.getUuid());
                 unfinishedMessages.remove(seq);
+                timestampSortedMessages.remove(rbelMessage);
               }
             });
   }
@@ -298,7 +317,7 @@ public class RbelMessageHistory {
     return elements.takeWhile(e -> e.getConversionPhase().isFinished()).toList();
   }
 
-  public interface Facade {
+  public interface MessageHistory {
 
     RbelElement getFirst();
 
@@ -322,15 +341,60 @@ public class RbelMessageHistory {
 
     Object[] toArray(Object[] a);
 
-    Collection<RbelElement> getMessagesAfter(RbelElement element, boolean includeElement);
+    /**
+     * Returns the next sequence number that will be handed out by the history (i.e. the same value
+     * that backs {@link RbelElement#getSequenceNumber()} for newly registered messages). It is
+     * incremented on every successful registration and is <em>not</em> decreased by removals.
+     */
+    long getMessageSequenceNumber();
+
+    /**
+     * Returns the messages located "after" the given anchor in the requested {@link
+     * MessageSortOrder}.
+     *
+     * <p>{@link MessageSortOrder#SEQUENCE} returns the messages in registration order; {@link
+     * MessageSortOrder#TIMESTAMP} returns them in ascending transmission-timestamp order, with the
+     * sequence number as tie breaker.
+     *
+     * <p>The anchor does not need to be a (current) member of the history. Its sequence number /
+     * (timestamp, sequence number) tuple is used purely as a cutoff via {@code tailMap} / {@code
+     * tailSet}, so messages registered after a previously removed anchor are still returned.
+     */
+    Collection<RbelElement> getMessagesAfter(
+        RbelElement element, boolean includeElement, MessageSortOrder sortOrder);
 
     Collection<RbelElement> getMessages();
+
+    /**
+     * Returns the parsed messages in ascending order of sequence numbers (i.e. in the order in
+     * which they were registered in the history). The list stops before the first unparsed message
+     * to guarantee a consistent prefix.
+     */
+    List<RbelElement> getMessagesByOrder();
+
+    /**
+     * Returns the parsed messages in ascending order of transmission timestamps. Ties are broken by
+     * sequence number. The list stops before the first unparsed message, so it might not be stable.
+     */
+    List<RbelElement> getMessagesByTimestamp();
+
+    /**
+     * Returns the parsed messages sorted according to the given {@link MessageSortOrder}.
+     *
+     * @see #getMessagesByOrder()
+     * @see #getMessagesByTimestamp()
+     */
+    default List<RbelElement> getMessages(MessageSortOrder sortOrder) {
+      return sortOrder == MessageSortOrder.TIMESTAMP
+          ? getMessagesByTimestamp()
+          : getMessagesByOrder();
+    }
 
     Optional<RbelElement> findLast(Predicate<RbelElement> additionalFilter);
   }
 
   @AllArgsConstructor
-  public class FacadeImpl implements Facade {
+  public class MessageHistoryImpl implements MessageHistory {
     private final boolean allowUnparsedMessagesToAppearInFacade;
 
     @Override
@@ -409,13 +473,29 @@ public class RbelMessageHistory {
     }
 
     @Override
-    public Collection<RbelElement> getMessagesAfter(RbelElement element, boolean includeElement) {
+    public long getMessageSequenceNumber() {
+      return messageSequenceNumber;
+    }
+
+    @Override
+    public Collection<RbelElement> getMessagesAfter(
+        RbelElement element, boolean includeElement, MessageSortOrder sortOrder) {
+      if (sortOrder != MessageSortOrder.TIMESTAMP) {
+        synchronized (RbelMessageHistory.this) {
+          var candidates =
+              element
+                  .getSequenceNumber()
+                  .map(seqNr -> messageHistory.tailMap(seqNr, includeElement).values())
+                  .orElseGet(messageHistory::values);
+          if (!allowUnparsedMessagesToAppearInFacade) {
+            candidates = getLongestFinishedMessagesPrefix(candidates.stream());
+          }
+          return candidates;
+        }
+      }
       synchronized (RbelMessageHistory.this) {
-        var candidates =
-            element
-                .getSequenceNumber()
-                .map(seqNr -> messageHistory.tailMap(seqNr, includeElement).values())
-                .orElseGet(messageHistory::values);
+        Collection<RbelElement> candidates =
+            timestampSortedMessages.tailSet(element, includeElement);
         if (!allowUnparsedMessagesToAppearInFacade) {
           candidates = getLongestFinishedMessagesPrefix(candidates.stream());
         }
@@ -429,6 +509,24 @@ public class RbelMessageHistory {
         waitForAllCurrentMessagesToBeParsed();
       }
       return Collections.unmodifiableCollection(messageHistory.values());
+    }
+
+    @Override
+    public List<RbelElement> getMessagesByOrder() {
+      synchronized (RbelMessageHistory.this) {
+        return getLongestFinishedMessagesPrefix(
+            messageHistory.values().stream()
+                .filter(e -> !e.hasFacet(RbelNonTransmissionMarkerFacet.class)));
+      }
+    }
+
+    @Override
+    public List<RbelElement> getMessagesByTimestamp() {
+      synchronized (RbelMessageHistory.this) {
+        return getLongestFinishedMessagesPrefix(
+            timestampSortedMessages.stream()
+                .filter(e -> !e.hasFacet(RbelNonTransmissionMarkerFacet.class)));
+      }
     }
 
     @Override

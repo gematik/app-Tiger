@@ -21,8 +21,6 @@
 package de.gematik.test.tiger.common.util;
 
 import de.gematik.rbellogger.util.RbelSocketAddress;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Objects;
 import lombok.Getter;
@@ -39,7 +37,7 @@ public class TcpIpConnectionIdentifier {
   private final RbelSocketAddress sortedAddress2;
 
   public TcpIpConnectionIdentifier(RbelSocketAddress sender, RbelSocketAddress receiver) {
-    if (compareAddresses(sender, receiver) < 0) {
+    if (RbelSocketAddress.compareAddresses(sender, receiver) < 0) {
       this.sortedAddress1 = sender;
       this.sortedAddress2 = receiver;
       this.originalDirection = true;
@@ -50,49 +48,6 @@ public class TcpIpConnectionIdentifier {
     }
     this.sender = sender;
     this.receiver = receiver;
-  }
-
-  private static int compareAddresses(RbelSocketAddress a, RbelSocketAddress b) {
-    if (a == null || b == null) {
-      return 0;
-    }
-    if (a.getAddress() != null
-        && b.getAddress() != null
-        && a.getAddress().getIpAddress() != null
-        && b.getAddress().getIpAddress() != null) {
-      // prefer the resolved view, since it is more stable
-      int ipCompare = Arrays.compare(a.getAddress().getIpAddress(), b.getAddress().getIpAddress());
-      return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
-    } else if (a.getAddress() != null
-        && b.getAddress() != null
-        && a.getAddress().getHostname() != null
-        && b.getAddress().getHostname() != null) {
-      byte[] aIp = a.getAddress().getIpAddress();
-      byte[] bIp = b.getAddress().getIpAddress();
-      if (aIp == null) {
-        aIp = tryResolveHostname(a.getAddress().getHostname());
-      }
-      if (bIp == null) {
-        bIp = tryResolveHostname(b.getAddress().getHostname());
-      }
-      if (aIp != null && bIp != null) {
-        int ipCompare = Arrays.compare(aIp, bIp);
-        return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
-      }
-      int ipCompare = a.getAddress().getHostname().compareTo(b.getAddress().getHostname());
-      return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
-    } else {
-      // fallback: not the same
-      return -1;
-    }
-  }
-
-  private static byte[] tryResolveHostname(String hostname) {
-    try {
-      return InetAddress.getByName(hostname).getAddress();
-    } catch (UnknownHostException e) {
-      return null;
-    }
   }
 
   public boolean isSameDirectionAs(TcpIpConnectionIdentifier other) {
@@ -144,15 +99,12 @@ public class TcpIpConnectionIdentifier {
    * "localhost" vs "view-localhost" which both resolve to 127.0.0.1).
    */
   private static boolean addressesMatch(RbelSocketAddress a, RbelSocketAddress b) {
-    if (a == b) return true;
-    if (a == null || b == null) return false;
-    if (a.getPort() != b.getPort()) return false;
-    if (a.getAddress() != null
-        && b.getAddress() != null
-        && a.getAddress().getIpAddress() != null
-        && b.getAddress().getIpAddress() != null) {
-      return Arrays.equals(a.getAddress().getIpAddress(), b.getAddress().getIpAddress());
+    if (a == b) {
+      return true;
     }
-    return Objects.equals(a, b);
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.isSameAddress(b);
   }
 }

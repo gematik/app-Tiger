@@ -71,9 +71,7 @@ public class SingleConnectionParser {
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
     this.executor = tigerProxy.getExecutor();
     this.proxyName = tigerProxy.proxyName();
-    log =
-        org.slf4j.LoggerFactory.getLogger(
-            tigerProxy.getName().orElse("TigerProxy") + "-ConnectionParser");
+    log = org.slf4j.LoggerFactory.getLogger(SingleConnectionParser.class);
     // Reset linkage state when history is cleared so we don't propagate stale previous UUIDs
     setMessageRemovalCallbacks(tigerProxy);
   }
@@ -261,6 +259,9 @@ public class SingleConnectionParser {
         .addArgument(messageElement::getUuid)
         .log("Trying to parse message with {} bytes and uuid {}");
     final var result = triggerActualMessageParsing(messageElement, messageMetadata);
+    messageElement
+        .getFacet(SingleConnectionParserMarkerFacet.class)
+        .ifPresent(result::addOrReplaceFacet);
     messageElement.removeFacetsOfType(SingleConnectionParserMarkerFacet.class);
     if (result.getConversionPhase() == RbelConversionPhase.DELETED) {
       log.atTrace()
@@ -300,8 +301,22 @@ public class SingleConnectionParser {
             bufferedContent
                 .getAdditionalData()
                 .getOrDefault(IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY.getKey(), false))) {
-      return DeterministicUuidGenerator.generateUuid(
-          bufferedContent.getUuid(), bufferedContent.getPositionInBaseNode());
+      String originalUuid = bufferedContent.getUuid();
+      String generatedUuid =
+          DeterministicUuidGenerator.generateUuid(
+              originalUuid, bufferedContent.getPositionInBaseNode());
+      boolean isPropagated =
+          Boolean.TRUE.equals(
+              bufferedContent
+                  .getAdditionalData()
+                  .getOrDefault(IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY.getKey(), false));
+      log.atDebug()
+          .addArgument(originalUuid)
+          .addArgument(generatedUuid)
+          .addArgument(bufferedContent::getPositionInBaseNode)
+          .addArgument(isPropagated)
+          .log("UUID transformation - original={} generated={} position={} isPropagatedChunk={}");
+      return generatedUuid;
     } else {
       return bufferedContent.getUuid();
     }
@@ -331,6 +346,16 @@ public class SingleConnectionParser {
     @Override
     public RbelConversionPhase getPhase() {
       return RbelConversionPhase.CONTENT_ENRICHMENT;
+    }
+
+    /**
+     * Run last within CONTENT_ENRICHMENT so every enrichment plugin (e.g. RbelWebsocketConverter)
+     * has a full pass before we discard incomplete messages. A very negative priority guarantees
+     * this.
+     */
+    @Override
+    public int getPriority() {
+      return Integer.MIN_VALUE;
     }
 
     @Override

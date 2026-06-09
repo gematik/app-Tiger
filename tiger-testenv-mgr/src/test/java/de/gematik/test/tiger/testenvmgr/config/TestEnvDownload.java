@@ -83,12 +83,15 @@ class TestEnvDownload {
     tigerProxyBytes =
         FileUtils.readFileToByteArray(
             Files.walk(Path.of("..", "tiger-standalone-proxy", "target"))
-                .filter(p -> p.toString().endsWith(".jar"))
-                .filter(p -> !p.toString().endsWith("-javadoc.jar"))
-                .filter(p -> !p.toString().endsWith("-sources.jar"))
-                .map(Path::toFile)
-                .findAny()
-                .orElseThrow());
+                .filter(p -> p.getFileName().toString().startsWith("tiger-standalone-proxy"))
+                .filter(p -> p.getFileName().toString().endsWith(".jar"))
+                .filter(p -> !p.getFileName().toString().contains("agent"))
+                .filter(p -> !p.getFileName().toString().contains("docker"))
+                .filter(p -> !p.getFileName().toString().contains("javadoc"))
+                .filter(p -> !p.getFileName().toString().contains("sources"))
+                .findFirst()
+                .orElseThrow()
+                .toFile());
   }
 
   @SneakyThrows

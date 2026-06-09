@@ -78,10 +78,18 @@ class LightConfigServer : SerializableMap() {
     val dockerOptions: LightDockerOptions? get() = typed("dockerOptions")
     val zionConfiguration: LightZionConfiguration? get() = typed("zionConfiguration")
 
+    companion object {
+        fun fromLocalProxy(localProxyConfig: LightTigerConfigModel):LightConfigServer {
+            return LightConfigServer().apply {
+                properties["type"] = "tigerProxy"
+                properties["tigerProxyConfiguration"] = localProxyConfig.tigerProxy ?: LightTigerProxyConfiguration()
+            }
+    }}
 }
 
 class LightZionConfiguration : SerializableMap() {
     val mockResponses: Map<String, LightMockResponse> get() = typedMap("mockResponses")
+    val serverPort : String? get() = properties["serverPort"]?.toString()
 
     fun collectBackendRequestUrls(): List<String> {
         fun collect(response: LightMockResponse): List<String> {
@@ -113,8 +121,8 @@ class LightExternalJarOptions : SerializableMap() {
 }
 
 class LightTigerProxyConfiguration : SerializableMap() {
-    val adminPort: String? get() = properties["adminPort"] as? String
-    val proxyPort: String? get() = properties["proxyPort"] as? String
+    val adminPort: String? get() = properties["adminPort"]?.toString()
+    val proxyPort: String? get() = properties["proxyPort"]?.toString()
     val directReverseProxy: LightDirectReverseProxyInfo? get() = typed("directReverseProxy")
     val proxyRoutes: List<LightRoute> get() = typedList("proxyRoutes")
     val trafficEndpoints: List<String>
@@ -124,7 +132,7 @@ class LightTigerProxyConfiguration : SerializableMap() {
 
 class LightDirectReverseProxyInfo : SerializableMap() {
     val hostname: String? get() = properties["hostname"] as? String
-    val port: String? get() = properties["port"] as? String
+    val port: String? get() = properties["port"]?.toString()
 }
 
 private val PLACEHOLDER_PATTERN = Regex("\\$\\{([^}]+)}")

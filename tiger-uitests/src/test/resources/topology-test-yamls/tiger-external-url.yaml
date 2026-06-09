@@ -1,0 +1,5 @@
+servers:
+  externalUrl:
+    type: externalUrl
+    source:
+      - https://www.example.com

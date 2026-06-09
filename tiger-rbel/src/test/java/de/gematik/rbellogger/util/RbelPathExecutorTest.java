@@ -217,7 +217,7 @@ class RbelPathExecutorTest {
     final RbelLogger logger =
         RbelLogger.build(RbelConfiguration.builder().capturer(fileReaderCapturer).build());
     fileReaderCapturer.initialize();
-    final RbelElement secondResponse = logger.getMessageList().get(3);
+    final RbelElement secondResponse = logger.getMessagesByOrder().get(3);
 
     assertThat(secondResponse)
         .extractChildWithPath(
@@ -235,7 +235,7 @@ class RbelPathExecutorTest {
     final RbelLogger logger =
         RbelLogger.build(RbelConfiguration.builder().capturer(fileReaderCapturer).build());
     fileReaderCapturer.initialize();
-    final RbelElement secondResponse = logger.getMessageList().get(3);
+    final RbelElement secondResponse = logger.getMessagesByOrder().get(3);
 
     assertThat(secondResponse)
         .extractChildWithPath(

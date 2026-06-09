@@ -22,7 +22,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.2.7</version>
+    <version>4.3.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -30,6 +30,16 @@
   <packaging>jar</packaging>
   <name>${project.artifactId}</name>
   <description>tiger-standalone-proxy modul of the tiger test platform.</description>
+
+  <properties>
+    <!-- Docker image build (see the `docker` profile at the bottom of this pom). Properties
+         can be overridden on the command line, e.g. `-Ddocker.image.tag=dev`. -->
+    <docker.image.name>gematik1/tiger-proxy-image</docker.image.name>
+    <docker.image.tag>${project.version}</docker.image.tag>
+    <docker.commit.hash>unknown</docker.commit.hash>
+    <version.docker-maven-plugin>0.46.0</version.docker-maven-plugin>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>de.gematik.test</groupId>
@@ -75,6 +85,33 @@
         </executions>
       </plugin>
       <plugin>
+        <!-- stage tiger-java-agent jar into target/ so the Dockerfile can COPY it into the image -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-tiger-java-agent</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>de.gematik.test</groupId>
+                  <artifactId>tiger-java-agent</artifactId>
+                  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                  <destFileName>tiger-java-agent.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${version.spring-boot}</version>
@@ -89,6 +126,15 @@
             </goals>
           </execution>
           <execution>
+            <id>repackage-docker</id>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+            <configuration>
+              <classifier>docker</classifier>
+            </configuration>
+          </execution>
+          <execution>
             <id>build-info</id>
             <goals>
               <goal>build-info</goal>
@@ -98,4 +144,53 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Builds the tiger-proxy Docker image from the Dockerfile in this module.
+      Activate explicitly so developer machines without a Docker daemon are not affected
+      by the default `mvn package` build:
+
+          mvn -Pdocker -pl tiger-standalone-proxy -am package
+          mvn -Pdocker -pl tiger-standalone-proxy docker:build
+          mvn -Pdocker -pl tiger-standalone-proxy docker:push
+    -->
+    <profile>
+      <id>docker</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>${version.docker-maven-plugin}</version>
+            <configuration>
+              <images>
+                <image>
+                  <name>${docker.image.name}:${docker.image.tag}</name>
+                  <build>
+                    <contextDir>${project.basedir}</contextDir>
+                    <dockerFile>Dockerfile</dockerFile>
+                    <args>
+                      <APP>proxy</APP>
+                      <VERSION>${project.version}</VERSION>
+                      <COMMIT_HASH>${docker.commit.hash}</COMMIT_HASH>
+                    </args>
+                  </build>
+                </image>
+              </images>
+            </configuration>
+            <executions>
+              <execution>
+                <id>build-docker-image</id>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

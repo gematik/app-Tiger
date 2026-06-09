@@ -78,13 +78,20 @@ defineProps<{
       <FontAwesomeIcon :icon="faSearch" />&nbsp;Search
     </button>
     <div
-      v-if="tigerVersion && knownTigerVersion(tigerVersion)"
-      class="tiger-version align-self-center text-start lh-1 ms-auto font-monospace"
+        v-if="tigerVersion"
+        class="tiger-version align-self-center text-start lh-1 ms-auto font-monospace"
     >
+      <div v-if="knownTigerVersion(tigerVersion)">
       <p class="version">
-        {{ tigerVersion.version }}<br /><em>Build date: {{ tigerVersion.buildDate }}</em
-        ><br /><em> {{ tigerVersion.proxyName }}</em>
+        {{ tigerVersion.version }}<br/><em>Build date: {{ tigerVersion.buildDate }}</em>
       </p>
+      </div>
+      <div
+          v-if="tigerVersion.proxyName"
+          class="tiger-version align-self-center text-start lh-1 font-monospace"
+      >
+        <p class="version"><em>{{ tigerVersion.proxyName }}</em></p>
+      </div>
     </div>
   </div>
 </template>

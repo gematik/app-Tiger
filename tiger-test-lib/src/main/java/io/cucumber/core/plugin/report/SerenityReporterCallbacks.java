@@ -880,7 +880,11 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
       try (var writer =
           new BufferedWriter(
               new OutputStreamWriter(new FileOutputStream(logFile), StandardCharsets.UTF_8))) {
-        rbelRenderer.doRender(LocalProxyRbelMessageListener.getInstance().getMessages(), writer);
+        rbelRenderer.doRender(
+            LocalProxyRbelMessageListener.getInstance()
+                .getValidatableMessages()
+                .getMessagesByTimestamp(),
+            writer);
       }
 
       if (TigerDirector.isSerenityAvailable()) {

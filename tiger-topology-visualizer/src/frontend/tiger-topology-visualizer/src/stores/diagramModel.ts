@@ -77,6 +77,20 @@ export const useDiagramModel = defineStore("diagramModel", () => {
   const uploadedFileStatuses = ref<Record<string, UploadedFileStatus>>({});
   const uploadError = ref<string | null>(null);
 
+  function highlightNode(nodeId: string) {
+    const node = model.value.nodes.find((node) => node.id === nodeId);
+    if (node) {
+      node.data.isHighlighted = true;
+    }
+  }
+
+  function clearHighlight(nodeId: string) {
+    const node = model.value.nodes.find((node) => node.id === nodeId);
+    if (node) {
+      node.data.isHighlighted = false;
+    }
+  }
+
   function emptyDiagramModel(): ConfigurationDiagramDto {
     return {
       nodes: [],
@@ -215,6 +229,8 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     removeConfigurationYaml,
     clearConfigurationYaml,
     loadFromLiveEndpoint,
+    highlightNode,
+    clearHighlight,
   };
 });
 

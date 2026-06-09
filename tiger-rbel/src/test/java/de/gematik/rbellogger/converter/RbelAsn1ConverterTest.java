@@ -81,7 +81,7 @@ public class RbelAsn1ConverterTest {
     }
     long t2 = System.currentTimeMillis();
     for (int i = 0; i < 100; i++) {
-      RbelHtmlRenderer.render(rbelLogger.getMessageList());
+      RbelHtmlRenderer.render(rbelLogger.getMessagesByOrder());
     }
     long t3 = System.currentTimeMillis();
     System.out.println("Parsing Time: " + (t2 - t1) / 1 + "ms");
@@ -171,7 +171,7 @@ public class RbelAsn1ConverterTest {
   @Test
   void testVariousRbelPathInPcap() {
     // check OID
-    final RbelElement rbelMessage = rbelLogger.getMessageList().get(58);
+    final RbelElement rbelMessage = rbelLogger.getMessagesByOrder().get(58);
     // The extractChildPath moves the pointer from the given element to its child so subsequent
     // chaining
     // starts from the "new root" element and thus the code will fail,

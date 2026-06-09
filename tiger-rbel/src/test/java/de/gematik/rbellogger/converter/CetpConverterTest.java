@@ -88,7 +88,7 @@ class CetpConverterTest {
   @SuppressWarnings("java:S2699")
   void checkRendering() {
     rbelConverter.parseMessage(cetpMessageAsBytes, new RbelMessageMetadata());
-    RbelHtmlRenderer.render(rbelConverter.getMessageList());
+    RbelHtmlRenderer.render(rbelConverter.getMessageHistory().getMessagesByOrder());
   }
 
   @SneakyThrows

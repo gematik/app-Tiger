@@ -288,7 +288,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public List<RbelElement> getRbelMessagesList() {
-    return rbelLogger.getMessageList();
+    return rbelLogger.getMessagesByOrder();
   }
 
   @Override
@@ -409,9 +409,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   private boolean isGivenTigerProxyHealthy(String url) {
     try {
       log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
-      String statusUrl = url;
+      String statusUrl;
       if (getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints()) {
-        statusUrl += "/actuator/health";
+        statusUrl = url + "/actuator/health";
+      } else {
+        statusUrl = url + "/clock";
       }
       final int status =
           Unirest.get(statusUrl)
@@ -438,7 +440,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     getRbelLogger().getRbelConverter().clearAllMessages();
   }
 
-  public RbelMessageHistory.Facade getMessageHistory() {
+  public RbelMessageHistory.MessageHistory getMessageHistory() {
     return getRbelLogger().getRbelConverter().getMessageHistory();
   }
 

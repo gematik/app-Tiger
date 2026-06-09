@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { Position } from "@vue-flow/core";
 import BaseNode from "./BaseNode.vue";
+import { getNodeVisual } from "./nodeVisuals";
 
 defineOptions({ inheritAttrs: false });
 
@@ -36,14 +37,21 @@ defineProps<{
   sourcePosition?: Position;
   targetPosition?: Position;
 }>();
+
+const visual = getNodeVisual("group");
 </script>
 
 <template>
   <BaseNode
+    :style="{
+      background: visual.colors.background,
+      borderColor: visual.colors.border,
+      borderStyle: visual.colors.borderStyle,
+      color: visual.colors.text,
+    }"
     :nodeData="data"
     :sourcePosition="sourcePosition"
     :targetPosition="targetPosition"
-    transparent
   >
   </BaseNode>
 </template>

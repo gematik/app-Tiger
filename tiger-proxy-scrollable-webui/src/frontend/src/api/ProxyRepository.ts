@@ -28,6 +28,7 @@ import type {
   SearchMessagesDto,
   TestFilterMessagesDto,
 } from "./MessageTypes.ts";
+import type { MessageSortOrder } from "@/Settings.ts";
 import type { DetachedRbelLog, WindowExt } from "@/WindowExt.ts";
 import { inflateSync } from "fflate";
 
@@ -45,12 +46,16 @@ export function getProxy(): ProxyRepository {
 }
 
 export type ProxyRepository = {
-  fetchMessagesWithMeta(props: { filterRbelPath?: string }): Promise<GetAllMessagesDto>;
+  fetchMessagesWithMeta(props: {
+    filterRbelPath?: string;
+    sortOrder?: MessageSortOrder;
+  }): Promise<GetAllMessagesDto>;
 
   fetchMessagesWithHtml(props: {
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
+    sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<GetMessagesDto>;
 
@@ -64,11 +69,16 @@ export type ProxyRepository = {
 
   fetchQuitProxy(): Promise<void>;
 
-  fetchTestFilter(props: { rbelPath: string; signal: AbortSignal }): Promise<TestFilterMessagesDto>;
+  fetchTestFilter(props: {
+    rbelPath: string;
+    sortOrder?: MessageSortOrder;
+    signal: AbortSignal;
+  }): Promise<TestFilterMessagesDto>;
 
   searchMessages(props: {
     filterRbelPath: string;
     searchRbelPath: string;
+    sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<SearchMessagesDto>;
 
@@ -186,11 +196,14 @@ async function createFetchRequest<T>(url: string, options: RequestInit = {}): Pr
 const ProxyRepositoryRemote: ProxyRepository = {
   fetchMessagesWithMeta: async ({
     filterRbelPath,
+    sortOrder,
   }: {
     filterRbelPath?: string;
+    sortOrder?: MessageSortOrder;
   }): Promise<GetAllMessagesDto> => {
     const params = new URLSearchParams();
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
+    if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<GetAllMessagesDto>(`/webui/getMessagesWithMeta?${params.toString()}`);
   },
 
@@ -198,17 +211,20 @@ const ProxyRepositoryRemote: ProxyRepository = {
     fromOffset,
     toOffsetExcluding,
     filterRbelPath,
+    sortOrder,
     signal,
   }: {
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
+    sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<GetMessagesDto> => {
     const params = new URLSearchParams();
     params.set("fromOffset", fromOffset.toString());
     params.set("toOffsetExcluding", toOffsetExcluding.toString());
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
+    if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<GetMessagesDto>(`/webui/getMessagesWithHtml?${params.toString()}`, {
       signal,
     });
@@ -224,13 +240,16 @@ const ProxyRepositoryRemote: ProxyRepository = {
 
   fetchTestFilter: async ({
     rbelPath,
+    sortOrder,
     signal,
   }: {
     rbelPath: string;
+    sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<TestFilterMessagesDto> => {
     const params = new URLSearchParams();
     params.set("filterRbelPath", rbelPath);
+    if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<TestFilterMessagesDto>(
       `/webui/testFilterMessages?${params.toString()}`,
       { signal },
@@ -240,15 +259,18 @@ const ProxyRepositoryRemote: ProxyRepository = {
   searchMessages: async ({
     filterRbelPath,
     searchRbelPath,
+    sortOrder,
     signal,
   }: {
     filterRbelPath: string;
     searchRbelPath: string;
+    sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<SearchMessagesDto> => {
     const params = new URLSearchParams();
     params.set("filterRbelPath", filterRbelPath);
     params.set("searchRbelPath", searchRbelPath);
+    if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<SearchMessagesDto>(`/webui/searchMessages?${params.toString()}`, {
       signal,
     });

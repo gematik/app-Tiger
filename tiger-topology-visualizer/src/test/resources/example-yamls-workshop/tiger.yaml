@@ -1,0 +1,10 @@
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: false
+
+additionalConfigurationFiles:
+  - filename: defaults.yaml
+  - filename: tiger-${environment}.yaml
+    baseKey: tiger
+  - filename: demoData.yaml
+    baseKey: demo

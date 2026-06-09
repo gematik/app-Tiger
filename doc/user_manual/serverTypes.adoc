@@ -1,0 +1,416 @@
+
+[#_server_types]
+=== Server type reference
+
+This section provides a detailed description of all supported server node types with typical configuration examples.
+
+[cols="1,3",options="header"]
+|===
+| Type | Description
+
+| `externalJar`
+| Starts an executable JAR file via `java -jar`. The most commonly used type for own Java/Spring Boot backend services.
+
+| `externalUrl`
+| No server is started. Registers an external URL under a fixed hostname in the local tiger proxy. The test code always uses the fixed hostname, regardless of where the real server is located.
+
+| `docker`
+| Starts a Docker container from a configured image. Tiger automatically injects the proxy certificate into the container.
+
+| `compose`
+| Starts multiple services via one or more Docker Compose YAML files.
+
+| `tigerProxy`
+| Starts an additional standalone tiger proxy node to intercept traffic between two components to track, log and validate traffic between any two nodes.
+For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
+
+| `helmChart`
+| Installs or updates a Helm chart in a local or remote Kubernetes cluster.
+
+| `httpbin`
+| Starts a built-in httpbin server with standard HTTP mock endpoints. Useful for quick HTTP step testing without a real backend.
+|===
+
+[#_server_type_external_jar]
+==== externalJar
+
+Starts any executable JAR archive using `java -jar`.
+The `options` list is passed directly to the JVM (before `-jar`), while `arguments` are passed to the application (after `-jar`).
+
+[source,shell]
+----
+java ${options} -jar myApp.jar ${arguments}
+----
+
+The working directory is the place where the jar is executed from.
+If `workingDir` is not set or is empty, the jar's parent directory is used as working directory for `local:` sources, or the OS temp folder for downloaded JARs.
+A non-existent `workingDir` is created automatically.
+Relative paths for both `source` and `workingDir` are resolved relative to the **project root** (the directory from which Maven is executed).
+
+TIP: Use the `local:` prefix to reference a JAR file on the local file system without downloading it.
+Wildcards (e.g. `local:../target/app-*.jar`) are supported.
+
+Tiger will use the following order to try to find a matching file:
+
+- The path given in `source` directly (absolute, or resolved from the tiger.yaml location if relative)
+- In the working directory, a file whose name matches the filename part of the source (fallback for bare filenames)
+- In the working directory, a file whose name matches a wildcard pattern in the source (eg. `app-*.jar`)
+
+By default, Tiger uses the same JVM with which Tiger itself was started.
+To use a different JVM set `lib.javaHome` in `tiger.yaml` or the environment variable `TIGER_LIB_JAVAHOME`.
+
+.Typical externalJar configuration
+[source,yaml]
+----
+servers:
+  myBackend:
+    type: externalJar
+    hostname: myBackend               # reachable as http://myBackend via tiger proxy
+    dependsUpon: myDatabase           # waits until myDatabase is running
+    startupTimeoutSec: 60
+      # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
+      # If the entry starts with "local:" followed by a file path the jar archive
+      # is expected to be available at that location and no download is performed.
+      # Only one entry is expected for this node type. Additional entries are silently ignored.
+    source:
+      - local:target/my-service-1.0.jar
+      # alternatively download from a URL:
+      # - http://nexus.intern/repo/my-service-1.0.jar
+
+      # MANDATORY URL to check for the successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If set to "NONE" no check is performed and
+      # the test environment manager will wait for the startup timeout.
+    healthcheckUrl: http://127.0.0.1:8080/actuator/health
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+    healthcheckReturnCode: 200
+      # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
+      # specified a default name will be used
+    logFile: ./target/serverLogs/myBackend.log
+
+    externalJarOptions:
+        # OPTIONAL folder from where to start the external jar.
+        # If not set, Tiger defaults to the parent directory of the jar file (for local: sources)
+        # or the OS temp folder (for downloaded jars).
+        # Relative paths are resolved relative to the location of the tiger.yaml file.
+        # A non-existent directory is created automatically.
+      workingDir: /home/user/test/myspecificjar
+      # OPTIONAL Options to pass in to the java executable call.
+      options:
+        - -Xmx512m
+        - -Dhttp.proxyHost=127.0.0.1
+        - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
+      # OPTIONAL provide additional arguments to the jar archive call.
+      arguments:
+        - --server.port=8080
+        - --spring.profiles.active=test
+    environment:
+      - DB_URL=jdbc:h2:mem:testdb
+      - DB_USER=sa
+    exports:
+      - MY_SERVICE_URL=http://myBackend
+----
+
+.Minimal externalJar configuration
+[source,yaml]
+----
+servers:
+  simpleService:
+    type: externalJar
+    source:
+      - local:../simple-service/target/simple-service.jar
+    healthcheckUrl: http://127.0.0.1:9090/health
+----
+
+[#_server_type_external_url]
+==== externalUrl
+
+A symbolic node type that does **not** start any server.
+Instead, it instructs the local tiger proxy to route requests for the configured `hostname` to the given `source` URL.
+
+This allows the test suite to always address a server by the same fixed hostname (e.g. `http://idpServer`), while the actual target URL can be changed in the YAML without touching any test code.
+
+NOTE: The `environment`,`urlMappings` and `exports`  properties has no effect on this type.
+
+.Routing to a production or reference environment
+[source,yaml]
+----
+servers:
+  idpServer:
+    type: externalUrl
+    hostname: idpServer               # tests always call http://idpServer
+    source:
+      - https://idp.prod.example.de   # actual target URL
+    healthcheckUrl: https://idp.prod.example.de/.well-known/openid-configuration
+    # OPTIONAL only declare the server healthy once the specified return code is given
+    healthcheckReturnCode: int
+----
+
+[#_server_type_docker]
+==== docker
+
+Starts a Docker container from a configured image.
+Tiger automatically adds the tiger proxy certificate to the container's OS trust store.
+This can be disabled by setting `dockerOptions.proxied: false`.
+
+To customize the docker container you may alter the entry point command line.
+For containers that should exit after a single command you may enable the oneShot property.
+
+The exposed container port is available as `${PORT:xxxx}` (where `xxxx` is the internal container port) in the `exports` entries.
+
+You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.
+
+If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. http://127.0.0.1:xxxx).
+
+If no port is exposed at all, the startupTimeoutSec property will determine the wait period, after which Tiger assumes the container is up and running.
+
+If you have your local docker environment set up hosting the docker containers on a remote docker hub server, you may set the environment variable TIGER_DOCKER_HOST to allow the health check url determined on runtime to point to the remote host instead of localhost.
+
+NOTE: To use this server type the xref:tigerExtensions.adoc#_tiger_cloud_extension[tiger-cloud-extension] dependency must be added to the pom.
+
+.Docker container with PostgreSQL database
+[source,yaml]
+----
+servers:
+  myDatabase:
+    hostname: myDatabase
+    type: docker
+    startupTimeoutSec: 60
+    # MANDATORY URL from where to download the docker image.
+    source:
+      - dockerhubrepo.somewhere.org/repo/project/postgress.image
+    # MANDATORY version of the docker image to download.
+    version: "15.3"
+    # OPTIONAL - a default name will be used if not specified
+    logFile: ./target/serverLogs/myDatabase.log
+    dockerOptions:
+      # OPTIONAL - adds tiger proxy certificate to the container OS trust store.
+      # Default value is true.
+      proxied: false                  # no TLS interception needed for DB
+      # OPTIONAL - container exits after executing its command.
+      # Default value is false.
+      oneShot: false
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    # ${PORT:xxxx} is replaced with the port exposed by the container on the docker host
+    exports:
+      - DB_PORT=${PORT:5432}
+----
+
+.One-shot container that runs a migration script and exits
+[source,yaml]
+----
+servers:
+  dbMigration:
+    type: docker
+    source:
+      - my-registry.example.de/db-migration:latest
+    startupTimeoutSec: 120
+    dockerOptions:
+      # OPTIONAL - container exits after executing its command.
+      # Default value is false.
+      oneShot: true
+      proxied: false
+      # OPTIONAL - overrides the entry point configured in the docker image.
+      # Default value is empty (uses the image's entry point).
+      entryPoint: /bin/sh -c "/migrate.sh && echo DONE"
+      # OPTIONAL - list of files or folders to copy into the container before start.
+      copyFiles:
+        # path to the file or folder to copy on the local file system
+        - sourcePath: ./config/migration.conf
+          # path inside the container where the file should be copied to
+          destinationPath: /etc/migration/migration.conf
+          # OPTIONAL - file mode as octal (see https://en.wikipedia.org/wiki/File-system_permissions#Numeric_notation)
+          fileMode: 0644
+----
+
+[#_server_type_compose]
+==== compose
+
+Starts multiple services defined in one or more Docker Compose YAML files.
+Files can be referenced by path or loaded from the classpath (e.g. from inside a JAR).
+
+Tiger copies and processes all compose files into `target/tiger-testenv-mgr/<serverId>/` before starting them, replacing all Tiger placeholder expressions.
+Because of this flattening, **compose files must not reference additional external files**.
+
+NOTE: To use this server type the xref:tigerExtensions.adoc#_tiger_cloud_extension[tiger-cloud-extension] dependency must be added to the pom.
+
+.Docker Compose with local files
+[source,yaml]
+----
+servers:
+  myStack:
+    type: compose
+    startupTimeoutSec: 180
+    logFile: ./target/serverLogs/myStack.log
+    source:
+      - ./docker/my-stack.yml
+      - ./docker/my-stack-override.yml
+----
+
+.Docker Compose loaded from classpath (e.g. ePA stack)
+[source,yaml]
+----
+servers:
+  epaStack:
+    type: compose
+    startupTimeoutSec: 300
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+      - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml
+----
+
+[#_server_type_tiger_proxy]
+==== tigerProxy
+
+Starts an additional standalone tiger proxy as an embedded Spring Boot application.
+This is useful to intercept and log traffic between two components that do not communicate through the local test suite proxy.
+
+The full tiger proxy configuration (routes, modifications, TLS, etc.) can be used inside `tigerProxyConfiguration`.
+See xref:tigerProxy.adoc#_tiger_proxy_basics[Tiger Proxy basics] for the complete reference.
+
+.tiger proxy as traffic sniffer between two services
+[source,yaml]
+----
+servers:
+  sniffer:
+    type: tigerProxy
+    hostname: sniffer
+    dependsUpon: myBackend
+    tigerProxyConfiguration:
+      adminPort: 9090                 # WebUI at http://localhost:9090/webui
+      proxyPort: 3128
+      proxiedServer: myBackend        # reverse proxy in front of myBackend
+      proxiedServerProtocol: http
+      proxyRoutes:
+        - from: http://myBackend
+          to: http://127.0.0.1:8080
+----
+
+.tiger proxy with forward proxy route and traffic modification
+[source,yaml]
+----
+servers:
+  forwardProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      proxyPort: 8888
+      adminPort: 8889
+      proxyRoutes:
+        - from: http://legacyHost
+          to: https://new.backend.example.de
+      modifications:
+        - condition: "isRequest"
+          targetElement: "$.header.Authorization"
+          replaceWith: "Bearer test-token-fixed"
+----
+
+[#_server_type_helm_chart]
+==== helmChart
+
+Installs or upgrades a Helm chart in a local or remote Kubernetes cluster.
+Tiger waits until all configured `healthcheckPods` are running before declaring the node ready.
+Port forwarding is set up via `exposedPorts` so that the test suite can access the services locally.
+
+NOTE: To use this server type the xref:tigerExtensions.adoc#_tiger_cloud_extension[tiger-cloud-extension] dependency must be added to the pom.
+
+.Nginx via Helm chart with port forwarding
+[source,yaml]
+----
+servers:
+  nginxService:
+    type: helmChart
+    startupTimeoutSec: 120
+    # MANDATORY repository from where to download the docker image
+    # if the helm chart is stored on the local file system that the
+    # workingDir should be set.
+    source:
+      - bitnami/nginx
+    # OPTIONAL version of the image
+    version: "15.0.0"
+    helmChartOptions:
+      context: my-kube-context        # kubectl context name
+      # OPTIONAL if no working directory is set the default . is used.
+      # if the helm chart is stored on the local file system the workingDir
+      # should be set.
+      workingdir:
+      # OPTIONAL override the POD_NAMESPACE environment variable if set.
+      # if not set, "default" will be used.
+      nameSpace: test
+      # MANDATORY pod name of the helm chart
+      podName: test-nginx
+      debug: false
+      # OPTIONAL should contain a list of pods for the health check, regex can be used.
+      healthcheckPods:
+        - test-nginx-.*               # regex of pods that must be running
+      # OPTIONAL contains a list that will be used for the port forwarding,
+      # if empty no port forwarding is done. The syntax is:
+      # <POD_NAME_OR_REGEX>,<LOCAL_PORT>:<FORWARDING_PORT>[,<LOCAL_PORT>:<FORWARDING_PORT>]*
+      exposedPorts:
+        - test-nginx.*,8080:80        # local:8080 → pod:80
+      # OPTIONAL contains a list of regex to identify the pods whose logs
+      # should be forwarded to the console and Tiger Workflow UI.
+      logPods:
+        - test-nginx.*
+      # OPTIONAL key-value pairs that will be used for starting the helm chart
+      values:
+        replicaCount: 1
+        service.type: ClusterIP
+----
+
+.Local Helm chart from the file system
+[source,yaml]
+----
+servers:
+  myChart:
+    type: helmChart
+    startupTimeoutSec: 180
+    source:
+      - ./helm/my-chart
+    helmChartOptions:
+      workingDir: ./helm
+      podName: my-chart-pod
+      nameSpace: default
+      healthcheckPods:
+        - my-chart-pod-.*
+      exposedPorts:
+        - my-chart-pod-.*,9000:8080
+----
+
+[#_server_type_httpbin]
+==== httpbin
+
+Starts a httpbin server.
+It provides a wide range of ready-to-use HTTP mock endpoints such as `/get`, `/post`, `/status/{code}`, `/headers`, `/delay/{n}` and many more.
+No external dependency or Docker is required.
+This type is ideal for quickly testing HTTP glue code steps without a real backend.
+
+.Minimal httpbin configuration
+[source,yaml]
+----
+servers:
+  httpbin:
+    type: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200
+----
+
+.httpbin reachable via tiger proxy under a fixed hostname
+[source,yaml]
+----
+servers:
+  httpbin:
+    type: httpbin
+    hostname: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200
+    exports:
+      - HTTPBIN_URL=http://httpbin
+----
+
+TIP: The `${free.port.0}` placeholder is automatically resolved to a free port on the local machine at startup.
+Use `${free.port.1}`, `${free.port.2}` etc. for additional ports.

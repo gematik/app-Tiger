@@ -86,20 +86,27 @@ fun convertConfigurationToDiagramModel(
     }
 
     // 4. Edges from local proxy to remote proxies (traffic endpoints) and docker containers (routes)
+    model += createTrafficEndpointEdges(config, resolvePlaceholders)
     if (config.localProxyActive) {
-        model += createTrafficEndpointEdges(config, resolvePlaceholders)
         model += createRouteToDockerEdges(config, resolvePlaceholders)
     }
+
+    // 4b. Edges from route nodes to compose services (by matching exposed host ports)
+    model += createRouteToComposeServiceEdges(config, model, resolvePlaceholders)
 
     // 5. Edges from route nodes to the servers they target (by serverPort match)
     model += createRouteToServerEdges(config, resolvePlaceholders)
 
-    // 6. Implicit edges from local proxy to servers that auto-register routes at runtime
-    //TODO: not sure if useful
-    //model += createImplicitProxyToServerEdges(config)
+    // 6. Direct reverse proxy edges (matching localhost targets to servers by port)
+    model += createDirectReverseProxyEdges(config, resolvePlaceholders)
 
     // 7. Zion backend request edges
     model += createZionBackendEdges(config, model, resolvePlaceholders)
+
+    model += createImplicitProxyToServerEdges(config)
+
+    // 8. Merge bidirectional edges (e.g. implicitRoute + usesProxy between same nodes)
+    model = mergeBidirectionalEdges(model)
 
     return model
 }

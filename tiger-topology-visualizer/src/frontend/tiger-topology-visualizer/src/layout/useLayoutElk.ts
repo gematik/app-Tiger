@@ -23,7 +23,7 @@ import ELK from "elkjs/lib/elk.bundled.js";
 import { type Edge, type Node, Position } from "@vue-flow/core";
 import type { ElkNode } from "elkjs/lib/elk-api";
 
-type ElkDirectionType = "RIGHT" | "LEFT" | "UP" | "DOWN";
+export type ElkDirectionType = "RIGHT" | "LEFT" | "UP" | "DOWN";
 type FlowNode = Node;
 type FlowEdge = Edge;
 
@@ -84,10 +84,16 @@ export async function layoutWithElk(
       "elk.algorithm": "layered",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
       "elk.direction": direction,
-      "elk.edgeRouting": "ORTHOGONAL",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "100",
-      "elk.spacing.nodeNode": "80",
-      "elk.spacing.edgeNode": "30",
+      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+      "elk.edgeRouting": "SPLINES",
+      "elk.layered.considerNodeAmongLayerConstraints": "true",
+      "elk.layered.crossingPenalty": "5000",
+      "elk.layered.unnecessaryBendPenalty": "1000",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "220",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "80",
+      "elk.spacing.nodeNode": "100",
+      "elk.spacing.edgeNode": "40",
+      "elk.spacing.edgeEdge": "30",
       "elk.padding": "[top=36,left=36,bottom=36,right=36]",
     },
     children: elkChildren,

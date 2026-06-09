@@ -67,6 +67,13 @@ public class TigerProxyConfiguration {
   @Builder.Default
   private float previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes = 5;
 
+  /**
+   * Number of NTP-style round-trips used to estimate the clock offset between this proxy and a
+   * remote proxy. The sample with the smallest round-trip time is selected. Set to 0 to disable
+   * clock-skew compensation.
+   */
+  @Builder.Default private int clockSyncSamples = 3;
+
   @Builder.Default private int stompClientBufferSizeInMb = 1;
   @Builder.Default private int perMessageBufferSizeInMb = 100;
   @Builder.Default private int rbelBufferSizeInMb = 1024;

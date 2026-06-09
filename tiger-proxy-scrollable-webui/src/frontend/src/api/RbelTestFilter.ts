@@ -23,6 +23,7 @@ import { type DeepReadonly, readonly, ref, type Ref } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useProxyController, type UseProxyControllerOptions } from "./ProxyController.ts";
 import type { TestFilterMessagesDto } from "./MessageTypes.ts";
+import type { MessageSortOrder } from "@/Settings.ts";
 import { ProxyError } from "@/api/ProxyRepository.ts";
 
 export interface UseRbelTestFilterReturn {
@@ -34,7 +35,10 @@ export interface UseRbelTestFilterReturn {
 
 export interface UseRbelTestFilterOptions extends UseProxyControllerOptions {}
 
-export function useRbelTestFilter(props: UseRbelTestFilterOptions): UseRbelTestFilterReturn {
+export function useRbelTestFilter(
+  sortOrder: Ref<MessageSortOrder>,
+  props: UseRbelTestFilterOptions,
+): UseRbelTestFilterReturn {
   const { testFilter } = useProxyController(props);
   const isLoading: Ref<boolean> = ref(false);
   const rbelTestResult: Ref<TestFilterMessagesDto | null> = ref(null);
@@ -46,7 +50,7 @@ export function useRbelTestFilter(props: UseRbelTestFilterOptions): UseRbelTestF
       abortController = new AbortController();
       isLoading.value = true;
       const result = await testFilter(
-        { rbelPath, signal: abortController.signal },
+        { rbelPath, sortOrder: sortOrder.value, signal: abortController.signal },
         { suppressError: true, propagateError: true },
       );
       if (result) {

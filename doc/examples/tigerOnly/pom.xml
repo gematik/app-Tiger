@@ -54,11 +54,6 @@
       <groupId>de.gematik.test</groupId>
       <artifactId>tiger-test-lib</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.cucumber</groupId>
-      <artifactId>cucumber-junit-platform-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   <!-- end::dependencies[] -->
 

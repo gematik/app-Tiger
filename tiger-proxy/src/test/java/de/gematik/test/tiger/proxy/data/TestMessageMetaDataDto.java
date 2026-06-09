@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
+import static de.gematik.test.tiger.util.TestConstants.LOCALHOST_REGEXP;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
@@ -54,7 +55,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("symbol", "fa-share")
         .hasFieldOrPropertyWithValue("color", "has-text-link")
         .hasFieldOrPropertyWithValue("sequenceNumber", 0L);
-    assertThat(requestMetaData.getSender()).matches("localhost:\\d*");
+    assertThat(requestMetaData.getSender()).matches(LOCALHOST_REGEXP + "\\d*");
 
     MessageMetaDataDto responseMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
@@ -64,7 +65,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("symbol", "fa-reply")
         .hasFieldOrPropertyWithValue("color", "text-success")
         .hasFieldOrPropertyWithValue("sequenceNumber", 1L);
-    assertThat(responseMetaData.getRecipient()).matches("localhost:\\d*");
+    assertThat(responseMetaData.getRecipient()).matches(LOCALHOST_REGEXP + "\\d*");
   }
 
   @Test

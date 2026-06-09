@@ -113,7 +113,7 @@ class VauModifierTest {
                         .rbelFile("src/test/resources/vauFlow.tgr")
                         .build()));
     rbelLogger.getRbelCapturer().initialize();
-    final RbelElement message = rbelLogger.getMessageList().get(4);
+    final RbelElement message = rbelLogger.getMessagesByOrder().get(4);
 
     rbelLogger
         .getRbelModifier()

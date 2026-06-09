@@ -1,0 +1,8 @@
+servers:
+  demo:
+    type: externalUrl
+    source:
+      - http://localhost:8080
+    healthcheckUrl: http://localhost:8080/service/status
+    # OPTIONAL
+    healthcheckReturnCode: 200
