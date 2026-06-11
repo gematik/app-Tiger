@@ -1282,7 +1282,7 @@ or
 assertThat(convertedMessage.findElement("$.header"))
     .get()
     .isSameAs(convertedMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
-----rent response at {tigerResolvedString} matches as XML and diff option
+----
 
 (The first example executes the RbelPath and returns a list of all matching elements; the second one returns an Optional containing a single result. If there are multiple matches, an exception is given.)
 
