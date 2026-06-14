@@ -41,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.opentest4j.TestAbortedException;
 import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
@@ -133,11 +134,15 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   public PcapReplayer readPcapReplay() {
-    pcapFile = Pcaps.openOffline(filename);
-    val myListener = new MyPacketListener(filterSrcPort, filterDstPort, toBeReplayedPackets);
-    pcapFile.setFilter("tcp", BpfCompileMode.OPTIMIZE);
-    pcapFile.loop(-1, myListener);
-    return this;
+    try {
+      pcapFile = Pcaps.openOffline(filename);
+      val myListener = new MyPacketListener(filterSrcPort, filterDstPort, toBeReplayedPackets);
+      pcapFile.setFilter("tcp", BpfCompileMode.OPTIMIZE);
+      pcapFile.loop(-1, myListener);
+      return this;
+    } catch (NoClassDefFoundError | UnsatisfiedLinkError e) {
+      throw new TestAbortedException("Skipping pcap replay because libpcap is not available on this machine.", e);
+    }
   }
 
   public static PcapReplayer writeReplay(List<TigerTestReplayPacket> toBeReplayedPackets) {
