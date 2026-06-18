@@ -26,35 +26,51 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.util.RbelContent;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.stream.IntStream;
 import lombok.val;
 
 public class RbelAuthorizationHeaderConverter extends RbelConverterPlugin {
-  private static final byte[] BEARER_TOKEN_PREFIX = "Bearer ".getBytes(StandardCharsets.UTF_8);
-  private static final byte[] DPOP_TOKEN_PREFIX = "DPoP ".getBytes(StandardCharsets.UTF_8);
-  private static final byte[] BASIC_PREFIX = "Basic ".getBytes(StandardCharsets.UTF_8);
+
+  private static final String BEARER_SCHEME = "Bearer";
+  private static final String DPOP_SCHEME = "DPoP";
+  private static final String BASIC_SCHEME = "Basic";
+
+  private static int getCredentialsOffset(String scheme) {
+    return scheme.length() + 1;
+  }
+
+  private static boolean startsWithAuthSchemeIgnoreCase(RbelContent content, String scheme) {
+    if (content.size() <= scheme.length() || content.get(scheme.length()) != ' ') {
+      return false;
+    }
+
+    return IntStream.range(0, scheme.length())
+        .allMatch(i -> equalsAsciiIgnoreCase(content.get(i), scheme.charAt(i)));
+  }
+
+  private static boolean equalsAsciiIgnoreCase(byte actual, char expected) {
+    return Character.toLowerCase((char) actual) == Character.toLowerCase(expected);
+  }
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
     var content = rbelElement.getContent();
-    if (content.startsWith(BEARER_TOKEN_PREFIX)) {
+    if (startsWithAuthSchemeIgnoreCase(content, BEARER_SCHEME)) {
       val bearerTokenElement =
-          RbelElement.create(
-              content.subArray(BEARER_TOKEN_PREFIX.length, content.size()), rbelElement);
+          RbelElement.create(content.subArray(getCredentialsOffset(BEARER_SCHEME), content.size()), rbelElement);
       rbelElement.addFacet(new RbelBearerTokenFacet(bearerTokenElement));
       converter.convertElement(bearerTokenElement);
-    } else if (content.startsWith(DPOP_TOKEN_PREFIX)) {
+    } else if (startsWithAuthSchemeIgnoreCase(content, DPOP_SCHEME)) {
       val dpopTokenElement =
-          RbelElement.create(
-              content.subArray(DPOP_TOKEN_PREFIX.length, content.size()), rbelElement);
+          RbelElement.create(content.subArray(getCredentialsOffset(DPOP_SCHEME), content.size()), rbelElement);
       rbelElement.addFacet(new RbelDpopTokenFacet(dpopTokenElement));
       converter.convertElement(dpopTokenElement);
-    } else if (content.startsWith(BASIC_PREFIX)) {
+    } else if (startsWithAuthSchemeIgnoreCase(content, BASIC_SCHEME)) {
       val cleartextContent =
           RbelContent.of(
               Base64.getDecoder()
-                  .decode(content.subArray(BASIC_PREFIX.length, content.size()).toByteArray()));
+                  .decode(content.subArray(getCredentialsOffset(BASIC_SCHEME), content.size()).toByteArray()));
       val colonPosition = cleartextContent.indexOf((byte) ':');
       if (colonPosition != -1) {
         val username = RbelElement.create(cleartextContent.subArray(0, colonPosition), rbelElement);
