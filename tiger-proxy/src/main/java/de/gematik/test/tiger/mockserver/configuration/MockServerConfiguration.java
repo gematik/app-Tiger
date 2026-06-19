@@ -96,7 +96,7 @@ public class MockServerConfiguration {
 
   // TLS
   private boolean rebuildServerTlsContext = false;
-  private String tlsProtocols = "TLSv1,TLSv1.1,TLSv1.2";
+  private String tlsProtocols = "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3";
   private KeyAndCertificateFactory serverKeyAndCertificateFactory = null;
   private KeyAndCertificateFactory clientKeyAndCertificateFactory = null;
   private Function<SslContextBuilder, SslContext> clientSslContextBuilderFunction = null;
