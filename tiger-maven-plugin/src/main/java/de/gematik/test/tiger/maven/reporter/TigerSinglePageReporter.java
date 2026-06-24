@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,13 @@ public class TigerSinglePageReporter implements TigerReporter {
   private Path generatedReport;
 
   public TigerSinglePageReporter(Path reportDirectory) {
+    this(reportDirectory, reportDirectory);
+  }
+
+  public TigerSinglePageReporter(Path sourceDirectory, Path outputDirectory) {
     reporter = new SinglePageHtmlReporter();
-    reporter.setSourceDirectory(reportDirectory);
-    reporter.setOutputDirectory(reportDirectory);
+    reporter.setSourceDirectory(sourceDirectory);
+    reporter.setOutputDirectory(outputDirectory);
   }
 
   @Override

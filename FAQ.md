@@ -24,7 +24,7 @@ Genauer geht es um folgenden Fehler:
 ```java
 Exception in thread 'main' java.lang.NoSuchMethodError: 'java.util.Set org.json.JSONObject.keySet()'
 ```
-    
+
 Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in der tiger-test-lib dependency aufgelöst werden:
 ```xml
 <exclusion>
@@ -36,7 +36,7 @@ Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in 
 ### FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen
 
 Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.
-Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!  
+Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!
 
 ### FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium
 
@@ -71,6 +71,33 @@ stage('Test') {
 }
 ```
 
+### FE03 Kann ich ein Docker-Image oder CANOPY ohne die tiger-cloud-extension starten?
+
+Ja. Seit Tiger 4.3 enthält `tiger-testenv-mgr` eingebaute Servertypen `docker` und `canopy` (Testcontainers-basiert, Single-Container-Scope). Für docker-compose-artige Multi-Service-Umgebungen oder Kubernetes/Helm bleibt `tiger-cloud-extension` die richtige Wahl; für Einzelimages und CANOPY-DNS-Interception reichen die In-Tree-Typen.
+
+```yaml
+servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+  myCanopy:
+    type: canopy
+    canopy:
+      image: gematik1/tiger-canopy-image:latest
+      # tigerProxyUrl, controlMode und dependsUpon werden aus myProxy auto-verdrahtet
+  app:
+    type: docker
+    docker:
+      image: my-org/my-app:1.2.3
+      exposedPorts: [8080]
+      # dnsServers wird mit der Canopy-IP vorne ergänzt; Opt-out via injectDns: false
+      waitStrategy: { kind: HTTP, httpPath: /health, timeoutSeconds: 60 }
+```
+
+Vollständiges Schema und veröffentlichte Platzhalter siehe Abschnitt "Built-in container server types" im `tiger-testenv-mgr`-Benutzerhandbuch.
+
 ## Workflow UI
 
 ### FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)
@@ -84,7 +111,7 @@ Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet wor
 ## Other topics
 
 ### FO01 How can I change the logging levels of loggers used by Tiger
-Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level. 
+Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level.
 
 ```yaml
 logging:
@@ -125,4 +152,3 @@ TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
 ```
-

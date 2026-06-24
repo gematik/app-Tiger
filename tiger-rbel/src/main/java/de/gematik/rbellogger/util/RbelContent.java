@@ -96,6 +96,8 @@ public abstract class RbelContent {
 
   public abstract boolean endsTrimmedWith(byte[] lastNonBlankBytes);
 
+  public abstract boolean startsWithIgnoreCase(byte[] firstBytes, Charset charset);
+
   public abstract boolean startsTrimmedWithIgnoreCase(byte[] firstNonBlankBytes, Charset charset);
 
   public abstract boolean endsTrimmedWithIgnoreCase(byte[] lastNonBlankBytes, Charset charset);
@@ -104,8 +106,8 @@ public abstract class RbelContent {
 
   public abstract int getChunkSize();
 
-  public RbelContentBase getBaseContent() {
-    return (RbelContentBase) this;
+  public RbelContent getBaseContent() {
+    return this;
   }
 
   public abstract List<RbelContent> split(byte[] delimiter);

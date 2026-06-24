@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,15 @@ public class TigerHtmlReporter implements TigerReporter {
   private TestResult testResult;
 
   public TigerHtmlReporter(Path reportDirectory, Path requirementsBaseDir) {
+    this(reportDirectory, reportDirectory, requirementsBaseDir);
+  }
+
+  public TigerHtmlReporter(Path sourceDirectory, Path outputDirectory, Path requirementsBaseDir) {
     reporter =
         new HtmlAggregateStoryReporter(
             "default", new FileSystemRequirements(requirementsBaseDir.toString()));
-    reporter.setSourceDirectory(reportDirectory.toFile());
-    reporter.setOutputDirectory(reportDirectory.toFile());
+    reporter.setSourceDirectory(sourceDirectory.toFile());
+    reporter.setOutputDirectory(outputDirectory.toFile());
     reporter.setGenerateTestOutcomeReports();
   }
 

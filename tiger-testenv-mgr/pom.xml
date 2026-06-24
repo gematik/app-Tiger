@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.3.1</version>
+    <version>4.3.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-testenv-mgr</artifactId>
@@ -46,6 +46,10 @@
     <dependency>
       <groupId>de.gematik.test</groupId>
       <artifactId>tiger-proxy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
     </dependency>
     <dependency>
       <groupId>de.gematik.test</groupId>
@@ -119,6 +123,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>de.gematik.test</groupId>
       <artifactId>tiger-httpbin</artifactId>
       <classifier>jar-with-dependencies</classifier>
@@ -147,7 +161,7 @@
     <dependency>
       <groupId>org.glassfish.tyrus.bundles</groupId>
       <artifactId>tyrus-standalone-client</artifactId>
-      <version>2.1.4</version>
+      <version>2.2.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -189,7 +203,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.9.0</version>
+        <version>3.10.0</version>
         <configuration>
           <artifactItems>
             <artifactItem>
@@ -352,7 +366,7 @@
       <plugin>
         <groupId>org.openapitools</groupId>
         <artifactId>openapi-generator-maven-plugin</artifactId>
-        <version>7.19.0</version>
+        <version>7.22.0</version>
         <executions>
           <execution>
             <id>generate java code</id>
@@ -361,17 +375,17 @@
             </goals>
             <configuration>
               <!-- TODO: the most correct way would be to refer the project.basedir, but a bug in the
-                            swagger-parser can't handle the 'C:' present in windows paths.
-                            Using ${project.baseUri} works in resolving the file, but the generated code creates duplicated
-                            classes for $refs even though they refer to the same class
-                            The direct path tiger-testenv-mgr should work but requires the generation always to be started from the
-                            root project.
+                                                                      swagger-parser can't handle the 'C:' present in windows paths.
+                                                                      Using ${project.baseUri} works in resolving the file, but the generated code creates duplicated
+                                                                      classes for $refs even though they refer to the same class
+                                                                      The direct path tiger-testenv-mgr should work but requires the generation always to be started from the
+                                                                      root project.
 
-                            Follow up on one of these tickets to see if the issue is resolved:
-                            https://github.com/swagger-api/swagger-parser/issues/2136
-                            https://github.com/swagger-api/swagger-parser/pull/2105
+                                                                      Follow up on one of these tickets to see if the issue is resolved:
+                                                                      https://github.com/swagger-api/swagger-parser/issues/2136
+                                                                      https://github.com/swagger-api/swagger-parser/pull/2105
 
-                            -->
+                                                                      -->
               <!--<inputSpec>${project.baseUri}/src/main/resources/tiger-management-api.yaml</inputSpec>-->
               <inputSpec>tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml</inputSpec>
               <generatorName>spring</generatorName>
@@ -404,10 +418,46 @@
                 <headerAttributes>false</headerAttributes>
                 <useIntroduction>true</useIntroduction>
                 <!-- I don't know why the option is default to false, since examples are not supported by the asciidoc generator.
-                                 see https://openapi-generator.tech/docs/generators/asciidoc/#global-feature -->
+                                                                                 see https://openapi-generator.tech/docs/generators/asciidoc/#global-feature -->
                 <skipExamples>true</skipExamples>
               </configOptions>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.github.victools</groupId>
+        <artifactId>jsonschema-maven-plugin</artifactId>
+        <version>4.38.0</version>
+        <configuration>
+          <classNames>
+            <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>
+          </classNames>
+          <schemaVersion>DRAFT_2020_12</schemaVersion>
+          <schemaFileName>{0}.json</schemaFileName>
+          <schemaFilePath>target/schemas</schemaFilePath>
+          <options>
+            <enabled>
+              <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
+              <option>NULLABLE_FIELDS_BY_DEFAULT</option>
+              <option>INLINE_ALL_SCHEMAS</option>
+              <option>MAP_VALUES_AS_ADDITIONAL_PROPERTIES</option>
+            </enabled>
+          </options>
+          <modules>
+            <module>
+              <name>Jackson</name>
+              <options>
+                <option>FLATTENED_ENUMS_FROM_JSONVALUE</option>
+              </options>
+            </module>
+          </modules>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>

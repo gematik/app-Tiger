@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.common;
+package de.gematik.test.tiger.testenvmgr.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,7 +66,7 @@ class ConfigurationSchemaTest {
   @Test
   void testValidTestenvMgrConfigs() throws Exception {
     final Schema jsonSchema = loadSchema();
-    final Path testenvMgrPath = Paths.get("../tiger-testenv-mgr/src/test/resources");
+    final Path testenvMgrPath = Paths.get("src/test/resources");
     final Set<Path> configsInTestenvMgr =
         Files.walk(testenvMgrPath)
             .filter(path -> path.getFileName().toString().endsWith(".yaml"))

@@ -1,5 +1,65 @@
 # Changelog Tiger Test platform
 
+# Release 4.3.2
+
+## Dependencies
+
+* Multiple dependency updates. (TGR-2169)
+
+## Features
+
+* TGR-1403: CANOPY — programmable DNS interception for test environments
+
+  New optional module **`tiger-canopy-extension`** adds a `canopy` server type for
+  `tiger.yaml`: a programmable DNS server that reroutes selected hostnames to a sibling
+  `tigerProxy` and forwards everything else to the system resolver. Replaces brittle, static
+  Docker network aliases with runtime-configurable interception.
+
+  Highlights:
+
+  * **`canopy` and `docker` server types** with sensible auto-wiring — `tigerProxyUrl`,
+    `controlMode`, `dependsUpon` and DNS handoff are derived from the env, explicit YAML wins.
+  * **Per-host `tigerProxyUrl` override** on `canopy.proxiedHosts[]` — one canopy can fan DNS
+    (and routes) out to several reverse proxies (HTTP / POP3 / SMTP …).
+  * **`tigerProxy` placeholders** `${<id>.adminUrl}` and `${<id>.proxyUrl}` for cross-server
+    reuse.
+  * **Cucumber glue auto-discovered** — runners that use `TigerCucumberRunner` need no config
+    change. Suites that hard-code `cucumber.glue` add
+    `de.gematik.test.tiger.canopy.extension.glue` to their list.
+
+  Users of `tiger-starter-parent` get the extension automatically. Direct consumers add:
+
+  ```xml
+  <dependency>
+    <groupId>de.gematik.test</groupId>
+    <artifactId>tiger-canopy-extension</artifactId>
+    <version>${tiger.version}</version>
+  </dependency>
+  ```
+
+  Full configuration surface, examples and opt-outs: `doc/user_manual/tigerExtensions.adoc`
+  (short overview), `doc/adr/canopy.md` (architecture, multi-proxy fan-out, YAML schema),
+  `tiger-canopy/README.md` (REST API and standalone-image config). FAQ entry FE03.
+* TGR-2114: A new configuration flag `tiger.lib.createIntermediateReports` enables continuous Serenity HTML report generation after each feature file completes. This lets you monitor test progress while the suite is still running.
+
+  Enable it in your `tiger.yaml`:
+
+  ```yaml
+  lib:
+    createIntermediateReports: true
+  ```
+* TGR-2170: Parse HTTP Authorization scheme (Bearer, DPoP, Basic) case-insensitive.
+
+## Bugfixes
+
+* TGR-1572: Release notes for releases on GitHub added.
+* TGR-1874: Run UiTest pipeline when UI module has changed.
+* TGR-2131: Documentation regarding the swagger API of tiger proxy to user manual added.
+* TGR-2163: Repaired broken user manual and fixed version in tigerOnly pom.
+* TGR-2166: Ensure aligned junit versions to avoid conflicts.
+* TGR-2171: Exchange eclipse-temurin:21-jre-alpine with gematik1/osadl-alpine-openjdk21-jre.
+
+
 # Release 4.3.0
 
 ## Breaking Changes

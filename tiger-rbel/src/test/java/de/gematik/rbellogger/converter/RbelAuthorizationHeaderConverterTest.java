@@ -41,7 +41,8 @@ class RbelAuthorizationHeaderConverterTest {
   void shouldFindJwtInBearerHeaderAttributer() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
-            "src/test/resources/sampleMessages/bearerToken.curl");
+                "src/test/resources/sampleMessages/bearerToken.curl")
+            .replace("Authorization: Bearer ", "Authorization: bEarer ");
 
     final RbelLogger logger = RbelLogger.build();
     final RbelElement convertedMessage =
@@ -72,7 +73,8 @@ class RbelAuthorizationHeaderConverterTest {
     assertThat(renderingOutput)
         .contains("Carvalho")
         .contains("https://idp.zentral.idp.splitdns.ti-dienste.de");
-    FileUtils.writeStringToFile(new File("target/bearerToken.html"), renderingOutput);
+    FileUtils.writeStringToFile(
+        new File("target/bearerToken.html"), renderingOutput, StandardCharsets.UTF_8);
   }
 
   @Test
@@ -80,7 +82,7 @@ class RbelAuthorizationHeaderConverterTest {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
                 "src/test/resources/sampleMessages/bearerToken.curl")
-            .replace("Authorization: Bearer ", "Authorization: DPoP ");
+            .replace("Authorization: Bearer ", "Authorization: dpoP ");
 
     final RbelLogger logger = RbelLogger.build();
     final RbelElement convertedMessage =
@@ -99,7 +101,7 @@ class RbelAuthorizationHeaderConverterTest {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
                 "src/test/resources/sampleMessages/bearerToken.curl")
-            .replaceFirst("Bearer .*", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==");
+            .replaceFirst("Bearer .*", "bAsic QWxhZGRpbjpvcGVuIHNlc2FtZQ==");
 
     final RbelLogger logger = RbelLogger.build();
     final RbelElement convertedMessage =

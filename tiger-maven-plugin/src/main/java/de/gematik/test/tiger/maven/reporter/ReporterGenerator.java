@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,19 +32,45 @@ public class ReporterGenerator {
   List<TigerReporter> activeReporters = new ArrayList<>();
   Log log;
 
+  /**
+   * Creates a ReporterGenerator where the source and output directories are the same.
+   *
+   * @param reportTypes the report types to generate (html, single-page-html, json-summary)
+   * @param reportDirectory the directory to read JSON outcomes from and write reports to
+   * @param requirementsBaseDir the base directory for feature file requirements
+   * @param log the Maven log
+   */
   public ReporterGenerator(
       List<String> reportTypes, Path reportDirectory, Path requirementsBaseDir, Log log) {
+    this(reportTypes, reportDirectory, reportDirectory, requirementsBaseDir, log);
+  }
+
+  /**
+   * Creates a ReporterGenerator with separate source and output directories.
+   *
+   * @param reportTypes the report types to generate (html, single-page-html, json-summary)
+   * @param sourceDirectory the directory to read JSON outcome files from
+   * @param outputDirectory the directory to write generated reports to
+   * @param requirementsBaseDir the base directory for feature file requirements
+   * @param log the Maven log
+   */
+  public ReporterGenerator(
+      List<String> reportTypes,
+      Path sourceDirectory,
+      Path outputDirectory,
+      Path requirementsBaseDir,
+      Log log) {
     this.log = log;
     if (reportTypes.contains("html")) {
-      htmlReporter = new TigerHtmlReporter(reportDirectory, requirementsBaseDir);
+      htmlReporter = new TigerHtmlReporter(sourceDirectory, outputDirectory, requirementsBaseDir);
       activeReporters.add(htmlReporter);
     }
     if (reportTypes.contains("single-page-html")) {
-      singlePageReporter = new TigerSinglePageReporter(reportDirectory);
+      singlePageReporter = new TigerSinglePageReporter(sourceDirectory, outputDirectory);
       activeReporters.add(singlePageReporter);
     }
     if (reportTypes.contains("json-summary")) {
-      jsonReporter = new TigerJsonReporter(reportDirectory);
+      jsonReporter = new TigerJsonReporter(sourceDirectory, outputDirectory);
       activeReporters.add(jsonReporter);
     }
   }

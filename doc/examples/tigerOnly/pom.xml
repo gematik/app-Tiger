@@ -33,7 +33,7 @@
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-    <version.tiger>4.2.7</version.tiger>
+    <version.tiger>4.3.2</version.tiger>
   </properties>
 
   <dependencyManagement>

@@ -50,6 +50,13 @@ lib:
     # Flag whether to create the RBEL HTML reports during
     # a testsuite run, activated by default
     createRbelHtmlReports: true
+    # Flag whether to generate intermediate Serenity HTML reports
+    # after each feature file completes. This allows you to view
+    # test progress while the suite is still running.
+    # The report is written to target/site/serenity/index.html
+    # and a machine-readable progress.json is placed alongside it.
+    # Deactivated by default.
+    createIntermediateReports: false
     # maximum amount of seconds to wait / pause execution via pop up in the workflow ui, default is 5 hours.
     pauseExecutionTimeoutSeconds: 18000
     # Customize your Rbel-Logs with your own logo. Must be PNG format.
@@ -78,6 +85,22 @@ logging:
     de.gematik.test.tiger.proxy: TRACE
     # activate tracing for the local tiger proxy. This logger has a special name due to its importance in the tiger test framework
     localTigerProxy: TRACE
+----
+
+=== Intermediate Serenity Reports
+
+By default, Serenity HTML reports are only generated at the end of a test suite run.
+If you want to monitor test progress while the suite is still running you can enable intermediate report generation.
+When activated, the Serenity HTML report is regenerated after each feature file completes and written to `target/site/serenity/index.html`.
+
+A machine-readable `progress.json` file containing status information (completed features, pass/fail counts, timing estimates) is placed alongside it.
+
+To enable this feature, add the following to your `tiger.yaml`:
+
+[source,yaml]
+----
+lib:
+  createIntermediateReports: true
 ----
 
 === Registering Lifecycle Callbacks

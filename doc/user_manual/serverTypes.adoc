@@ -29,6 +29,9 @@ For this to work, you must either be able to force a proxy on the nodes or xref:
 
 | `httpbin`
 | Starts a built-in httpbin server with standard HTTP mock endpoints. Useful for quick HTTP step testing without a real backend.
+
+| `canopy`
+| Starts a DNS server that dynamically reroutes selected hostnames to the Tiger proxy. Enables runtime routing changes without environment restart.
 |===
 
 [#_server_type_external_jar]
@@ -414,3 +417,108 @@ servers:
 
 TIP: The `${free.port.0}` placeholder is automatically resolved to a free port on the local machine at startup.
 Use `${free.port.1}`, `${free.port.2}` etc. for additional ports.
+
+[#_server_type_canopy]
+==== canopy
+
+Starts a CANOPY DNS server that dynamically intercepts and reroutes selected hostnames to the Tiger proxy.
+Instead of static Docker network configurations, CANOPY enables runtime routing changes via REST API or Cucumber steps, so test scenarios can swap routing without restarting the environment.
+
+The server is available as a Docker image (`gematik1/tiger-canopy-image:latest`).
+When used standalone (docker-compose only), no tiger-canopy-extension dependency is required.
+For Tiger integration with auto-wiring and DNS injection features, ensure `tiger-canopy-extension` is on the classpath.
+
+When configured with a unique sibling `tigerProxy` server, CANOPY auto-wires the proxy URL and enables Dynamic-Route mode (automatic route registration with the proxy).
+The DNS address is automatically injected into sibling Docker containers for transparent hostname interception.
+
+Published placeholders (available for use in other server configurations):
+- `${<serverId>.baseUrl}` — REST API URL (e.g., `http://canopy:8080`)
+- `${<serverId>.dnsAddress}` — DNS server address (container-network IP or localhost)
+- `${<serverId>.dnsPort}` — DNS port (default 53)
+- `${<serverId>.containerName}` — Container ID/name
+
+For comprehensive documentation, configuration reference, troubleshooting, and examples, see the
+xref:../../tiger-canopy/doc/CANOPY-USER-GUIDE.md[Canopy User Guide].
+
+.Simple Canopy setup with auto-wiring to a sibling Tiger proxy
+[source,yaml]
+----
+servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  myCanopy:
+    type: canopy
+    canopy:
+      # tigerProxyUrl is auto-wired to ${myProxy.adminUrl}
+      # controlMode is auto-set to ROUTE_PER_HOST
+      proxiedHosts:
+        - { host: api.example.com, matchType: EXACT }
+        - { host: example.org,     matchType: SUFFIX }
+
+  testApp:
+    type: docker
+    docker:
+      image: my-app:latest
+      exposedPorts: [8080]
+    # DNS is automatically injected; app resolves api.example.com through Canopy
+----
+
+.Multi-proxy setup with per-host overrides
+[source,yaml]
+----
+servers:
+  httpProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  pop3Proxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9100
+      proxyPort: 9110
+
+  myCanopy:
+    type: canopy
+    canopy:
+      tigerProxyUrl: ${httpProxy.adminUrl}        # default proxy
+      proxiedHosts:
+        - { host: api.example.com }               # → httpProxy
+        - { host: pop3.example.com,
+            tigerProxyUrl: ${pop3Proxy.adminUrl} } # → pop3Proxy
+----
+
+.Controlling DNS-Only vs Dynamic-Route modes
+[source,yaml]
+----
+servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  dnsOnlyCanopy:
+    type: canopy
+    canopy:
+      # DNS-Only Mode: DNS rewriting only, proxy configured separately
+      controlMode: NONE
+      tigerProxyUrl: http://my-external-proxy:9090/
+      proxiedHosts:
+        - { host: example.com }
+
+  dynamicRouteCanopy:
+    type: canopy
+    canopy:
+      # Dynamic-Route Mode: Canopy registers routes with proxy automatically
+      controlMode: ROUTE_PER_HOST
+      # tigerProxyUrl auto-wired to ${myProxy.adminUrl} if not set
+      proxiedHosts:
+        - { host: api.example.com }
+----
+

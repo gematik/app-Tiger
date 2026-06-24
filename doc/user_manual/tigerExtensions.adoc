@@ -57,3 +57,12 @@ This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.g
 
 The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.
 This internal gematik extension can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension.
+
+=== Tiger Canopy Extension
+
+The Tiger-Canopy-Extension adds a `canopy` server type to `tiger.yaml`: a programmable DNS
+server that reroutes selected hostnames to a sibling `tigerProxy` and forwards everything
+else to the system resolver — replacing brittle, static Docker network aliases.
+Bundled by default in `tiger-starter-parent`; otherwise pull in `de.gematik.test:tiger-canopy-extension`.
+Architecture and full YAML surface: `doc/adr/canopy.md`.
+

@@ -35,22 +35,26 @@ public class RbelAuthorizationHeaderConverter extends RbelConverterPlugin {
   private static final byte[] DPOP_TOKEN_PREFIX = "DPoP ".getBytes(StandardCharsets.UTF_8);
   private static final byte[] BASIC_PREFIX = "Basic ".getBytes(StandardCharsets.UTF_8);
 
+  private static boolean startsWithAuthSchemeIgnoreCase(RbelContent content, byte[] scheme) {
+    return content.startsWithIgnoreCase(scheme, StandardCharsets.UTF_8);
+  }
+
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
     var content = rbelElement.getContent();
-    if (content.startsWith(BEARER_TOKEN_PREFIX)) {
+    if (startsWithAuthSchemeIgnoreCase(content, BEARER_TOKEN_PREFIX)) {
       val bearerTokenElement =
           RbelElement.create(
               content.subArray(BEARER_TOKEN_PREFIX.length, content.size()), rbelElement);
       rbelElement.addFacet(new RbelBearerTokenFacet(bearerTokenElement));
       converter.convertElement(bearerTokenElement);
-    } else if (content.startsWith(DPOP_TOKEN_PREFIX)) {
+    } else if (startsWithAuthSchemeIgnoreCase(content, DPOP_TOKEN_PREFIX)) {
       val dpopTokenElement =
           RbelElement.create(
               content.subArray(DPOP_TOKEN_PREFIX.length, content.size()), rbelElement);
       rbelElement.addFacet(new RbelDpopTokenFacet(dpopTokenElement));
       converter.convertElement(dpopTokenElement);
-    } else if (content.startsWith(BASIC_PREFIX)) {
+    } else if (startsWithAuthSchemeIgnoreCase(content, BASIC_PREFIX)) {
       val cleartextContent =
           RbelContent.of(
               Base64.getDecoder()
