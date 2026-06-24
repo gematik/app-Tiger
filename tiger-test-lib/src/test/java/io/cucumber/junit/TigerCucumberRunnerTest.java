@@ -48,18 +48,41 @@ class TigerCucumberRunnerTest {
         .containsExactly(
             "--plugin",
             "pretty",
-            "--glue",
+            TigerCucumberRunner.GLUE_OPTION,
             "a",
-            "--glue",
+            TigerCucumberRunner.GLUE_OPTION,
             "b",
-            "--glue",
+            TigerCucumberRunner.GLUE_OPTION,
             "c",
             "classpath:features");
   }
 
   @Test
   void parseCommandLineOptions_convertsTigerGluesIntoCucumberGlueConfiguration() {
-    assertThat(TigerCucumberRunner.parseCommandLineOptions(new String[] {"--tiger.glues", "a,b,c"}))
-        .containsEntry(GLUE_PROPERTY_NAME, "classpath:/a,classpath:/b,classpath:/c");
+    String glue =
+        TigerCucumberRunner.parseCommandLineOptions(new String[] {"--tiger.glues", "a,b,c"})
+            .get(GLUE_PROPERTY_NAME);
+    assertThat(glue).contains("classpath:/a", "classpath:/b", "classpath:/c");
+  }
+
+  @Test
+  void appendAutoDiscoveredGlues_addsTigerGluePackageScanResult() {
+    String[] augmented = TigerCucumberRunner.appendAutoDiscoveredGlues(new String[0]);
+    assertThat(augmented)
+        .as("must add --glue <pkg> for the scanned fixture package")
+        .contains(TigerCucumberRunner.GLUE_OPTION, "de.gematik.test.tiger.lib.glue.testfixture");
+  }
+
+  @Test
+  void appendAutoDiscoveredGlues_isIdempotent_whenUserAlreadyListedPackage() {
+    String[] userInput = {
+      TigerCucumberRunner.GLUE_OPTION, "de.gematik.test.tiger.lib.glue.testfixture"
+    };
+    String[] augmented = TigerCucumberRunner.appendAutoDiscoveredGlues(userInput);
+    long count =
+        java.util.Arrays.stream(augmented)
+            .filter("de.gematik.test.tiger.lib.glue.testfixture"::equals)
+            .count();
+    assertThat(count).isEqualTo(1L);
   }
 }

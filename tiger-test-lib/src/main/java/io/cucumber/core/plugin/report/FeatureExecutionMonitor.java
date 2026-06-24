@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import io.cucumber.plugin.event.TestCaseStarted;
 import java.net.URI;
 import java.util.Optional;
+import java.util.function.Consumer;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -35,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 public class FeatureExecutionMonitor {
 
   private URI currentFeatureFile;
+
+  @Setter private Consumer<URI> onFeatureCompleted;
 
   /**
    * This method is called at the start of the test run. It initializes the currentFeatureFile to
@@ -55,22 +59,37 @@ public class FeatureExecutionMonitor {
   }
 
   /**
-   * This method is called at the start of each test case. It updates the currentFeatureFile to the
-   * URI of the feature file of the currently executing test case. If a new feature file starts
-   * executing, it clears the test variables.
-   *
-   * @param testCaseStartedEvent The event triggered at the start of a test case.
+   * Called at the start of each test case. Updates {@code currentFeatureFile}. If a different
+   * feature file starts and its predecessor's completion has not yet been signaled (fallback path
+   * when pickle counts were unknown), the completion is fired here.
    */
   public void startTestCase(TestCaseStarted testCaseStartedEvent) {
+    URI newUri = testCaseStartedEvent.getTestCase().getUri();
     getCurrentFeatureFile()
-        .filter(featureFile -> !featureFile.equals(testCaseStartedEvent.getTestCase().getUri()))
-        .ifPresent(featureFile -> TigerGlobalConfiguration.clearTestVariables());
+        .filter(featureFile -> !featureFile.equals(newUri))
+        .ifPresent(
+            previous -> {
+              TigerGlobalConfiguration.clearTestVariables();
+            });
 
-    currentFeatureFile = testCaseStartedEvent.getTestCase().getUri();
+    currentFeatureFile = newUri;
   }
 
   /** This method is called at the end of the test run. It clears the test variables. */
   public void stopTestRun() {
+    if (currentFeatureFile != null) {
+      notifyFeatureCompleted(currentFeatureFile);
+    }
     TigerGlobalConfiguration.clearTestVariables();
+  }
+
+  private void notifyFeatureCompleted(URI completedFeatureFile) {
+    if (onFeatureCompleted != null) {
+      try {
+        onFeatureCompleted.accept(completedFeatureFile);
+      } catch (Exception e) {
+        log.warn("Error in onFeatureCompleted callback for {}", completedFeatureFile, e);
+      }
+    }
   }
 }

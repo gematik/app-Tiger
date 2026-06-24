@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.3.1</version>
+    <version>4.3.2</version>
   </parent>
 
   <artifactId>tiger-common</artifactId>
@@ -179,42 +179,6 @@
               <sourceDirectory>src/main/java</sourceDirectory>
               <outputDirectory>${project.build.directory}/delombok</outputDirectory>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.github.victools</groupId>
-        <artifactId>jsonschema-maven-plugin</artifactId>
-        <version>5.0.0</version>
-        <configuration>
-          <classNames>
-            <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>
-          </classNames>
-          <schemaVersion>DRAFT_2020_12</schemaVersion>
-          <schemaFileName>{0}.json</schemaFileName>
-          <schemaFilePath>target/schemas</schemaFilePath>
-          <options>
-            <enabled>
-              <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
-              <option>NULLABLE_FIELDS_BY_DEFAULT</option>
-              <option>INLINE_ALL_SCHEMAS</option>
-              <option>MAP_VALUES_AS_ADDITIONAL_PROPERTIES</option>
-            </enabled>
-          </options>
-          <modules>
-            <module>
-              <name>Jackson</name>
-              <options>
-                <option>FLATTENED_ENUMS_FROM_JSONVALUE</option>
-              </options>
-            </module>
-          </modules>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>generate</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>

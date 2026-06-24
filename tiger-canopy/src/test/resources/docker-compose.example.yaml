@@ -1,0 +1,112 @@
+# Example docker-compose for the CANOPY DNS server.
+#
+# `app-container` uses the dedicated `dns_net` network and is configured to dynamically
+# discover CANOPY's IP at startup. CANOPY itself rewrites the listed hostnames to the
+# Tiger proxy address (TIGER_PROXY_URL) and forwards every other query upstream.
+#
+# Bring up:
+#   docker compose -f docker-compose.example.yaml up
+# Verify resolution from the app container:
+#   docker compose exec app-container nslookup api.example.com
+# Add a host at runtime:
+#   curl -X POST http://localhost:8080/api/v1/proxied-hosts \
+#        -H 'Content-Type: application/json' \
+#        -d '{"host":"login.example.com","matchType":"EXACT"}'
+#
+# Configuration options (pick one — all three are equivalent):
+#
+#   1. SPRING_APPLICATION_JSON (used below) — one env var carrying the full
+#      nested structure as JSON; Spring Boot parses it natively into the
+#      environment. Closest thing to "YAML-like" in env-var land.
+#
+#   2. Indexed env vars — flat OS env vars, one per leaf field. Verbose but
+#      portable; Spring Boot encodes list elements with an index segment:
+#
+#        environment:
+#          CANOPY_DNS_PORT: "53"
+#          TIGER_PROXY_URL: "http://tiger-proxy:9090/"
+#          CANOPY_CONTROL_MODE: "NONE"
+#          CANOPY_PROXIEDHOSTS_0_HOST: "api.example.com"
+#          CANOPY_PROXIEDHOSTS_0_MATCHTYPE: "EXACT"
+#          CANOPY_PROXIEDHOSTS_1_HOST: "example.com"
+#          CANOPY_PROXIEDHOSTS_1_MATCHTYPE: "SUFFIX"
+#
+#   3. Mounted config file (recommended for non-trivial setups):
+#
+#        volumes:
+#          - ./canopy-overrides.yaml:/app/config/application.yaml:ro
+#        environment:
+#          SPRING_CONFIG_ADDITIONAL_LOCATION: "/app/config/"
+#
+#      with a sibling `canopy-overrides.yaml`:
+#
+#        canopy:
+#          tigerProxyUrl: http://tiger-proxy:9090/
+#          controlMode: NONE
+#          proxiedHosts:
+#            - { host: api.example.com, matchType: EXACT }
+#            - { host: example.com,     matchType: SUFFIX }
+
+version: '2.4'
+
+services:
+  canopy:
+    image: gematik1/tiger-canopy-image:latest
+    container_name: tiger-canopy
+    networks:
+      - dns_net
+    ports:
+      # REST API on the host so curl/test suites can reach it.
+      - "8080:8080"
+    environment:
+      # All CANOPY configuration in one place via SPRING_APPLICATION_JSON —
+      # Spring Boot parses this JSON blob natively into the environment,
+      # preserving full nested structure. Alternatives (indexed env vars,
+      # mounted YAML file) are documented in the file header.
+      SPRING_APPLICATION_JSON: |
+        {
+          "canopy": {
+            "dnsPort": 53,
+            "tigerProxyUrl": "http://tiger-proxy:9090/",
+            "controlMode": "NONE",
+            "proxiedHosts": [
+              {"host": "api.example.com", "matchType": "EXACT"},
+              {"host": "example.com",     "matchType": "SUFFIX"}
+            ]
+          }
+        }
+
+  # Helper that resolves canopy and writes a shared resolv.conf clients mount.
+  resolv-writer:
+    image: alpine:3
+    command: [ "sh", "-c", "for i in $(seq 1 30); do IP=$(getent hosts canopy | awk '{print $1}') && [ -n \"$IP\" ] && break; sleep 1; done; \
+      if [ -z \"$IP\" ]; then echo 'ERROR: could not resolve canopy' >&2; exit 1; fi; \
+      cat > /dns/resolv.conf <<EOF\n+nameserver $IP\nnameserver 127.0.0.11\n+EOF\n+      tail -f /dev/null" ]
+    networks:
+      - dns_net
+    depends_on:
+      - canopy
+    volumes:
+      - ./dns:/dns
+    healthcheck:
+      test: [ "CMD-SHELL","[ -s /dns/resolv.conf ] && grep -q nameserver /dns/resolv.conf || exit 1" ]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  app-container:
+    image: nginx
+    container_name: app-container
+    networks:
+      - dns_net
+    # Mount the shared resolv.conf produced by resolv-writer. Clients will
+    # only start after the writer is healthy (Compose v2.4 condition).
+    volumes:
+      - ./dns/resolv.conf:/etc/resolv.conf:ro
+    depends_on:
+      resolv-writer:
+        condition: service_healthy
+
+networks:
+  dns_net:
+    driver: bridge

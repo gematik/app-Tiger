@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ public class TigerLibConfig {
   @Builder.Default public int workflowUiStartTimeoutInSeconds = 120;
   @Builder.Default public boolean createRbelHtmlReports = true;
   @Builder.Default public boolean createRbelModificationReports = true;
+  @Builder.Default public boolean createIntermediateReports = false;
+  @Builder.Default public int intermediateReportSearchDepth = 3;
   @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;
   @Builder.Default public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
   @Builder.Default private boolean trafficVisualization = false;

@@ -38,7 +38,7 @@ This is less of a problem with a reverse proxy since it is technically not a man
 
 The tiger proxy is a proxy server.
 It comes in two flavors: tiger proxy and Tiger Standalone Proxy.
-The standalone tiger proxy is started from a JAR file.
+
 The test environment manager boots the main tiger proxy (so-called local tiger proxy) and also any additional ones (remote tiger proxy, not standalone).
 
 The local tiger proxy has the following configuration properties in the tiger.yaml:
@@ -1493,23 +1493,44 @@ RbelElementTreePrinter.builder()
     .execute();
 ----
 
-=== Running tiger proxy as standalone JAR
+[#_standalone_proxy]
+=== Tiger Standalone Proxy
 
-If you only want to run a tiger proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups).
-A spring boot executable JAR is available via https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy[maven central].
+The Tiger Standalone Proxy repackages the Tiger Proxy as a self-contained, runnable Spring Boot JAR and as a Docker image.
+It is the recommended way to run a Tiger Proxy outside of a Tiger test suite — for example as a permanently running traffic recorder, as part of a mesh setup, or as a sidecar container.
 
-Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager.
-All properties can be used the same way as described in xref:tigerProxy.adoc#_tiger_proxy[this chapter].
-There is, however, one additional property for the standalone proxy specifically:
+All configuration options described in xref:tigerProxy.adoc#_tiger_proxy[the Tiger Proxy chapter] apply equally to the standalone proxy.
+There is, however, one additional property specific to the standalone proxy:
 
 [source,yaml]
 ----
-# flag whether to load all resources (js,css) locally or via CDN/internet.
-# useful if you have no access to the internet in your environment
+# Load all resources (JS, CSS) from the classpath instead of via CDN.
+# Set to true if the environment has no internet access.
 localResources: false
 ----
 
-=== Running tiger proxy as a docker container
+==== Running tiger proxy as a standalone JAR
+
+A Spring Boot executable JAR is available via https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy[Maven Central].
+Download the JAR and start it with:
+
+[source,bash]
+----
+java -jar tiger-standalone-proxy-<version>.jar
+----
+
+To supply a custom configuration, place an `application.yaml` next to the JAR — Spring Boot picks it up automatically.
+Alternatively, point Spring Boot at any file via `--spring.config.additional-location`:
+
+[source,bash]
+----
+java -jar tiger-standalone-proxy-<version>.jar \
+     --spring.config.additional-location=file:./my-config.yaml
+----
+
+All properties described in xref:tigerProxy.adoc#_tiger_proxy_basics[Tiger Proxy basics] can be used directly in that file.
+
+==== Running tiger proxy as a docker container
 
 You can also simply run the tiger proxy as a docker container:
 
@@ -1530,3 +1551,14 @@ docker run \
   -p 8080:8080 -p 9090:9090 --rm \
   gematik1/tiger-proxy-image:latest
 ----
+
+Once the proxy is running, the following endpoints are available:
+
+- **Swagger UI** — interactive browser-based API explorer:
+`http://localhost:{port}/swagger-ui/index.html`
+- **OpenAPI JSON spec**:
+`http://localhost:{port}/v3/api-docs`
+- **OpenAPI YAML spec**:
+`http://localhost:{port}/v3/api-docs.yaml`
+
+The spec covers all Tiger-Proxy REST endpoints, including route management (`/route`), traffic modifications (`/modification`), tracing points (`/tracingpoints`), traffic push (`/traffic`), and the Web UI endpoints.

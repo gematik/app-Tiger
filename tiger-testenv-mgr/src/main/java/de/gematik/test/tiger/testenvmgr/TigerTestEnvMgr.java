@@ -45,6 +45,7 @@ import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.env.*;
+import de.gematik.test.tiger.testenvmgr.events.TigerLifecycleEventBus;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
@@ -115,6 +116,14 @@ public class TigerTestEnvMgr
   private final List<TigerServerLogListener> logListeners = new ArrayList<>();
   private final DownloadManager downloadManager = new DownloadManager();
   private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
+
+  /**
+   * In-process lifecycle event bus. Out-of-tree extensions subscribe via {@link
+   * TigerLifecycleEventBus#subscribe(Class, java.util.function.Consumer)}; in-tree producers (e.g.
+   * {@code AbstractTigerServer#start} and the {@code DockerServer}) call {@code publish}.
+   */
+  private final TigerLifecycleEventBus lifecycleEventBus = new TigerLifecycleEventBus();
+
   private final org.slf4j.Logger localProxyLog;
   @Setter public ConfigurableApplicationContext context;
   private TigerProxy localTigerProxy;
@@ -122,6 +131,39 @@ public class TigerTestEnvMgr
 
   Optional<ILifecycleManager> getLifecycleManager() {
     return Optional.ofNullable(lifecycleManager);
+  }
+
+  /**
+   * Returns all running-or-not servers in this environment whose class is assignment-compatible
+   * with {@code type}. Pure additive over the existing {@link #getServers() servers} map; the
+   * intended replacement for canopy-named accessors that previous drafts of the API would have put
+   * on core (see {@code doc/adr/canopy-extension-repo-extraction.md}). Lets out-of-tree extensions
+   * look up their own server instances without core having to know their type by name.
+   *
+   * <p>Returns an empty list (never {@code null}) when no server matches.
+   */
+  public <T extends AbstractTigerServer> List<T> getServersOfType(Class<T> type) {
+    return servers.values().stream().filter(type::isInstance).map(type::cast).toList();
+  }
+
+  /**
+   * Convenience over {@link #getServersOfType(Class)} for the common case "I expect at most one of
+   * these in the env." Returns {@link Optional#empty()} when none, the single instance when exactly
+   * one, and throws {@link TigerEnvironmentStartupException} when more than one is present (so the
+   * caller knows their assumption is wrong).
+   */
+  public <T extends AbstractTigerServer> Optional<T> findUniqueServerOfType(Class<T> type) {
+    List<T> matches = getServersOfType(type);
+    if (matches.size() > 1) {
+      throw new TigerEnvironmentStartupException(
+          "Expected at most one server of type "
+              + type.getSimpleName()
+              + ", found "
+              + matches.size()
+              + ": "
+              + matches.stream().map(AbstractTigerServer::getServerId).toList());
+    }
+    return matches.stream().findFirst();
   }
 
   @Getter(AccessLevel.PRIVATE)
@@ -482,6 +524,11 @@ public class TigerTestEnvMgr
 
   public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
     try {
+      // Per-server pre-validation hook: lets server types inject implicit dependsUpon edges
+      // (and other config tweaks) BEFORE the dependency graph is consulted. See
+      // AbstractTigerServer#prepareDependencies for the contract.
+      servers.values().forEach(AbstractTigerServer::prepareDependencies);
+
       assertNoCyclesInGraph();
       assertNoUnknownServersInDependencies();
 

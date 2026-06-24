@@ -83,6 +83,34 @@ stage('Test') {
 }
 ----
 
+=== FE03 Can I run a Docker image or CANOPY without the tiger-cloud-extension?
+
+Yes. Since Tiger 4.3, `tiger-testenv-mgr` ships built-in `docker` and `canopy` server types (Testcontainers-backed, single-container scope). For a docker-compose-style multi-service env or Kubernetes/Helm, keep using `tiger-cloud-extension`; for ad-hoc images and CANOPY DNS interception, the in-tree types are enough.
+
+[source,yaml]
+----
+servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+  myCanopy:
+    type: canopy
+    canopy:
+      image: gematik1/tiger-canopy-image:latest
+      # tigerProxyUrl, controlMode and dependsUpon are auto-wired from myProxy
+  app:
+    type: docker
+    docker:
+      image: my-org/my-app:1.2.3
+      exposedPorts: [8080]
+      # dnsServers is auto-prepended with myCanopy's IP; opt out with injectDns: false
+      waitStrategy: { kind: HTTP, httpPath: /health, timeoutSeconds: 60 }
+----
+
+See the `tiger-testenv-mgr` user-manual section "Built-in container server types" for the full configuration schema and the placeholders these types publish.
+
 == Workflow UI
 
 === FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)
@@ -156,6 +184,35 @@ TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
 ----
+
+=== FO04 How do I get rid of "alias hell" in my docker-compose setup?
+
+If your test environment uses static `networks.<net>.aliases` (or extra `dns:` entries) just so a
+container thinks `api.example.com` lives at the Tiger proxy IP, you've probably hit the limits of
+that pattern: routing is fixed at compose-up time, every scenario change forces an environment
+restart, and debugging is painful.
+
+The `tiger-canopy` module replaces that with a tiny programmable DNS server. Point your
+containers' `dns:` at it and it will:
+
+* answer queries for hostnames you have *registered* with the Tiger proxy IP,
+* forward everything else to the system upstream resolvers.
+
+The list of registered hostnames is mutable at runtime via a REST API
+(`/api/v1/proxied-hosts`) and via Cucumber glue steps shipped in `tiger-test-lib` (`CanopyGlue`):
+
+[source,gherkin]
+----
+Given TGR set CANOPY base URL to http://canopy:8080
+When  TGR add the following proxied hosts to CANOPY:
+  | host             | matchType |
+  | api.example.com  | EXACT     |
+  | example.com      | SUFFIX    |
+Then  TGR CANOPY contains proxied host api.example.com
+----
+
+See `tiger-canopy/README.md` for the full REST reference, configuration options and a ready-to-run
+`docker-compose.example.yaml`.
 
 === FM01 What serenity do we use currently?
 
@@ -243,6 +300,10 @@ stage('Test') {
 }
 ----
 
+=== FE03 Kann ich ein Docker-Image oder CANOPY ohne die tiger-cloud-extension starten?
+
+Ja. Seit Tiger 4.3 enthält `tiger-testenv-mgr` eingebaute Servertypen `docker` und `canopy` (Testcontainers-basiert, Single-Container-Scope). Für docker-compose-artige Multi-Service-Umgebungen oder Kubernetes/Helm bleibt `tiger-cloud-extension` die richtige Wahl; für Einzelimages und CANOPY-DNS-Interception reichen die In-Tree-Typen. Konfigurationsschema und veröffentlichte Platzhalter siehe Abschnitt "Built-in container server types" im `tiger-testenv-mgr`-Benutzerhandbuch sowie den Eintrag FE03 im englischen Teil.
+
 == Workflow UI
 
 === FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)
@@ -316,3 +377,33 @@ TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
 ----
+
+=== FO04 Wie werde ich die "Alias-Hölle" in meinem docker-compose-Setup los?
+
+Wenn deine Testumgebung statische `networks.<net>.aliases` (oder zusätzliche `dns:`-Einträge)
+nutzt, damit ein Container glaubt, `api.example.com` liege auf der Tiger-Proxy-IP, stößt du
+schnell an Grenzen: Routing ist beim Hochfahren festgelegt, jede Szenarioänderung erfordert einen
+Umgebungsneustart, und Debugging ist mühsam.
+
+Das Modul `tiger-canopy` ersetzt das durch einen kleinen, programmierbaren DNS-Server. Setze die
+`dns:`-Einträge deiner Container auf ihn und er wird:
+
+* Anfragen für *registrierte* Hostnamen mit der Tiger-Proxy-IP beantworten,
+* alles andere an die System-Upstream-Resolver weiterleiten.
+
+Die Liste der registrierten Hostnamen ist zur Laufzeit über eine REST-API
+(`/api/v1/proxied-hosts`) sowie über Cucumber-Glue-Steps (`CanopyGlue` in `tiger-test-lib`)
+veränderbar:
+
+[source,gherkin]
+----
+Angenommen TGR setze die CANOPY-Basis-URL auf http://canopy:8080
+Wenn TGR füge folgende Proxy-Hosts zu CANOPY hinzu:
+  | host             | matchType |
+  | api.example.com  | EXACT     |
+  | example.com      | SUFFIX    |
+Dann TGR CANOPY enthält den Proxy-Host api.example.com
+----
+
+Die vollständige REST-Referenz, Konfigurationsoptionen und eine sofort lauffähige
+`docker-compose.example.yaml` findest du in `tiger-canopy/README.md`.

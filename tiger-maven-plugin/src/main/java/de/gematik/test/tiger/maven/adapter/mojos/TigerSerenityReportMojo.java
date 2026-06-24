@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +21,20 @@
 package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
-import de.gematik.test.tiger.common.report.ReportDataKeys;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.maven.reporter.ReporterGenerator;
+import io.cucumber.core.plugin.report.IntermediateReportGenerator;
+import io.cucumber.core.plugin.report.SerenityReportFileManipulator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.thucydides.model.domain.ReportData;
-import net.thucydides.model.domain.TestOutcome;
-import net.thucydides.model.domain.TestStep;
-import net.thucydides.model.reports.OutcomeFormat;
-import net.thucydides.model.reports.TestOutcomeLoader;
-import net.thucydides.model.reports.TestOutcomes;
-import net.thucydides.model.reports.json.JSONTestOutcomeReporter;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -91,6 +82,43 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       return;
     }
 
+    Path intermediateWorkDir =
+        reportDirectory.toPath().resolve(IntermediateReportGenerator.getWorkingDirName());
+
+    if (intermediateWorkDir.toFile().exists()) {
+      generateReportsFromIntermediateResults(intermediateWorkDir);
+    } else {
+      generateReportsFromScratch();
+    }
+
+    if (openSerenityReportInBrowser) {
+      TigerBrowserUtil.openUrlInBrowser(
+          reportDirectory.toPath() + "\\index.html", "browser for serenity report");
+    }
+  }
+
+  private void generateReportsFromIntermediateResults(Path intermediateWorkDir) throws IOException {
+    getLog()
+        .info(
+            "Intermediate reports were active — reusing already-manipulated JSON files from "
+                + intermediateWorkDir);
+
+    backupJsonReportFiles();
+
+    var reportGenerator =
+        new ReporterGenerator(
+            reports,
+            intermediateWorkDir,
+            reportDirectory.toPath(),
+            Path.of(requirementsBaseDir),
+            getLog());
+    reportGenerator.generateReports();
+
+    FileUtils.deleteDirectory(intermediateWorkDir.toFile());
+    Files.deleteIfExists(reportDirectory.toPath().resolve("progress.json"));
+  }
+
+  private void generateReportsFromScratch() throws IOException {
     includeFullUnresolvedDocstringArguments();
     backupJsonReportFiles();
     modifyStepDescriptionsWithTigerResolvedValues();
@@ -99,15 +127,10 @@ public class TigerSerenityReportMojo extends AbstractMojo {
         new ReporterGenerator(
             reports, reportDirectory.toPath(), Path.of(requirementsBaseDir), getLog());
     reportGenerator.generateReports();
-
-    if (openSerenityReportInBrowser) {
-      TigerBrowserUtil.openUrlInBrowser(
-          reportDirectory.toPath() + "\\index.html", "browser for serenity report");
-    }
   }
 
   private void includeFullUnresolvedDocstringArguments() throws IOException {
-    modifyExistingReportFiles(this::replaceMultilineDocstringDescription);
+    SerenityReportFileManipulator.includeFullUnresolvedDocstringArguments(reportDirectory);
   }
 
   private void backupJsonReportFiles() throws IOException {
@@ -135,69 +158,6 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   }
 
   private void modifyStepDescriptionsWithTigerResolvedValues() throws IOException {
-    modifyExistingReportFiles(this::replaceTigerResolvedStepDescriptions);
-  }
-
-  private void modifyExistingReportFiles(Consumer<TestStep> testStepModifier) throws IOException {
-    TestOutcomes testOutcomesToManipulate =
-        TestOutcomeLoader.loadTestOutcomes()
-            .inFormat(OutcomeFormat.JSON)
-            .from(reportDirectory)
-            .withRequirementsTags();
-
-    var outcomesReporter = new JSONTestOutcomeReporter();
-    outcomesReporter.setOutputDirectory(reportDirectory);
-
-    for (TestOutcome outcome : testOutcomesToManipulate.getOutcomes()) {
-      List<TestStep> allSteps = collectSteps(outcome);
-      allSteps.forEach(testStepModifier);
-      outcomesReporter.generateReportFor(outcome);
-    }
-  }
-
-  private List<TestStep> collectSteps(TestOutcome outcome) {
-    var result = new ArrayList<TestStep>();
-    outcome
-        .getTestSteps()
-        .forEach(
-            step -> {
-              result.add(step);
-              result.addAll(collectChildren(step));
-            });
-    return result;
-  }
-
-  private List<TestStep> collectChildren(TestStep step) {
-    var result = new ArrayList<TestStep>();
-    var children = step.getChildren();
-    result.addAll(children);
-    children.forEach(child -> result.addAll(collectChildren(child)));
-    return result;
-  }
-
-  private void replaceTigerResolvedStepDescriptions(TestStep step) {
-    getTigerResolvedStepDescription(step).ifPresent(step::setDescription);
-  }
-
-  private void replaceMultilineDocstringDescription(TestStep step) {
-    getCompleteUnresolvedMultilineDocstring(step).ifPresent(step::setDescription);
-  }
-
-  private Optional<String> getTigerResolvedStepDescription(TestStep step) {
-    return extractCustomReportData(step, ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY);
-  }
-
-  private Optional<String> getCompleteUnresolvedMultilineDocstring(TestStep step) {
-    return extractCustomReportData(step, ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING);
-  }
-
-  /** beware of side effect. It removes the given data from the original object. */
-  private Optional<String> extractCustomReportData(TestStep step, String customKey) {
-    var reportDataWithDescription =
-        step.getReportData().stream().filter(data -> data.getTitle().equals(customKey)).findAny();
-    reportDataWithDescription.ifPresent(reportData -> step.getReportData().remove(reportData));
-    return reportDataWithDescription
-        .map(ReportData::getContents)
-        .map(StringEscapeUtils::unescapeJava);
+    SerenityReportFileManipulator.modifyStepDescriptionsWithTigerResolvedValues(reportDirectory);
   }
 }

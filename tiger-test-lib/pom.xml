@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.3.1</version>
+    <version>4.3.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-test-lib</artifactId>
@@ -63,6 +63,10 @@
     <dependency>
       <groupId>de.gematik.test</groupId>
       <artifactId>tiger-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>de.gematik.test</groupId>
+      <artifactId>tiger-canopy-client</artifactId>
     </dependency>
     <dependency>
       <groupId>de.gematik.test</groupId>
@@ -152,8 +156,12 @@
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-suite-commons</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-engine</artifactId>
+    </dependency>
     <!-- even though we don't directly use junit4, we still need the vintage engine
-                    because cucumber uses it on its PickleRunner -->
+                            because cucumber uses it on its PickleRunner -->
     <dependency>
       <groupId>org.junit.vintage</groupId>
       <artifactId>junit-vintage-engine</artifactId>

@@ -20,6 +20,10 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
@@ -34,6 +38,9 @@ import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
+import de.gematik.test.tiger.testenvmgr.events.AfterServerStartEvent;
+import de.gematik.test.tiger.testenvmgr.events.AfterServerStopEvent;
+import de.gematik.test.tiger.testenvmgr.events.BeforeServerStartEvent;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -187,6 +194,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         }
         return;
       }
+      testEnvMgr.getLifecycleEventBus().publish(new BeforeServerStartEvent(this));
       performStartup();
     } catch (Throwable t) {
       log.warn(
@@ -205,10 +213,13 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     synchronized (this) {
       setStatus(TigerServerStatus.RUNNING, getServerId() + " READY");
     }
+    testEnvMgr.getLifecycleEventBus().publish(new AfterServerStartEvent(this));
   }
 
   private void reloadConfiguration() {
     try {
+      String previousDependsUpon =
+          this.configuration == null ? null : this.configuration.getDependsUpon();
       this.configuration =
           TigerGlobalConfiguration.instantiateConfigurationBean(
                   getConfigurationBeanClass(), "tiger", "servers", getServerId())
@@ -216,6 +227,11 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                   () ->
                       new TigerEnvironmentStartupException(
                           "Could not reload configuration for server with id %s", getServerId()));
+      if (StringUtils.isNotBlank(previousDependsUpon)) {
+        for (String token : previousDependsUpon.split(",")) {
+          configuration.addDependsUpon(token);
+        }
+      }
       tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
       hostname = determineHostname();
     } catch (TigerConfigurationException e) {
@@ -228,7 +244,85 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     return CfgServer.class;
   }
 
+  /**
+   * Tolerant ObjectMapper used by {@link #readTypeSpecificConfig(String, Class)}. Configured to
+   * ignore unknown fields so that newer extension-side configs do not break older Tiger releases,
+   * and to omit nulls on the way back out.
+   */
+  private static final ObjectMapper TYPE_SPECIFIC_CONFIG_MAPPER =
+      new ObjectMapper()
+          .setSerializationInclusion(Include.NON_NULL)
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+  /**
+   * Deserialize the {@link CfgServer#getTypeSpecificConfig() typeSpecificConfig} entry under {@code
+   * key} into a POJO of {@code type}. Returns {@code null} when the key is absent.
+   *
+   * <p>This is the extension hook that lets out-of-tree server types attach typed configuration to
+   * a {@code CfgServer} without core having to import their classes. In-tree types may keep using
+   * {@link #getConfigurationBeanClass()} where that is more convenient. See {@code
+   * doc/adr/canopy-extension-repo-extraction.md}.
+   *
+   * @throws TigerEnvironmentStartupException if the value is present but cannot be bound to {@code
+   *     type}.
+   */
+  protected <T> T readTypeSpecificConfig(String key, Class<T> type) {
+    configuration.markTypeSpecificConfigKeyRead(key);
+    JsonNode node = configuration.getTypeSpecificConfig().get(key);
+    if (node == null || node.isNull()) {
+      return null;
+    }
+    try {
+      return TYPE_SPECIFIC_CONFIG_MAPPER.treeToValue(node, type);
+    } catch (Exception e) {
+      throw new TigerEnvironmentStartupException(
+          "Failed to bind typeSpecificConfig['"
+              + key
+              + "'] of server '"
+              + getServerId()
+              + "' to "
+              + type.getSimpleName()
+              + ": "
+              + e.getMessage(),
+          e);
+    }
+  }
+
   public abstract void performStartup();
+
+  /**
+   * Pre-validation hook invoked by {@link TigerTestEnvMgr#setUpEnvironment} on every server
+   * <em>before</em> the dependency graph is built (i.e. before cycle and unknown-dependency
+   * checks). Subclasses override to mutate their own {@link CfgServer} configuration — typically
+   * injecting implicit {@code dependsUpon} edges discovered from sibling servers in the env. The
+   * default implementation is a no-op.
+   *
+   * <p>Contract:
+   *
+   * <ul>
+   *   <li>Must be cheap and idempotent (the framework calls it exactly once per server but tests
+   *       may call it explicitly multiple times).
+   *   <li>Must not perform IO or block on other servers — those have not been started yet.
+   *   <li>May call {@link CfgServer#addDependsUpon} to add boot-order edges.
+   * </ul>
+   *
+   * <p>This is delivered via final {@link #prepareDependencies()} which threads the idempotency
+   * guard; subclasses override {@link #doPrepareDependencies()} for the actual work.
+   */
+  public final void prepareDependencies() {
+    if (dependenciesPrepared) {
+      return;
+    }
+    dependenciesPrepared = true;
+    doPrepareDependencies();
+  }
+
+  /** Subclass override point for {@link #prepareDependencies()}. Default: no-op. */
+  protected void doPrepareDependencies() {
+    // no-op
+  }
+
+  private boolean dependenciesPrepared = false;
 
   protected void processExports() {
     configuration
@@ -369,6 +463,9 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   public void stopServerAndCleanUp() {
     shutdown();
     removeAllRoutesForServer();
+    if (tigerTestEnvMgr != null) {
+      tigerTestEnvMgr.getLifecycleEventBus().publish(new AfterServerStopEvent(this));
+    }
   }
 
   public abstract void shutdown();

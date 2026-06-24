@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,10 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   /** number of failed scenarios / scenario data variants. */
   @Getter private int scFailed = 0;
 
-  private final FeatureExecutionMonitor featureExecutionMonitor = new FeatureExecutionMonitor();
+  private static final FeatureExecutionMonitor featureExecutionMonitor =
+      new FeatureExecutionMonitor();
+  private static final IntermediateReportGenerator intermediateReportGenerator =
+      new IntermediateReportGenerator();
 
   private static final ThreadLocal<TigerStatusUpdate> currentStatusUpdate = new ThreadLocal<>();
   private static final ThreadLocal<Stack<StepUpdate>> currentSteps = new ThreadLocal<>();
@@ -164,6 +167,14 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
         () -> {
           shouldAbortTestExecution();
           featureExecutionMonitor.startTestRun();
+          if (TigerDirector.getLibConfig().createIntermediateReports) {
+            featureExecutionMonitor.setOnFeatureCompleted(
+                intermediateReportGenerator::onFeatureCompleted);
+            log.info(
+                "Intermediate report generation is enabled. Reports will be generated after each feature file completes.");
+          } else {
+            featureExecutionMonitor.setOnFeatureCompleted(null);
+          }
         });
   }
 
@@ -685,10 +696,6 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     }
     val waitTime = RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
     try {
-      // TODO max wait mit timeout UND nur zurück geben auf was wir hier schon gewartet
-      // val myStepMessages = tigerProxy.currentMessages();
-      // tigerProxy.waitFor(myStepMessages);
-      // return myStepMessages;
       Awaitility.await()
           .atMost(waitTime, TimeUnit.SECONDS)
           .pollInterval(200, TimeUnit.MILLISECONDS)

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@
  */
 package io.cucumber.core.plugin;
 
-// add required static imports
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.jayway.jsonpath.JsonPath;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.report.ReportDataKeys;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
@@ -45,6 +46,7 @@ import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
+import io.cucumber.plugin.event.TestRunStarted;
 import io.cucumber.plugin.event.TestSourceRead;
 import io.cucumber.plugin.event.TestStep;
 import io.cucumber.plugin.event.TestStepFinished;
@@ -52,6 +54,9 @@ import io.cucumber.plugin.event.TestStepStarted;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -62,6 +67,7 @@ import java.util.Optional;
 import java.util.UUID;
 import junit.framework.AssertionFailedError;
 import net.minidev.json.JSONArray;
+import net.serenitybdd.core.di.SerenityInfrastructure;
 import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
 import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
@@ -69,15 +75,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
 
 public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvStatusTest {
 
-  public static final String GENERATED_JSON_REPORT =
-      "target/site/serenity/d11408aff740706845d0a023dbe62d62f228d65c01a235474885c0879ce920e1.json";
+  private static Path getSerenityReportDir() {
+    return SerenityInfrastructure.getConfiguration().getOutputDirectory().toPath();
+  }
 
   public static final String TEST_GLUE_CLASS = "io.cucumber.core.plugin.TestGlue";
-  public static final String TEST_GLUE_STEP_LOCATION =
-      TEST_GLUE_CLASS + ".testGlueMethod(java.lang.String,java.lang.String)";
   public static final String RESOLVABLE_DOCSTRING_STEP_LOCATION =
       TEST_GLUE_CLASS + ".testDocString(java.lang.String)";
   public static final String NON_RESOLVABLE_DOCSTRING_STEP_LOCATION =
@@ -127,8 +134,9 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
   private final String scenarioOutlineName = "Auth - Fehlende Parameter alle anderen";
 
   @BeforeEach
-  public void configurePort() {
+  void configurePort() throws IOException {
     LOCAL_PROXY_ADMIN_PORT.putValue(9999);
+    cleanSerenityReportDir();
   }
 
   @Test
@@ -303,10 +311,26 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
   }
 
   @AfterEach
-  void deleteJsonReport() {
-    File jsonReport = new File(GENERATED_JSON_REPORT);
-    if (jsonReport.exists()) {
-      jsonReport.delete();
+  void deleteJsonReport() throws IOException {
+    cleanSerenityReportDir();
+  }
+
+  private static void cleanSerenityReportDir() throws IOException {
+    Path reportDir = getSerenityReportDir();
+    if (Files.exists(reportDir)) {
+      try (var files = Files.list(reportDir)) {
+        files.filter(p -> p.toString().endsWith(".json")).forEach(p -> p.toFile().delete());
+      }
+    }
+  }
+
+  private static Path findGeneratedJsonReport() throws IOException {
+    Path reportDir = getSerenityReportDir();
+    try (var files = Files.list(reportDir)) {
+      return files
+          .filter(p -> p.toString().endsWith(".json"))
+          .findFirst()
+          .orElseThrow(() -> new AssertionFailedError("No JSON report found in " + reportDir));
     }
   }
 
@@ -405,7 +429,7 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
         new TestRunFinished(
             Instant.now(), new Result(Status.PASSED, Duration.ofMillis(500), null)));
 
-    try (var reader = new ObjectMapper().createParser(new File(GENERATED_JSON_REPORT))) {
+    try (var reader = new ObjectMapper().createParser(findGeneratedJsonReport().toFile())) {
       TreeNode testSteps = reader.readValueAsTree().get("testSteps");
 
       assertThat(testSteps.size()).isEqualTo(11);
@@ -559,6 +583,101 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
 
     assertThat(listener.getReporterCallbacks().getScFailed()).isEqualTo(1);
     assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
+  }
+
+  @Test
+  void testIntermediateReportingLifecycle() throws Exception {
+    final Path sampleJson1 =
+        Path.of(
+            "../tiger-maven-plugin/src/test/resources/serenityReports/fresh/"
+                + "7ce696c3605a99c1796a8791d96109283a6c99ad1e94731b7208d02c0f3ba04b.json");
+    final String sampleScenarioName = "Simple first test";
+    assertThat(sampleJson1).as("Sample Serenity JSON fixture must exist").exists();
+
+    TigerDirector.getLibConfig().createIntermediateReports = true;
+    Path reportDir = getSerenityReportDir();
+    Path progressFile = reportDir.resolve("progress.json");
+    Path workingDir = reportDir.resolve("intermediateWorkDir");
+    // Copy the feature file so we have a second, distinct URI
+    Path secondFeaturePath = Path.of("target", "second-feature-copy.feature");
+    Files.copy(Path.of(featureFilePath), secondFeaturePath, StandardCopyOption.REPLACE_EXISTING);
+    // Register the second feature's scenarios with ScenarioRunner
+    var launcher = LauncherFactory.create();
+    var secondTestPlan =
+        launcher.discover(
+            LauncherDiscoveryRequestBuilder.request()
+                .configurationParameter(
+                    io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME,
+                    secondFeaturePath.toString())
+                .build());
+    new TigerExecutionListener().testPlanExecutionStarted(secondTestPlan);
+    try {
+      Files.deleteIfExists(progressFile);
+      Files.createDirectories(reportDir);
+
+      // Use listener (not just callbacks) so Serenity reporter initializes properly
+      // and produces valid JSON outcome files for the intermediate generator to process
+      listener.handleTestRunStarted(new TestRunStarted(Instant.now()));
+
+      // --- Feature 1 ---
+      listener.handleTestSourceRead(
+          new TestSourceRead(
+              Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8)));
+      TestStep step1 = TestStepAdapter.builder().line(71).column(5).build();
+      TestCase case1 = new BasicTestCase(List.of(step1));
+      listener.handleTestCaseStarted(new TestCaseStarted(Instant.now(), case1));
+      listener.handleTestStepStarted(new TestStepStarted(Instant.now(), case1, step1));
+      listener.handleTestStepFinished(
+          new TestStepFinished(
+              Instant.now(),
+              case1,
+              step1,
+              new Result(Status.PASSED, Duration.ofMillis(500), null)));
+      Files.copy(
+          sampleJson1,
+          reportDir.resolve("feature1-outcome.json"),
+          StandardCopyOption.REPLACE_EXISTING);
+      listener.handleTestCaseFinished(
+          new TestCaseFinished(
+              Instant.now(), case1, new Result(Status.PASSED, Duration.ofMillis(500), null)));
+
+      listener.handleTestRunFinished(
+          new TestRunFinished(
+              Instant.now(), new Result(Status.PASSED, Duration.ofMillis(500), null)));
+
+      listener.handleTestRunStarted(new TestRunStarted(Instant.now()));
+
+      // Wait for intermediate report to be generated asynchronously
+      Path indexHtml = reportDir.resolve("index.html");
+      await()
+          .atMost(Duration.ofSeconds(30))
+          .pollInterval(Duration.ofMillis(100))
+          .untilAsserted(() -> assertThat(progressFile).exists());
+      await()
+          .atMost(Duration.ofSeconds(30))
+          .pollInterval(Duration.ofMillis(100))
+          .untilAsserted(() -> assertThat(indexHtml).exists());
+
+      assertThat(Files.readString(progressFile))
+          .as("Report must reflect feature 1's completion")
+          .contains("\"completedFeatures\": 1");
+      String htmlAfterFeature1 = Files.readString(indexHtml);
+      assertThat(htmlAfterFeature1)
+          .as(
+              "HTML index must mention the scenario from feature 1's outcome ('"
+                  + sampleScenarioName
+                  + "') - proving the aggregator actually processed feature 1's JSON")
+          .contains(sampleScenarioName);
+    } finally {
+      TigerDirector.getLibConfig().createIntermediateReports = false;
+      Files.deleteIfExists(progressFile);
+      Files.deleteIfExists(secondFeaturePath);
+      Files.deleteIfExists(reportDir.resolve("feature1-outcome.json"));
+      Files.deleteIfExists(reportDir.resolve("feature2-outcome.json"));
+      if (workingDir.toFile().exists()) {
+        org.apache.commons.io.FileUtils.deleteDirectory(workingDir.toFile());
+      }
+    }
   }
 
   private class ScenarioOutlineTestCase extends BasicTestCase {

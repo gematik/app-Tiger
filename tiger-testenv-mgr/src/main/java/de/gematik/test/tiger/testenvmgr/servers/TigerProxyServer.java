@@ -23,6 +23,7 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
@@ -164,6 +165,34 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     addServerNameForPort(tigerProxyConfiguration.getProxyPort(), this.getServerId());
     addServerNameForPort(tigerProxyConfiguration.getAdminPort(), this.getServerId());
     tigerProxyBean = applicationContext.getBean(TigerProxy.class);
+    publishUrlPlaceholders(tigerProxyConfiguration);
+  }
+
+  /**
+   * Publishes Tiger configuration placeholders so other servers (notably canopy containers running
+   * on the docker bridge) can resolve this proxy's URLs without hard-coding ports.
+   *
+   * <ul>
+   *   <li>{@code <id>.adminUrl} — host-gateway URL of the proxy's admin REST API. Uses {@code
+   *       host.docker.internal} so that Docker containers can reach the JVM-side proxy across the
+   *       bridge. Works on Docker Desktop and on Linux daemons started with {@code
+   *       --add-host=host.docker.internal:host-gateway} (Testcontainers helpers expose this via
+   *       {@code GenericContainer#withExtraHost}).
+   *   <li>{@code <id>.proxyUrl} — host-gateway URL of the forward/reverse proxy port.
+   * </ul>
+   *
+   * <p>JVM-side callers that talk to the proxy on {@code localhost} can still build that URL
+   * themselves from {@link TigerProxyConfiguration#getAdminPort()} / {@link
+   * TigerProxyConfiguration#getProxyPort()}.
+   */
+  private void publishUrlPlaceholders(TigerProxyConfiguration cfg) {
+    String prefix = getServerId() + ".";
+    TigerGlobalConfiguration.putValue(
+        prefix + "adminUrl", "http://host.docker.internal:" + cfg.getAdminPort());
+    if (cfg.getProxyPort() != null && cfg.getProxyPort() > 0) {
+      TigerGlobalConfiguration.putValue(
+          prefix + "proxyUrl", "http://host.docker.internal:" + cfg.getProxyPort());
+    }
   }
 
   private void addAlternativeNamesToProxyConfiguration(

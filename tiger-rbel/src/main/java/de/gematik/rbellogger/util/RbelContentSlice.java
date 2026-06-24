@@ -27,6 +27,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.tuple.Pair;
 
 @AllArgsConstructor
 class RbelContentSlice extends RbelContent {
@@ -148,6 +149,13 @@ class RbelContentSlice extends RbelContent {
   public boolean startsTrimmedWith(byte[] firstNonBlankBytes, int startIndex) {
     checkIndex(startIndex);
     return baseContent.startsTrimmedWith(firstNonBlankBytes, start + startIndex);
+  }
+
+  public boolean startsWithIgnoreCase(byte[] firstBytes, Charset charset) {
+    if (firstBytes.length > size()) {
+      return false;
+    }
+    return baseContent.startsWithIgnoreCaseWithoutChecks(Pair.of(firstBytes, charset), start);
   }
 
   @Override

@@ -27,6 +27,7 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
 
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerInitializer;
+import de.gematik.test.tiger.lib.glue.TigerGluePackageScanner;
 import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
 import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
 import de.gematik.test.tiger.testenvmgr.env.*;
@@ -66,6 +67,7 @@ import org.junit.platform.launcher.core.LauncherFactory;
 public class TigerCucumberRunner {
 
   private static final String TIGER_GLUES_ARGUMENT = "--tiger.glues";
+  public static final String GLUE_OPTION = "--glue";
 
   public static void main(String[] args) {
     log.info("Starting TigerCucumberRunner.main()...");
@@ -82,10 +84,45 @@ public class TigerCucumberRunner {
 
   protected static Map<String, String> parseCommandLineOptions(String[] args) {
     String[] modifiedArgs = parseTigerGlues(args);
+    modifiedArgs = appendAutoDiscoveredGlues(modifiedArgs);
     RuntimeOptions cmdLineOptions =
         (new CommandlineOptionsParser(System.out)).parse(modifiedArgs).build(); // NOSONAR
 
     return convertToConfigurationParametersMap(cmdLineOptions);
+  }
+
+  /**
+   * Appends {@code --glue <pkg>} pairs for every package contributed by a Tiger extension via the
+   * {@link de.gematik.test.tiger.common.glue.TigerGluePackage @TigerGluePackage} annotation. Skips
+   * packages already listed in {@code args} so a user override always wins. Idempotent and quiet
+   * (logs only at INFO when something was actually added).
+   */
+  static String[] appendAutoDiscoveredGlues(String[] args) {
+    Set<String> discovered = TigerGluePackageScanner.discoverGluePackages();
+    if (discovered.isEmpty()) {
+      return args;
+    }
+    Set<String> existing = new HashSet<>();
+    for (int i = 0; i < args.length - 1; i++) {
+      if (GLUE_OPTION.equals(args[i])) {
+        existing.add(args[i + 1]);
+      }
+    }
+    List<String> extra = new ArrayList<>();
+    for (String pkg : discovered) {
+      if (existing.add(pkg)) {
+        extra.add(GLUE_OPTION);
+        extra.add(pkg);
+      }
+    }
+    if (extra.isEmpty()) {
+      return args;
+    }
+    String[] out = Arrays.copyOf(args, args.length + extra.size());
+    for (int i = 0; i < extra.size(); i++) {
+      out[args.length + i] = extra.get(i);
+    }
+    return out;
   }
 
   public static String[] parseTigerGlues(String[] args) {
@@ -102,7 +139,7 @@ public class TigerCucumberRunner {
         Arrays.stream(glueArray)
             .forEachOrdered(
                 glue -> {
-                  processedArgs.add("--glue");
+                  processedArgs.add(GLUE_OPTION);
                   processedArgs.add(glue.trim());
                 });
       } else {

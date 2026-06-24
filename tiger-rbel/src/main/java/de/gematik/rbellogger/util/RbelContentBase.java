@@ -450,8 +450,7 @@ class RbelContentBase extends RbelContent {
     return true;
   }
 
-  private boolean startsWithIgnoreCaseWithoutChecks(
-      Pair<byte[], Charset> prefix, int startInclusive) {
+  boolean startsWithIgnoreCaseWithoutChecks(Pair<byte[], Charset> prefix, int startInclusive) {
     byte[] prefixBytes = prefix.getLeft();
     if (startInclusive + prefixBytes.length <= size) {
       Charset charset = prefix.getRight();
@@ -487,6 +486,13 @@ class RbelContentBase extends RbelContent {
   @Override
   public boolean startsTrimmedWithIgnoreCase(byte[] firstNonBlankBytes, Charset charset) {
     return startsTrimmedWithIgnoreCase(firstNonBlankBytes, charset, 0);
+  }
+
+  public boolean startsWithIgnoreCase(byte[] firstBytes, Charset charset) {
+    if (firstBytes.length > size) {
+      return false;
+    }
+    return startsWithIgnoreCaseWithoutChecks(Pair.of(firstBytes, charset), 0);
   }
 
   public boolean startsTrimmedWithIgnoreCase(

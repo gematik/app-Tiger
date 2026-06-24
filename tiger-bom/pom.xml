@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.3.1</version>
+  <version>4.3.2</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -55,10 +55,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- work around for owasp plugin requiring yarn to perform its task, alas we don't use yarn at all
-                                     https://service.gematik.de/browse/DEVOPS-1233
-                                -->
+                                         https://service.gematik.de/browse/DEVOPS-1233
+                                    -->
 
     <version.apache-mime4j>0.8.13</version.apache-mime4j>
+    <version.archunit>1.4.0</version.archunit>
     <version.asm>9.9.1</version.asm>
 
     <version.assertj>3.27.7</version.assertj>
@@ -74,6 +75,7 @@
     <version.commons-lang3>3.20.0</version.commons-lang3>
     <version.commons-text>1.15.0</version.commons-text>
     <version.cucumber>7.31.0</version.cucumber>
+    <version.dnsjava>3.6.3</version.dnsjava>
     <version.dokka-maven-plugin>2.1.0</version.dokka-maven-plugin>
     <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
     <version.font-awesome>7.1.0</version.font-awesome>
@@ -95,6 +97,7 @@
     <version.jfiglet>1.0.1</version.jfiglet>
     <version.jna>5.18.1</version.jna>
     <version.jose4j>0.9.6</version.jose4j>
+    <version.java-websocket>1.6.0</version.java-websocket>
     <version.jquery>3.7.1</version.jquery>
     <version.json>20251224</version.json>
     <version.json-schema-validator>1.5.6</version.json-schema-validator>
@@ -133,6 +136,7 @@
     <version.npm>11.11.0</version.npm>
     <version.objenesis>3.5</version.objenesis>
     <version.okhttp>5.3.2</version.okhttp>
+    <version.pcap4j>1.8.2</version.pcap4j>
     <version.org.glassfish.jaxb>4.0.6</version.org.glassfish.jaxb>
     <version.selenium>4.38.0</version.selenium>
     <version.serenity.core>5.3.10</version.serenity.core>
@@ -234,6 +238,31 @@
         <version>${version.junit5}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-commons</artifactId>
+        <version>${version.junit-platform}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-engine</artifactId>
+        <version>${version.junit-platform}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${version.junit5}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${version.junit5}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${version.junit5}</version>
       </dependency>
       <dependency>
         <groupId>org.seleniumhq.selenium</groupId>
@@ -343,63 +372,83 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
+      </dependency>
+      <dependency>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-canopy</artifactId>
+        <version>4.3.2</version>
+      </dependency>
+      <dependency>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-canopy-client</artifactId>
+        <version>4.3.2</version>
+      </dependency>
+      <dependency>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-canopy-extension</artifactId>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.3.1</version>
+        <version>4.3.2</version>
+      </dependency>
+      <dependency>
+        <groupId>dnsjava</groupId>
+        <artifactId>dnsjava</artifactId>
+        <version>${version.dnsjava}</version>
       </dependency>
       <dependency>
         <groupId>io.github.classgraph</groupId>
@@ -433,9 +482,9 @@
       </dependency>
 
       <!-- make sure that only one version of jakarta.xml.bind
-                                                     with a compatible version of the org.glassfish.jaxb
-                                                     implementation is available to all modules
-                                                     to avoid conflicts -->
+                                                           with a compatible version of the org.glassfish.jaxb
+                                                           implementation is available to all modules
+                                                           to avoid conflicts -->
       <dependency>
         <groupId>jakarta.xml.bind</groupId>
         <artifactId>jakarta.xml.bind-api</artifactId>
@@ -634,6 +683,11 @@
         <version>${version.assertj}</version>
       </dependency>
       <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit-junit5</artifactId>
+        <version>${version.archunit}</version>
+      </dependency>
+      <dependency>
         <groupId>org.awaitility</groupId>
         <artifactId>awaitility</artifactId>
         <version>${version.awaitility}</version>
@@ -702,6 +756,11 @@
         <groupId>org.javassist</groupId>
         <artifactId>javassist</artifactId>
         <version>3.30.2-GA</version>
+      </dependency>
+      <dependency>
+        <groupId>org.java-websocket</groupId>
+        <artifactId>Java-WebSocket</artifactId>
+        <version>${version.java-websocket}</version>
       </dependency>
       <dependency>
         <groupId>org.jetbrains</groupId>
@@ -796,6 +855,16 @@
         <version>${version.lombok-mapstruct-binding}</version>
       </dependency>
       <dependency>
+        <groupId>org.pcap4j</groupId>
+        <artifactId>pcap4j-core</artifactId>
+        <version>${version.pcap4j}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.pcap4j</groupId>
+        <artifactId>pcap4j-packetfactory-static</artifactId>
+        <version>${version.pcap4j}</version>
+      </dependency>
+      <dependency>
         <groupId>org.reflections</groupId>
         <artifactId>reflections</artifactId>
         <version>0.10.2</version>
@@ -823,10 +892,10 @@
       </dependency>
       <dependency>
         <!-- because of a bug in spring-webmvc which is not yet fixed in spring-boot-dependencies.
-                                        when spring-boot includes this version, we can remove it from here.
-                                        Problem manifests in zion, but since zion reads dependencies from here, it is
-                                        safer to set it directly in bom - See TGRZ-8
-                                        -->
+                                                when spring-boot includes this version, we can remove it from here.
+                                                Problem manifests in zion, but since zion reads dependencies from here, it is
+                                                safer to set it directly in bom - See TGRZ-8
+                                                -->
         <groupId>org.springframework</groupId>
         <artifactId>spring-webmvc</artifactId>
         <version>6.2.16</version>
