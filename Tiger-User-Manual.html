@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.3.1 - 2026-06-11</span>
+<span id="revdate">Version 4.3.2 - 2026-06-24</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -226,8 +226,10 @@ video {
 <li><a href="#_yaml_loading_and_overriding">3.2. YAML loading and overriding logic</a></li>
 <li><a href="#_server_types">3.3. Server type reference</a></li>
 <li><a href="#server-type-example">3.4. Server type example</a></li>
-<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.5. Standalone mode vs. implicit startup with test suite</a></li>
-<li><a href="#using-environment-variables-and-system-properties">3.6. Using Environment variables and system properties</a></li>
+<li><a href="#provided-node-templates">3.5. Provided node templates</a></li>
+<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.6. Configuring the local test suite Tiger Proxy</a></li>
+<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.7. Standalone mode vs. implicit startup with test suite</a></li>
+<li><a href="#using-environment-variables-and-system-properties">3.8. Using Environment variables and system properties</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_proxy">4. Tiger Proxy</a>
@@ -246,23 +248,23 @@ video {
 <li><a href="#header-rewriting-and-routing-behavior">4.12. Header rewriting and routing behavior</a></li>
 <li><a href="#understanding-filtering">4.13. Understanding filtering</a></li>
 <li><a href="#_rbel_path_details">4.14. Understanding RBelPath</a></li>
-<li><a href="#running-tiger-proxy-as-standalone-jar">4.15. Running tiger proxy as standalone JAR</a></li>
-<li><a href="#running-tiger-proxy-as-a-docker-container">4.16. Running tiger proxy as a docker container</a></li>
+<li><a href="#_standalone_proxy">4.15. Tiger Standalone Proxy</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library">5. Tiger Test library</a>
 <ul class="sectlevel2">
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
-<li><a href="#registering-lifecycle-callbacks">5.2. Registering Lifecycle Callbacks</a></li>
-<li><a href="#_cucumber_hooks">5.3. Cucumber and Hooks</a></li>
-<li><a href="#using-the-cucumber-tiger-validation-steps">5.4. Using the Cucumber Tiger validation steps</a></li>
-<li><a href="#writing-your-own-glue-code">5.5. Writing your own Glue code</a></li>
-<li><a href="#modifying-rbelobjects-rbelbuilder">5.6. Modifying RbelObjects (RbelBuilder)</a></li>
-<li><a href="#using-the-http-client-steps">5.7. Using the HTTP client steps</a></li>
-<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.8. Exemplaric scenario Konnektorfarm EAU validation</a></li>
-<li><a href="#using-tiger-test-lib-helper-classes">5.9. Using Tiger test lib helper classes</a></li>
-<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.10. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
-<li><a href="#junit-test-report-when-using-scenario-outlines">5.11. JUnit test report when using Scenario Outlines</a></li>
+<li><a href="#intermediate-serenity-reports">5.2. Intermediate Serenity Reports</a></li>
+<li><a href="#registering-lifecycle-callbacks">5.3. Registering Lifecycle Callbacks</a></li>
+<li><a href="#_cucumber_hooks">5.4. Cucumber and Hooks</a></li>
+<li><a href="#using-the-cucumber-tiger-validation-steps">5.5. Using the Cucumber Tiger validation steps</a></li>
+<li><a href="#writing-your-own-glue-code">5.6. Writing your own Glue code</a></li>
+<li><a href="#modifying-rbelobjects-rbelbuilder">5.7. Modifying RbelObjects (RbelBuilder)</a></li>
+<li><a href="#using-the-http-client-steps">5.8. Using the HTTP client steps</a></li>
+<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.9. Exemplaric scenario Konnektorfarm EAU validation</a></li>
+<li><a href="#using-tiger-test-lib-helper-classes">5.10. Using Tiger test lib helper classes</a></li>
+<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.11. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#junit-test-report-when-using-scenario-outlines">5.12. JUnit test report when using Scenario Outlines</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -293,6 +295,7 @@ video {
 <ul class="sectlevel2">
 <li><a href="#public-tiger-extensions">8.1. Public Tiger Extensions</a></li>
 <li><a href="#gematik-intern-extensions">8.2. Gematik intern Extensions</a></li>
+<li><a href="#tiger-canopy-extension">8.3. Tiger Canopy Extension</a></li>
 </ul>
 </li>
 <li><a href="#rest-api">9. Rest API</a>
@@ -728,7 +731,7 @@ This means the tests will not be run automatically on start up and you can selec
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;
-    &lt;version.tiger&gt;4.2.7&lt;/version.tiger&gt;
+    &lt;version.tiger&gt;4.3.2&lt;/version.tiger&gt;
   &lt;/properties&gt;
 
   &lt;dependencyManagement&gt;
@@ -1001,6 +1004,11 @@ There is a JSON schema available for your IDE to assist with editing the <code>t
 <p>The nodes configured in the YAML file are started asynchronously unless the <code>dependsUpon</code> property is set.</p>
 </div>
 <div class="paragraph">
+<p>One optional but powerful server type is <code>canopy</code>, a DNS server that can intercept and dynamically reroute selected hostnames to the Tiger proxy at runtime.<br>
+This enables test scenarios to change routing configuration without restarting the environment, making it ideal for multi-scenario testing, chaos injection, and hypothesis testing.<br>
+For details on why and how to use Canopy, see <a href="../../tiger-canopy/doc/CANOPY-USER-GUIDE.md">the Canopy User Guide</a>.</p>
+</div>
+<div class="paragraph">
 <p>Before writing your own <code>tiger.yaml</code> configuration files, ensure you are familiar with YAML syntax and structure.</p>
 </div>
 </div>
@@ -1085,6 +1093,10 @@ For this to work, you must either be able to force a proxy on the nodes or <a hr
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>httpbin</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Starts a built-in httpbin server with standard HTTP mock endpoints. Useful for quick HTTP step testing without a real backend.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>canopy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Starts a DNS server that dynamically reroutes selected hostnames to the Tiger proxy. Enables runtime routing changes without environment restart.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1560,6 +1572,115 @@ Use <code>${free.port.1}</code>, <code>${free.port.2}</code> etc. for additional
 </table>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_server_type_canopy"><a class="anchor" href="#_server_type_canopy"></a>3.3.8. canopy</h4>
+<div class="paragraph">
+<p>Starts a CANOPY DNS server that dynamically intercepts and reroutes selected hostnames to the Tiger proxy.<br>
+Instead of static Docker network configurations, CANOPY enables runtime routing changes via REST API or Cucumber steps, so test scenarios can swap routing without restarting the environment.</p>
+</div>
+<div class="paragraph">
+<p>The server is available as a Docker image (<code>gematik1/tiger-canopy-image:latest</code>).<br>
+When used standalone (docker-compose only), no tiger-canopy-extension dependency is required.<br>
+For Tiger integration with auto-wiring and DNS injection features, ensure <code>tiger-canopy-extension</code> is on the classpath.</p>
+</div>
+<div class="paragraph">
+<p>When configured with a unique sibling <code>tigerProxy</code> server, CANOPY auto-wires the proxy URL and enables Dynamic-Route mode (automatic route registration with the proxy).<br>
+The DNS address is automatically injected into sibling Docker containers for transparent hostname interception.</p>
+</div>
+<div class="paragraph">
+<p>Published placeholders (available for use in other server configurations):<br>
+- <code>${&lt;serverId&gt;.baseUrl}</code> — REST API URL (e.g., <code><a href="http://canopy:8080" class="bare">http://canopy:8080</a></code>)<br>
+- <code>${&lt;serverId&gt;.dnsAddress}</code> — DNS server address (container-network IP or localhost)<br>
+- <code>${&lt;serverId&gt;.dnsPort}</code> — DNS port (default 53)<br>
+- <code>${&lt;serverId&gt;.containerName}</code> — Container ID/name</p>
+</div>
+<div class="paragraph">
+<p>For comprehensive documentation, configuration reference, troubleshooting, and examples, see the<br>
+<a href="../../tiger-canopy/doc/CANOPY-USER-GUIDE.md">Canopy User Guide</a>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 18. Simple Canopy setup with auto-wiring to a sibling Tiger proxy</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  myCanopy:
+    type: canopy
+    canopy:
+      # tigerProxyUrl is auto-wired to ${myProxy.adminUrl}
+      # controlMode is auto-set to ROUTE_PER_HOST
+      proxiedHosts:
+        - { host: api.example.com, matchType: EXACT }
+        - { host: example.org,     matchType: SUFFIX }
+
+  testApp:
+    type: docker
+    docker:
+      image: my-app:latest
+      exposedPorts: [8080]
+    # DNS is automatically injected; app resolves api.example.com through Canopy</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 19. Multi-proxy setup with per-host overrides</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  httpProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  pop3Proxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9100
+      proxyPort: 9110
+
+  myCanopy:
+    type: canopy
+    canopy:
+      tigerProxyUrl: ${httpProxy.adminUrl}        # default proxy
+      proxiedHosts:
+        - { host: api.example.com }               # → httpProxy
+        - { host: pop3.example.com,
+            tigerProxyUrl: ${pop3Proxy.adminUrl} } # → pop3Proxy</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 20. Controlling DNS-Only vs Dynamic-Route modes</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+
+  dnsOnlyCanopy:
+    type: canopy
+    canopy:
+      # DNS-Only Mode: DNS rewriting only, proxy configured separately
+      controlMode: NONE
+      tigerProxyUrl: http://my-external-proxy:9090/
+      proxiedHosts:
+        - { host: example.com }
+
+  dynamicRouteCanopy:
+    type: canopy
+    canopy:
+      # Dynamic-Route Mode: Canopy registers routes with proxy automatically
+      controlMode: ROUTE_PER_HOST
+      # tigerProxyUrl auto-wired to ${myProxy.adminUrl} if not set
+      proxiedHosts:
+        - { host: api.example.com }</code></pre>
+</div>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="server-type-example"><a class="anchor" href="#server-type-example"></a>3.4. Server type example</h3>
@@ -1567,7 +1688,7 @@ Use <code>${free.port.1}</code>, <code>${free.port.2}</code> etc. for additional
 <p>Here is a little example of how the server names are set and used and how the server is reachable via the tiger proxy.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Example with three external jar servers</div>
+<div class="title">Listing 21. Example with three external jar servers</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
 # here the server name is "identityServer" and
@@ -1619,11 +1740,928 @@ Use <code>${free.port.1}</code>, <code>${free.port.2}</code> etc. for additional
 </div>
 </div>
 <div class="paragraph">
-<p>The configuration of the tiger proxy is explained in detail in the section <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
+<p>The general properties are followed by the type specific substructures, which configure specific aspects of each node type.<br>
+Their meaning and format are explained in the related section.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 22. Type specific properties</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  # type specific sub structure for external jar, Tiger Proxy, docker and helm chart nodes
+  externalJarOptions:
+    # used by external jar and Tiger Proxy nodes
+    workingDir: string
+    # only used by external jar nodes
+    options: []
+    # used by external jar and Tiger Proxy nodes
+    arguments: []
+    # flag whether to forward log output from external jar processes to the workflow UI
+    activateWorkflowLogs : true
+    # flag whether to forward log output from external jar processes to workflow UI and console
+    activateLogs: true
+
+  # type specific sub structure for Tiger Proxy nodes
+  tigerProxyConfiguration:
+    # Here a normal Tiger Proxy configuration can be used.
+    # This is explained in more depth down below
+    adminPort: int
+    proxiedServer: string
+    proxiedServerProtocol: [HTTP|HTTPS]
+    proxyRoutes:
+        # defines a forward-proxy-route from this server
+      - from: http://foobar
+        # to this server
+        to: https://cryptic.backend/server/with/path
+
+  # type specific sub structure for docker container and compose nodes
+  dockerOptions:
+    # all properties below only used by docker container nodes
+    proxied: boolean
+    oneShot: boolean
+    entryPoint: string
+  # type specific sub structure for helm charts
+  helmChartOptions:
+    # context to install the helm chart to
+    context:
+    # name for the helm chart
+    podName:
+    # working directory for local helm and kubectl calls
+    workingDir:
+    # name space to install the helm chart to
+    nameSpace:
+    # flag whether to show more detailed infos about
+    # the helm chart installation in the console
+    debug:
+    # list of regex names for pods to be running to signal
+    # successful startup of helm chart **/
+    healthcheckPods:
+    # list of key value pairs to be used by the helm chart
+    values:
+    # comma separated list of port forwardings
+    # Entries can be either "podNameRegex:xxxx", which is shorthand for
+    # "podNameRegex:xxxx:xxxx or
+    # "podNameRegex:xxxx:yyyy" where xxxx is the local port
+    # and yyyy is the port in the pod
+    exposedPorts:
+    # list of regex for pod names logs should be shown
+    logPods:</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The configuration of the Tiger Proxy is explained in detail in the section <a href="#_configuring_the_local_test_suite_tiger_proxy">Configuring the local test suite Tiger Proxy</a></p>
+</div>
+<div class="sect3">
+<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.4.1. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
+<div class="paragraph">
+<p>PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).<br>
+In every place a string can be given.<br>
+It could be one of</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>"my/file/name.p12;p12password"</p>
+</li>
+<li>
+<p>"p12password;my/file/name.p12"</p>
+</li>
+<li>
+<p>"cert.pem;key.pkcs8"</p>
+</li>
+<li>
+<p>"rsaCert.pem;rsaKey.pkcs1"</p>
+</li>
+<li>
+<p>"key/store.jks;key"</p>
+</li>
+<li>
+<p>"key/store.jks;key1;key2"</p>
+</li>
+<li>
+<p>"key/store.jks;jks;key"</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Not supported pathname strings:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>"D:\\myproject\\key\\store.jks;key"</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Supported pathname string on all platforms:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>"myproject/key/store.jks;key"</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Please notice, that double backslashes ("\\") are not supported as file separators, since they are not accepted on all platforms.<br>
+Invalid pathname strings will also produce an exception.</p>
+</div>
+<div class="paragraph">
+<p>Each part can be one of:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>filename</p>
+</li>
+<li>
+<p>password</p>
+</li>
+<li>
+<p>store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If you want, you can also describe the components in a map:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tls.forwardMutualTlsIdentity:
+  filename: myIdentity.p12
+  password: "changeit"
+  storeType: P12</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case both the storeType and the password are not mandatory and would be guessed (the store-type via the file extension and the password via a default-list).</p>
+</div>
+<div class="sect4">
+<h5 id="pki-identity-passwords"><a class="anchor" href="#pki-identity-passwords"></a>PKI identity passwords</h5>
+<div class="paragraph">
+<p>Tiger will attempt to decrypt a given P12 file with a list of common passwords, among these are:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>"00", "123456", "gematik", "changeit"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Users can insert additional passwords by configuring the <code>tiger.yaml</code> as follows</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>lib:
+    additionalKeyStorePasswords: ["foo", "bar", "baz"]</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.4.2. Docker Container node</h4>
+<div class="paragraph">
+<p>The docker container node allows to instantiate a local docker container from the configured image.<br>
+The exposed port of the docker container is available as a special token in the substitution process of the exports entries (<code>${PORT:xxxx}</code> where xxxx is the port being exposed inside the container).</p>
+</div>
+<div class="paragraph">
+<p>To customize the docker container you may alter the entry point command line.<br>
+Additionally, Tiger will automatically add the Tiger Proxy certificate to the container&#8217;s operating system list of trusted certificates.<br>
+This modification can be disabled by setting the property <code>dockerOptions.proxied</code> to false.<br>
+E.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  exampleDockerServer:
+    type: docker
+    dockerOptions:
+        proxied: false # default is true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For containers that should exit after a single command you may enable the oneShot property.</p>
+</div>
+<div class="paragraph">
+<p>You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.</p>
+</div>
+<div class="paragraph">
+<p>If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. <a href="http://127.0.0.1:xxxx" class="bare">http://127.0.0.1:xxxx</a>).</p>
+</div>
+<div class="paragraph">
+<p>If no port is exposed at all, the startupTimeoutSec property will determine the wait period, after which Tiger assumes the container is up and running.</p>
+</div>
+<div class="paragraph">
+<p>If you have your local docker environment set up hosting the docker containers on a remote docker hub server, you may set the environment variable <code>TIGER_DOCKER_HOST</code> to allow the health check url determined on runtime to point to the remote host instead of localhost.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Listing 23. Docker container configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    dockerContainer_001:
+      hostname: myDockerContainer
+      type: docker
+      dependsUpon: csv string
+      startupTimeoutSec: int
+
+      # MANDATORY URL from where to download the docker image.
+      source:
+        - dockerhubrepo.somewhere.org/repo/project/docker.image
+      # MANDATORY version of the docker image to download.
+      version: 0.1.2
+      # OPTIONAL the logs of the docker container are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/dockerContainer_001.log
+
+      dockerOptions:
+        # OPTIONAL Flag whether the container shall be modified by
+        # o adding the Tiger Proxy certificate to the container operating system.
+        # o adding docker.host.internal to the container's /etc/hosts file.
+        # Default value is true.
+        proxied: true
+        # OPTIONAL Flag whether the container is a one shot container or not.
+        # One shot meaning it will execute a command and then stop.
+        # Default value is false.
+        oneShot: false
+        # OPTIONAL The entry point command line to be used to start up this container
+        # overwriting any configured entry point in the docker image.
+        # Default value is empty meaning to use the configured entry point command line.
+        entryPoint: chmod a+x /startup.sh &amp;&amp; /startup.sh
+        # OPTIONAL list of files to be copied to the container
+        copyFiles:
+          # path to the file or the folder to copy inside the container
+          - sourcePath: ./example/path/file_to_copy.txt
+          # path inside the container where the file should be copied to
+            destinationPath: /path/in/container/file_to_copy.txt
+          # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
+            fileMode: 0633
+          # a complete folder can also be copied instead of a single file
+          - sourcePath: ./example/copy_folder
+            destinationPath: /path/in/container/copy_folder
+
+
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.4.3. Docker Compose node</h4>
+<div class="paragraph">
+<p>The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support.<br>
+So many of the yaml compose files will need to be modified to work with the testcontainer library.</p>
+</div>
+<div class="paragraph">
+<p>For now, we support the ePA2 FD module and the DEMIS Meldeportal.</p>
+</div>
+<div class="paragraph">
+<p>If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check <a href="#_tiger_configuration">this chapter</a>).</p>
+</div>
+<div class="paragraph">
+<p>The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files.<br>
+Each copied compose file will have a random UUID appended to its filename.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Listing 24. Docker compose configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  type: compose
+  dependsUpon: csv string
+  startupTimeoutSec: int
+  # OPTIONAL the logs of the docker compose are also written to a file, if no logFile is
+  # specified a default name will be used
+  logFile: ./target/serverLogs/dockerCompose.log
+
+  # MANDATORY list of yaml files to use to start up the services.
+  # The entries can either be file paths or if starts with
+  # classpath:....  a reference to a yaml file contained in the class path
+  # (it could also be located inside a jar that is in the class path)
+  source:
+    - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2.yml
+    - classpath:/de/gematik/test/tiger/testenvmgr/epa/titus-epa2-local.yml</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 25. Demis docker compose example</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  demis_001:
+    type: compose
+    source:
+      - classpath:/de/gematik/test/tiger/testenvmgr/demis/demis_localhost.yml
+    startupTimeoutSec: 180</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.4.4. External Jar node</h4>
+<div class="paragraph">
+<p>The External Jar node is along with the Docker container node the most important/used node for test environments.<br>
+Any Jar archive executable which can be started with the <code>java -jar</code> command can be configured as an external Jar node.</p>
+</div>
+<div class="paragraph">
+<p>The options list are arguments added immediately after the java executable, while the arguments list is appended after the -jar argument.</p>
+</div>
+<div class="paragraph">
+<p>The working directory is the place where the jar is executed from.<br>
+So if your jar archive expects some configuration files make sure to choose the folder appropriately.</p>
+</div>
+<div class="paragraph">
+<p>If <code>workingDir</code> is not set, Tiger defaults to the parent directory of the jar file for <code>local:</code> sources, or the OS temp folder for downloaded jars.</p>
+</div>
+<div class="paragraph">
+<p>Relative paths for both <code>source</code> and <code>workingDir</code> are resolved relative to the location of the main <code>tiger.yaml</code> file.</p>
+</div>
+<div class="paragraph">
+<p>If using the <code>local:</code> prefix you can also use wildcards to find any matching jar-files.<br>
+Tiger will use the following order to try to find a matching file:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The path given in <code>source</code> directly (absolute, or resolved from the tiger.yaml location if relative)</p>
+</li>
+<li>
+<p>In the working directory, a file whose name matches the filename part of the source (fallback for bare filenames)</p>
+</li>
+<li>
+<p>In the working directory, a file whose name matches a wildcard pattern in the source (eg. <code>app-*.jar</code>)</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell script hljs" data-lang="shell script">java ${options} -jar externalJar.jar ${arguments}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 26. External jar configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    externalJar_001:
+      hostname: mySpecialJar
+      type: externalJar
+      dependsUpon: csv string
+      startupTimeoutSec: int
+
+      # MANDATORY SINGLE ENTRY URL from where to download the Jar archive.
+      # If the entry starts with "local:" followed by a file path the jar archive
+      # is expected to be available at that location and no download is performed.
+      # Only one entry is expected for this node type. Additional entries are silently ignored.
+      source:
+        - http://myjars.download.org/myproject/myjar.jar
+      # MANDATORY URL to check for the successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If set to "NONE" no check is performed and
+      # the test environment manager will wait for the startup timeout.
+      healthcheckUrl: http://127.0.0.1:8080
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalJar are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalJar_001.log
+
+      externalJarOptions:
+        # OPTIONAL folder from where to start the external jar.
+        # If not set, Tiger defaults to the parent directory of the jar file (for local: sources)
+        # or the OS temp folder (for downloaded jars).
+        # Relative paths are resolved relative to the location of the tiger.yaml file.
+        # A non-existent directory is created automatically.
+        workingDir: /home/user/test/myspecificjar
+        # OPTIONAL Options to pass in to the java executable call.
+        options: []
+        # OPTIONAL provide additional arguments to the jar archive call.
+        # Default value is empty.
+        arguments:
+          - --testarg1
+          - -singledasharg2
+          - --paramarg3=testvalue1
+
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>By default, the JVM used to start the JAR-File is the taken from the <code>java.home</code> system property, thus using the same JVM with which Tiger was started.<br>
+To change the JVM used you can set the property <code>tiger.lib.javaHome</code> (e.g. by setting <code>-Dtiger.lib.javaHome</code>, by setting <code>TIGER_LIB_JAVAHOME</code> in the environment or by setting <code>lib.javaHome</code> in the <code>tiger.yaml</code>).</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.4.5. External URL node</h4>
+<div class="paragraph">
+<p>The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname.<br>
+This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.</p>
+</div>
+<div class="paragraph">
+<p>So, in the following example, the test suite can send HTTP(S) requests to the server "http://myExternalServer" via the local Tiger Proxy, which will be rerouted to the external URL "https://www.medizin.de".<br>
+If it is ever necessary to change the external URL, the test suite does not have to be modified, only the routing configuration for the node has to be changed.</p>
+</div>
+<div class="paragraph">
+<p>Given the nature of this type, the environment section has no effect and is not to be used.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 27. External URL configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  externalUrl_001:
+      hostname: myExternalServer
+      type: externalUrl
+      dependsUpon: csv string
+      startupTimeoutSec: int
+
+      # MANDATORY URL of the external server
+      source:
+        - https://www.medizin.de
+
+      # OPTIONAL URL to check for successful startup of this node.
+      # A successful start is indicated by ANY answer on this URL.
+      # Any status is accepted as long as there is an answer.
+      # If the value is not set, then no health check is carried out
+      # in the startup phase, instead the startupTimeout is waited for.
+      # After this timeout it is assumed that the server is up.
+      healthcheckUrl: https://www.medizin.de/healthyState.jsp
+      # OPTIONAL only declare the server healthy once the specified return code
+      # is given
+      healthcheckReturnCode: int
+      # OPTIONAL the logs of the externalUrl are also written to a file, if no logFile is
+      # specified a default name will be used
+      logFile: ./target/serverLogs/externalUrl_001.log
+
+      # The following properties are explained in the General properties section above
+      # IGNORE for this type as it has no effect
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.4.6. Helm Chart node</h4>
+<div class="paragraph">
+<p>The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart).<br>
+The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To use this server type you must include the tiger-cloud-extension dependency!
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Listing 28. Helm chart configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  testHelmChart_Nginx:
+    type: helmChart
+    startupTimeoutSec: 50
+    # MANDATORY repository from where to download the docker image
+    # if the helm chart is stored on the local file system that the
+    # workingDir should be set.
+    source:
+      - bitnami/nginx
+    # OPTIONAL version of the image
+    version: 1.1.0
+    helmChartOptions:
+      # The kubernetes context
+      context:
+      # OPTIONAL if no working directory is set the default . is used.
+      # if the helm chart is stored on the local file system the workingDir
+      # should be set.
+      workingdir:
+      # OPTIONAL prints out debug messages if set to true, default is false.
+      debug: true
+      # OPTIONAL override the POD_NAMESPACE environment variable if set.
+      # if not set, "default" will be used.
+      nameSpace: buildslaves
+      # MANDATORY pod name of the helm chart
+      podName: test-tiger-nginx
+      # OPTIONAL key-value pairs that will be used for starting the helm chart
+      values:
+      # OPTIONAL should contain a list of pods for the health check, regex can be used.
+      healthcheckPods:
+        - test-tiger-nginx-.*
+      # OPTIONAL contains a list of regex to identify the pods whose logs
+      # should be forwarded to the console and Tiger Workflow UI.
+      logPods:
+        - test-tiger-nginx.*
+      # OPTIONAL contains a list that will be used for the port forwarding,
+      # if empty no port forwarding is done. The syntax is:
+      # &lt;POD_NAME_OR_REGEX&gt;,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;[,&lt;LOCAL_PORT&gt;:&lt;FORWARDING_PORT&gt;]*
+      exposedPorts:
+        - test-tiger-nginx.*,8080:80</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.4.7. Tiger Proxy node</h4>
+<div class="paragraph">
+<p>The most complex and versatile node type.<br>
+The Tiger Proxy will be started as an embedded spring boot application.<br>
+This way the start-up time can be minimized, and it is always guaranteed to start the current version.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 29. Tiger Proxy configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+    tigerProxy_001:
+      hostname: myTigerProxy
+      type: tigerProxy
+      dependsUpon: csv string
+      startupTimeoutSec: int
+
+      tigerProxyConfiguration:
+        # OPTIONAL port of the web user interface and the proxy management
+        # (e.g. rbel-message forwarding)
+        # Default value is empty, which means a random port will be used.
+        # The chosen port is stored with the key tiger.internal.localproxy.admin.port in
+        # the TigerGlobalConfiguration
+        adminPort: 8080
+        # OPTIONAL server name of the node this proxy shall be used as reverse proxy for.
+        # If set the routes will be configured appropriately.
+        # Default value is empty.
+        proxiedServer: externalJar_001
+        # OPTIONAL port of the proxy, where the proxy expects to receive proxy requests
+        # Default value is empty, which means a random port will be used.
+        proxyPort: 3128
+        # OPTIONAL protocol the proxy is expecting requests in. One of [http|https]
+        # Default value is http
+        proxiedServerProtocol: http
+        # configures the proxy itself. For more details
+        # please check the chapter about the local test suite Tiger Proxy below
+        ...
+        proxyRoutes:
+          - from: http://foobar
+            # defines a forward-proxy-route from this server...
+            to: https://cryptic.backend/server/with/path
+            # to this server
+        ...
+
+      # The following properties are explained in the General properties section above
+      environment: []
+      urlMappings: []
+      exports: []</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The configuration of the Tiger Proxy is explained in detail in the section <a href="#_configuring_the_local_test_suite_tiger_proxy">Configuring the local test suite Tiger Proxy</a></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.4.8. httpbin node</h4>
+<div class="paragraph">
+<p>The httpbin simply starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server.<br>
+This provides several endpoints against which you can perform all kinds of http requests.<br>
+The server port on which the server starts can be configured.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 30. httpbin configuration</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">httpbin:
+    type: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.5. Standalone mode vs. implicit startup with test suite</h3>
+<h3 id="provided-node-templates"><a class="anchor" href="#provided-node-templates"></a>3.5. Provided node templates</h3>
+<div class="paragraph">
+<p>Besides these basic nodes we also support tailored templates for nodes like IDP, ePA, ERp and DEMIS.<br>
+This should allow you to bring up project specific test environments very fast.</p>
+</div>
+<div class="paragraph">
+<p>All currently supported templates can be found in the tiger-testenv-mgr modul in the yaml file at /src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml</p>
+</div>
+<div class="paragraph">
+<p>To use such a template, just use the template attribute:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">myPersonalTestIDPInTheRU:
+  template: idp-rise-ru</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or if you want to have an environment with a local reference implementation of the ERezept Fachdienst</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">myLocalTestIDP:
+  template: idp-ref
+  hostname: idp
+
+myLocalTestERp:
+  template: erzpt-fd-ref
+  dependsUpon: myLocalTestIDP</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-idp-reference-nodes"><a class="anchor" href="#local-idp-reference-nodes"></a>3.5.1. Local IDP reference nodes</h4>
+<div class="paragraph">
+<p>This template provides the reference implementation of the IDP server as a local docker container.<br>
+The docker image is loaded from a gematik internal docker registry server.</p>
+</div>
+<div class="paragraph">
+<p>The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available for all subsequently initiated test environment nodes.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="external-idp-rise-instance-nodes"><a class="anchor" href="#external-idp-rise-instance-nodes"></a>3.5.2. External IDP RISE instance nodes</h4>
+<div class="paragraph">
+<p>The idp-rise-ru template provides the RU instance of RISE&#8217;s IDP server as an "external URL".<br>
+The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL of the Discovery Document end point and a config-file for the IDP test suite respectively.<br>
+They are available for all subsequently initiated test environment nodes.</p>
+</div>
+<div class="paragraph">
+<p>The idp-rise-tu template provides the TU instance accordingly.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-erp-reference-nodes"><a class="anchor" href="#local-erp-reference-nodes"></a>3.5.3. Local ERp reference nodes</h4>
+<div class="paragraph">
+<p>This template provides the reference implementation of the eRezept server as a local docker container.<br>
+The docker image is loaded from a gematik internal docker registry server.<br>
+Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under <a href="http://idp" class="bare">http://idp</a> or adapt the environment variable configuration.</p>
+</div>
+<div class="paragraph">
+<p>A large list of environment variables is set.<br>
+But don&#8217;t worry, it is just the server that uses them.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-epa2-reference-nodes"><a class="anchor" href="#local-epa2-reference-nodes"></a>3.5.4. Local ePA2 reference nodes</h4>
+<div class="paragraph">
+<p>This template provides the gematik reference Aktensystem simulation as docker compose.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-pssim-node"><a class="anchor" href="#local-pssim-node"></a>3.5.5. Local PSSim node</h4>
+<div class="paragraph">
+<p>This template provides a Primärsystem simulation (as a jar), usable for ePA.<br>
+See <a href="https://wiki.gematik.de/display/PTP/epa-ps" class="bare">https://wiki.gematik.de/display/PTP/epa-ps</a> for more information.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-konsim-node"><a class="anchor" href="#local-konsim-node"></a>3.5.6. Local KonSim node</h4>
+<div class="paragraph">
+<p>This template provides a Konnektor simulation (as external jar).<br>
+See <a href="https://wiki.gematik.de/display/PTP/KonSim" class="bare">https://wiki.gematik.de/display/PTP/KonSim</a> for more information.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-epa-fdv-sim"><a class="anchor" href="#local-epa-fdv-sim"></a>3.5.7. Local ePA FdV Sim</h4>
+<div class="paragraph">
+<p>This template provides FdV simulation, usable for ePA.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="local-demis-reference-nodes"><a class="anchor" href="#local-demis-reference-nodes"></a>3.5.8. Local DEMIS reference nodes</h4>
+<div class="paragraph">
+<p>This template provides the DEMIS Meldeportal as local docker compose.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.6. Configuring the local test suite Tiger Proxy</h3>
+<div class="paragraph">
+<p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the <code>tiger.yaml</code> file.<br>
+For more information about what the Tiger Proxy is and how it works see the chapter <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># Flag whether to activate the local Tiger Proxy. The local tiger proxy field will be null if this property is set to false
+# Default value is true
+localProxyActive: true
+
+# Specifiy additional yaml-files to read in during startup
+additionalConfigurationFiles:
+  -
+    # the path to the file to read
+    filename: specialEnvironment.yaml
+    # the key to which to map the given file. "tiger" is the base-key for the tiger.yaml-file
+    baseKey: tiger
+
+# the block where all the Tiger Proxy configuration properties are located
+tigerProxy:
+  # the port which will be used for administration (webUI, mesh-Setup,...)
+  adminPort: 7777
+  # port which will be used to proxy requests
+  proxyPort: 6666
+  additionalProxyPorts:
+    - 5555 # additional port which will be used for proxying
+  # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
+  proxyLogLevel: TRACE
+  # section to configure whether and where the proxy should dump a tiger traffic file on shutdown
+  fileSaveInfo:
+    # should the traffic be logged to a file?
+    writeToFile: true
+    # configure the file name
+    filename: "foobar.tgr"
+    # default false, removes any potentially existing saved tgr traffic file on startup.
+    clearFileOnBoot: true
+    # read traffic from a file at startup
+    sourceFile: "sourceFile.tgr"
+    # filter messages read from file (JEXL expression).
+    # Only message for which this expression is true will be loaded.
+    readFilter: "message.statusCode == '200'"
+
+  # a list of routing entries the proxy should apply to traffic
+  proxyRoutes:
+      # defines a forward-proxy-route from this server...
+    - from: http://foobar
+      # to this server
+      to: https://cryptic.backend/server/with/path
+      # reverse proxy-route. http://&lt;tiger-proxy&gt;/blub will be forwarded
+    - from: "/blub"
+      to: "https://another.de/server"
+      # the traffic for this route will NOT be logged (default is false)
+      disableRbelLogging: true
+      hosts:
+        - "www.google.com"
+        - "www.bing.com"
+      # For reverse proxy-routes this allows to differentiate requests based on the host-header. This is useful when the DNS-resolvement of the client can be influenced, but not the ports used.
+
+  # a list of modifications that will be applied to every proxied request and response
+  modifications:
+    # a condition that needs to be fulfilled for the modification to be applied
+    # (uses JEXL grammar)
+  - condition: "isRequest"
+    # which element should be targeted?
+    targetElement: "$.header.user-agent"
+    # the replacement string to be filled in.
+    # This modification will replace the entire "user-agent" in all requests
+    replaceWith: "modified user-agent"
+
+  - condition: "isResponse &amp;&amp; $.responseCode == 200"
+    targetElement: "$.body"
+    # The name of this modification.
+    # This can be used to identify, alter or remove this modification.
+    # The name is optional, but if it is used, it has to be unique.
+    name: "body replacement modification"
+    # This will replace the body of every 200 response completely with the given json-string
+    # (This ignores the existing body. For example this could be an XML-body.
+    # Content-Type-headers will NOT be set accordingly).
+    replaceWith: "{\"another\":{\"node\":{\"path\":\"correctValue\"}}}"
+  - targetElement: "$.body"
+    # The given regex will be used to target only parts of targeted element.
+    regexFilter: "ErrorSeverityType:((Error)|(Warning))"
+    # This modification has no condition,
+    # so it will be applied to every request and every response
+    replaceWith: "ErrorSeverityType:Error"
+
+  # can be used if the target-server (to) is behind another proxy
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    type: HTTP
+    noProxyHosts:
+      - "localhost"
+  # The Tiger Proxy will route google.com to google.com even if no route is set.
+  # The traffic routed via this "forwardAll"-routing will be logged by default
+  # (meaning it will show up in the Rbel-Logs and be forwarded to tracing-clients)
+  # This can be deactivated by setting this flag to false
+  activateForwardAllLogging: true
+  # Limits the rbel-Buffer to approximately this size.
+  # Note: When Rbel debugging is activated the size WILL vastly exceed this limit!
+  rbelBufferSizeInMb: 1024
+  # If set to false disables traffic-analysis by Rbel.
+  # Deactivating will not impede proxy-forwarding nor
+  # the traffic-endpoints.
+  activateRbelParsing: true
+  # While parsing the Tiger Proxy can block the communication from completing.
+  # The end answer from the Tiger Proxy is only transmitted when parsing is completed
+  # (and the message pair can be seen in the log). When 'false' the parsing is done
+  # asynchronous.
+  # Default is true ONLY for the local Tiger Proxy, otherwise default is false!!
+  parsingShouldBlockCommunication: false
+  # This will share the WebUI-Resources (various CSS-files) from the Tiger Proxy
+  # locally, thus enabling usage when no internet connection exists
+  localResources: true
+  # When active the host-headers are rewritten even for a reverse-proxy-route
+  rewriteHostHeader: true
+  # This option can be used to deactivate TLS-Termination. Only deactivate this in
+  # conjunction with a directReverseProxy
+  activateTlsTermination: true
+
+  tls:
+    # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will
+    # generate an identity when queried by a client that matches the configured route.
+    # If the client then in turn trusts the CA this solution will provide you with a seamless
+    # TLS experience. It however requires access to the private-key of a trusted CA.
+    serverRootCa: "certificate.pem;privateKey.pem;PKCS8"
+    # Alternative solution: now all incoming TLS-traffic will be handled using this identity.
+    # This might be easier but requires a certificate
+    # which is valid for the configured routes
+    serverIdentity: "certificateAndKeyAndChain.p12;Password"
+    # Defines which SSL-Suites are allowed. This will delete all default-suites and only add the one
+    # defined here. This configures the server-side of the proxy. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    serverSslSuites:
+      - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+    # This configures the SSL-Suites for the client-side. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    clientSslSuites:
+      - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+    # Define which TLS protocols the server will allow/use. Available values can be found here:
+    # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    clientSupportedGroups:
+      - "brainpoolP256r1"
+      - "brainpoolP384r1"
+      - "prime256v1"
+      - "secp384r1"
+    # Define the groups to be offered in the "client hello" message. More information can be found here:
+    # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.7
+    serverTlsProtocols:
+      - "TLSv1.2"
+
+    # This identity will be used as a client-identity for mutual-TLS when forwarding to
+    # other servers. The information string can be
+    # "my/file/name.p12;p12password" or
+    # "p12password;my/file/name.p12" or
+    # "cert.pem;key.pkcs8" or
+    # "rsaCert.pem;rsaKey.pkcs1" or
+    # "key/store.jks;key" or
+    # "key/store.jks;key1;key2" or
+    # "key/store.jks;jks;key"
+    #
+    # Each part can be one of:
+    # * filename
+    # * password
+    # * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
+    forwardMutualTlsIdentity: "directory/where/another/identityResides.jks;changeit;JKS"
+    # domain which will be used as the server address in the TLS-certificate
+    domainName: deep.url.of.server.de
+    # Alternate names to be added to the TLS-certificate
+    # (localhost and 127.0.0.1 are added by default)
+    alternativeNames:
+      - localhost
+      - 63.54.54.43
+      - foo.bar.server.com
+    # the file into which the master-secrets are written. For this to work
+    # the tiger-java-agent has to be attached to the JVM
+    # (eg. -javaagent:tiger-java-agent-3.1.4.jar). This can be done by
+    # executing the goal 'attach-tiger-agent' to the tiger-maven-plugin.
+    masterSecretsFile: "masterSecretsFile.txt"
+
+  # the given folders are loaded into RBel for analysis. This is only necessary to decrypt
+  # traffic when analyzing it. It has no effect on the proxy-functions themselves.
+  keyFolders:
+  - .
+
+  # Filter out any messages larger from parsing (saving performance)
+  skipParsingWhenMessageLargerThanKb: 8000
+  # Filter out any messages (or message parts) from displaying
+  skipDisplayWhenMessageLargerThanKb: 512
+
+  # A list of upstream Tiger Proxies. This proxy will try to connect to all given sources to
+  # gather traffic via the STOMP-protocol. If any of the given endpoints are not accessible
+  # the server will not boot. (fail fast, fail early)
+  trafficEndpoints:
+    - http://another.tiger.proxy:&lt;proxyPort&gt;
+  trafficEndpointConfiguration:
+    # the name for the traffic Endpoint. can be any string, which will be
+    # displayed at /tracingpoints
+    name: "tigerProxy Tracing Point"</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.7. Standalone mode vs. implicit startup with test suite</h3>
 <div class="paragraph">
 <p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios, thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.<br>
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.</p>
@@ -1685,7 +2723,7 @@ So you may skip the first and just use it with two different values being set.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.6. Using Environment variables and system properties</h3>
+<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.8. Using Environment variables and system properties</h3>
 <div class="paragraph">
 <p>In many configuration values (e.g. <code>exports</code>, <code>environment</code>, <code>source</code>, etc.), placeholders like <code>${PORT:xxxx}</code> or <code>${NAME}</code> can be used.<br>
 These are replaced at runtime with the actual values (e.g. the exposed port of a Docker container or the hostname of a node).</p>
@@ -1743,9 +2781,10 @@ This is less of a problem with a reverse proxy since it is technically not a man
 <h3 id="_tiger_proxy_basics"><a class="anchor" href="#_tiger_proxy_basics"></a>4.2. Tiger Proxy basics</h3>
 <div class="paragraph">
 <p>The tiger proxy is a proxy server.<br>
-It comes in two flavors: tiger proxy and Tiger Standalone Proxy.<br>
-The standalone tiger proxy is started from a JAR file.<br>
-The test environment manager boots the main tiger proxy (so-called local tiger proxy) and also any additional ones (remote tiger proxy, not standalone).</p>
+It comes in two flavors: tiger proxy and Tiger Standalone Proxy.</p>
+</div>
+<div class="paragraph">
+<p>The test environment manager boots the main tiger proxy (so-called local tiger proxy) and also any additional ones (remote tiger proxy, not standalone).</p>
 </div>
 <div class="paragraph">
 <p>The local tiger proxy has the following configuration properties in the tiger.yaml:</p>
@@ -1783,7 +2822,7 @@ This provides the tiger proxy log to monitor the traffic (described in detail <a
 The individual attributes are described in detail in the subsections below.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Complete tiger proxy configuration example</div>
+<div class="title">Listing 31. Complete tiger proxy configuration example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
   # ----General-------------------------------------------------
@@ -2511,7 +3550,7 @@ Invalid pathname strings will also produce an exception.</p>
 <p>In this case both the storeType and the password are not mandatory and would be guessed (the store-type via the file extension and the password via a default-list, see next section).</p>
 </div>
 <div class="sect4">
-<h5 id="pki-identity-passwords"><a class="anchor" href="#pki-identity-passwords"></a>PKI identity passwords</h5>
+<h5 id="pki-identity-passwords-2"><a class="anchor" href="#pki-identity-passwords-2"></a>PKI identity passwords</h5>
 <div class="paragraph">
 <p>Tiger will attempt to decrypt a given P12 file with a list of common passwords, among these are: <code>00</code>, <code>123456</code>, <code>gematik</code>, <code>changeit</code>.</p>
 </div>
@@ -3168,7 +4207,7 @@ The following formats are supported <strong>by default</strong> (always active):
 </tbody>
 </table>
 <div class="listingblock">
-<div class="title">Listing 20. Example: activating optional converters</div>
+<div class="title">Listing 32. Example: activating optional converters</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
     tigerProxyConfiguration:
@@ -3814,26 +4853,49 @@ It brings various options:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="running-tiger-proxy-as-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-standalone-jar"></a>4.15. Running tiger proxy as standalone JAR</h3>
+<h3 id="_standalone_proxy"><a class="anchor" href="#_standalone_proxy"></a>4.15. Tiger Standalone Proxy</h3>
 <div class="paragraph">
-<p>If you only want to run a tiger proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups).<br>
-A spring boot executable JAR is available via <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy">maven central</a>.</p>
+<p>The Tiger Standalone Proxy repackages the Tiger Proxy as a self-contained, runnable Spring Boot JAR and as a Docker image.<br>
+It is the recommended way to run a Tiger Proxy outside of a Tiger test suite — for example as a permanently running traffic recorder, as part of a mesh setup, or as a sidecar container.</p>
 </div>
 <div class="paragraph">
-<p>Supplying an application.yaml file allows you to configure the standalone proxy just like an instance started by the test environment manager.<br>
-All properties can be used the same way as described in <a href="#_tiger_proxy">this chapter</a>.<br>
-There is, however, one additional property for the standalone proxy specifically:</p>
+<p>All configuration options described in <a href="#_tiger_proxy">the Tiger Proxy chapter</a> apply equally to the standalone proxy.<br>
+There is, however, one additional property specific to the standalone proxy:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># flag whether to load all resources (js,css) locally or via CDN/internet.
-# useful if you have no access to the internet in your environment
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># Load all resources (JS, CSS) from the classpath instead of via CDN.
+# Set to true if the environment has no internet access.
 localResources: false</code></pre>
 </div>
 </div>
+<div class="sect3">
+<h4 id="running-tiger-proxy-as-a-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-a-standalone-jar"></a>4.15.1. Running tiger proxy as a standalone JAR</h4>
+<div class="paragraph">
+<p>A Spring Boot executable JAR is available via <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy">Maven Central</a>.<br>
+Download the JAR and start it with:</p>
 </div>
-<div class="sect2">
-<h3 id="running-tiger-proxy-as-a-docker-container"><a class="anchor" href="#running-tiger-proxy-as-a-docker-container"></a>4.16. Running tiger proxy as a docker container</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">java -jar tiger-standalone-proxy-&lt;version&gt;.jar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To supply a custom configuration, place an <code>application.yaml</code> next to the JAR — Spring Boot picks it up automatically.<br>
+Alternatively, point Spring Boot at any file via <code>--spring.config.additional-location</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">java -jar tiger-standalone-proxy-&lt;version&gt;.jar \
+     --spring.config.additional-location=file:./my-config.yaml</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All properties described in <a href="#_tiger_proxy_basics">Tiger Proxy basics</a> can be used directly in that file.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="running-tiger-proxy-as-a-docker-container"><a class="anchor" href="#running-tiger-proxy-as-a-docker-container"></a>4.15.2. Running tiger proxy as a docker container</h4>
 <div class="paragraph">
 <p>You can also simply run the tiger proxy as a docker container:</p>
 </div>
@@ -3857,7 +4919,30 @@ Be aware: When you change configuration in the container, make sure to always ke
   gematik1/tiger-proxy-image:latest</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Once the proxy is running, the following endpoints are available:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Swagger UI</strong> — interactive browser-based API explorer:<br>
+<code><a href="http://localhost:{port}/swagger-ui/index.html" class="bare">http://localhost:{port}/swagger-ui/index.html</a></code></p>
+</li>
+<li>
+<p><strong>OpenAPI JSON spec</strong>:<br>
+<code><a href="http://localhost:{port}/v3/api-docs" class="bare">http://localhost:{port}/v3/api-docs</a></code></p>
+</li>
+<li>
+<p><strong>OpenAPI YAML spec</strong>:<br>
+<code><a href="http://localhost:{port}/v3/api-docs.yaml" class="bare">http://localhost:{port}/v3/api-docs.yaml</a></code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The spec covers all Tiger-Proxy REST endpoints, including route management (<code>/route</code>), traffic modifications (<code>/modification</code>), tracing points (<code>/tracingpoints</code>), traffic push (<code>/traffic</code>), and the Web UI endpoints.</p>
+</div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -3924,6 +5009,13 @@ Currently, multithreaded or parallel test runs are not supported.
     # Flag whether to create the RBEL HTML reports during
     # a testsuite run, activated by default
     createRbelHtmlReports: true
+    # Flag whether to generate intermediate Serenity HTML reports
+    # after each feature file completes. This allows you to view
+    # test progress while the suite is still running.
+    # The report is written to target/site/serenity/index.html
+    # and a machine-readable progress.json is placed alongside it.
+    # Deactivated by default.
+    createIntermediateReports: false
     # maximum amount of seconds to wait / pause execution via pop up in the workflow ui, default is 5 hours.
     pauseExecutionTimeoutSeconds: 18000
     # Customize your Rbel-Logs with your own logo. Must be PNG format.
@@ -3956,7 +5048,27 @@ logging:
 </div>
 </div>
 <div class="sect2">
-<h3 id="registering-lifecycle-callbacks"><a class="anchor" href="#registering-lifecycle-callbacks"></a>5.2. Registering Lifecycle Callbacks</h3>
+<h3 id="intermediate-serenity-reports"><a class="anchor" href="#intermediate-serenity-reports"></a>5.2. Intermediate Serenity Reports</h3>
+<div class="paragraph">
+<p>By default, Serenity HTML reports are only generated at the end of a test suite run.<br>
+If you want to monitor test progress while the suite is still running you can enable intermediate report generation.<br>
+When activated, the Serenity HTML report is regenerated after each feature file completes and written to <code>target/site/serenity/index.html</code>.</p>
+</div>
+<div class="paragraph">
+<p>A machine-readable <code>progress.json</code> file containing status information (completed features, pass/fail counts, timing estimates) is placed alongside it.</p>
+</div>
+<div class="paragraph">
+<p>To enable this feature, add the following to your <code>tiger.yaml</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">lib:
+  createIntermediateReports: true</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="registering-lifecycle-callbacks"><a class="anchor" href="#registering-lifecycle-callbacks"></a>5.3. Registering Lifecycle Callbacks</h3>
 <div class="paragraph">
 <p>When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.</p>
 </div>
@@ -3968,7 +5080,7 @@ All classes that implement this interface and are located in the package <code>d
 <p>Here is an example of a class that will log messages on each callback method:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. ExampleCallback.java</div>
+<div class="title">Listing 33. ExampleCallback.java</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.gematik.test.tiger.lifecycle;
 
@@ -4012,7 +5124,7 @@ public class ExampleCallback implements LifecycleCallbacks {
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.3. Cucumber and Hooks</h3>
+<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.4. Cucumber and Hooks</h3>
 <div class="paragraph">
 <p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.</p>
 </div>
@@ -4034,7 +5146,7 @@ The current test run state (success/failed rate) is logged to the console.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.4. Using the Cucumber Tiger validation steps</h3>
+<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.5. Using the Cucumber Tiger validation steps</h3>
 <div class="paragraph">
 <p>The Tiger validation steps are a set of Cucumber steps that enable you to search for requests and associated responses matching certain criteria.<br>
 All of that without need to write your own code.<br>
@@ -4042,7 +5154,7 @@ Basic knowledge about RBelPath and regular expressions are sufficient.<br>
 In order to use these steps you must ensure that the relevant traffic is routed via the local tiger proxy of the test suite or construct a <a href="#_mesh_setup_traffic_endpoints">tiger proxy mesh</a> set up.</p>
 </div>
 <div class="sect3">
-<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.4.1. Filtering requests</h4>
+<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.5.1. Filtering requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4071,7 +5183,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="_validation_message_sort_order"><a class="anchor" href="#_validation_message_sort_order"></a>5.4.2. Validation iteration order</h4>
+<h4 id="_validation_message_sort_order"><a class="anchor" href="#_validation_message_sort_order"></a>5.5.2. Validation iteration order</h4>
 <div class="paragraph">
 <p>By default the validator iterates messages in registration order (sequence number).<br>
 In proxy-mesh setups where upstream traffic can arrive out of chronological order, switch to transmission-timestamp order via <code>tiger.lib.validation.messageSortOrder</code>:</p>
@@ -4101,7 +5213,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.4.3. Validating responses</h4>
+<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.5.3. Validating responses</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4126,7 +5238,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. Tiger response validation steps example</div>
+<div class="title">Listing 34. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger validation steps
 
@@ -4167,7 +5279,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.4.4. Validating requests</h4>
+<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.5.4. Validating requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -4192,7 +5304,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. Tiger request validation steps example</div>
+<div class="title">Listing 35. Tiger request validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger request validation steps
 
@@ -4226,13 +5338,13 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.4.5. Regex matching</h4>
+<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.5.5. Regex matching</h4>
 <div class="paragraph">
 <p>When comparing values (e.g. in the <code>TGR current response body matches:</code>) generally the algorithms check for equality and only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.4.6. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.5.6. Complete set of steps in validation glue code</h4>
 <div class="sect4">
 <h5 id="tgr-setze-anfrage-timeout-auf-int-sekunden"><a class="anchor" href="#tgr-setze-anfrage-timeout-auf-int-sekunden"></a>TGR setze Anfrage Timeout auf {int} Sekunden</h5>
 
@@ -5122,7 +6234,7 @@ test fails.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.5. Writing your own Glue code</h3>
+<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.6. Writing your own Glue code</h3>
 <div class="paragraph">
 <p>You can define your own BDD steps and write the corresponding glue code in your own project. The glue code files should be placed either in the test/java directory or in the main/java directory depending on your project structure and needs.<br>
 You must remember to configure the packages where your glue code is defined in the <a href="#maven-plugin-generate-drivers">tiger-maven-plugin</a> configuration.</p>
@@ -5131,7 +6243,7 @@ You must remember to configure the packages where your glue code is defined in t
 <p>Additionally, you can use some tiger-specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.</p>
 </div>
 <div class="sect3">
-<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.5.1. Resolving Variables</h4>
+<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.6.1. Resolving Variables</h4>
 <div class="paragraph">
 <p>When defining a glue code method, you can use the variables with the names {tigerResolvedString} and {tigerResolvedUrl}.<br>
 These will be automatically resolved by the TigerGlobalConfiguration resolver, and the result is injected directly in the java method.</p>
@@ -5187,7 +6299,7 @@ public void multilineStringExample(DataTable dataTable){
 </div>
 </div>
 <div class="sect3">
-<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.5.2. Formating Tables</h4>
+<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.6.2. Formating Tables</h4>
 <div class="paragraph">
 <p>Depending on the concrete useage, a <code>DataTable</code> may be interpreted by the glue code as a row wise argument or as a column wise argument.<br>
 To make it clearer to the user, it may be helpful to highlight the first row or the first column of the table when displaying it in the Workflow Ui.<br>
@@ -5226,9 +6338,9 @@ You can apply both annotations to the same method.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.6. Modifying RbelObjects (RbelBuilder)</h3>
+<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.7. Modifying RbelObjects (RbelBuilder)</h3>
 <div class="sect3">
-<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.6.1. Introduction</h4>
+<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.7.1. Introduction</h4>
 <div class="paragraph">
 <p>RBelObjects are internal data structures used by the Tiger test framework to represent and manipulate parsed message content, such as JSON, XML, or token formats. They allow you to access, modify, and assert values at specific paths within a message using RBelPath expressions (see <a href="#_rbel_path_details">Understanding RBelPath</a>). RBelObjects enable flexible validation, transformation, and serialization of message data during automated tests.</p>
 </div>
@@ -5259,7 +6371,7 @@ Jexl Expressions are implemented, as for reading a file or for serializing:<br>
 </div>
 </div>
 <div class="sect3">
-<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.6.2. List of all possible Steps</h4>
+<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.7.2. List of all possible Steps</h4>
 <div class="sect4">
 <h5 id="tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"><a class="anchor" href="#tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"></a>TGR erstellt ein neues Rbel-Objekt {tigerResolvedString} mit Inhalt {tigerResolvedString}</h5>
 
@@ -5352,9 +6464,9 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.6.3. Usage examples</h4>
+<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.7.3. Usage examples</h4>
 <div class="listingblock">
-<div class="title">Listing 24. Tiger Rbel Builder steps example</div>
+<div class="title">Listing 36. Tiger Rbel Builder steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Tiger - RbelBuilder
 
@@ -5382,12 +6494,12 @@ certain value</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.7. Using the HTTP client steps</h3>
+<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.8. Using the HTTP client steps</h3>
 <div class="paragraph">
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. Tiger response validation steps example</div>
+<div class="title">Listing 37. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -5579,7 +6691,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.7.1. Complete set of steps in HTTP client glue code</h4>
+<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.8.1. Complete set of steps in HTTP client glue code</h4>
 <div class="sect4">
 <h5 id="tgr-send-empty-requesttype-request-to-tigerresolvedurl"><a class="anchor" href="#tgr-send-empty-requesttype-request-to-tigerresolvedurl"></a>TGR send empty {requestType} request to {tigerResolvedUrl}</h5>
 
@@ -5902,7 +7014,7 @@ following redirects.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.7.2. XMLUnit Diff Builder</h4>
+<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.8.2. XMLUnit Diff Builder</h4>
 <div class="paragraph">
 <p>Using the validation steps <code>TGR current response at {string} matches as XML:</code> or<br>
 <code>TGR current response at {string} matches as XML and diff options {string}:</code> you are able to compare the content of any RbelPath node in the response.<br>
@@ -5933,7 +7045,7 @@ Comparison is also performed on similarity and not equal content.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.7.3. JSONChecker</h4>
+<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.8.3. JSONChecker</h4>
 <div class="paragraph">
 <p>Using the validation step <code>TGR current response at {string} matches as JSON:</code> you are able to compare the content of any RbelPath node in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.</p>
 </div>
@@ -5977,7 +7089,7 @@ It will be first checked, whether the expected value is equal to the actual one,
 We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 38. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">  {
     "alg": "dir",
@@ -6146,7 +7258,7 @@ address: Friedrichstraße</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.8. Exemplaric scenario Konnektorfarm EAU validation</h3>
+<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.9. Exemplaric scenario Konnektorfarm EAU validation</h3>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.<br>
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
@@ -6171,7 +7283,7 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.9. Using Tiger test lib helper classes</h3>
+<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.10. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -6191,7 +7303,7 @@ All classes listed here are part of the tiger-common module
 <p>For BDD feature files Tiger provides some helper steps too.</p>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.9.1. Complete set of helper steps in Tiger glue code</h4>
+<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.10.1. Complete set of helper steps in Tiger glue code</h4>
 <div class="sect4">
 <h5 id="tgr-testsuite-string-version-string"><a class="anchor" href="#tgr-testsuite-string-version-string"></a>TGR testsuite {string} version {string}</h5>
 
@@ -6457,7 +7569,7 @@ end up in the configuration.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="banner"><a class="anchor" href="#banner"></a>5.9.2. Banner</h4>
+<h4 id="banner"><a class="anchor" href="#banner"></a>5.10.2. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful, for example take a look at the following figure.</p>
 </div>
@@ -6473,21 +7585,21 @@ Furthermore, all banner messages are displayed and highlighted in the Workflow U
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.9.3. TigerSerializationUtil</h4>
+<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.10.3. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps.<br>
 If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.9.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.10.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files.<br>
 For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.9.5. Performing REST calls with Tiger</h4>
+<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.10.5. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -6508,7 +7620,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.10. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.11. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories.<br>
 To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files.<br>
@@ -6572,7 +7684,7 @@ Background blocks will be merged to each scenario before exporting its steps to 
 </div>
 </div>
 <div class="sect2">
-<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.11. JUnit test report when using Scenario Outlines</h3>
+<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.12. JUnit test report when using Scenario Outlines</h3>
 <div class="paragraph">
 <p>When using Scenario Outlines in your feature files, the JUnit test report will show each example that has run in the scenario outline as a single test case.<br>
 To create a name for each example that is referencing the scenario outline, the system property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> is set to the value <code>pickle</code> in case it is not set by the environment.</p>
@@ -6775,7 +7887,7 @@ The server "B" should now use the activated server, without having to set it man
 The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. Configuring using placeholders and exports</div>
+<div class="title">Listing 39. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">servers:
   serverAInternet:
@@ -6926,7 +8038,7 @@ You can simply set an environment variable to do the job for you.<br>
 Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. tiger.yaml with the tiger proxy routing everything to the local server</div>
+<div class="title">Listing 40. tiger.yaml with the tiger proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6950,7 +8062,7 @@ Below are the relevant snippets:</p>
 This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. tiger.yaml with the tiger proxy routing everything to the local server</div>
+<div class="title">Listing 41. tiger.yaml with the tiger proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6975,7 +8087,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. The testsuite</div>
+<div class="title">Listing 42. The testsuite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-Gherkin hljs" data-lang="Gherkin">    TGR current response with attribute "$.body.ReplyStructure.Header.Sender.url" matches "http://127.0.0.1:${backend.server.port}"</code></pre>
 </div>
@@ -7764,7 +8876,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <p>An <code>externalJar</code> server type is displayed as a simple node with an incoming edge for the implicit route from the local proxy. Additionally, if the <code>externalJar</code> has the configuration properties set to use a proxy (http.proxyHost and http.proxyPort), then an outgoing edge is displayed to the local proxy. These properties can be set in the tiger.yaml like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. Example of <code>externalJar</code> configuration with proxy settings</div>
+<div class="title">Listing 43. Example of <code>externalJar</code> configuration with proxy settings</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   mainServer:
@@ -7835,14 +8947,14 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <h5 id="standalone-mode"><a class="anchor" href="#standalone-mode"></a>Standalone mode</h5>
 <div class="paragraph">
 <p>As an alternative to the integration in the Workflow UI, the topology visualizer can be used in a standalone mode.<br>
-You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.3.1/tiger-topology-visualizer-4.3.1-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.3.1/tiger-topology-visualizer-4.3.1-standalone.jar</a></p>
+You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.3.2/tiger-topology-visualizer-4.3.2-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.3.2/tiger-topology-visualizer-4.3.2-standalone.jar</a></p>
 </div>
 <div class="paragraph">
 <p>and run it with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.3.1-standalone.jar</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.3.2-standalone.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -8342,8 +9454,18 @@ This internal gematik extension can be found on GitLab <a href="https://gitlab.p
 <p>The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.<br>
 This internal gematik extension can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension" class="bare">https://gitlab.prod.ccs.gematik.solutions/roboter/tiger-robot-extension</a>.</p>
 </div>
-<div style="page-break-after: always;"></div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="tiger-canopy-extension"><a class="anchor" href="#tiger-canopy-extension"></a>8.3. Tiger Canopy Extension</h3>
+<div class="paragraph">
+<p>The Tiger-Canopy-Extension adds a <code>canopy</code> server type to <code>tiger.yaml</code>: a programmable DNS<br>
+server that reroutes selected hostnames to a sibling <code>tigerProxy</code> and forwards everything<br>
+else to the system resolver — replacing brittle, static Docker network aliases.<br>
+Bundled by default in <code>tiger-starter-parent</code>; otherwise pull in <code>de.gematik.test:tiger-canopy-extension</code>.<br>
+Architecture and full YAML surface: <code>doc/adr/canopy.md</code>.</p>
+</div>
+<div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
@@ -9733,6 +10855,37 @@ For purposes of the Gematik SW-factory, the following code snippet is recommende
 </div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="fe03-can-i-run-a-docker-image-or-canopy-without-the-tiger-cloud-extension"><a class="anchor" href="#fe03-can-i-run-a-docker-image-or-canopy-without-the-tiger-cloud-extension"></a>12.2.3. FE03 Can I run a Docker image or CANOPY without the tiger-cloud-extension?</h4>
+<div class="paragraph">
+<p>Yes. Since Tiger 4.3, <code>tiger-testenv-mgr</code> ships built-in <code>docker</code> and <code>canopy</code> server types (Testcontainers-backed, single-container scope). For a docker-compose-style multi-service env or Kubernetes/Helm, keep using <code>tiger-cloud-extension</code>; for ad-hoc images and CANOPY DNS interception, the in-tree types are enough.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9000
+      proxyPort: 9090
+  myCanopy:
+    type: canopy
+    canopy:
+      image: gematik1/tiger-canopy-image:latest
+      # tigerProxyUrl, controlMode and dependsUpon are auto-wired from myProxy
+  app:
+    type: docker
+    docker:
+      image: my-org/my-app:1.2.3
+      exposedPorts: [8080]
+      # dnsServers is auto-prepended with myCanopy's IP; opt out with injectDns: false
+      waitStrategy: { kind: HTTP, httpPath: /health, timeoutSeconds: 60 }</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the <code>tiger-testenv-mgr</code> user-manual section "Built-in container server types" for the full configuration schema and the placeholders these types publish.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>12.3. Workflow UI</h3>
@@ -9824,13 +10977,54 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>12.4.4. FM01 What serenity do we use currently?</h4>
+<h4 id="fo04-how-do-i-get-rid-of-alias-hell-in-my-docker-compose-setup"><a class="anchor" href="#fo04-how-do-i-get-rid-of-alias-hell-in-my-docker-compose-setup"></a>12.4.4. FO04 How do I get rid of "alias hell" in my docker-compose setup?</h4>
+<div class="paragraph">
+<p>If your test environment uses static <code>networks.&lt;net&gt;.aliases</code> (or extra <code>dns:</code> entries) just so a<br>
+container thinks <code>api.example.com</code> lives at the Tiger proxy IP, you&#8217;ve probably hit the limits of<br>
+that pattern: routing is fixed at compose-up time, every scenario change forces an environment<br>
+restart, and debugging is painful.</p>
+</div>
+<div class="paragraph">
+<p>The <code>tiger-canopy</code> module replaces that with a tiny programmable DNS server. Point your<br>
+containers' <code>dns:</code> at it and it will:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>answer queries for hostnames you have <strong>registered</strong> with the Tiger proxy IP,</p>
+</li>
+<li>
+<p>forward everything else to the system upstream resolvers.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The list of registered hostnames is mutable at runtime via a REST API<br>
+(<code>/api/v1/proxied-hosts</code>) and via Cucumber glue steps shipped in <code>tiger-test-lib</code> (<code>CanopyGlue</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Given TGR set CANOPY base URL to http://canopy:8080
+When  TGR add the following proxied hosts to CANOPY:
+  | host             | matchType |
+  | api.example.com  | EXACT     |
+  | example.com      | SUFFIX    |
+Then  TGR CANOPY contains proxied host api.example.com</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See <code>tiger-canopy/README.md</code> for the full REST reference, configuration options and a ready-to-run<br>
+<code>docker-compose.example.yaml</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>12.4.5. FM01 What serenity do we use currently?</h4>
 <div class="paragraph">
 <p>Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>12.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
+<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>12.4.6. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
 <div class="paragraph">
 <p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird.<br>
 Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
@@ -9846,7 +11040,7 @@ Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, d
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>12.4.6. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
+<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>12.4.7. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
 <div class="paragraph">
 <p>Genauer geht es um folgenden Fehler:</p>
 </div>
@@ -9868,7 +11062,7 @@ Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, d
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>12.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
+<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>12.4.8. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
 <div class="paragraph">
 <p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
 Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird.<br>
@@ -9876,14 +11070,14 @@ Dieses ist NICHT kompatibel zu SLF4J 2.x.x!</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>12.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
+<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>12.4.9. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
 <div class="paragraph">
 <p>Spring Boot liefert eine veraltete Version von Selenium aus.<br>
 Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"><a class="anchor" href="#fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"></a>12.4.9. FM06 Wenn ich Scenario Outlines nutze, werden die Tests im junit Report nicht mit dem Namen des Scenarios angezeigt, sondern z.B. als Examples.Example #1.1.</h4>
+<h4 id="fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"><a class="anchor" href="#fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"></a>12.4.10. FM06 Wenn ich Scenario Outlines nutze, werden die Tests im junit Report nicht mit dem Namen des Scenarios angezeigt, sondern z.B. als Examples.Example #1.1.</h4>
 <div class="paragraph">
 <p>Vermutlich ist die System Property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> (meist im File junit-platform.properties) auf etwas anderes als "pickle" gesetzt.<br>
 Wenn diese Property nicht explizit gesetzt wurde, wird sie von Tiger automatisch auf "pickle" gesetzt.</p>
@@ -9925,6 +11119,12 @@ Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipel
     }
 }</code></pre>
 </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="fe03-kann-ich-ein-docker-image-oder-canopy-ohne-die-tiger-cloud-extension-starten"><a class="anchor" href="#fe03-kann-ich-ein-docker-image-oder-canopy-ohne-die-tiger-cloud-extension-starten"></a>12.5.3. FE03 Kann ich ein Docker-Image oder CANOPY ohne die tiger-cloud-extension starten?</h4>
+<div class="paragraph">
+<p>Ja. Seit Tiger 4.3 enthält <code>tiger-testenv-mgr</code> eingebaute Servertypen <code>docker</code> und <code>canopy</code> (Testcontainers-basiert, Single-Container-Scope). Für docker-compose-artige Multi-Service-Umgebungen oder Kubernetes/Helm bleibt <code>tiger-cloud-extension</code> die richtige Wahl; für Einzelimages und CANOPY-DNS-Interception reichen die In-Tree-Typen. Konfigurationsschema und veröffentlichte Platzhalter siehe Abschnitt "Built-in container server types" im <code>tiger-testenv-mgr</code>-Benutzerhandbuch sowie den Eintrag FE03 im englischen Teil.</p>
 </div>
 </div>
 </div>
@@ -10017,13 +11217,55 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="fo04-wie-werde-ich-die-alias-hölle-in-meinem-docker-compose-setup-los"><a class="anchor" href="#fo04-wie-werde-ich-die-alias-hölle-in-meinem-docker-compose-setup-los"></a>12.7.4. FO04 Wie werde ich die "Alias-Hölle" in meinem docker-compose-Setup los?</h4>
+<div class="paragraph">
+<p>Wenn deine Testumgebung statische <code>networks.&lt;net&gt;.aliases</code> (oder zusätzliche <code>dns:</code>-Einträge)<br>
+nutzt, damit ein Container glaubt, <code>api.example.com</code> liege auf der Tiger-Proxy-IP, stößt du<br>
+schnell an Grenzen: Routing ist beim Hochfahren festgelegt, jede Szenarioänderung erfordert einen<br>
+Umgebungsneustart, und Debugging ist mühsam.</p>
+</div>
+<div class="paragraph">
+<p>Das Modul <code>tiger-canopy</code> ersetzt das durch einen kleinen, programmierbaren DNS-Server. Setze die<br>
+<code>dns:</code>-Einträge deiner Container auf ihn und er wird:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Anfragen für <strong>registrierte</strong> Hostnamen mit der Tiger-Proxy-IP beantworten,</p>
+</li>
+<li>
+<p>alles andere an die System-Upstream-Resolver weiterleiten.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Die Liste der registrierten Hostnamen ist zur Laufzeit über eine REST-API<br>
+(<code>/api/v1/proxied-hosts</code>) sowie über Cucumber-Glue-Steps (<code>CanopyGlue</code> in <code>tiger-test-lib</code>)<br>
+veränderbar:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Angenommen TGR setze die CANOPY-Basis-URL auf http://canopy:8080
+Wenn TGR füge folgende Proxy-Hosts zu CANOPY hinzu:
+  | host             | matchType |
+  | api.example.com  | EXACT     |
+  | example.com      | SUFFIX    |
+Dann TGR CANOPY enthält den Proxy-Host api.example.com</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Die vollständige REST-Referenz, Konfigurationsoptionen und eine sofort lauffähige<br>
+<code>docker-compose.example.yaml</code> findest du in <code>tiger-canopy/README.md</code>.</p>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-06-11 15:08:49 +0200
+Last updated 2026-06-24 14:04:09 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
