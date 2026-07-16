@@ -71,6 +71,7 @@ class IncomingChannelAttributeRaceConditionTest {
     // Setup mocks
     MockServerConfiguration mockConfig = mock(MockServerConfiguration.class);
     when(mockConfig.socketConnectionTimeoutInMillis()).thenReturn(5000L);
+    when(mockConfig.tcpIdleTimeoutInMillis()).thenReturn(1000);
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
     try {

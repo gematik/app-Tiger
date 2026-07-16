@@ -22,14 +22,14 @@ package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.BinaryNode;
 import java.util.*;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.val;
 import org.apache.commons.lang3.ClassUtils;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.BinaryNode;
 
 /** Stores a map of key/value-pairs. */
 @Getter
@@ -106,6 +106,8 @@ public class TigerConfigurationSource implements Comparable<TigerConfigurationSo
         newList.add(wrapAsKey(Integer.toString(counter++)));
         putValue(newList, entry);
       }
+    } else if (value instanceof byte[] bytes) {
+      values.put(baseKey, Base64.getEncoder().encodeToString(bytes));
     } else if (ClassUtils.isPrimitiveOrWrapper(value.getClass())
         || value instanceof String
         || value instanceof Enum<?>) {
@@ -123,10 +125,10 @@ public class TigerConfigurationSource implements Comparable<TigerConfigurationSo
         putValue(
             new TigerConfigurationKey(baseKey),
             Base64.getEncoder().encodeToString(binaryNode.binaryValue()));
-      } else if (jsonNode.isTextual()) {
-        putValue(new TigerConfigurationKey(baseKey), jsonNode.textValue());
+      } else if (jsonNode.isString()) {
+        values.put(baseKey, jsonNode.stringValue());
       } else if (jsonNode.isValueNode() && !jsonNode.isNull()) {
-        putValue(new TigerConfigurationKey(baseKey), jsonNode.toString());
+        values.put(baseKey, jsonNode.toString());
       }
     } else {
       val treeView = configurationLoader.getObjectMapper().valueToTree(value);

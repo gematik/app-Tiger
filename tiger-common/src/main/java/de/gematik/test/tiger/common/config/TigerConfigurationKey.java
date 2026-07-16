@@ -106,6 +106,19 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
     return true;
   }
 
+    public boolean isBelowUsingWildcards(TigerConfigurationKey reference) {
+        if (reference == null || reference.size() >= size()) {
+            return false;
+        }
+        for (int i = 0; i < reference.size(); i++) {
+            final TigerConfigurationKeyString key = reference.get(i);
+            if (StringUtils.isNotEmpty(key.asString()) && !key.asString().equals("*") && !key.equals(get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
   public boolean isDirectlyBelow(TigerConfigurationKey reference) {
     if (reference == null || reference.size() + 1 != size()) {
       return false;
@@ -136,6 +149,23 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
 
   public boolean containsKey(String key) {
     return downsampleKey().matches(key);
+  }
+
+  public boolean containsKeyWithWildcards(String referenceKey) {
+    TigerConfigurationKey reference = new TigerConfigurationKey(referenceKey);
+    // Check if all parts of the reference match with wildcards
+    if (reference.size() > size()) {
+      return false;
+    }
+    for (int i = 0; i < reference.size(); i++) {
+      final TigerConfigurationKeyString refPart = reference.get(i);
+      if (StringUtils.isNotEmpty(refPart.asString())
+          && !refPart.asString().equals("*")
+          && !refPart.equals(get(i))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public void add(String key) {

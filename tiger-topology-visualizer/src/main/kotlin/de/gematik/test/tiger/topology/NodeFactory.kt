@@ -24,8 +24,9 @@ package de.gematik.test.tiger.topology
 import de.gematik.test.tiger.topology.deserialization.LightConfigServer
 import de.gematik.test.tiger.topology.deserialization.LightRoute
 import de.gematik.test.tiger.topology.deserialization.LightTigerConfigModel
+import de.gematik.test.tiger.topology.util.extractHost
 import de.gematik.test.tiger.topology.util.extractPortFromUrl
-import java.net.URI
+import de.gematik.test.tiger.topology.util.requireThat
 import kotlin.collections.emptyMap
 import kotlin.collections.map
 
@@ -157,14 +158,15 @@ private fun collectServersByPort(
 
 private fun collectServersByName(config: LightTigerConfigModel): Map<String, List<String>> =
     config.servers.flatMap { (name, server) ->
-        buildList {
-            add(name.lowercase())
-            server.hostname
-                .takeIf { it.isNotBlank() }
-                ?.lowercase()
-                ?.takeIf { it != name.lowercase() }
-                ?.let(::add)
-        }.map { normalizedHost -> normalizedHost to name }
+        val hosts = mutableSetOf(name.lowercase())
+        server.hostname.takeIf { it.isNotBlank() }?.lowercase()?.let(hosts::add)
+
+        if (server.type == NodeType.EXTERNAL_URL.value) {
+            server.source.forEach { url ->
+                extractHost(url)?.lowercase()?.let(hosts::add)
+            }
+        }
+        hosts.map { it to name }
     }.groupBy({ it.first }, { it.second })
 
 private fun extractServerPort(server: LightConfigServer): String? {
@@ -237,20 +239,16 @@ private fun createComposeNode(
     }
     val services = resolvedYaml?.let { parseComposeServices(it) }.orEmpty()
 
-    val serviceNodes = services.entries.mapIndexed { index, entry ->
-        ConfigurationDiagramModel(
-            listOf(
-                DiagramNode(
-                    id = NodeId("${server.key}-service-$index"),
-                    type = NodeType.COMPOSE_SERVICE,
-                    data = NodeData(entry.key, entry.value as Map<*, *>),
-                    parentNode = NodeId(server.key),
-                    expandParent = true
-                )
-            ),
-            listOf(DiagramEdge.implicitRoute(NodeId(LOCAL_PROXY), NodeId("${server.key}-service-$index")))
-        )
-    }.fold(ConfigurationDiagramModel.empty()){ acc, model -> acc + model }
+    val serviceNodes = services.entries.map { entry ->
+        val serviceId = "${server.key}-${entry.key}"
+        DiagramNode(
+            id = NodeId(serviceId),
+            type = NodeType.COMPOSE_SERVICE,
+            data = NodeData(entry.key, entry.value as Map<*, *>),
+            parentNode = NodeId(server.key),
+            expandParent = true
+        ).singletonModel() + DiagramEdge.implicitRoute(NodeId(LOCAL_PROXY), NodeId(serviceId)).singletonModel()
+    }.fold(ConfigurationDiagramModel.empty(), ConfigurationDiagramModel::plus)
     return serviceNodes + ConfigurationDiagramModel(listOf(groupNode), emptyList(), warnings)
 }
 
@@ -275,15 +273,10 @@ private fun createExternalJarNode(
 
 
 private fun createExternalUrlNode(server: Map.Entry<String, LightConfigServer>): ConfigurationDiagramModel {
-    val url = server.value.source.firstOrNull()
-    val host = url?.let(::extractHost)
     return DiagramNode(
         id = NodeId(server.key),
         type = NodeType.EXTERNAL_URL,
-        data = NodeData(server.key, buildMap {
-            host?.let { put("hostname", it) }
-            putAll(server.value.properties)
-        })
+        data = NodeData(server.key, server.value.properties.toMap())
     ).singletonModel()
 }
 
@@ -304,7 +297,7 @@ internal fun createZionBackendEdges(
         server.zionConfiguration?.collectBackendRequestUrls().orEmpty().forEach { url ->
             val resolved = resolvePlaceholders(url)
             val target = existingModel.findNodeMatchingUrl(resolved)
-                ?: syntheticByUrl.getOrPut(resolved) { createSyntheticExternalNode(resolved) }.id
+                ?: syntheticByUrl.getOrPut(resolved) { createSyntheticTargetNode(resolved) }.id
             edges += DiagramEdge.makesBackendRequest(NodeId(name), target, NodeId(LOCAL_PROXY))
         }
     }
@@ -312,11 +305,13 @@ internal fun createZionBackendEdges(
     return ConfigurationDiagramModel(nodes, edges.distinctBy { it.id.value })
 }
 
-private fun createSyntheticExternalNode(url: String): DiagramNode {
+
+private fun createSyntheticTargetNode(url: String): DiagramNode {
     val host = extractHost(url)
+    val isLocal = host in LOCALHOST_HOSTS
     return DiagramNode(
-        id = NodeId("external-backend-${sanitizeId(url)}"),
-        type = NodeType.EXTERNAL_URL,
+        id = NodeId("${if (isLocal) "unresolved-local-target" else "external-backend"}-${sanitizeId(url)}"),
+        type = if (isLocal) NodeType.UNRESOLVED_LOCAL_TARGET else NodeType.SYNTHETIC_EXTERNAL_URL,
         data = NodeData(url, buildMap {
             host?.let { put("hostname", it) }
         })
@@ -418,46 +413,100 @@ private fun createTrafficEndpointEdgesForProxy(
  */
 internal fun createRouteToServerEdges(
     config: LightTigerConfigModel,
+    existingModel: ConfigurationDiagramModel,
     resolvePlaceholders: ResolvePlaceholders
 ): ConfigurationDiagramModel {
     val serversByPort = collectServersByPort(config, resolvePlaceholders)
     val serversByName = collectServersByName(config)
+    val tigerProxiesByProxyPort = collectTigerProxiesByProxyPort(config, resolvePlaceholders)
 
-    if (serversByPort.isEmpty() && serversByName.isEmpty()) return ConfigurationDiagramModel.empty()
-
+    val nodes = mutableListOf<DiagramNode>()
     val edges = mutableListOf<DiagramEdge>()
+    val syntheticByUrl = mutableMapOf<String, DiagramNode>()
 
-    fun matchRoutes(proxyName: String, routes: List<LightRoute>) {
-        routes.forEachIndexed { i, route ->
-            val routeNodeId = "$proxyName-route-$i"
-            route.to.forEach { toUrl ->
-                val resolvedUrl = resolvePlaceholders(toUrl)
-                val portMatches = extractPortFromUrl(resolvedUrl)
-                    ?.let { serversByPort[it].orEmpty() }
-                    .orEmpty()
-                val hostMatches = extractHost(resolvedUrl)
-                    ?.lowercase()
-                    ?.let { serversByName[it].orEmpty() }
-                    .orEmpty()
+    forEachProxyRoute(config) { proxyName, i, route ->
+        val routeNodeId = "$proxyName-route-$i"
+        route.to.forEach { toUrl ->
+            val resolvedUrl = resolvePlaceholders(toUrl)
+            val targetPort = extractPortFromUrl(resolvedUrl)
+            val portMatches = targetPort
+                ?.let { serversByPort[it].orEmpty() }
+                .orEmpty()
+            val hostMatches = extractHost(resolvedUrl)
+                ?.lowercase()
+                ?.let { serversByName[it].orEmpty() }
+                .orEmpty()
+            val proxyPortMatches = if (isLocalhost(resolvedUrl)) {
+                targetPort?.let { tigerProxiesByProxyPort[it] }?.let(::listOf).orEmpty()
+            } else {
+                emptyList()
+            }
 
-                (portMatches + hostMatches).distinct().forEach { serverName ->
+            val allMatches = (portMatches + hostMatches + proxyPortMatches).distinct()
+
+            //If no host or port matches and there is not already a dockerhost route
+            //then we create a synthetic node
+            if (allMatches.isEmpty() &&
+                !existingModel.hasRouteTarget(routeNodeId) &&
+                existingModel.findNodeMatchingUrl(resolvedUrl) == null
+            ) {
+                val syntheticNode = syntheticByUrl.getOrPut(resolvedUrl) {
+                    createSyntheticTargetNode(resolvedUrl)
+                }
+                edges += DiagramEdge.routeToTarget(NodeId(routeNodeId), syntheticNode.id)
+            } else {
+                //otherwise connect what is already there
+                allMatches.forEach { serverName ->
                     edges += DiagramEdge.routeToTarget(NodeId(routeNodeId), NodeId(serverName))
                 }
             }
         }
     }
 
+    nodes += syntheticByUrl.values
+    return ConfigurationDiagramModel(nodes, edges)
+}
+
+private fun collectTigerProxiesByProxyPort(
+    config: LightTigerConfigModel,
+    resolvePlaceholders: ResolvePlaceholders
+): Map<String, String> {
+    val entries = config.servers
+        .filter { it.value.type == "tigerProxy" }
+        .mapNotNull { (name, server) ->
+            server.tigerProxyConfiguration?.proxyPort
+                ?.let(resolvePlaceholders)
+                ?.takeIf { it.isNotBlank() }
+                ?.let { it to name }
+        }
+
+    return entries.associate { (port, serverName) -> port to serverName }
+}
+
+private fun ConfigurationDiagramModel.hasRouteTarget(routeNodeId: String): Boolean =
+    edges.any {
+        it.type == EdgeType.ROUTE_TO_TARGET && it.source.value == routeNodeId
+    }
+
+
+
+private fun forEachProxyRoute(
+    config: LightTigerConfigModel,
+    action: (proxyName: String, routeIndex: Int, route: LightRoute) -> Unit
+) {
     // Local proxy routes
-    matchRoutes(LOCAL_PROXY, config.tigerProxy?.proxyRoutes.orEmpty())
+    config.tigerProxy?.proxyRoutes.orEmpty().forEachIndexed { i, route ->
+        action(LOCAL_PROXY, i, route)
+    }
 
     // Remote tiger proxy routes
     config.servers
         .filter { it.value.type == "tigerProxy" }
         .forEach { (name, server) ->
-            matchRoutes(name, server.tigerProxyConfiguration?.proxyRoutes.orEmpty())
+            server.tigerProxyConfiguration?.proxyRoutes.orEmpty().forEachIndexed { i, route ->
+                action(name, i, route)
+            }
         }
-
-    return ConfigurationDiagramModel.fromEdges(edges)
 }
 
 
@@ -514,29 +563,17 @@ private fun createRouteToTargetByPortEdges(
 
     val edges = mutableListOf<DiagramEdge>()
 
-    fun matchRoutes(proxyName: String, routes: List<LightRoute>) {
-        routes.forEachIndexed { i, route ->
-            val routeNodeId = "$proxyName-route-$i"
-            route.to.forEach { toUrl ->
-                val resolvedUrl = resolvePlaceholders(toUrl)
-                if (!urlTargetsDockerHost(resolvedUrl, resolvePlaceholders)) return@forEach
-                val port = extractPortFromUrl(resolvedUrl) ?: return@forEach
-                targetPorts.filter { (_, ports) -> port in ports }.forEach { (targetId, _) ->
-                    edges += DiagramEdge.routeToTarget(NodeId(routeNodeId), targetId)
-                }
+    forEachProxyRoute(config) { proxyName, i, route ->
+        val routeNodeId = "$proxyName-route-$i"
+        route.to.forEach { toUrl ->
+            val resolvedUrl = resolvePlaceholders(toUrl)
+            if (!urlTargetsDockerHost(resolvedUrl, resolvePlaceholders)) return@forEach
+            val port = extractPortFromUrl(resolvedUrl) ?: return@forEach
+            targetPorts.filter { (_, ports) -> port in ports }.forEach { (targetId, _) ->
+                edges += DiagramEdge.routeToTarget(NodeId(routeNodeId), targetId)
             }
         }
     }
-
-    // Local proxy routes
-    matchRoutes(LOCAL_PROXY, config.tigerProxy?.proxyRoutes.orEmpty())
-
-    // Remote tiger proxy routes
-    config.servers
-        .filter { it.value.type == "tigerProxy" }
-        .forEach { (name, server) ->
-            matchRoutes(name, server.tigerProxyConfiguration?.proxyRoutes.orEmpty())
-        }
 
     return ConfigurationDiagramModel.fromEdges(edges)
 }
@@ -592,13 +629,7 @@ private fun serverNodeWithOptionalProxyEdge(
     }
 }
 
-private fun extractHost(url: String): String? {
-    // If port contains unresolved placeholders, replace with dummy port so URI.create() can parse it
-    val parseableUrl = url.replace(Regex(":([^/]*\\$\\{[^}]*})"), ":9999")
-    return runCatching { URI.create(parseableUrl).host }.getOrNull()
-}
-
-private fun sanitizeId(value: String): String =
+internal fun sanitizeId(value: String): String =
     value.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').ifBlank { "target" }
 
 

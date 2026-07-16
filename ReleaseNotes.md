@@ -1,5 +1,52 @@
 # Changelog Tiger Test platform
 
+# Release 4.4.0
+
+## Dependencies
+
+* Multiple dependency updates. (TGR-2179)
+* Restassured 6.0.0 (TGR-2179)
+* Groovy 5.0.6 (TGR-2179)
+* Jackson 3 (TGR-2179)
+* Spring Boot 4 (TGR-2179)
+
+## Features
+
+* TGR-2048: Topology Visualizer: add endpoint to read configuration of a remote tiger proxy and display it in the topology visualizer.
+
+  The Tiger Proxy configuration endpoint returns the configuration of the tiger proxy but omits default values and known sensitive data are redacted from the output. This includes forwardProxyInfo password, tls configuration passwords and authentication password of proxy routes.
+
+  Additional sensitive data can be explicitly redacted in the tiger proxy configuration under the key `redactedConfigurationPaths`. For example:
+
+  ```yaml
+  tigerProxy:
+    redactedConfigurationPaths:
+      - tls # these will redact the full tls configuration
+      - fileSaveInfo.fileName # will redact the fileName of the fileSaveInfo
+      - proxyRoutes.*.from # redacts the from address of every proxy route
+  ```
+* TGR-2154: Topology: The topology diagram is enriched with additional information determined during the live test run.
+* TGR-2174: Don't propagate/log tiger routing exceptions if they are deleted by the converter.
+
+  This allows converters, e.g. for POP3/SMTP, to explicitly make exceptions ignorable.
+* TGR-2186: Topology Visualizer: updated user manual and improved autolayouting.
+* TGR-2194: Add new configuration for direct reverse proxy to set a TCP idle timeout.
+  This is useful for long-running connections that may be idle for a while, such as WebSocket connections. The default
+  value is 5 seconds, but it can be overridden in the `tigerProxy.directReverseProxy.tcpIdleTimeoutInSeconds`
+  configuration.
+
+## Bugfixes
+
+* ANFISIK-540: Empty compressed HTTP bodies won't cause a parsing error.
+* TGR-2064: Fix deprecated key check in tiger.yaml.
+* TGR-2143: Standalone mode for TigerTestenvManager fixed.
+* TGR-2147: Publish AfterServerStartEvent asynchronously so misbehaving/slow subscribers cannot block environment setup.
+* TGR-2175: Fixed message toggling in Web UI Rbel log
+* TGR-2184: Fixed an issue where the Serenity reports contained unnecessary rbel log data making the file size too large.
+* TGR-2189: Dependency update.
+* TGR-2193: Bugfix for resolving default tiger logo when rendering HTML.
+
+
 # Release 4.3.2
 
 ## Dependencies

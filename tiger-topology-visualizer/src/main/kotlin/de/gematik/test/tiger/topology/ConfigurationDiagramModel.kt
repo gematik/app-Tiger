@@ -23,7 +23,7 @@ package de.gematik.test.tiger.topology
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonValue
-import java.net.URI
+import de.gematik.test.tiger.topology.util.extractHost
 
 @JvmInline
 value class NodeId(val value: String)
@@ -35,6 +35,7 @@ sealed class NodeType(
     @get:JsonValue val value: String
 ) {
     data object TIGER_PROXY : NodeType("tigerProxy")
+
     //represents tiger proxies which are not configured in the yaml, but are targets
     //of proxy subscriptions: e.g.: standalone proxies started remotely
     data object TIGER_PROXY_EXTERNAL : NodeType("tigerProxyExternal")
@@ -43,6 +44,8 @@ sealed class NodeType(
     data object COMPOSE_SERVICE : NodeType("composeService")
     data object EXTERNAL_JAR : NodeType("externalJar")
     data object EXTERNAL_URL : NodeType("externalUrl")
+    data object SYNTHETIC_EXTERNAL_URL : NodeType("syntheticExternalUrl")
+    data object UNRESOLVED_LOCAL_TARGET : NodeType("unresolvedLocalTarget")
     data object HTTP_BIN : NodeType("httpbin")
     data object ZION : NodeType("zion")
     data object ROUTE : NodeType("route")
@@ -50,10 +53,22 @@ sealed class NodeType(
     data class OTHER(val originalType: String) : NodeType(originalType)
 
     companion object {
-        private val knownTypes by lazy { listOf(
-            TIGER_PROXY, DOCKER, GROUP, COMPOSE_SERVICE, HTTP_BIN,
-            EXTERNAL_JAR, EXTERNAL_URL, ZION, ROUTE, DIRECT_REVERSE_TARGET
-        )}
+        private val knownTypes by lazy {
+            listOf(
+                TIGER_PROXY,
+                DOCKER,
+                GROUP,
+                COMPOSE_SERVICE,
+                HTTP_BIN,
+                EXTERNAL_JAR,
+                SYNTHETIC_EXTERNAL_URL,
+                UNRESOLVED_LOCAL_TARGET,
+                EXTERNAL_URL,
+                ZION,
+                ROUTE,
+                DIRECT_REVERSE_TARGET
+            )
+        }
 
         fun fromServerType(type: String): NodeType =
             knownTypes.find { it.value == type } ?: OTHER(type.ifBlank { "unknown" })
@@ -63,7 +78,8 @@ sealed class NodeType(
 
 data class NodeData(
     val label: String,
-    val config: Map<*, *> = emptyMap<String, Any>())
+    val config: Map<*, *> = emptyMap<String, Any>()
+)
 
 
 data class ConfigurationDiagramModel(
@@ -71,29 +87,38 @@ data class ConfigurationDiagramModel(
     val edges: List<DiagramEdge>,
     @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
     val warnings: List<String> = emptyList()
-){
+) {
 
     operator fun plus(other: ConfigurationDiagramModel): ConfigurationDiagramModel {
         return this.merge(other)
     }
 
     fun merge(other: ConfigurationDiagramModel): ConfigurationDiagramModel {
-        val mergedNodes = this.nodes + other.nodes
-        val mergedEdges = this.edges + other.edges
-        val mergedWarnings = this.warnings + other.warnings
+        val mergedNodes = (this.nodes + other.nodes).distinctBy { it.id }
+        val mergedEdges = (this.edges + other.edges).distinctBy { it.id }
+        val mergedWarnings = (this.warnings + other.warnings).distinct()
         return ConfigurationDiagramModel(mergedNodes, mergedEdges, mergedWarnings)
     }
 
 
     fun findNodeMatchingUrl(url: String): NodeId? {
-        val urlHost = URI.create(url).host
+        val urlHost = extractHost(url) ?: return null
 
-        return this.nodes.find { it.data.config["hostname"].toString() == urlHost || it.id.value == urlHost }?.id
+        return nodes.find { node ->
+            node.data.config["hostname"] == urlHost ||
+                    node.id.value == urlHost ||
+                    (node.type == NodeType.EXTERNAL_URL &&
+                            (node.data.config["source"] as? List<*>)
+                                ?.mapNotNull { it?.toString() }
+                                ?.mapNotNull { extractHost(it) }
+                                ?.any { urlHost == it }
+                            ?: false)
+        }?.id
     }
 
     fun withWarnings(additionalWarnings: List<String>): ConfigurationDiagramModel =
         if (additionalWarnings.isEmpty()) this
-        else copy(warnings = warnings + additionalWarnings)
+        else copy(warnings = (warnings + additionalWarnings).distinct())
 
     companion object {
         fun empty(): ConfigurationDiagramModel {
@@ -118,7 +143,7 @@ data class DiagramNode(
     val parentNode: NodeId? = null,
     @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
     val expandParent: Boolean? = null
-){
+) {
 
 
     fun singletonModel(): ConfigurationDiagramModel {
@@ -135,7 +160,7 @@ data class DiagramEdge(
     val markerEnd: String = "arrowclosed",
     @get:JsonInclude(JsonInclude.Include.NON_NULL)
     val markerStart: String? = null,
-    val data : EdgeData = EdgeData(),
+    val data: EdgeData = EdgeData(),
 ) {
     fun singletonModel(): ConfigurationDiagramModel {
         return ConfigurationDiagramModel(emptyList(), listOf(this))
@@ -143,13 +168,31 @@ data class DiagramEdge(
 
     companion object {
         fun trafficSubscription(source: NodeId, target: NodeId) =
-            DiagramEdge(EdgeId("${source.value}-to-${target.value}-trafficEndpoint"), EdgeType.TRAFFIC_SUBSCRIPTION, source, target, label = "subscribes to traffic")
+            DiagramEdge(
+                EdgeId("${source.value}-to-${target.value}-trafficEndpoint"),
+                EdgeType.TRAFFIC_SUBSCRIPTION,
+                source,
+                target,
+                label = "subscribes to traffic"
+            )
 
         fun usesProxy(source: NodeId, target: NodeId) =
-            DiagramEdge(EdgeId("${source.value}-to-${target.value}"), EdgeType.USES_PROXY, source, target, label = "uses proxy")
+            DiagramEdge(
+                EdgeId("${source.value}-to-${target.value}"),
+                EdgeType.USES_PROXY,
+                source,
+                target,
+                label = "uses proxy"
+            )
 
         fun implicitRoute(source: NodeId, target: NodeId) =
-            DiagramEdge(EdgeId("${source.value}-to-${target.value}-implicit"), EdgeType.IMPLICIT_ROUTE, source, target, label = "automatic route to")
+            DiagramEdge(
+                EdgeId("${source.value}-to-${target.value}-implicit"),
+                EdgeType.IMPLICIT_ROUTE,
+                source,
+                target,
+                label = "automatic route to"
+            )
 
         fun proxyToRoute(proxyName: String, routeIndex: Int, source: NodeId, target: NodeId) =
             DiagramEdge(EdgeId("$proxyName-to-route-$routeIndex"), EdgeType.PROXY_TO_ROUTE, source, target)
@@ -158,15 +201,29 @@ data class DiagramEdge(
             DiagramEdge(EdgeId("${source.value}-to-${target.value}"), EdgeType.ROUTE_TO_TARGET, source, target)
 
         fun makesBackendRequest(source: NodeId, target: NodeId, proxiedVia: NodeId) =
-            DiagramEdge(EdgeId("${source.value}-to-${target.value}-backendRequest"), EdgeType.MAKES_BACKEND_REQUEST, source, target, label = "makes backend request", data = EdgeData(proxiedVia = proxiedVia))
+            DiagramEdge(
+                EdgeId("${source.value}-to-${target.value}-backendRequest"),
+                EdgeType.MAKES_BACKEND_REQUEST,
+                source,
+                target,
+                label = "makes backend request",
+                data = EdgeData(proxiedVia = proxiedVia)
+            )
 
         fun directReverseRoute(source: NodeId, target: NodeId) =
-            DiagramEdge(EdgeId("${source.value}-to-${target.value}-directReverse"), EdgeType.DIRECT_REVERSE_ROUTE, source, target, label = "direct reverse")
+            DiagramEdge(
+                EdgeId("${source.value}-to-${target.value}-directReverse"),
+                EdgeType.DIRECT_REVERSE_ROUTE,
+                source,
+                target,
+                label = "direct reverse"
+            )
     }
 }
 
 data class EdgeData(
-    val proxiedVia: NodeId? = null)
+    val proxiedVia: NodeId? = null
+)
 
 sealed class EdgeType(
     @get:JsonValue val value: String

@@ -24,9 +24,6 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.createInstanceUnchecked;
 import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.findConstructor;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
@@ -37,6 +34,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import de.gematik.test.tiger.lifecycle.ILifecycleManager;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -56,6 +54,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -74,11 +73,13 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Getter
@@ -296,22 +297,20 @@ public class TigerTestEnvMgr
 
   private void logConfiguration() {
     if (log.isDebugEnabled()) {
-      ObjectMapper mapper = new ObjectMapper();
-      mapper.setSerializationInclusion(Include.NON_NULL);
-      mapper.setSerializationInclusion(Include.NON_EMPTY);
-      mapper.setSerializationInclusion(Include.NON_DEFAULT);
+      ObjectMapper mapper = TigerSerializationUtil.createSimpleJsonMapper();
+
       try {
         log.debug(
             "Tiger configuration: "
                 + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(configuration));
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
         log.error("Unable to dump tiger configuration in " + getClass().getSimpleName(), e);
       }
       try {
         log.debug(
             "Environment variables: "
                 + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(System.getenv()));
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
         log.error("Unable to dump os env variables in " + getClass().getSimpleName(), e);
       }
     }
@@ -326,7 +325,11 @@ public class TigerTestEnvMgr
 
     for (BeanDefinition serverBeanDefinition : serverBeanDefinitions) {
       try {
-        Class<?> clz = Class.forName(serverBeanDefinition.getBeanClassName());
+        Class<?> clz =
+            Class.forName(
+                serverBeanDefinition.getBeanClassName(),
+                true,
+                Thread.currentThread().getContextClassLoader());
         String typeToken = clz.getAnnotation(TigerServerType.class).value();
         serverClasses.put(typeToken, clz.asSubclass(AbstractTigerServer.class));
         log.info(
@@ -524,6 +527,7 @@ public class TigerTestEnvMgr
 
   public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
     try {
+      log.trace("setup:start");
       // Per-server pre-validation hook: lets server types inject implicit dependsUpon edges
       // (and other config tweaks) BEFORE the dependency graph is consulted. See
       // AbstractTigerServer#prepareDependencies for the contract.
@@ -562,17 +566,19 @@ public class TigerTestEnvMgr
                                       .serverUpdate(new LinkedHashMap<>(activeServers))
                                       .build())));
 
-      final List<AbstractTigerServer> initialServersToBoot =
-          servers.values().parallelStream()
-              .filter(server -> server.getDependUponList().isEmpty())
-              .toList();
-
       log.info(
           "Booting following server(s): {}",
-          initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
+          servers.values().stream()
+              .filter(server -> server.getDependUponList().isEmpty())
+              .map(AbstractTigerServer::getHostname)
+              .toList());
 
-      initialServersToBoot.parallelStream().forEach(this::startServer);
+      log.trace("setup:before_startAllServersInParallel");
+      startAllServersInParallel();
+      log.trace("setup:after_startAllServersInParallel");
+      log.trace("setup:before_afterServersStart_callback");
       getLifecycleManager().ifPresent(ILifecycleManager::afterServersStart);
+      log.trace("setup:after_afterServersStart_callback");
       if (isLocalTigerProxyActive()) {
         log.info("Subscribing to traffic endpoints with local tiger proxy...");
         localTigerProxy.subscribeToTrafficEndpoints();
@@ -582,6 +588,7 @@ public class TigerTestEnvMgr
 
       log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
     } catch (GenericTigerException rte) {
+      log.trace("setup:failed", rte);
       shutDown();
       throw rte;
     }
@@ -640,42 +647,113 @@ public class TigerTestEnvMgr
         }
         server.start(this);
       }
-
-      cachedExecutor
-          .submit(
-              () ->
-                  servers.values().parallelStream()
-                      .filter(
-                          candidate -> {
-                            log.debug(
-                                "Considering to start server {} with status {}...",
-                                candidate.getServerId(),
-                                candidate.getStatus());
-                            return candidate.getStatus() == TigerServerStatus.NEW;
-                          })
-                      .filter(
-                          candidate ->
-                              candidate.getDependUponList().stream()
-                                  .filter(
-                                      depending ->
-                                          depending.getStatus() != TigerServerStatus.RUNNING)
-                                  .findAny()
-                                  .isEmpty())
-                      .forEach(
-                          toBeStartedServer -> {
-                            log.info(
-                                "Starting server {} with status {}",
-                                toBeStartedServer.getServerId(),
-                                toBeStartedServer.getStatus());
-                            startServer(toBeStartedServer);
-                          }))
-          .get();
-    } catch (RuntimeException | ExecutionException e) {
+    } catch (RuntimeException e) {
       throw new TigerEnvironmentStartupException(
           "Error during startup of server " + server.getServerId(), e);
+    }
+  }
+
+  private void startAllServersInParallel() {
+    var serverFutures = new HashMap<AbstractTigerServer, CompletableFuture<Void>>();
+    var tigerServers = servers.values();
+    log.atTrace().addArgument(tigerServers::size).log("startup:initialize_futures count={}");
+    for (AbstractTigerServer server : tigerServers) {
+      serverFutures.put(server, new CompletableFuture<>());
+    }
+
+    final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+    for (AbstractTigerServer server : tigerServers) {
+      cachedExecutor.submit(
+          () -> {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+            startServerWithDependencyWait(server, serverFutures);
+          });
+    }
+
+    try {
+      log.trace("startup:before_wait_allOf");
+      CompletableFuture.allOf(serverFutures.values().toArray(new CompletableFuture[0])).get();
+      log.trace("startup:after_wait_allOf");
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new TigerTestEnvException("Interrupt received while starting servers", e);
+      throw new TigerTestEnvException("Interrupted while waiting for servers to start", e);
+    } catch (ExecutionException e) {
+      log.trace("startup:wait_allOf_failed", e);
+      Throwable cause = e.getCause();
+      if (cause instanceof TigerEnvironmentStartupException startupException) {
+        throw startupException;
+      }
+      throw new TigerEnvironmentStartupException("Server startup failed", cause);
+    }
+  }
+
+  private void startServerWithDependencyWait(
+      AbstractTigerServer server, Map<AbstractTigerServer, CompletableFuture<Void>> serverFutures) {
+    log.atTrace().addArgument(server::getServerId).log("startup:task_started server={}");
+    try {
+      log.atDebug()
+          .addArgument(server::getServerId)
+          .addArgument(
+              () ->
+                  server.getDependUponList().stream()
+                      .map(AbstractTigerServer::getServerId)
+                      .collect(Collectors.joining(", ")))
+          .log("Server {} waiting for servers {} to start...");
+
+      List<CompletableFuture<Void>> depFutures =
+          server.getDependUponList().stream()
+              .map(serverFutures::get)
+              .filter(Objects::nonNull)
+              .toList();
+
+      if (!depFutures.isEmpty()) {
+        log.atTrace()
+            .addArgument(server::getServerId)
+            .addArgument(depFutures::size)
+            .log("startup:server_wait_dependencies server={} deps={}");
+        CompletableFuture.allOf(depFutures.toArray(new CompletableFuture[0])).get();
+        log.atTrace()
+            .addArgument(server::getServerId)
+            .log("startup:server_dependencies_ready server={}");
+      }
+
+      log.atTrace().addArgument(server::getServerId).log("startup:server_before_start server={}");
+      startServer(server);
+      log.atTrace().addArgument(server::getServerId).log("startup:server_after_start server={}");
+      serverFutures.get(server).complete(null);
+      log.atTrace()
+          .addArgument(server::getServerId)
+          .log("startup:server_future_completed server={}");
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      serverFutures.get(server).completeExceptionally(e);
+      log.atTrace().addArgument(server::getServerId).log("startup:server_interrupted server={}");
+      throw new TigerTestEnvException(
+          "Interrupted while waiting for dependencies of " + server.getServerId(), e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      serverFutures.get(server).completeExceptionally(cause);
+      log.atTrace()
+          .addArgument(server::getServerId)
+          .log("startup:server_dependency_failed server={}", e);
+      if (cause instanceof TigerEnvironmentStartupException startupException) {
+        throw startupException;
+      }
+      throw new TigerEnvironmentStartupException(
+          "Failed to start server " + server.getServerId(), cause);
+    } catch (TigerEnvironmentStartupException e) {
+      serverFutures.get(server).completeExceptionally(e);
+      log.atTrace().addArgument(server::getServerId).log("startup:server_failed server={}", e);
+      throw e;
+    } catch (Exception e) {
+      serverFutures.get(server).completeExceptionally(e);
+      log.atTrace()
+          .addArgument(server::getServerId)
+          .log("startup:server_unexpected_failure server={}", e);
+      throw new TigerEnvironmentStartupException(
+          "Failed to start server " + server.getServerId(), e);
+    } finally {
+      log.atTrace().addArgument(server::getServerId).log("startup:task_finished server={}");
     }
   }
 

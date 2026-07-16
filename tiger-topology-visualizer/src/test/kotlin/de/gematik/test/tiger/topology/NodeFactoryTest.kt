@@ -73,7 +73,7 @@ class NodeFactoryTest {
 
             val node = model.nodes.single()
             assertThat(node.type.value).isEqualTo("externalUrl")
-            assertThat(node.data.config["hostname"]).isEqualTo("example.com")
+            assertThat(node.data.config["source"]).isEqualTo(listOf("https://example.com/api"))
         }
 
         @Test
@@ -180,10 +180,10 @@ class NodeFactoryTest {
             val model = createDiagramNode(entry, resolver, identity)
 
             assertThat(model.nodes.map { it.id.value }).containsExactlyInAnyOrder(
-                "myCompose", "myCompose-service-0", "myCompose-service-1"
+                "myCompose", "myCompose-web", "myCompose-db"
             )
             assertThat(model.nodes.first { it.id.value == "myCompose" }.type.value).isEqualTo("group")
-            assertThat(model.nodes.filter { it.id.value.startsWith("myCompose-service") })
+            assertThat(model.nodes.filter { it.id.value.startsWith("myCompose-") })
                 .allMatch { it.parentNode?.value == "myCompose" }
         }
 
@@ -253,7 +253,7 @@ class NodeFactoryTest {
                 """.trimIndent()
             )
 
-            val model = createRouteToServerEdges(config, identity)
+            val model = createRouteToServerEdges(config, ConfigurationDiagramModel.empty(), identity)
 
             assertThat(model.edges).containsExactly(
                 DiagramEdge.routeToTarget(NodeId("localTigerProxy-route-0"), NodeId("backend"))
@@ -261,7 +261,7 @@ class NodeFactoryTest {
         }
 
         @Test
-        fun `no edges when ports dont match`() {
+        fun `synthetic node and edge when target does not exist in config`() {
             val config = parseTigerConfig(
                 """
                 tigerProxy:
@@ -275,11 +275,106 @@ class NodeFactoryTest {
                 """.trimIndent()
             )
 
-            val model = createRouteToServerEdges(config, identity)
+            val model = createRouteToServerEdges(config, ConfigurationDiagramModel.empty(), identity)
 
-            assertThat(model.edges).isEmpty()
+            assertThat(model.nodes).containsExactly(
+                DiagramNode(
+                    NodeId("unresolved-local-target-http-localhost-9999"),
+                    NodeType.UNRESOLVED_LOCAL_TARGET,
+                    NodeData("http://localhost:9999", mapOf("hostname" to "localhost"))
+                )
+            )
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.routeToTarget(
+                    NodeId("localTigerProxy-route-0"),
+                    NodeId("unresolved-local-target-http-localhost-9999")
+                )
+            )
+        }
+
+        @Test
+        fun `route to unknown target creates synthetic node`() {
+            val config = parseTigerConfig(
+                """
+                tigerProxy:
+                  proxyRoutes:
+                    - from: http://frontend
+                      to: http://external-service.com:1234
+                """.trimIndent()
+            )
+
+            val model = createRouteToServerEdges(config, ConfigurationDiagramModel.empty(), identity)
+
+            assertThat(model.nodes)
+                .containsExactly(
+                    DiagramNode(
+                        id = NodeId("external-backend-http-external-service-com-1234"),
+                        type = NodeType.SYNTHETIC_EXTERNAL_URL,
+                        data = NodeData("http://external-service.com:1234", mapOf("hostname" to "external-service.com"))
+                    )
+                )
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.routeToTarget(
+                    NodeId("localTigerProxy-route-0"),
+                    NodeId("external-backend-http-external-service-com-1234")
+                )
+            )
+        }
+
+        @Test
+        fun `route to already matched target does not create synthetic node`() {
+            val config = parseTigerConfig(
+                """
+                tigerProxy:
+                  proxyRoutes:
+                    - from: http://frontend
+                      to: http://already-matched:1234
+                """.trimIndent()
+            )
+            val existingModel = ConfigurationDiagramModel.fromNodes(
+                listOf(
+                    DiagramNode(
+                        NodeId("matched-node"),
+                        NodeType.DOCKER,
+                        NodeData("already-matched", mapOf("hostname" to "already-matched"))
+                    )
+                )
+            )
+
+            val model = createRouteToServerEdges(config, existingModel, identity)
+
+            assertThat(model.nodes).isEmpty()
+            assertThat(model.edges).isEmpty() // matched by Docker/Compose elsewhere, so this one should be silent
+        }
+
+        @Test
+        fun `route to externalUrl server via source URL host creates edge`() {
+            val config = parseTigerConfig(
+                """
+                tigerProxy:
+                  proxyRoutes:
+                    - from: /example
+                      to: https://www.example.com
+                servers:
+                  exampleCom:
+                    type: externalUrl
+                    source:
+                      - https://www.example.com
+                """.trimIndent()
+            )
+
+
+            val model = createRouteToServerEdges(
+                config,
+                createDiagramNode(config.servers.entries.first(), noopResolver, identity),
+                identity
+            )
+
+            assertThat(model.edges).hasSize(1)
+            assertThat(model.edges[0].target).isEqualTo(NodeId("exampleCom"))
         }
     }
+
 
     @Nested
     inner class RouteToDockerEdges {
@@ -522,10 +617,21 @@ class NodeFactoryTest {
 
             val model = createZionBackendEdges(config, ConfigurationDiagramModel.empty(), identity)
 
-            assertThat(model.nodes).hasSize(1)
-            assertThat(model.nodes.single().type.value).isEqualTo("externalUrl")
-            assertThat(model.edges).hasSize(1)
-            assertThat(model.edges.single().source.value).isEqualTo("myZion")
+
+            assertThat(model.nodes).containsExactly(
+                DiagramNode(
+                    id = NodeId("external-backend-http-unknown-example-com-api"),
+                    type = NodeType.SYNTHETIC_EXTERNAL_URL,
+                    data = NodeData("http://unknown.example.com/api", mapOf("hostname" to "unknown.example.com"))
+                )
+            )
+            assertThat(model.edges).containsExactly(
+                DiagramEdge.makesBackendRequest(
+                    NodeId("myZion"),
+                    NodeId("external-backend-http-unknown-example-com-api"),
+                    NodeId(LOCAL_PROXY)
+                )
+            )
         }
     }
 }

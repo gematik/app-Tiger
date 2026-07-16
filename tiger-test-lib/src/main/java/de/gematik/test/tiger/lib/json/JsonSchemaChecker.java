@@ -20,7 +20,7 @@
  */
 package de.gematik.test.tiger.lib.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /** Validates a given JSON string against a given JSON schema. */
 public class JsonSchemaChecker extends AbstractSchemaChecker {

@@ -30,4 +30,8 @@ public class DeprecatedKeyDescriptor {
   private String compareKey;
   private String deprecatedKey;
   private String newKey;
+
+  public String getCompareKey() {
+    return compareKey != null ? compareKey.toLowerCase() : null;
+  }
 }

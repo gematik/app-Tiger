@@ -64,6 +64,27 @@ const isOnlineMode = __IS_ONLINE_MODE__;
 // Create a mock message queue for the SettingsHeader component
 // Since we're in single message mode, we don't have a real message queue
 function createMockMessageQueue(): UseMessageQueueReturn {
+  // simple per-uuid UI state storage for the single-message view
+  const uiStateMap: Map<
+    string,
+    Partial<import("@/api/MessageQueue.ts").MessageUiState>
+  > = new Map();
+  function getUiState(uuid: string) {
+    let s = uiStateMap.get(uuid) as import("@/api/MessageQueue.ts").MessageUiState | undefined;
+    if (!s) {
+      s = { details: true, headers: true, body: true, sections: {} };
+      uiStateMap.set(uuid, s);
+    }
+    return s;
+  }
+  function setUiState(
+    uuid: string,
+    state: Partial<import("@/api/MessageQueue.ts").MessageUiState>,
+  ) {
+    const s = getUiState(uuid);
+    Object.assign(s, state);
+  }
+
   return {
     reversedMessageQueue: readonly(ref(false)),
     messagesMeta: computed(() => []),
@@ -71,9 +92,12 @@ function createMockMessageQueue(): UseMessageQueueReturn {
     scrollToMessage: () => {},
     reset: () => {},
     internal: {
+      // match the expected signature from UseMessageQueueReturn
       update: () => {},
       messages: ref([]) as Ref<MessageType[]>,
       ref: ref(null),
+      getUiState,
+      setUiState,
     },
   };
 }

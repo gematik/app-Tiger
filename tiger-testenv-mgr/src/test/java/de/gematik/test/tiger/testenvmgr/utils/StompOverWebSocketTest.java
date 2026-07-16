@@ -32,6 +32,9 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.lang.reflect.Type;
+import java.net.Socket;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import javax.net.ssl.*;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +70,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 @Slf4j
-public class StompOverWebSocketTest {
+class StompOverWebSocketTest {
 
   @ParameterizedTest(name = "routeTarget={0}, connectionHost={1}, hostHeader={2}, secure={3}")
   @CsvSource({
@@ -166,6 +170,33 @@ public class StompOverWebSocketTest {
         .disconnect();
   }
 
+  private static X509ExtendedTrustManager trustAllManager() {
+    return new X509ExtendedTrustManager() {
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+      }
+
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) {}
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) {}
+
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {}
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {}
+    };
+  }
+
   @SneakyThrows
   private static WebSocketStompClient createStompClient(boolean secure) {
     StandardWebSocketClient webSocketClient = new StandardWebSocketClient();
@@ -173,54 +204,19 @@ public class StompOverWebSocketTest {
       // For Tomcat's WebSocket client, we need to disable host verification
       // by providing a custom SSLContext with a permissive trust manager that skips hostname
       // verification (similar to Tyrus's SslEngineConfigurator.setHostVerificationEnabled(false))
-      var trustAllContext = javax.net.ssl.SSLContext.getInstance("TLS");
-      trustAllContext.init(
-          null,
-          new javax.net.ssl.TrustManager[] {
-            new javax.net.ssl.X509ExtendedTrustManager() {
-              @Override
-              public void checkClientTrusted(
-                  java.security.cert.X509Certificate[] chain,
-                  String authType,
-                  java.net.Socket socket) {}
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, new TrustManager[] {trustAllManager()}, new SecureRandom());
 
-              @Override
-              public void checkServerTrusted(
-                  java.security.cert.X509Certificate[] chain,
-                  String authType,
-                  java.net.Socket socket) {}
+      SSLContext.setDefault(sslContext);
+      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 
-              @Override
-              public void checkClientTrusted(
-                  java.security.cert.X509Certificate[] chain,
-                  String authType,
-                  javax.net.ssl.SSLEngine engine) {}
-
-              @Override
-              public void checkServerTrusted(
-                  java.security.cert.X509Certificate[] chain,
-                  String authType,
-                  javax.net.ssl.SSLEngine engine) {}
-
-              @Override
-              public void checkClientTrusted(
-                  java.security.cert.X509Certificate[] chain, String authType) {}
-
-              @Override
-              public void checkServerTrusted(
-                  java.security.cert.X509Certificate[] chain, String authType) {}
-
-              @Override
-              public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return new java.security.cert.X509Certificate[0];
-              }
-            }
-          },
-          new java.security.SecureRandom());
+      // Spring passes this context into ClientEndpointConfig;
+      // Tomcat 11 uses ClientEndpointConfig#getSSLContext() for WSS handshakes.
+      webSocketClient.setSslContext(sslContext);
 
       webSocketClient
           .getUserProperties()
-          .put("org.apache.tomcat.websocket.SSL_CONTEXT", trustAllContext);
+          .put("org.apache.tomcat.websocket.SSL_CONTEXT", sslContext);
     }
 
     var stompClient = new WebSocketStompClient(webSocketClient);

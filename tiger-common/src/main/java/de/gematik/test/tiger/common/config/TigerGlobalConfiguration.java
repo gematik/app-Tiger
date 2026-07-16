@@ -23,9 +23,6 @@ package de.gematik.test.tiger.common.config;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.AdditionalConfigurationFileProperty;
 import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
@@ -39,6 +36,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,6 +46,10 @@ import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.MapperBuilder;
 
 /**
  * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end
@@ -261,12 +263,26 @@ public class TigerGlobalConfiguration {
 
   public static Optional<byte[]> readByteArray(String key) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
+    return globalConfigurationLoader
+        .readStringOptional(key)
+        .map(TigerGlobalConfiguration::unwrapJsonQuotedString)
+        .map(Base64.getDecoder()::decode);
   }
 
   public static Optional<byte[]> readByteArray(TigerConfigurationKey key) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
+    return globalConfigurationLoader
+        .readStringOptional(key)
+        .map(TigerGlobalConfiguration::unwrapJsonQuotedString)
+        .map(Base64.getDecoder()::decode);
+  }
+
+  private static String unwrapJsonQuotedString(String value) {
+    // Handle case where JSON-quoted string is stored (e.g., "base64string")
+    if (value != null && value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+      return value.substring(1, value.length() - 1);
+    }
+    return value;
   }
 
   @SneakyThrows
@@ -664,6 +680,10 @@ public class TigerGlobalConfiguration {
 
   public static ObjectMapper getObjectMapper() {
     return globalConfigurationLoader.getObjectMapper();
+  }
+
+  public static void addCustomMapper(Consumer<MapperBuilder> customizer) {
+    globalConfigurationLoader.addCustomMapper(customizer);
   }
 
   public static void deleteFromAllSources(TigerConfigurationKey configurationKey) {

@@ -29,6 +29,7 @@ import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.rbel.MockHistoryFacade;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.NavigableSet;
@@ -119,18 +120,30 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
     stepRbelMessages.add(e);
   }
 
-  public void clearMessages() {
+  public void clearReportRbelLogMessages() {
     rbelMessages.clear();
   }
 
   public synchronized void clearAllMessages() {
     clearValidatableRbelMessages();
-    clearMessages();
+    clearReportRbelLogMessages();
     stepRbelMessages.clear();
   }
 
-  public List<RbelElement> getMessages() {
-    return Collections.unmodifiableList(rbelMessages);
+  public RbelMessageHistory.MessageHistory getRbelReportMessages() {
+    return shapeMessageHistory(List.copyOf(rbelMessages));
+  }
+
+  private MockHistoryFacade shapeMessageHistory(Collection<RbelElement> messages) {
+    var sequenceMap =
+        messages.stream()
+            .collect(
+                Collectors.toMap(
+                    e -> e.getSequenceNumber().get(), e -> e, (e1, e2) -> e1, TreeMap::new));
+    NavigableSet<RbelElement> timestampSorted =
+        new TreeSet<>(RbelMessageHistory.TIMESTAMP_SEQ_COMPARATOR);
+    timestampSorted.addAll(messages);
+    return new MockHistoryFacade(sequenceMap, timestampSorted);
   }
 
   /** clears the validatable messages list* */
@@ -151,25 +164,14 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
    */
   public RbelMessageHistory.MessageHistory getValidatableMessages() {
     // we make a new unmodifiable list that is read directly from the tiger proxy messageHistory
-    // but without the elements that should habe been deleted by the clearValidatableRbelMessages()
+    // but without the elements that should have been deleted by the clearValidatableRbelMessages()
     // call.
     return Optional.ofNullable(lastDeletedElement)
         .map(
             element -> {
               var sourceHistory = messagesSupplier.getMessageHistory();
-              var sequenceMap =
-                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.SEQUENCE).stream()
-                      .collect(
-                          Collectors.toMap(
-                              e -> e.getSequenceNumber().get(),
-                              e -> e,
-                              (e1, e2) -> e1,
-                              TreeMap::new));
-              NavigableSet<RbelElement> timestampSorted =
-                  new TreeSet<>(RbelMessageHistory.TIMESTAMP_SEQ_COMPARATOR);
-              timestampSorted.addAll(
-                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.TIMESTAMP));
-              return new MockHistoryFacade(sequenceMap, timestampSorted);
+              return shapeMessageHistory(
+                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.SEQUENCE));
             })
         .map(RbelMessageHistory.MessageHistory.class::cast)
         .orElseGet(messagesSupplier::getMessageHistory);

@@ -21,15 +21,15 @@
 
 package de.gematik.test.tiger.topology
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import de.gematik.test.tiger.topology.deserialization.GlobalConfig
 import de.gematik.test.tiger.topology.deserialization.LightAdditionalConfigurationFile
 import de.gematik.test.tiger.topology.deserialization.LightTigerConfigModel
 import de.gematik.test.tiger.topology.deserialization.resolvePlaceholders
 import de.gematik.test.tiger.topology.util.requireThat
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 // ──────────────────────────────────────────────────────────────────────────────
 // YAML parsing, normalisation, and multi-file merge logic.
@@ -44,9 +44,10 @@ private const val TIGER_KEY = "tiger"
 private val TIGER_ROOT_KEYS = setOf("servers", "tigerProxy", "localProxyActive", "additionalConfigurationFiles")
 
 internal val yamlMapper: ObjectMapper =
-    ObjectMapper(YAMLFactory())
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .registerKotlinModule()
+    YAMLMapper.builder()
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .addModule(kotlinModule())
+        .build()
 
 
 

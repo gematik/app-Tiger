@@ -21,17 +21,10 @@
 
 package de.gematik.test.tiger.proxy.client.legacy;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.client.TigerTracingDto;
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +34,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * Legacy DTO for Tiger Tracing messages. We changed the structure of the tracing messages in tiger
@@ -124,15 +123,14 @@ public class TigerTracingDtoLegacy {
   }
 
   private static class TigerTracingDtoLegacyAddressDeserializer
-      extends JsonDeserializer<RbelSocketAddress> {
+      extends ValueDeserializer<RbelSocketAddress> {
 
     @Override
-    public RbelSocketAddress deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException {
-      JsonNode node = p.getCodec().readTree(p);
+    public RbelSocketAddress deserialize(JsonParser p, DeserializationContext ctxt) {
+      JsonNode node = ctxt.readTree(p);
       if (node.has("hostname") && node.has("port")) {
         // Extract fields from the legacy object structure
-        String hostname = node.get("hostname").asText();
+        String hostname = node.get("hostname").asString();
         int port = node.get("port").asInt();
         return RbelSocketAddress.create(hostname, port);
       }
@@ -141,14 +139,14 @@ public class TigerTracingDtoLegacy {
   }
 
   private static class TigerTracingDtoLegcyDatetimeDeserializer
-      extends JsonDeserializer<ZonedDateTime> {
+      extends ValueDeserializer<ZonedDateTime> {
 
     @Override
-    public ZonedDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public ZonedDateTime deserialize(JsonParser p, DeserializationContext ctxt) {
       try {
-        String date = p.getText();
+        String date = p.getString();
         return ZonedDateTime.parse(date);
-      } catch (JsonParseException e) {
+      } catch (JacksonException e) {
         return null;
       }
     }

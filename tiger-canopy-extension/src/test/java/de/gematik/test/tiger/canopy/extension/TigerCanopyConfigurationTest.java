@@ -23,8 +23,6 @@ package de.gematik.test.tiger.canopy.extension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.canopy.client.config.HttpVersion;
 import de.gematik.test.tiger.canopy.client.config.MatchType;
@@ -32,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Round-trip serialization tests for {@link TigerCanopyConfiguration}. The YAML-bound POJO must
@@ -43,7 +43,7 @@ class TigerCanopyConfigurationTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void defaultsRoundTripThroughJson() throws Exception {
+  void defaultsRoundTripThroughJson() {
     TigerCanopyConfiguration original = new TigerCanopyConfiguration();
 
     String json = mapper.writeValueAsString(original);
@@ -65,7 +65,7 @@ class TigerCanopyConfigurationTest {
   }
 
   @Test
-  void fullyPopulatedRoundTripPreservesAllFields() throws Exception {
+  void fullyPopulatedRoundTripPreservesAllFields() {
     TigerCanopyConfiguration original = new TigerCanopyConfiguration();
     original.setDnsPort(5353);
     original.setTigerProxyUrl("http://tiger-proxy:8080");
@@ -98,7 +98,7 @@ class TigerCanopyConfigurationTest {
   }
 
   @Test
-  void enumsSerializeAsBareNamesMatchingTheCanopyWireFormat() throws Exception {
+  void enumsSerializeAsBareNamesMatchingTheCanopyWireFormat() {
     TigerCanopyConfiguration cfg = new TigerCanopyConfiguration();
     cfg.setControlMode(ControlMode.ROUTE_PER_HOST);
     cfg.setProxyClientHttpVersion(HttpVersion.HTTP_2);
@@ -116,13 +116,12 @@ class TigerCanopyConfigurationTest {
   }
 
   @Test
-  void unknownFieldsAreToleratedSoNewerCanopyConfigsLoadOnOlderTiger() throws Exception {
+  void unknownFieldsAreToleratedSoNewerCanopyConfigsLoadOnOlderTiger() {
     String json =
         "{\"dnsPort\":5353,\"someFieldFromTheFuture\":42,"
             + "\"controlMode\":\"NONE\",\"image\":\"x\"}";
 
-    ObjectMapper tolerant =
-        new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    ObjectMapper tolerant = JsonMapper.builder().build();
 
     TigerCanopyConfiguration restored = tolerant.readValue(json, TigerCanopyConfiguration.class);
     assertThat(restored.getDnsPort()).isEqualTo(5353);

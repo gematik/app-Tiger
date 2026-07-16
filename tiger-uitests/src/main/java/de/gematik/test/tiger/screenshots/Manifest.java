@@ -20,13 +20,13 @@
 package de.gematik.test.tiger.screenshots;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The manifest.json that tracks the current archive state in the store. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -40,13 +40,13 @@ record Manifest(String baseline, int sequence, String timestamp) {
   static final String BASELINE_PREFIX = "screenshots-baseline-";
 
   private static final ObjectMapper MAPPER =
-      new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+      JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
-  static Manifest read(Path file) throws IOException {
+  static Manifest read(Path file) {
     return MAPPER.readValue(file.toFile(), Manifest.class);
   }
 
-  void write(Path file) throws IOException {
+  void write(Path file) {
     MAPPER.writeValue(file.toFile(), this);
   }
 

@@ -24,9 +24,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.extension.Parameters;
 import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformerV2;
@@ -42,6 +39,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 class ClockSkewEstimatorTest {
 
@@ -149,8 +148,7 @@ class ClockSkewEstimatorTest {
    */
   static class DynamicClockTransformer implements ResponseDefinitionTransformerV2 {
 
-    private static final ObjectMapper MAPPER =
-        new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
     public ResponseDefinition transform(ServeEvent serveEvent) {
@@ -165,7 +163,7 @@ class ClockSkewEstimatorTest {
         body =
             MAPPER.writeValueAsString(
                 new TracingpointsController.ClockResponse(simulatedRemoteNow));
-      } catch (JsonProcessingException e) {
+      } catch (JacksonException e) {
         throw new IllegalStateException("Failed to serialise ClockResponse", e);
       }
       return ResponseDefinitionBuilder.like(original).but().withBody(body).build();

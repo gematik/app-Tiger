@@ -20,10 +20,6 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
@@ -52,6 +48,9 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Getter
 public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
@@ -213,7 +212,10 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     synchronized (this) {
       setStatus(TigerServerStatus.RUNNING, getServerId() + " READY");
     }
-    testEnvMgr.getLifecycleEventBus().publish(new AfterServerStartEvent(this));
+    // Publish asynchronously so misbehaving/slow subscribers cannot block environment setup.
+    testEnvMgr
+        .getCachedExecutor()
+        .submit(() -> testEnvMgr.getLifecycleEventBus().publish(new AfterServerStartEvent(this)));
   }
 
   private void reloadConfiguration() {
@@ -250,9 +252,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
    * and to omit nulls on the way back out.
    */
   private static final ObjectMapper TYPE_SPECIFIC_CONFIG_MAPPER =
-      new ObjectMapper()
-          .setSerializationInclusion(Include.NON_NULL)
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      TigerSerializationUtil.createSimpleJsonMapper();
 
   /**
    * Deserialize the {@link CfgServer#getTypeSpecificConfig() typeSpecificConfig} entry under {@code
@@ -357,7 +357,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private void assertThatHostnameIsUnique() {
     tigerTestEnvMgr.getServers().values().stream()
         .filter(other -> other != this)
-        .filter(other -> StringUtils.equalsIgnoreCase(other.getHostname(), hostname))
+        .filter(other -> Strings.CI.equals(other.getHostname(), hostname))
         .findAny()
         .ifPresent(
             other -> {

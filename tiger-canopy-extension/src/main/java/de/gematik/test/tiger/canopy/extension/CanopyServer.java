@@ -21,9 +21,7 @@
  */
 package de.gematik.test.tiger.canopy.extension;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
@@ -31,6 +29,7 @@ import de.gematik.test.tiger.canopy.client.CanopyAdminClient;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.canopy.client.config.HttpVersion;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
@@ -50,6 +49,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Tiger {@link AbstractTigerServer} that boots a CANOPY DNS-rewriting service from a {@code
@@ -88,8 +88,7 @@ public class CanopyServer extends AbstractTigerServer {
   static final String DEFAULT_IMAGE = "de.gematik.test/tiger-canopy:latest";
 
   private static final String CONFIG_KEY = "canopy";
-  private static final ObjectMapper SAJ_MAPPER =
-      new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
+  private static final ObjectMapper SAJ_MAPPER = TigerSerializationUtil.createSimpleJsonMapper();
 
   private TigerCanopyConfiguration canopyConfig;
   private GenericContainer<?> container;

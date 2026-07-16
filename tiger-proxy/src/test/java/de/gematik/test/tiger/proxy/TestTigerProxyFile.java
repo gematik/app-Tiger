@@ -81,7 +81,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void filterFileForRequest_pairShouldBeIntact() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          otherProxy.waitForAllCurrentMessagesToBeParsed();
+          otherProxy.ensureFileIsParsed();
           assertThat(
                   otherProxy
                       .getMessageHistory()
@@ -135,7 +135,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void filterFileForRequestWithRequestFilter_pairShouldBeIntact() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          otherProxy.waitForAllCurrentMessagesToBeParsed();
+          otherProxy.ensureFileIsParsed();
           assertThat(otherProxy.getMessageHistory().getFirst())
               .hasStringContentEqualToAtPosition("$.path", "/foobar");
           assertThat(otherProxy.getMessages()).hasSize(2);
@@ -153,7 +153,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void saveTlsConnection_detailsShouldBeIntactAfterReadingFromFile() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          otherProxy.waitForAllCurrentMessagesToBeParsed();
+          otherProxy.ensureFileIsParsed();
           assertThat(otherProxy.getRbelLogger().getRbelConverter().getMessageHistory().getFirst())
               .hasFacet(TlsFacet.class)
               .hasStringContentEqualToAtPosition(

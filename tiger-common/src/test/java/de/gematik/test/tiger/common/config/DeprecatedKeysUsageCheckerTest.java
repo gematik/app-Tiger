@@ -67,6 +67,14 @@ class DeprecatedKeysUsageCheckerTest {
                 .build(),
             "The key ('bar') in yaml file should not be used anymore, use 'baz' instead!"),
         Arguments.of(
+            "tiger.servers.proxykon1.tigerProxyCfg",
+            DeprecatedKeyDescriptor.builder()
+                .compareKey("tiger.servers.*.tigerProxyCfg")
+                .deprecatedKey("tigerProxyCfg")
+                .newKey("tigerProxyConfiguration")
+                .build(),
+            "The key ('tigerProxyCfg') in yaml file should not be used anymore, use 'tigerProxyConfiguration' instead!"),
+        Arguments.of(
             "foo.bar",
             DeprecatedKeyDescriptor.builder().compareKey("foo.bar").deprecatedKey("foo").build(),
             "The key ('foo') in yaml file should not be used anymore! It is deprecated without a"

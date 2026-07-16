@@ -26,11 +26,34 @@ import FeatureUpdate, {
 } from "@/types/testsuite/FeatureUpdate.ts";
 import debug from "@/logging/log.ts";
 import type ScenarioUpdate from "@/types/testsuite/ScenarioUpdate.ts";
+import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto.ts";
 
 export const useFeaturesStore = defineStore("features", () => {
   const featureUpdateMap = ref(new Map<string, FeatureUpdate>()) as Ref<
     Map<string, FeatureUpdate>
   >;
+
+  const rbelMetadata = computed(() => {
+    const stepRbelMetaDataList: MessageMetaDataDto[] = [];
+
+    for (const [, feature] of featureUpdateMap.value) {
+      for (const [, scenario] of feature.scenarios) {
+        for (const [, step] of scenario.steps) {
+          for (const rbelMeta of step.rbelMetaData) {
+            const rbelMetaSequenceNumber = rbelMeta.sequenceNumber;
+            stepRbelMetaDataList.push({
+              ...rbelMeta,
+              sequenceNumber: rbelMetaSequenceNumber,
+            });
+          }
+        }
+      }
+    }
+    return stepRbelMetaDataList.toSorted(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+  });
 
   function getScenarioOrVariantById(id: string): ScenarioUpdate | undefined {
     for (const feature of featureUpdateMap.value.values()) {
@@ -106,6 +129,7 @@ export const useFeaturesStore = defineStore("features", () => {
 
   return {
     featureUpdateMap,
+    rbelMetadata,
     allTestIds,
     replaceFeatureMap,
     getScenarioOrVariantById,

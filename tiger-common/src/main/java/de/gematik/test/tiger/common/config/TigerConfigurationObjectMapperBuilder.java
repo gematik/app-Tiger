@@ -22,24 +22,19 @@ package de.gematik.test.tiger.common.config;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationLoader.TIGER_CONFIGURATION_ATTRIBUTE_KEY;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.cfg.ContextAttributes;
-import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
-import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
-import java.io.IOException;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.Version;
+import tools.jackson.databind.*;
+import tools.jackson.databind.cfg.ContextAttributes;
+import tools.jackson.databind.deser.DeserializationProblemHandler;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.node.StringNode;
 
 class TigerConfigurationObjectMapperBuilder {
 
@@ -52,10 +47,12 @@ class TigerConfigurationObjectMapperBuilder {
     this.objectMapper =
         JsonMapper.builder()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+            .configure(MapperFeature.USE_GETTERS_AS_SETTERS, true)
+            .configure(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-            .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(configurationLoader))
             .addModule(skipEvaluationModule)
             .defaultAttributes(
@@ -70,7 +67,7 @@ class TigerConfigurationObjectMapperBuilder {
   }
 
   @AllArgsConstructor
-  private static class AllowDelayedPrimitiveResolvementModule extends Module {
+  private static class AllowDelayedPrimitiveResolvementModule extends JacksonModule {
 
     private TigerConfigurationLoader tigerConfigurationLoader;
 
@@ -86,22 +83,19 @@ class TigerConfigurationObjectMapperBuilder {
 
     @Override
     public void setupModule(SetupContext setupContext) {
-      setupContext.addDeserializationProblemHandler(
-          new ClazzFallbackConverter(tigerConfigurationLoader));
+      setupContext.addHandler(new ClazzFallbackConverter(tigerConfigurationLoader));
     }
   }
 
-  @RequiredArgsConstructor
   @AllArgsConstructor
-  @Slf4j
-  public static class SkipEvaluationDeserializer extends JsonDeserializer<String>
-      implements ContextualDeserializer {
+  @RequiredArgsConstructor
+  public static class SkipEvaluationDeserializer extends ValueDeserializer<String> {
 
     private final TigerConfigurationLoader configurationLoader;
     private boolean skipEvaluation;
 
     @Override
-    public JsonDeserializer<?> createContextual(
+    public ValueDeserializer<?> createContextual(
         DeserializationContext ctxt, BeanProperty property) {
       this.skipEvaluation =
           property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
@@ -109,8 +103,8 @@ class TigerConfigurationObjectMapperBuilder {
     }
 
     @Override
-    public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-        throws IOException {
+    public String deserialize(
+        JsonParser jsonParser, DeserializationContext deserializationContext) {
       final String valueAsString = jsonParser.getValueAsString();
       if (skipEvaluation) {
         return valueAsString;
@@ -127,13 +121,15 @@ class TigerConfigurationObjectMapperBuilder {
 
     @Override
     public Object handleWeirdStringValue(
-        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
-        throws IOException {
+        DeserializationContext ctxt,
+        Class<?> targetType,
+        String valueToConvert,
+        String failureMsg) {
       if (valueToConvert.contains("!{") || valueToConvert.contains("${")) {
         final String substitute =
             TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader);
         if (!substitute.equals(valueToConvert)) {
-          final TextNode replacedTextNode = ctxt.getNodeFactory().textNode(substitute);
+          final StringNode replacedTextNode = ctxt.getNodeFactory().stringNode(substitute);
           return ctxt.readTreeAsValue(replacedTextNode, targetType);
         }
         return returnTigerSpecificFallbackValue(ctxt, targetType, valueToConvert, failureMsg);
@@ -142,8 +138,10 @@ class TigerConfigurationObjectMapperBuilder {
     }
 
     Object returnTigerSpecificFallbackValue(
-        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
-        throws IOException {
+        DeserializationContext ctxt,
+        Class<?> targetType,
+        String valueToConvert,
+        String failureMsg) {
       if (targetType.equals(Boolean.class)
           || targetType.equals(Integer.class)
           || targetType.equals(Long.class)

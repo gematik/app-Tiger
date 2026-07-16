@@ -78,9 +78,9 @@ import org.junit.jupiter.api.extension.TestWatcher;
  * variables used by the playwright tests such as playwright, browser and page.
  */
 @Slf4j
-@SuppressWarnings("java:S2187")
+@SuppressWarnings(value = {"java:S2187", "java:S5786"})
 @ExtendWith(AbstractBase.SaveArtifactsOnTestFailed.class)
-public class AbstractBase implements ExtensionContext.Store.CloseableResource {
+public class AbstractBase implements AutoCloseable {
 
   static String port;
   private static final String doc = "doc";

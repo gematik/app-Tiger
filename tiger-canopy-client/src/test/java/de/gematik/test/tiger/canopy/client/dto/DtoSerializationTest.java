@@ -24,17 +24,14 @@ package de.gematik.test.tiger.canopy.client.dto;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.canopy.client.config.MatchType;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Tests for the CANOPY wire-format DTOs. Mirrors the {@link ObjectMapper} configuration used by
@@ -42,12 +39,7 @@ import org.junit.jupiter.api.Test;
  */
 class DtoSerializationTest {
 
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+  private static final ObjectMapper MAPPER = TigerSerializationUtil.createSimpleJsonMapper();
 
   // ---- AddProxiedHostRequest ----------------------------------------
 
@@ -68,28 +60,28 @@ class DtoSerializationTest {
   }
 
   @Test
-  void addProxiedHostRequest_serialize_omitsNullProxyUrl() throws Exception {
+  void addProxiedHostRequest_serialize_omitsNullProxyUrl() {
     var json = MAPPER.writeValueAsString(new AddProxiedHostRequest("a.example", MatchType.EXACT));
 
     var node = MAPPER.readTree(json);
-    assertThat(node.get("host").asText()).isEqualTo("a.example");
-    assertThat(node.get("matchType").asText()).isEqualTo("EXACT");
+    assertThat(node.get("host").asString()).isEqualTo("a.example");
+    assertThat(node.get("matchType").asString()).isEqualTo("EXACT");
     assertThat(node.has("tigerProxyUrl")).isFalse();
   }
 
   @Test
-  void addProxiedHostRequest_serialize_includesNonNullProxyUrl() throws Exception {
+  void addProxiedHostRequest_serialize_includesNonNullProxyUrl() {
     var json =
         MAPPER.writeValueAsString(
             new AddProxiedHostRequest("a.example", MatchType.SUFFIX, "http://p:9090"));
 
     var node = MAPPER.readTree(json);
-    assertThat(node.get("tigerProxyUrl").asText()).isEqualTo("http://p:9090");
-    assertThat(node.get("matchType").asText()).isEqualTo("SUFFIX");
+    assertThat(node.get("tigerProxyUrl").asString()).isEqualTo("http://p:9090");
+    assertThat(node.get("matchType").asString()).isEqualTo("SUFFIX");
   }
 
   @Test
-  void addProxiedHostRequest_deserialize_acceptsMissingMatchTypeAndProxyUrl() throws Exception {
+  void addProxiedHostRequest_deserialize_acceptsMissingMatchTypeAndProxyUrl() {
     var r = MAPPER.readValue("{\"host\":\"a.example\"}", AddProxiedHostRequest.class);
 
     assertThat(r.host()).isEqualTo("a.example");
@@ -98,7 +90,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void addProxiedHostRequest_deserialize_ignoresUnknownFields() throws Exception {
+  void addProxiedHostRequest_deserialize_ignoresUnknownFields() {
     var r =
         MAPPER.readValue(
             "{\"host\":\"a.example\",\"matchType\":\"EXACT\",\"future\":42}",
@@ -130,7 +122,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void proxiedHostDto_roundTripsInstantAsIso8601() throws Exception {
+  void proxiedHostDto_roundTripsInstantAsIso8601() {
     var dto =
         new ProxiedHostDto(
             "a.example",
@@ -141,27 +133,27 @@ class DtoSerializationTest {
 
     var json = MAPPER.writeValueAsString(dto);
     JsonNode node = MAPPER.readTree(json);
-    assertThat(node.get("addedAt").asText()).isEqualTo("2026-05-07T12:00:00Z");
+    assertThat(node.get("addedAt").asString()).isEqualTo("2026-05-07T12:00:00Z");
 
     var back = MAPPER.readValue(json, ProxiedHostDto.class);
     assertThat(back).isEqualTo(dto);
   }
 
   @Test
-  void proxiedHostDto_omitsNullsWhenSerialized() throws Exception {
+  void proxiedHostDto_omitsNullsWhenSerialized() {
     var dto = new ProxiedHostDto("a.example", MatchType.EXACT, null, null, null);
 
     var node = MAPPER.readTree(MAPPER.writeValueAsString(dto));
     assertThat(node.has("addedAt")).isFalse();
     assertThat(node.has("routeId")).isFalse();
     assertThat(node.has("tigerProxyUrl")).isFalse();
-    assertThat(node.get("host").asText()).isEqualTo("a.example");
+    assertThat(node.get("host").asString()).isEqualTo("a.example");
   }
 
   // ---- BulkAddRequest / BulkAddResponse ------------------------------
 
   @Test
-  void bulkAddRequest_roundTrip() throws Exception {
+  void bulkAddRequest_roundTrip() {
     var req =
         new BulkAddRequest(
             List.of(
@@ -177,7 +169,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void bulkAddResponse_deserialize() throws Exception {
+  void bulkAddResponse_deserialize() {
     var resp =
         MAPPER.readValue(
             """
@@ -194,7 +186,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void bulkAddResponse_acceptsEmptyLists() throws Exception {
+  void bulkAddResponse_acceptsEmptyLists() {
     var resp = MAPPER.readValue("{\"added\":[],\"unchanged\":[]}", BulkAddResponse.class);
 
     assertThat(resp.added()).isEmpty();
@@ -204,7 +196,7 @@ class DtoSerializationTest {
   // ---- ConfigDto -----------------------------------------------------
 
   @Test
-  void configDto_roundTrip() throws Exception {
+  void configDto_roundTrip() {
     var cfg = new ConfigDto("http://proxy:9090", ControlMode.ROUTE_PER_HOST, 53);
 
     var json = MAPPER.writeValueAsString(cfg);
@@ -212,7 +204,7 @@ class DtoSerializationTest {
   }
 
   @Test
-  void configDto_deserialize_allControlModes() throws Exception {
+  void configDto_deserialize_allControlModes() {
     for (ControlMode mode : ControlMode.values()) {
       var json = "{\"tigerProxyUrl\":\"x\",\"controlMode\":\"" + mode.name() + "\",\"dnsPort\":1}";
       assertThat(MAPPER.readValue(json, ConfigDto.class).controlMode()).isEqualTo(mode);
@@ -222,11 +214,11 @@ class DtoSerializationTest {
   // ---- UpdateProxyUrlRequest ----------------------------------------
 
   @Test
-  void updateProxyUrlRequest_roundTrip() throws Exception {
+  void updateProxyUrlRequest_roundTrip() {
     var req = new UpdateProxyUrlRequest("http://new-proxy:9090");
 
     var json = MAPPER.writeValueAsString(req);
-    assertThat(MAPPER.readTree(json).get("url").asText()).isEqualTo("http://new-proxy:9090");
+    assertThat(MAPPER.readTree(json).get("url").asString()).isEqualTo("http://new-proxy:9090");
     assertThat(MAPPER.readValue(json, UpdateProxyUrlRequest.class)).isEqualTo(req);
   }
 
@@ -244,11 +236,11 @@ class DtoSerializationTest {
   }
 
   @Test
-  void apiErrorResponse_roundTrip() throws Exception {
+  void apiErrorResponse_roundTrip() {
     var err = new ApiErrorResponse(Instant.parse("2026-05-07T12:00:00Z"), 500, "boom");
 
     var json = MAPPER.writeValueAsString(err);
-    assertThat(MAPPER.readTree(json).get("timestamp").asText()).isEqualTo("2026-05-07T12:00:00Z");
+    assertThat(MAPPER.readTree(json).get("timestamp").asString()).isEqualTo("2026-05-07T12:00:00Z");
     assertThat(MAPPER.readValue(json, ApiErrorResponse.class)).isEqualTo(err);
   }
 }

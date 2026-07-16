@@ -40,6 +40,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.socket.nio.NioChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -51,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
+import jdk.net.ExtendedSocketOptions;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -226,6 +228,16 @@ public class ClientBootstrapFactory {
     Optional.ofNullable(config.responseFuture())
         .ifPresent(responseFuture -> bootstrap.attr(RESPONSE_FUTURE, responseFuture));
 
+    Optional.ofNullable(configuration.tcpIdleTimeoutInMillis())
+        .ifPresent(
+            timeoutMillis -> {
+              if (timeoutMillis > 0) {
+                bootstrap
+                    .option(ChannelOption.SO_KEEPALIVE, true)
+                    .option(
+                        NioChannelOption.of(ExtendedSocketOptions.TCP_KEEPINTERVAL), timeoutMillis);
+              }
+            });
     return bootstrap;
   }
 

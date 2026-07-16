@@ -36,4 +36,5 @@ public class DirectReverseProxyInfo {
   private Integer port;
   private boolean ignoreConnectionErrors = false;
   @Builder.Default private List<TigerProxyModifierDescription> modifierPlugins = List.of();
+  @Builder.Default private Float tcpIdleTimeoutInSeconds = 5f;
 }

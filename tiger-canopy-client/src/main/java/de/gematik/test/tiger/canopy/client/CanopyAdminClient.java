@@ -21,12 +21,6 @@
  */
 package de.gematik.test.tiger.canopy.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.canopy.client.config.MatchType;
 import de.gematik.test.tiger.canopy.client.dto.AddProxiedHostRequest;
 import de.gematik.test.tiger.canopy.client.dto.BulkAddRequest;
@@ -34,6 +28,7 @@ import de.gematik.test.tiger.canopy.client.dto.BulkAddResponse;
 import de.gematik.test.tiger.canopy.client.dto.ConfigDto;
 import de.gematik.test.tiger.canopy.client.dto.ProxiedHostDto;
 import de.gematik.test.tiger.canopy.client.dto.UpdateProxyUrlRequest;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -44,6 +39,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Slim, framework-free client for the CANOPY REST API ({@code /api/v1/proxied-hosts}).
@@ -64,11 +61,8 @@ public class CanopyAdminClient {
   private static final String API = "/api/v1/proxied-hosts";
 
   private static final ObjectMapper DEFAULT_MAPPER =
-      new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+      TigerSerializationUtil.createSimpleJsonMapper();
+  ;
 
   private final URI baseUrl;
   private final HttpClient http;
@@ -77,8 +71,7 @@ public class CanopyAdminClient {
 
   /**
    * Creates a client with sensible defaults: 5 s connect timeout, 10 s per-request timeout, and an
-   * {@link ObjectMapper} configured with {@link JavaTimeModule} and lenient unknown-property
-   * handling.
+   * {@link ObjectMapper} configured with and lenient unknown-property handling.
    */
   public CanopyAdminClient(URI baseUrl) {
     this(
@@ -221,7 +214,7 @@ public class CanopyAdminClient {
     }
     try {
       return mapper.readValue(response.body(), type);
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       throw new CanopyClientException(
           "Failed to parse CANOPY response body: " + response.body(), e);
     }
@@ -233,7 +226,7 @@ public class CanopyAdminClient {
     }
     try {
       return mapper.readValue(response.body(), type);
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       throw new CanopyClientException(
           "Failed to parse CANOPY response body: " + response.body(), e);
     }

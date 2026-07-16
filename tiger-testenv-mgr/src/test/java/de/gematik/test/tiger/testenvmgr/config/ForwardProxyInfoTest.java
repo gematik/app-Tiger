@@ -34,12 +34,14 @@ import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,8 +52,6 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 class ForwardProxyInfoTest {
-
-  private AtomicBoolean shouldServerRun = new AtomicBoolean(true);
 
   @SneakyThrows
   @Test
@@ -100,22 +100,7 @@ class ForwardProxyInfoTest {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
     final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.30").orElseThrow();
     try (ServerSocket serverSocket = new ServerSocket(port)) {
-      final Thread serverThread =
-          new Thread(
-              () -> {
-                while (shouldServerRun.get()) {
-                  try {
-                    Socket socket = serverSocket.accept();
-                    OutputStream out = socket.getOutputStream();
-                    out.write("pong".getBytes());
-                    out.close();
-                    socket.close();
-                  } catch (IOException e) {
-                    // swallow
-                  }
-                }
-              });
-      serverThread.start();
+      startServerThread(shouldServerRun, serverSocket);
       assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
     } finally {
       shouldServerRun.set(false);
@@ -135,30 +120,35 @@ class ForwardProxyInfoTest {
                 - http://localhost:${free.port.30}
           """,
       skipEnvironmentSetup = true)
+  @SuppressWarnings("java:S4144")
   void failingHttpsServer_shouldStillStartUp(TigerTestEnvMgr envMgr) {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
     final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.30").orElseThrow();
     try (ServerSocket serverSocket = new ServerSocket(port)) {
-      final Thread serverThread =
-          new Thread(
-              () -> {
-                while (shouldServerRun.get()) {
-                  try {
-                    Socket socket = serverSocket.accept();
-                    OutputStream out = socket.getOutputStream();
-                    out.write("pong".getBytes());
-                    out.close();
-                    socket.close();
-                  } catch (IOException e) {
-                    // swallow
-                  }
-                }
-              });
-      serverThread.start();
+      startServerThread(shouldServerRun, serverSocket);
       assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
     } finally {
       shouldServerRun.set(false);
     }
+  }
+
+  private static void startServerThread(AtomicBoolean shouldServerRun, ServerSocket serverSocket) {
+    final Thread serverThread =
+        new Thread(
+            () -> {
+              while (shouldServerRun.get()) {
+                try {
+                  Socket socket = serverSocket.accept();
+                  OutputStream out = socket.getOutputStream();
+                  out.write("pong".getBytes());
+                  out.close();
+                  socket.close();
+                } catch (IOException e) {
+                  // swallow
+                }
+              }
+            });
+    serverThread.start();
   }
 
   @SneakyThrows
@@ -185,17 +175,14 @@ class ForwardProxyInfoTest {
   void localSourceNonHttpAndForwardProxyConfigured_shouldStillStartUp(TigerTestEnvMgr envMgr) {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
     final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.31").orElseThrow();
-    try {
-      startDistrustingSslServer(port);
+    try (Closeable ignored = startDistrustingSslServer(port, shouldServerRun)) {
       assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
-    } finally {
-      shouldServerRun.set(false);
     }
   }
 
   @SneakyThrows
-  public int startDistrustingSslServer(Integer port) {
-    var threadPool = Executors.newCachedThreadPool();
+  public Closeable startDistrustingSslServer(Integer port, AtomicBoolean shouldServerRun) {
+    ExecutorService threadPool = Executors.newCachedThreadPool();
     SSLContext sslContext = getSSLContext();
     SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
     SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(port);
@@ -205,15 +192,35 @@ class ForwardProxyInfoTest {
         () -> {
           while (shouldServerRun.get()) {
             try {
-              Socket socket = serverSocket.accept();
-              socket.close();
+              SSLSocket socket = (SSLSocket) serverSocket.accept();
+              // Start the TLS handshake in a separate task so accept-loop continues.
+              // Server requires client-auth; health-checker has no client cert
+              // → server sends handshake_failure → client gets SSLHandshakeException
+              threadPool.execute(
+                  () -> {
+                    try {
+                      socket.startHandshake();
+                    } catch (IOException e) {
+                      // expected: handshake fails because client has no certificate
+                    } finally {
+                      try {
+                        socket.close();
+                      } catch (IOException ignored) {
+                        // swallow
+                      }
+                    }
+                  });
             } catch (IOException e) {
               // swallow
             }
           }
         });
 
-    return serverSocket.getLocalPort();
+    return () -> {
+      shouldServerRun.set(false);
+      serverSocket.close();
+      threadPool.shutdownNow();
+    };
   }
 
   protected SSLContext getSSLContext() throws Exception {

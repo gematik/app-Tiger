@@ -28,7 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 /** A specialized class that checks for old/deprecated keys. */
 public final class DeprecatedKeysUsageChecker {
 
-  private static List<DeprecatedKeyDescriptor> deprecatedKeys =
+   private static List<DeprecatedKeyDescriptor> deprecatedKeys =
       List.of(
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration.serverport")
@@ -70,7 +70,7 @@ public final class DeprecatedKeysUsageChecker {
               .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.servers.*.tigerproxyconfiguration")
+              .compareKey("tiger.servers.*.tigerproxycfg")
               .deprecatedKey("tigerProxyCfg")
               .newKey("tigerProxyConfiguration")
               .build(),
@@ -80,17 +80,12 @@ public final class DeprecatedKeysUsageChecker {
               .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .compareKey("tiger.tigerproxyconfiguration.activateAsn1Parsing")
               .deprecatedKey("activateAsn1Parsing")
               .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
-              .deprecatedKey("activateAsn1Parsing")
-              .newKey("activateRbelParsingFor")
-              .build(),
-          DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .compareKey("tiger.tigerproxyconfiguration.activateErpVauAnalysis")
               .deprecatedKey("activateErpVauAnalysis")
               .newKey("activateRbelParsingFor")
               .build(),
@@ -105,7 +100,7 @@ public final class DeprecatedKeysUsageChecker {
               .newKey("authentication")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.tigerproxy.proxyRoutes.*.basicAuth")
+              .compareKey("tiger.tigerproxy.proxyRoutes.*.basicAuth.*")
               .deprecatedKey("basicAuth")
               .newKey("authentication")
               .build(),
@@ -137,9 +132,14 @@ public final class DeprecatedKeysUsageChecker {
     for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeys) {
       valueMap.keySet().stream()
           .filter(
-              key ->
-                  key.containsKey(deprecatedKey.getCompareKey())
-                      || key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey())))
+              key -> {
+                  boolean containsResult = key.containsKey(deprecatedKey.getCompareKey());
+                  boolean isBelowResult = key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey()));
+
+                  boolean containsResultWithWildcards = key.containsKeyWithWildcards(deprecatedKey.getCompareKey());
+                  boolean isBelowResultWithWildcards = key.isBelowUsingWildcards(new TigerConfigurationKey(deprecatedKey.getCompareKey()));
+                  return containsResult || isBelowResult || containsResultWithWildcards || isBelowResultWithWildcards;
+              })
           .findFirst()
           .ifPresent(
               a -> {

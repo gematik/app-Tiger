@@ -22,13 +22,15 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
 
-import de.gematik.test.tiger.lib.TigerDirector;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -81,21 +83,50 @@ public class TestEnvironmentMojo extends AbstractMojo {
     }
 
     val classLoader = classLoaderBuilder.get();
-    Future testEnvFuture = buildTestEnvFutureAndRun(classLoader);
+    AtomicReference<ExecutorService> executorRef = new AtomicReference<>();
+    Future<?> testEnvFuture = buildTestEnvFutureAndRun(classLoader, executorRef);
 
     try {
       testEnvFuture.get(autoShutdownAfterSeconds, TimeUnit.SECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException cte) {
+    } catch (TimeoutException timeout) {
+      getLog()
+          .info(
+              "Auto shutdown timeout reached after "
+                  + autoShutdownAfterSeconds
+                  + " seconds. Shutting down test environment.");
+    } catch (InterruptedException cte) {
+      Thread.currentThread().interrupt();
       throw new MojoExecutionException("Error while running Tiger Testenvironment", cte);
+    } catch (ExecutionException cte) {
+      Throwable cause = cte.getCause() != null ? cte.getCause() : cte;
+      getLog().error("Tiger test environment startup failed: " + cause.getMessage(), cause);
+      throw new MojoExecutionException("Error while running Tiger Testenvironment", cause);
     } finally {
-      if (TigerDirector.getTigerTestEnvMgr() != null) {
-        TigerDirector.getTigerTestEnvMgr().shutDown();
-        getLog().info("Tiger standalone test environment is shut down!");
+      if (isTigerDirectorInitialized(classLoader)) {
+        Object tigerTestEnvMgr = invokeTigerDirector(classLoader, "getTigerTestEnvMgr");
+        if (tigerTestEnvMgr != null) {
+          try {
+            tigerTestEnvMgr.getClass().getMethod("shutDown").invoke(tigerTestEnvMgr);
+          } catch (ReflectiveOperationException e) {
+            getLog()
+                .warn(
+                    "Unable to invoke "
+                        + tigerTestEnvMgr.getClass().getName()
+                        + ".shutDown during cleanup",
+                    e);
+          }
+          getLog().info("Tiger standalone test environment is shut down!");
+        }
+      }
+      ExecutorService executor = executorRef.get();
+      if (executor != null) {
+        executor.shutdownNow();
       }
     }
   }
 
-  private Future<Void> buildTestEnvFutureAndRun(ClassLoader classLoader) {
+  private Future<Void> buildTestEnvFutureAndRun(
+      ClassLoader classLoader, AtomicReference<ExecutorService> executorRef) {
     Callable<Void> task =
         () -> {
           Thread.currentThread().setContextClassLoader(classLoader);
@@ -113,8 +144,12 @@ public class TestEnvironmentMojo extends AbstractMojo {
                             + " startup failure with the maven logging system!");
               }
             }
-            TigerDirector.startStandaloneTestEnvironment();
+            invokeTigerDirector(classLoader, "startStandaloneTestEnvironment");
             getLog().info("Tiger standalone test environment is setup!");
+            // Keep this worker alive so setup-testenv remains blocking until timeout/interrupt.
+            new CountDownLatch(1).await();
+          } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
           } catch (Exception e) {
             getLog().error("Failed to start application", e);
             throw e;
@@ -123,12 +158,24 @@ public class TestEnvironmentMojo extends AbstractMojo {
         };
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
+    executorRef.set(executor);
     return executor.submit(task);
   }
 
   public ClassLoader buildUpClassLoader() {
-    return new URLClassLoader(
-        getProjectClasspathUrls(), Thread.currentThread().getContextClassLoader());
+    val mergedUrls = new LinkedHashSet<URL>();
+    mergedUrls.addAll(Arrays.asList(getPluginClasspathUrls()));
+    mergedUrls.addAll(Arrays.asList(getProjectClasspathUrls()));
+
+    return new URLClassLoader(mergedUrls.toArray(URL[]::new), ClassLoader.getPlatformClassLoader());
+  }
+
+  URL[] getPluginClasspathUrls() {
+    ClassLoader currentClassLoader = getClass().getClassLoader();
+    if (currentClassLoader instanceof URLClassLoader urlClassLoader) {
+      return urlClassLoader.getURLs();
+    }
+    return new URL[0];
   }
 
   public URL[] getProjectClasspathUrls() {
@@ -142,5 +189,20 @@ public class TestEnvironmentMojo extends AbstractMojo {
     return runtimeClasspathElements.stream()
         .map(unchecked(path -> new File(path).toURI().toURL()))
         .toArray(URL[]::new);
+  }
+
+  private Object invokeTigerDirector(ClassLoader classLoader, String methodName) {
+    try {
+      Class<?> tigerDirectorClass =
+          Class.forName("de.gematik.test.tiger.lib.TigerDirector", true, classLoader);
+      return tigerDirectorClass.getMethod(methodName).invoke(null);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException("Unable to invoke TigerDirector." + methodName, e);
+    }
+  }
+
+  private boolean isTigerDirectorInitialized(ClassLoader classLoader) {
+    Object initialized = invokeTigerDirector(classLoader, "isInitialized");
+    return initialized instanceof Boolean b && b;
   }
 }

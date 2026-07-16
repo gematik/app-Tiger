@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -67,6 +68,8 @@ public class TigerProxyConfiguration {
   @Builder.Default
   private float previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes = 5;
 
+  private Long maxSocketTimeoutInMillis;
+
   /**
    * Number of NTP-style round-trips used to estimate the clock offset between this proxy and a
    * remote proxy. The sample with the smallest round-trip time is selected. Set to 0 to disable
@@ -105,11 +108,11 @@ public class TigerProxyConfiguration {
   /** Management-port of the Tiger Proxy. */
   private int adminPort;
 
-  private String username;
-  private String password;
-
   /** used to overwrite proxyCfg with values that allow to reverse proxy the given server node. */
   private String proxiedServer;
+
+  /** Used to hide specific configuration paths from the /configuration endpoint */
+  @Builder.Default private List<String> redactedConfigurationPaths = Collections.emptyList();
 
   /**
    * Used when adding a route to the Tiger Proxy. By default, or when set to "inherit", the

@@ -22,7 +22,6 @@ package de.gematik.rbellogger.writer.tree;
 
 import static de.gematik.rbellogger.writer.RbelContentTreeConverter.ENCODE_AS;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelNestedFacet;
@@ -32,6 +31,7 @@ import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
+import tools.jackson.databind.JsonNode;
 
 public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeNodeConverter {
 
@@ -103,7 +103,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
     if (!valueElement
         .getFacet(RbelJsonFacet.class)
         .map(RbelJsonFacet::getJsonElement)
-        .map(JsonNode::isTextual)
+        .map(JsonNode::isString)
         .orElse(false)) {
       nodes.forEach(node -> node.attributes().put(JSON_NON_STRING_PRIMITIVE, "true"));
     }

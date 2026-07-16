@@ -43,7 +43,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -69,12 +69,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
-      "management.endpoint.health.enabled=true",
+      "management.endpoint.health.access=read_only",
       "management.endpoint.health.probes.enabled=true",
       "management.endpoint.health.show-details=always",
-      "management.endpoint.info.enabled=true",
-      "management.endpoints.enabled-by-default=true",
-      "management.endpoints.web.base-path=/actuator/",
+      "management.endpoint.info.access=read_only",
+      "management.endpoints.access.default=read_only",
+      "management.endpoints.web.base-path=/actuator",
       "management.endpoints.web.exposure.include=health,info",
       "management.health.livenessstate.enabled=true",
       "management.health.readinessstate.enabled=true"

@@ -20,8 +20,6 @@
  */
 package de.gematik.rbellogger.data;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.time.ZonedDateTime;
@@ -31,6 +29,8 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * This facet is used to store metadata about the message, such as sender, receiver, transmission.
@@ -53,8 +53,7 @@ public class RbelMessageMetadata implements RbelFacet {
       new RbelMetadataValue<>("pairedMessageUuid", String.class);
   public static final RbelMetadataValue<RbelMessageKind> MESSAGE_KIND =
       new RbelMetadataValue<>("messageKind", RbelMessageKind.class);
-  private static final ObjectMapper MAPPER =
-      new ObjectMapper().registerModule(new JavaTimeModule());
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   private final Map<String, Object> metadata = new HashMap<>();
 

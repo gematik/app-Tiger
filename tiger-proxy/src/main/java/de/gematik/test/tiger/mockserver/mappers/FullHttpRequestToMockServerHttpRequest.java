@@ -42,6 +42,7 @@ import java.util.Optional;
 import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 /*
  * @author jamesdbloom
@@ -140,7 +141,7 @@ public class FullHttpRequestToMockServerHttpRequest {
       SocketAddress senderAddress) {
     httpRequest.setReceiverAddress(isSecure, fullHttpRequest.headers().get("host"), port);
     if (senderAddress instanceof InetSocketAddress) {
-      httpRequest.setSenderAddress(StringUtils.removeStart(senderAddress.toString(), "/"));
+      httpRequest.setSenderAddress(Strings.CS.removeStart(senderAddress.toString(), "/"));
     }
   }
 

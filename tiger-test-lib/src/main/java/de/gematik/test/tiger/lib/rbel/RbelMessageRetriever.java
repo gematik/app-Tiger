@@ -731,10 +731,21 @@ public class RbelMessageRetriever {
   public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
     val host =
         req.getFacet(RbelTcpIpMessageFacet.class)
-            .flatMap(e -> RbelSocketAddressFacet.tryToExtractServerName(e.getReceiver()))
-            .orElse("");
+            .map(RbelTcpIpMessageFacet::getReceiver)
+            .flatMap(e -> e.getFacet(RbelSocketAddressFacet.class));
 
-    return areHostsEqual(host, hostFilter) || doesItMatch(host, hostFilter);
+    if (host.isEmpty()) {
+      return false;
+    }
+
+    var hostDomain = host.get().getDomain().seekValue(String.class).orElse("");
+    var hostBundledServerName =
+        host.get().getBundledServerName().map(RbelElement::getRawStringContent).orElse("");
+
+    return areHostsEqual(hostDomain, hostFilter)
+        || areHostsEqual(hostBundledServerName, hostFilter)
+        || doesItMatch(hostDomain, hostFilter)
+        || doesItMatch(hostBundledServerName, hostFilter);
   }
 
   public boolean doesMethodMatch(final RbelElement req, final String method) {

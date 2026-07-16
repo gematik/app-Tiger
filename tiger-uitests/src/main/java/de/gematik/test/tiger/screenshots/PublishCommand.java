@@ -19,12 +19,12 @@
  */
 package de.gematik.test.tiger.screenshots;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** Publish command — compares new screenshots against the archive, publishes delta or baseline. */
 @Slf4j

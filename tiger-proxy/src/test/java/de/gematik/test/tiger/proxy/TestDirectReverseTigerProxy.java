@@ -263,4 +263,78 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
       assertThat(response.getBody()).contains("<title>Example Domain</title>");
     }
   }
+
+  @Test
+  void directForwardWithTcpIdleTimeout_shouldConfigureKeepAlive()
+      throws IOException, InterruptedException {
+    try (ServerSocket backendServer = new ServerSocket(0)) {
+      // Configure TCP keep-alive to maintain connections during idle periods (like SMTP)
+      // Keep-alive interval (1s) must be SHORTER than socket timeout (2s) to prevent connection
+      // from closing
+      spawnTigerProxyWithDefaultRoutesAndWith(
+          TigerProxyConfiguration.builder()
+              .directReverseProxy(
+                  DirectReverseProxyInfo.builder()
+                      .hostname("localhost")
+                      .port(backendServer.getLocalPort())
+                      .tcpIdleTimeoutInSeconds(1f) // Send keep-alive ping every 1 second
+                      .build())
+              // Socket timeout 2 seconds (1/10th of default 20s for faster test)
+              // Keep-alive pings at 1s interval will reset the timeout before it triggers
+              .maxSocketTimeoutInMillis(2000L)
+              .build());
+
+      log.info("Backendserver running on port {}", backendServer.getLocalPort());
+
+      try (Socket clientSocket = new Socket("localhost", tigerProxy.getProxyPort())) {
+        final byte[] requestPayload1 = "{\"foo\": \"bar\"}".getBytes(UTF_8);
+        final byte[] responsePayload1 = "{\"status\": \"ok\"}".getBytes(UTF_8);
+
+        clientSocket.getOutputStream().write(requestPayload1);
+        clientSocket.getOutputStream().flush();
+
+        final Socket serverSocket = backendServer.accept();
+        assertThat(serverSocket.getInputStream().readNBytes(requestPayload1.length))
+            .isEqualTo(requestPayload1);
+
+        serverSocket.getOutputStream().write(responsePayload1);
+        serverSocket.getOutputStream().flush();
+
+        assertThat(clientSocket.getInputStream().readNBytes(responsePayload1.length))
+            .isEqualTo(responsePayload1);
+
+        await().until(() -> tigerProxy.getMessageHistory().size() >= 2);
+
+        // Wait 1.5 seconds (longer than keep-alive interval of 1s, shorter than socket timeout of
+        // 2s)
+        // Keep-alive ping at 1s will reset the timeout, connection stays open
+        log.info(
+            "Letting connection idle for 1.5s - keep-alive ping at 1s resets the 2s socket timeout");
+        Thread.sleep(1500);
+
+        final byte[] requestPayload2 = "{\"foo\": \"bar\"}".getBytes(UTF_8);
+        final byte[] responsePayload2 = "{\"status\": \"ok\"}".getBytes(UTF_8);
+
+        clientSocket.getOutputStream().write(requestPayload2);
+        clientSocket.getOutputStream().flush();
+
+        assertThat(serverSocket.getInputStream().readNBytes(requestPayload2.length))
+            .isEqualTo(requestPayload2);
+
+        serverSocket.getOutputStream().write(responsePayload2);
+        serverSocket.getOutputStream().flush();
+
+        assertThat(clientSocket.getInputStream().readNBytes(responsePayload2.length))
+            .isEqualTo(responsePayload2);
+
+        awaitMessagesInTigerProxy(4);
+
+        val messages = tigerProxy.getRbelMessagesList();
+        assertThat(messages.get(0).getRawContent()).isEqualTo(requestPayload1);
+        assertThat(messages.get(1).getRawContent()).isEqualTo(responsePayload1);
+        assertThat(messages.get(2).getRawContent()).isEqualTo(requestPayload2);
+        assertThat(messages.get(3).getRawContent()).isEqualTo(responsePayload2);
+      }
+    }
+  }
 }

@@ -20,12 +20,12 @@
  */
 package de.gematik.test.tiger.proxy.client;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import tools.jackson.databind.annotation.JsonDeserialize;
 
 @Data
 @Builder

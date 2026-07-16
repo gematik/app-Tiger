@@ -20,8 +20,9 @@
  */
 package de.gematik.rbellogger.facets.http;
 
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.Charset;
 
 public interface RbelHttpCodingConverter {
-  byte[] decode(byte[] bytes, String eol, Charset charset);
+  RbelContent decode(RbelContent bytes, String eol, Charset charset);
 }

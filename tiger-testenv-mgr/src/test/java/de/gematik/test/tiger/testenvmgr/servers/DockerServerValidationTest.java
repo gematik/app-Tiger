@@ -24,13 +24,13 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Pre-startup validation tests for {@link DockerServer} that do <em>not</em> spawn a container. The
@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
  */
 class DockerServerValidationTest {
 
-  private static CfgServer cfgWithDockerBlock(String json) throws Exception {
+  private static CfgServer cfgWithDockerBlock(String json) {
     CfgServer cfg = new CfgServer().setType("docker").setHostname("dockerunit");
     if (json != null) {
       JsonNode tree = new ObjectMapper().readTree(json);
@@ -50,7 +50,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_throws_whenDockerBlockMissing(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_throws_whenDockerBlockMissing(TigerTestEnvMgr mgr) {
     DockerServer s = new DockerServer("d1", cfgWithDockerBlock(null), mgr);
 
     assertThatThrownBy(s::assertThatConfigurationIsCorrect)
@@ -61,7 +61,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_throws_whenImageMissing(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_throws_whenImageMissing(TigerTestEnvMgr mgr) {
     DockerServer s = new DockerServer("d1", cfgWithDockerBlock("{\"exposedPorts\":[80]}"), mgr);
 
     assertThatThrownBy(s::assertThatConfigurationIsCorrect)
@@ -71,7 +71,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_acceptsMinimalImageOnly(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_acceptsMinimalImageOnly(TigerTestEnvMgr mgr) {
     DockerServer s =
         new DockerServer("d1", cfgWithDockerBlock("{\"image\":\"alpine:latest\"}"), mgr);
 
@@ -83,7 +83,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_throws_whenMultipleNetworksRequested(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_throws_whenMultipleNetworksRequested(TigerTestEnvMgr mgr) {
     // B2 regression: multi-network attach is not supported in v1; must fail loudly, not
     // silently drop the second/third entries.
     DockerServer s =
@@ -98,8 +98,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_throws_whenPortsListeningWithoutExposedPorts(TigerTestEnvMgr mgr)
-      throws Exception {
+  void assertConfig_throws_whenPortsListeningWithoutExposedPorts(TigerTestEnvMgr mgr) {
     // B3 regression: PORTS_LISTENING with empty exposedPorts must fail loudly instead of
     // silently degrading to Testcontainers' default log probe.
     DockerServer s =
@@ -118,7 +117,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_throws_whenLogStrategyWithoutPattern(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_throws_whenLogStrategyWithoutPattern(TigerTestEnvMgr mgr) {
     DockerServer s =
         new DockerServer(
             "d1",
@@ -133,7 +132,7 @@ class DockerServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_acceptsNoneStrategyWithNoPorts(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_acceptsNoneStrategyWithNoPorts(TigerTestEnvMgr mgr) {
     DockerServer s =
         new DockerServer(
             "d1",

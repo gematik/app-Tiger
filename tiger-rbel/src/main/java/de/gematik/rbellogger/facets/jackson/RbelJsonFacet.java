@@ -25,7 +25,6 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParent
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.pre;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
@@ -39,6 +38,7 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
+import tools.jackson.databind.JsonNode;
 
 @Data
 @Builder(toBuilder = true)

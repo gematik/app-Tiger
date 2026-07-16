@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
@@ -36,7 +37,7 @@ import java.util.List;
 import lombok.*;
 
 @NoArgsConstructor
-@AllArgsConstructor
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @Builder(toBuilder = true)
 @Data
 @JsonInclude(Include.NON_NULL)

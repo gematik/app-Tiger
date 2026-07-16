@@ -23,9 +23,6 @@ package de.gematik.rbellogger.converter;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
@@ -46,12 +43,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 class RbelCborConverterTest {
 
   private static RbelLogger rbelLogger;
   private final ObjectMapper jsonMapper =
-      new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+      JsonMapper.builder().configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true).build();
   private final CBORMapper cborMapper = new CBORMapper();
 
   @BeforeAll

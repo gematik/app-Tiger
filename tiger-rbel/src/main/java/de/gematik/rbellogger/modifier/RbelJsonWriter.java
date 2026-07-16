@@ -20,13 +20,12 @@
  */
 package de.gematik.rbellogger.modifier;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelJexlException;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
+import tools.jackson.databind.JsonNode;
 
 public class RbelJsonWriter implements RbelElementWriter {
 
@@ -41,7 +40,7 @@ public class RbelJsonWriter implements RbelElementWriter {
     final JsonNode jsonElement =
         oldTargetElement.getFacetOrFail(RbelJsonFacet.class).getJsonElement();
     if (jsonElement.isValueNode()) {
-      if (jsonElement.isTextual()) {
+      if (jsonElement.isString()) {
         return (quote(new String(newContent, oldTargetElement.getElementCharset())))
             .getBytes(oldTargetElement.getElementCharset());
       } else {
@@ -51,8 +50,7 @@ public class RbelJsonWriter implements RbelElementWriter {
       return writeJsonObject(oldTargetElement, oldTargetModifiedChild, newContent, jsonElement);
     } else if (jsonElement.isArray()) {
       StringJoiner joiner = new StringJoiner(",");
-      for (Iterator<JsonNode> it = jsonElement.elements(); it.hasNext(); ) {
-        JsonNode entry = it.next();
+      for (JsonNode entry : jsonElement.values()) {
         if (entry == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
           joiner.add(new String(newContent, oldTargetElement.getElementCharset()));
         } else {
@@ -73,8 +71,7 @@ public class RbelJsonWriter implements RbelElementWriter {
       byte[] newContent,
       JsonNode jsonElement) {
     StringJoiner joiner = new StringJoiner(",");
-    for (Iterator<Entry<String, JsonNode>> it = jsonElement.fields(); it.hasNext(); ) {
-      Entry<String, JsonNode> entry = it.next();
+    for (Entry<String, JsonNode> entry : jsonElement.properties()) {
       if (entry.getValue()
           == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
         joiner.add(

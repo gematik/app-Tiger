@@ -25,8 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.events.BeforeContainerStartEvent;
@@ -39,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Unit tests for {@link CanopyDnsAutoInjector}'s decision logic. No docker daemon required; the
@@ -73,10 +73,9 @@ class CanopyDnsAutoInjectorTest {
   }
 
   /** Helper: build a DockerServer with the given docker block. */
-  private static DockerServer dockerServer(String id, String json, TigerTestEnvMgr mgr)
-      throws Exception {
+  private static DockerServer dockerServer(String id, String json, TigerTestEnvMgr mgr) {
     CfgServer cfg = new CfgServer().setType("docker").setHostname(id);
-    JsonNode tree = new ObjectMapper().readTree(json);
+    JsonNode tree = JsonMapper.builder().build().readTree(json);
     cfg.setTypeSpecificConfigEntry("docker", tree);
     DockerServer s = new DockerServer(id, cfg, mgr);
     s.assertThatConfigurationIsCorrect();
@@ -90,7 +89,7 @@ class CanopyDnsAutoInjectorTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void injectsCanopyDnsWhenCarrierIsEmpty(TigerTestEnvMgr mgr) throws Exception {
+  void injectsCanopyDnsWhenCarrierIsEmpty(TigerTestEnvMgr mgr) {
     CanopyServer canopy = canopyRunningAt("10.0.0.5", mgr);
     mgr.getServers().put("canopy1", canopy);
     DockerServer docker = dockerServer("app", "{\"image\":\"nginx\"}", mgr);
@@ -104,7 +103,7 @@ class CanopyDnsAutoInjectorTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void skipsWhenCarrierAlreadyHasExplicitDns(TigerTestEnvMgr mgr) throws Exception {
+  void skipsWhenCarrierAlreadyHasExplicitDns(TigerTestEnvMgr mgr) {
     CanopyServer canopy = canopyRunningAt("10.0.0.5", mgr);
     mgr.getServers().put("canopy1", canopy);
     DockerServer docker = dockerServer("app", "{\"image\":\"nginx\"}", mgr);
@@ -118,7 +117,7 @@ class CanopyDnsAutoInjectorTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void skipsWhenInjectDnsFalse(TigerTestEnvMgr mgr) throws Exception {
+  void skipsWhenInjectDnsFalse(TigerTestEnvMgr mgr) {
     CanopyServer canopy = canopyRunningAt("10.0.0.5", mgr);
     mgr.getServers().put("canopy1", canopy);
     DockerServer docker = dockerServer("app", "{\"image\":\"nginx\",\"injectDns\":false}", mgr);
@@ -146,7 +145,7 @@ class CanopyDnsAutoInjectorTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void skipsWhenMultipleCanopiesPresent(TigerTestEnvMgr mgr) throws Exception {
+  void skipsWhenMultipleCanopiesPresent(TigerTestEnvMgr mgr) {
     CanopyServer c1 = canopyRunningAt("10.0.0.5", mgr);
     CanopyServer c2 = canopyRunningAt("10.0.0.6", mgr);
     mgr.getServers().put("canopy1", c1);
@@ -162,7 +161,7 @@ class CanopyDnsAutoInjectorTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void skipsWhenCanopyContainerNotYetRunning(TigerTestEnvMgr mgr) throws Exception {
+  void skipsWhenCanopyContainerNotYetRunning(TigerTestEnvMgr mgr) {
     CanopyServer canopy =
         new CanopyServer("canopy1", new CfgServer().setType("canopy"), mgr); // no container
     mgr.getServers().put("canopy1", canopy);

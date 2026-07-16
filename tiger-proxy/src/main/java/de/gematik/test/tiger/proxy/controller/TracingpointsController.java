@@ -20,21 +20,21 @@
  */
 package de.gematik.test.tiger.proxy.controller;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 @RequiredArgsConstructor
 @RestController
@@ -74,9 +74,8 @@ public class TracingpointsController {
   }
 
   @Builder
-  @RequiredArgsConstructor
   @Getter
-  @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+  @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
   public static class TracingpointsInfo {
 
     private final String name;
@@ -90,8 +89,12 @@ public class TracingpointsController {
   }
 
   @Getter
-  @RequiredArgsConstructor
   public static class ClockResponse {
     private final ZonedDateTime serverTime;
+
+    @JsonCreator
+    public ClockResponse(@JsonProperty("serverTime") ZonedDateTime serverTime) {
+      this.serverTime = serverTime;
+    }
   }
 }

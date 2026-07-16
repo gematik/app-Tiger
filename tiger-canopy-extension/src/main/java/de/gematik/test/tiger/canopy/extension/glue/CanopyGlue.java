@@ -20,11 +20,6 @@
  */
 package de.gematik.test.tiger.canopy.extension.glue;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.canopy.client.CanopyAdminClient;
 import de.gematik.test.tiger.canopy.client.CanopyClientException;
 import de.gematik.test.tiger.canopy.client.config.MatchType;
@@ -32,6 +27,7 @@ import de.gematik.test.tiger.canopy.client.dto.AddProxiedHostRequest;
 import de.gematik.test.tiger.canopy.client.dto.ProxiedHostDto;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.glue.TigerGluePackage;
+import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
@@ -46,6 +42,7 @@ import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Cucumber glue code for runtime configuration of a CANOPY DNS server (the {@code tiger-canopy}
@@ -74,12 +71,7 @@ public class CanopyGlue {
   /** Tiger configuration key holding the CANOPY base URL (e.g. {@code http://canopy:8080}). */
   public static final String CONFIG_KEY_BASE_URL = "tiger.canopy.baseUrl";
 
-  private static final ObjectMapper JSON_MAPPER =
-      new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-          .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+  private static final ObjectMapper JSON_MAPPER = TigerSerializationUtil.createSimpleJsonMapper();
 
   private final HttpClient httpClient;
 

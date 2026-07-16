@@ -26,11 +26,14 @@ import { useDiagramModel } from "../stores/diagramModel.ts";
 import { Background } from "@vue-flow/background";
 import {
   type ElkDirectionType,
+  type ElkLayoutModeType,
   layoutWithElk,
 } from "../layout/useLayoutElk.ts";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls, ControlButton } from "@vue-flow/controls";
 import "@vue-flow/controls/dist/style.css";
+import Button from "primevue/button";
+import ButtonGroup from "primevue/buttongroup";
 import Message from "primevue/message";
 import DefaultNode from "../nodes/DefaultNode.vue";
 import GroupNode from "../nodes/GroupNode.vue";
@@ -49,11 +52,21 @@ import { useLabelLayoutStore } from "../stores/labelLayoutStore";
 import TigerProxyExternalNode from "../nodes/TigerProxyExternalNode.vue";
 import TopologyLegend from "./TopologyLegend.vue";
 
+const props = withDefaults(
+  defineProps<{
+    showFiltering?: boolean;
+  }>(),
+  {
+    showFiltering: true,
+  },
+);
+
 const diagramModel = useDiagramModel();
 const nodes = ref<any[]>([]);
 const edges = ref<any[]>([]);
 const layoutError = ref<string | null>(null);
 const direction = ref<ElkDirectionType>("DOWN");
+const layoutMode = ref<ElkLayoutModeType>("auto");
 const { fitView } = useVueFlow();
 const labelLayoutStore = useLabelLayoutStore();
 
@@ -61,12 +74,17 @@ function toggleDirection() {
   direction.value = direction.value === "DOWN" ? "RIGHT" : "DOWN";
 }
 
+function setLayoutMode(mode: ElkLayoutModeType) {
+  layoutMode.value = mode;
+}
+
 async function runLayout() {
   try {
     const layoutResult = await layoutWithElk(
-      diagramModel.model.nodes,
-      diagramModel.model.edges,
+      diagramModel.filteredNodes,
+      diagramModel.filteredEdges,
       direction.value,
+      layoutMode.value,
     );
     labelLayoutStore.clearAll();
     nodes.value = layoutResult.nodes;
@@ -147,9 +165,18 @@ function getAbsoluteNodeCenter(
   };
 }
 
-watch([() => diagramModel.model, direction], runLayout, {
-  immediate: true,
-});
+watch(
+  [
+    () => diagramModel.filteredNodes,
+    () => diagramModel.filteredEdges,
+    direction,
+    layoutMode,
+  ],
+  runLayout,
+  {
+    immediate: true,
+  },
+);
 
 watch(
   () =>
@@ -193,39 +220,110 @@ const legendNodeTypes = computed(() =>
       {{ layoutError }}
     </Message>
   </div>
-  <VueFlow
-    v-else
-    v-model:nodes="nodes"
-    v-model:edges="edges"
-    :nodeTypes="nodeTypes"
-    :edgeTypes="edgeTypes"
-  >
-    <Background></Background>
-    <div class="diagram-controls">
-      <MiniMap pannable zoomable></MiniMap>
-      <Controls>
-        <ControlButton @click="toggleDirection" title="Toggle layout direction">
-          {{ direction === "DOWN" ? "↓" : "→" }}
-        </ControlButton>
-        <ControlButton @click="runLayout()" title="Re-run auto-layout">
-          <FontAwesomeIcon :icon="fas.faDiagramProject" />
-        </ControlButton>
-      </Controls>
+  <div class="container-for-vueflow" v-else>
+    <div v-if="props.showFiltering" class="edge-toggle-controls">
+      <ButtonGroup>
+        <Button
+          :severity="
+            diagramModel.edgeDisplayMode === 'ALL' ? 'primary' : 'secondary'
+          "
+          size="small"
+          label="All Edges"
+          @click="diagramModel.edgeDisplayMode = 'ALL'"
+        ></Button>
+        <Button
+          :severity="
+            diagramModel.edgeDisplayMode === 'LIVE' ? 'primary' : 'secondary'
+          "
+          size="small"
+          label="Only Live Data"
+          @click="diagramModel.edgeDisplayMode = 'LIVE'"
+        ></Button>
+        <Button
+          :severity="
+            diagramModel.edgeDisplayMode === 'STATIC' ? 'primary' : 'secondary'
+          "
+          size="small"
+          label="Only Static Data"
+          @click="diagramModel.edgeDisplayMode = 'STATIC'"
+        ></Button>
+      </ButtonGroup>
     </div>
+    <VueFlow
+      v-model:nodes="nodes"
+      v-model:edges="edges"
+      :nodeTypes="nodeTypes"
+      :edgeTypes="edgeTypes"
+    >
+      <Background></Background>
+      <div class="diagram-controls">
+        <MiniMap pannable zoomable></MiniMap>
+        <Controls>
+          <ControlButton
+            @click="setLayoutMode('auto')"
+            title="Auto choose layout"
+          >
+            <FontAwesomeIcon
+              :icon="fas.faWandMagicSparkles"
+              :style="{ opacity: layoutMode === 'auto' ? 1 : 0.55 }"
+            />
+          </ControlButton>
+          <ControlButton
+            @click="setLayoutMode('compact')"
+            title="Apply compact layout"
+          >
+            <FontAwesomeIcon
+              :icon="fas.faCompress"
+              :style="{ opacity: layoutMode === 'compact' ? 1 : 0.55 }"
+            />
+          </ControlButton>
+          <ControlButton
+            @click="setLayoutMode('spread')"
+            title="Apply spread layout"
+          >
+            <FontAwesomeIcon
+              :icon="fas.faMaximize"
+              :style="{ opacity: layoutMode === 'spread' ? 1 : 0.55 }"
+            />
+          </ControlButton>
+          <ControlButton
+            @click="toggleDirection"
+            title="Toggle layout direction"
+          >
+            {{ direction === "DOWN" ? "↓" : "→" }}
+          </ControlButton>
+        </Controls>
+      </div>
 
-    <TopologyLegend :node-types="legendNodeTypes" />
-  </VueFlow>
+      <TopologyLegend :node-types="legendNodeTypes" />
+    </VueFlow>
+  </div>
 </template>
 
 <style scoped>
-.vue-flow {
+.container-for-vueflow {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  width: 100%;
+  min-height: 0;
+}
+
+.vue-flow {
+  flex: 1;
+  min-height: 0;
   font-family: monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+}
+
+.edge-toggle-controls {
+  padding-block-start: 0.5rem;
+  padding-block-end: 0.5rem;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Make group nodes transparent so edges show through */
@@ -280,6 +378,22 @@ const legendNodeTypes = computed(() =>
 :deep(.tiger-edge-implicitRoute),
 :deep(.tiger-edge-proxyAndRoute) {
   stroke: black;
+}
+
+:deep(.tiger-edge-dynamicTraffic) {
+  stroke: #f6a337;
+  stroke-width: 2.5;
+  stroke-dasharray: 10 7;
+  animation: tiger-edge-bidirectional-flow 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes tiger-edge-bidirectional-flow {
+  from {
+    stroke-dashoffset: -24;
+  }
+  to {
+    stroke-dashoffset: 24;
+  }
 }
 
 .diagram-controls {

@@ -26,10 +26,10 @@ import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.boot.web.server.autoconfigure.ServerProperties;
+import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 
 @ResetTigerConfiguration
 class TigerProxyStartupErrorsTest {
@@ -52,7 +52,7 @@ class TigerProxyStartupErrorsTest {
             "webServerAppCtxt",
             ServletWebServerApplicationContext.class,
             () -> mock(ServletWebServerApplicationContext.class))
-        .withBean("serverProperties", ServerProperties.class, () -> mock(ServerProperties.class))
+        .withBean("serverProperties", ServerProperties.class, ServerProperties::new)
         .withSystemProperties("LOCAL_SERVER_PORT", "666")
         .withConfiguration(AutoConfigurations.of(TigerProxyApplication.class));
   }

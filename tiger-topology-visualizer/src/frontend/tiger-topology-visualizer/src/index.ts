@@ -46,6 +46,7 @@ import "@vue-flow/minimap/dist/style.css";
 
 export { default as TopologyDiagram } from "./components/TopologyDiagram.vue";
 export { useDiagramModel } from "./stores/diagramModel.ts";
+export type { AdditionalEdge } from "./stores/diagramModel.ts";
 export { layoutWithElk } from "./layout/useLayoutElk.ts";
 export type {
   DiagramNodeDto,

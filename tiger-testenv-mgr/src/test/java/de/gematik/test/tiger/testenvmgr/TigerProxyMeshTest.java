@@ -72,12 +72,14 @@ import lombok.val;
 import net.jcip.annotations.NotThreadSafe;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 @Getter
 @ResetTigerConfiguration
 @NotThreadSafe
+@Tag("de.gematik.test.tiger.common.LongRunnerTest")
 class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
   /**
@@ -957,7 +959,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     .asString());
 
     await()
-        .atMost(cycles * (maxDelay + 50), TimeUnit.MILLISECONDS)
+        .atMost(cycles * (maxDelay + 1000), TimeUnit.MILLISECONDS)
         .until(
             () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessages().size(),
             size -> size == 2 * cycles);
@@ -996,8 +998,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       var req = messages.get(reqIndex);
       var resp = messages.get(respIndex);
 
-      assertThat(req.getSequenceNumber().get()).isEqualTo(reqIndex);
-      assertThat(resp.getSequenceNumber().get()).isEqualTo(respIndex);
+      assertThat(req.getSequenceNumber()).contains((long) reqIndex);
+      assertThat(resp.getSequenceNumber()).contains((long) respIndex);
 
       assertThat(req)
           .extractFacet(ProxyTransmissionHistory.class)

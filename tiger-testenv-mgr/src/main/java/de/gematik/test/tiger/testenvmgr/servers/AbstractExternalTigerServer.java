@@ -146,7 +146,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     try {
       checkUrlOrThrowException(url);
       printServerUpMessage();
-      setStatus(TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy");
+      setUpAndHealthyStatus();
     } catch (ConnectException | SocketTimeoutException cex) {
       if (!noErrorLogging) {
         handleNoTcpConnectionException(url);
@@ -154,13 +154,17 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     } catch (SSLHandshakeException | TlsException sslhe) {
       handleSslHandshakeErrorAndSetServerRunning(sslhe);
     } catch (SSLException sslex) {
-      handleOtherSslError(noErrorLogging, sslex);
+      handleOtherSslError(sslex);
     } catch (Exception e) {
       if (!noErrorLogging) {
         handleOtherException(e);
       }
     }
     return getStatus();
+  }
+
+  private void setUpAndHealthyStatus() {
+    setStatus(TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy");
   }
 
   private void handleNoTcpConnectionException(URL url) {
@@ -171,16 +175,26 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     log.error("Failed to connect - " + e.getMessage(), e);
   }
 
-  private void handleOtherSslError(boolean noErrorLogging, SSLException sslex) {
-    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
-      if (!noErrorLogging) {
-        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+  private void handleOtherSslError(SSLException sslex) {
+    if (sslex.getMessage() != null
+        && sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+      if (log.isWarnEnabled()) {
+        log.warn(
+            Ansi.colorize(
+                "Unsupported or unrecognized SSL message (possible http/https mismatch) - server"
+                    + " at least seems to be up! {}",
+                RbelAnsiColors.YELLOW_BOLD),
+            sslex.getMessage());
       }
     } else {
-      if (!noErrorLogging) {
-        log.error("SSL Error - " + sslex.getMessage(), sslex);
+      if (log.isWarnEnabled()) {
+        log.warn(
+            Ansi.colorize(
+                "SSL error but server at least seems to be up! {}", RbelAnsiColors.YELLOW_BOLD),
+            sslex.getMessage());
       }
     }
+    setUpAndHealthyStatus();
   }
 
   private void handleSslHandshakeErrorAndSetServerRunning(IOException sslhe) {
@@ -190,7 +204,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
               "SSL handshake but server at least seems to be up! {}", RbelAnsiColors.YELLOW_BOLD),
           sslhe.getMessage());
     }
-    setStatus(TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy");
+    setUpAndHealthyStatus();
   }
 
   private void checkUrlOrThrowException(URL url) throws IOException {
@@ -198,8 +212,8 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     if (con instanceof HttpURLConnection httpConnection) {
       InsecureTrustAllManager.allowAllSsl(con);
       con.setConnectTimeout(EXTERNAL_SERVER_CONNECTION_TIMEOUT.getValueOrDefault());
-      con.connect();
       try {
+        con.connect();
         final int responseCode = httpConnection.getResponseCode();
         if (getConfiguration().getHealthcheckReturnCode() != null
             && !getConfiguration().getHealthcheckReturnCode().equals(responseCode)) {
@@ -213,12 +227,16 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             || TigerExceptionUtils.getCauseWithMessageMatching(
                     e,
                     message ->
-                        "Connection reset".equals(message)
-                            || "Unexpected end of file from server".equals(message))
+                        message.matches(
+                            "Connection reset"
+                                + "|Broken pipe"
+                                + "|Unexpected end of file from server"
+                                + "|An established connection was aborted by the software in your host machine"
+                                + "|Software caused connection abort"))
                 .isEmpty()) {
           throw e;
         }
-        // ignore
+        // ignore - server accepted the connection but aborted/reset it, which means it is up
       }
     }
   }

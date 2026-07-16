@@ -29,7 +29,7 @@ import TopologyDiagram from "./components/TopologyDiagram.vue";
   <div class="app-layout">
     <FileUploader />
     <div class="topology-container">
-      <TopologyDiagram />
+      <TopologyDiagram :show-filtering="false" />
     </div>
   </div>
 </template>

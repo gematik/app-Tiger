@@ -37,6 +37,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class TigerPkiIdentityLoaderTest {
 
@@ -385,8 +388,10 @@ class TigerPkiIdentityLoaderTest {
     identityInfo.setAliasesOrPasswords(List.of("internal", "values"));
 
     // Serialize to JSON using the same ObjectMapper that would be used in configuration
-    com.fasterxml.jackson.databind.ObjectMapper mapper =
-        new com.fasterxml.jackson.databind.ObjectMapper();
+    ObjectMapper mapper =
+        JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+            .build();
     String json = mapper.writeValueAsString(identityInfo);
 
     // Verify that aliasesOrPasswords is not present in JSON

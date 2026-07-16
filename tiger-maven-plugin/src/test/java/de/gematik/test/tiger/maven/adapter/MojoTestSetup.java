@@ -43,6 +43,7 @@ public class MojoTestSetup {
     Mockito.when(project.getRuntimeClasspathElements()).thenReturn(runtimeClasspathElements);
 
     mojo.setProject(project);
+    mojo.setAutoShutdownAfterSeconds(15);
     return mojo;
   }
 

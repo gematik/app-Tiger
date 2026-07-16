@@ -23,13 +23,13 @@ package de.gematik.test.tiger.canopy.extension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Edge-case coverage for {@link CanopyServer#prepareDependencies()} auto-wiring beyond the
@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
  */
 class CanopyAutoWireTest {
 
-  private static CfgServer cfgWith(String json) throws Exception {
+  private static CfgServer cfgWith(String json) {
     CfgServer cfg = new CfgServer().setType("canopy").setHostname("canopyunit");
     if (json != null) {
       JsonNode tree = new ObjectMapper().readTree(json);
@@ -70,8 +70,7 @@ class CanopyAutoWireTest {
                 adminPort: 44401
                 proxyPort: 44402
           """)
-  void prepareDependencies_isIdempotent_acrossMultipleInvocations(TigerTestEnvMgr mgr)
-      throws Exception {
+  void prepareDependencies_isIdempotent_acrossMultipleInvocations(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith(null), mgr);
 
     s.prepareDependencies();
@@ -99,8 +98,7 @@ class CanopyAutoWireTest {
                 adminPort: 44411
                 proxyPort: 44412
           """)
-  void singleSiblingProxy_preservesExistingDependsUpon_andAppendsProxyId(TigerTestEnvMgr mgr)
-      throws Exception {
+  void singleSiblingProxy_preservesExistingDependsUpon_andAppendsProxyId(TigerTestEnvMgr mgr) {
     CfgServer cfg = cfgWith(null).setDependsUpon("foo");
     CanopyServer s = new CanopyServer("c1", cfg, mgr);
 
@@ -122,8 +120,7 @@ class CanopyAutoWireTest {
                 adminPort: 44421
                 proxyPort: 44422
           """)
-  void singleSiblingProxy_dependsUponAlreadyContainsProxy_isIdempotent(TigerTestEnvMgr mgr)
-      throws Exception {
+  void singleSiblingProxy_dependsUponAlreadyContainsProxy_isIdempotent(TigerTestEnvMgr mgr) {
     CfgServer cfg = cfgWith(null).setDependsUpon("tp,foo");
     CanopyServer s = new CanopyServer("c1", cfg, mgr);
 
@@ -151,7 +148,7 @@ class CanopyAutoWireTest {
                 adminPort: 44433
                 proxyPort: 44434
           """)
-  void multipleProxies_skipsAutoWireAndLeavesConfigUntouched(TigerTestEnvMgr mgr) throws Exception {
+  void multipleProxies_skipsAutoWireAndLeavesConfigUntouched(TigerTestEnvMgr mgr) {
     assertConfigUnchanged(mgr);
   }
 
@@ -168,12 +165,11 @@ class CanopyAutoWireTest {
                 adminPort: 0
                 proxyPort: 44441
           """)
-  void singleSiblingProxyWithoutUsableAdminPort_skipsAutoWire(TigerTestEnvMgr mgr)
-      throws Exception {
+  void singleSiblingProxyWithoutUsableAdminPort_skipsAutoWire(TigerTestEnvMgr mgr) {
     assertConfigUnchanged(mgr);
   }
 
-  private static void assertConfigUnchanged(TigerTestEnvMgr mgr) throws Exception {
+  private static void assertConfigUnchanged(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith(null), mgr);
 
     s.prepareDependencies();

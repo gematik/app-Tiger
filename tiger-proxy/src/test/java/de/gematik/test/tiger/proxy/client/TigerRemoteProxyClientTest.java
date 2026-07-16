@@ -87,10 +87,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -127,7 +127,7 @@ class TigerRemoteProxyClientTest {
 
   // the remote proxy (routing the requests to the remote server)
   @Autowired private TigerProxy tigerProxy;
-  @SpyBean private TigerWebUiController tigerWebUiController;
+  @MockitoSpyBean private TigerWebUiController tigerWebUiController;
 
   // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
   private static TigerRemoteProxyClient tigerRemoteProxyClient;
@@ -186,7 +186,9 @@ class TigerRemoteProxyClientTest {
         .register(
             get("/error")
                 .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
-
+    runtimeInfo
+        .getWireMock()
+        .register(get("/foobarString").willReturn(ok().withBody("foobarString")));
     log.info("Configuring routes...");
     tigerRemoteProxyClient.clearAllMessages();
     tigerRemoteProxyClient.clearAllRoutes();
@@ -576,7 +578,7 @@ class TigerRemoteProxyClientTest {
       newlyConnectedRemoteClient.connect();
 
       TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
-          newlyConnectedRemoteClient, numberOfGeneratedMessages * 2, 10);
+          newlyConnectedRemoteClient, numberOfGeneratedMessages * 2, 20);
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
       assertThat(newlyConnectedRemoteClient.getRbelMessagesList())

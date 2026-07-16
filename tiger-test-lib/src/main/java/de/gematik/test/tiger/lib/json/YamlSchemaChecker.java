@@ -20,8 +20,8 @@
  */
 package de.gematik.test.tiger.lib.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * Validates content against a YAML-formatted schema. Since YAML is a superset of JSON, both YAML

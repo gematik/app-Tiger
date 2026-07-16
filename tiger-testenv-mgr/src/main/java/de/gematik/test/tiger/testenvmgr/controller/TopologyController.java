@@ -22,6 +22,7 @@ package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.topology.ConfigurationDiagramModel;
 import de.gematik.test.tiger.topology.LiveDiagramBuilderKt;
+import de.gematik.test.tiger.topology.RemoteProxyConfigurationReader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,9 +34,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class TopologyController {
 
+  private final RemoteProxyConfigurationReader remoteProxyConfigurationReader =
+      new RemoteProxyConfigurationReader();
+
   @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   public ConfigurationDiagramModel getTopology() {
     log.trace("Fetch request for live topology diagram");
-    return LiveDiagramBuilderKt.buildDiagramFromLiveConfiguration();
+    return LiveDiagramBuilderKt.buildDiagramFromLiveConfiguration(remoteProxyConfigurationReader);
   }
 }

@@ -22,17 +22,12 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.util.MemoryConstants.KB;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
-import java.io.IOException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +35,11 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.module.SimpleModule;
 
 @SpringBootApplication(
     scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerProxyApplication.class})
@@ -67,14 +67,13 @@ public class TigerProxyApplication implements ServletContextListener {
     SimpleModule module = new SimpleModule();
     module.addSerializer(
         RbelElement.class,
-        new JsonSerializer<>() {
+        new ValueSerializer<>() {
           @Override
-          public void serialize(
-              RbelElement value, JsonGenerator gen, SerializerProvider serializers)
-              throws IOException {
+          public void serialize(RbelElement value, JsonGenerator gen, SerializationContext ctxt)
+              throws JacksonException {
             gen.writeStartObject();
-            gen.writeStringField("uuid", value.getUuid());
-            gen.writeArrayFieldStart("facets");
+            gen.writeStringProperty("uuid", value.getUuid());
+            gen.writeArrayPropertyStart("facets");
             for (RbelFacet facet : value.getFacets()) {
               gen.writeString(facet.getClass().getSimpleName());
             }

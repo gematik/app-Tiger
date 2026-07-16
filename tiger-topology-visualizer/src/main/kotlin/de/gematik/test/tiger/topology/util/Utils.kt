@@ -21,6 +21,8 @@
 
 package de.gematik.test.tiger.topology.util
 
+import java.net.URI
+
 
 //Same as require, but with custom exception
 inline fun requireThat(value: Boolean, lazyMessage: () -> String) {
@@ -35,3 +37,9 @@ private val PORT_IN_URL = Regex(":(\\$\\{[^}]+}|\\d+)")
 /** Extracts a port string from a URL. Returns the port (numeric or placeholder), or null. */
 fun extractPortFromUrl(url: String): String? =
     PORT_IN_URL.find(url)?.groupValues?.getOrNull(1)
+
+internal fun extractHost(url: String): String? {
+    // If port contains unresolved placeholders, replace with dummy port so URI.create() can parse it
+    val parseableUrl = url.replace(Regex(":([^/]*\\$\\{[^}]*})"), ":9999")
+    return runCatching { URI.create(parseableUrl).host }.getOrNull()
+}

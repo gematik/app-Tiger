@@ -23,11 +23,6 @@ package de.gematik.test.tiger.common.pki;
 import static de.gematik.test.tiger.common.config.TigerConfigurationLoader.TIGER_CONFIGURATION_ATTRIBUTE_KEY;
 import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.parseInformationString;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
@@ -39,8 +34,16 @@ import java.util.List;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.*;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
+@Slf4j
 @EqualsAndHashCode(callSuper = true)
 @Data
 @JsonDeserialize(using = TigerPkiIdentityDeserializer.class)
@@ -58,17 +61,61 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
     this.fileLoadingInformation = fileLoadingInformation;
   }
 
+  /** No-arg constructor for Spring ConfigurationProperties binding. */
+  public TigerConfigurationPkiIdentity() {
+    super();
+  }
+
+  /**
+   * Setter for Spring ConfigurationProperties binding. When Spring binds nested YAML object
+   * properties, it sets filename/password/alias/storeType directly on this object via these
+   * delegating setters. After binding completes, initializeFromProperties() is called to construct
+   * fileLoadingInformation from these fields.
+   */
+  public void setFilename(String filename) {
+    ensureFileLoadingInformation();
+    this.fileLoadingInformation.setFilenames(filename != null ? List.of(filename) : List.of());
+  }
+
+  public void setPassword(String password) {
+    ensureFileLoadingInformation();
+    this.fileLoadingInformation.setPassword(password);
+  }
+
+  public void setAlias(String alias) {
+    ensureFileLoadingInformation();
+    this.fileLoadingInformation.setAlias(alias);
+  }
+
+  public void setStoreType(String storeTypeStr) {
+    ensureFileLoadingInformation();
+    if (storeTypeStr != null) {
+      StoreType.findStoreTypeForString(storeTypeStr)
+          .ifPresentOrElse(
+              st -> this.fileLoadingInformation.setStoreType(st),
+              () -> {
+                throw new IllegalArgumentException("Unknown storeType: " + storeTypeStr);
+              });
+    }
+  }
+
+  private synchronized void ensureFileLoadingInformation() {
+    if (this.fileLoadingInformation == null) {
+      this.fileLoadingInformation = TigerPkiIdentityInformation.builder().build();
+    }
+  }
+
   public static class TigerPkiIdentityDeserializer
-      extends JsonDeserializer<TigerConfigurationPkiIdentity> {
+      extends ValueDeserializer<TigerConfigurationPkiIdentity> {
 
     @Override
     public TigerConfigurationPkiIdentity deserialize(
         JsonParser jsonParser, DeserializationContext ctxt) {
       try {
-        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+        JsonNode node = ctxt.readTree(jsonParser);
 
-        if (node.isTextual()) {
-          final String substitutedValue = replacePlaceholders(ctxt, node.asText());
+        if (node.isString()) {
+          final String substitutedValue = replacePlaceholders(ctxt, node.asString());
           return new TigerConfigurationPkiIdentity(substitutedValue);
         }
 
@@ -100,8 +147,8 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
 
     private static Optional<String> findField(
         JsonNode node, String fieldname, DeserializationContext ctxt) {
-      if (node.hasNonNull(fieldname) && node.get(fieldname).isTextual()) {
-        return Optional.of(replacePlaceholders(ctxt, node.get(fieldname).asText()));
+      if (node.hasNonNull(fieldname) && node.get(fieldname).isString()) {
+        return Optional.of(replacePlaceholders(ctxt, node.get(fieldname).asString()));
       }
       return Optional.empty();
     }
@@ -113,20 +160,19 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
   }
 
   public static class TigerPkiIdentitySerializer
-      extends JsonSerializer<TigerConfigurationPkiIdentity> {
+      extends ValueSerializer<TigerConfigurationPkiIdentity> {
 
     @Override
     public void serialize(
-        TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializerProvider serializers)
-        throws IOException {
+        TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializationContext ctxt)
+        throws JacksonException {
       if (value.getFileLoadingInformation() != null
           && value.getFileLoadingInformation().isUseCompactFormat()) {
         gen.writeString(value.getFileLoadingInformation().generateCompactFormat());
         return;
       }
-      serializers
-          .findValueSerializer(TigerPkiIdentityInformation.class)
-          .serialize(value.getFileLoadingInformation(), gen, serializers);
+      ctxt.findValueSerializer(TigerPkiIdentityInformation.class)
+          .serialize(value.getFileLoadingInformation(), gen, ctxt);
     }
   }
 }

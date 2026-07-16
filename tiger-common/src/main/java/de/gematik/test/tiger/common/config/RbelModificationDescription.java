@@ -20,10 +20,11 @@
  */
 package de.gematik.test.tiger.common.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 @Data
-@AllArgsConstructor
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
 public class RbelModificationDescription {

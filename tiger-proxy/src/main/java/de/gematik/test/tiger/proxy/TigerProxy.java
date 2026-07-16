@@ -29,6 +29,7 @@ import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
@@ -180,6 +181,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
     mockServerConfiguration.rbelConverter(getRbelLogger().getRbelConverter());
 
+    Optional.ofNullable(getTigerProxyConfiguration().getMaxSocketTimeoutInMillis())
+        .ifPresent(
+            timeout -> {
+              log.info("Overriding socket timeout to {} ms", timeout);
+              mockServerConfiguration.maxSocketTimeoutInMillis(timeout);
+            });
+
     final MockServerTlsConfigurator tlsConfigurator =
         MockServerTlsConfigurator.builder()
             .tigerProxyConfiguration(getTigerProxyConfiguration())
@@ -255,6 +263,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
               .map(RbelBinaryModifierPlugin::instantiateModifierPlugin)
               .toList());
     }
+
+    Optional.ofNullable(getTigerProxyConfiguration())
+        .map(TigerProxyConfiguration::getDirectReverseProxy)
+        .map(DirectReverseProxyInfo::getTcpIdleTimeoutInSeconds)
+        .ifPresent(
+            timeoutSeconds ->
+                mockServerConfiguration.tcpIdleTimeoutInMillis((int) (timeoutSeconds * 1000F)));
 
     MockServer newMockServer =
         new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());

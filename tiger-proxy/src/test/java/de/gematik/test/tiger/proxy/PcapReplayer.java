@@ -20,8 +20,6 @@
  */
 package de.gematik.test.tiger.proxy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -48,6 +46,8 @@ import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.TcpPacket.TcpHeader;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -108,10 +108,10 @@ public class PcapReplayer implements AutoCloseable {
     for (JsonNode packet : root) {
       val packetSrcPort =
           Integer.parseInt(
-              packet.get("_source").get("layers").get("tcp").get("tcp.srcport").asText());
+              packet.get("_source").get("layers").get("tcp").get("tcp.srcport").asString());
       val packetDstPort =
           Integer.parseInt(
-              packet.get("_source").get("layers").get("tcp").get("tcp.dstport").asText());
+              packet.get("_source").get("layers").get("tcp").get("tcp.dstport").asString());
       val isServer = packetSrcPort == filterSrcPort;
       val clientMatches = packetSrcPort == filterSrcPort || packetDstPort == filterSrcPort;
       val serverMatches = packetSrcPort == filterDstPort || packetDstPort == filterDstPort;
@@ -123,7 +123,7 @@ public class PcapReplayer implements AutoCloseable {
                 .get("layers")
                 .get("data")
                 .get("data.data")
-                .asText()
+                .asString()
                 .replace(":", "");
         val data = Hex.decode(dataString);
         addPacket(new TigerTestReplayPacket(isServer, data));
