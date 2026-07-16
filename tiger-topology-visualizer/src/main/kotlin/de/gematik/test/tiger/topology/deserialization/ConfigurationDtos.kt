@@ -25,9 +25,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonValue
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 // Classes store a Map<String, Any?> internally via @JsonAnySetter, but provide typed getters
 // for the fields we need when building the topology visualizer.
@@ -50,7 +51,7 @@ class LightTigerConfigModel : SerializableMap() {
 class GlobalConfig(
     val tigerConfig: LightTigerConfigModel = LightTigerConfigModel(),
     private val fullTree: Map<String, Any?> = emptyMap(),
-    val warnings : List<String> = listOf()
+    val warnings: List<String> = listOf()
 ) {
     /** Resolves a dot-separated path against the full configuration tree. */
     operator fun get(path: String): Any? = resolvePathInMap(path, fullTree)
@@ -79,21 +80,23 @@ class LightConfigServer : SerializableMap() {
     val zionConfiguration: LightZionConfiguration? get() = typed("zionConfiguration")
 
     companion object {
-        fun fromLocalProxy(localProxyConfig: LightTigerConfigModel):LightConfigServer {
+        fun fromLocalProxy(localProxyConfig: LightTigerConfigModel): LightConfigServer {
             return LightConfigServer().apply {
                 properties["type"] = "tigerProxy"
                 properties["tigerProxyConfiguration"] = localProxyConfig.tigerProxy ?: LightTigerProxyConfiguration()
             }
-    }}
+        }
+    }
 }
 
 class LightZionConfiguration : SerializableMap() {
     val mockResponses: Map<String, LightMockResponse> get() = typedMap("mockResponses")
-    val serverPort : String? get() = properties["serverPort"]?.toString()
+    val serverPort: String? get() = properties["serverPort"]?.toString()
 
     fun collectBackendRequestUrls(): List<String> {
         fun collect(response: LightMockResponse): List<String> {
-            val fromThis = response.backendRequests.values.mapNotNull { backendRequest -> backendRequest.url.takeIf { it.isNotBlank() } }
+            val fromThis =
+                response.backendRequests.values.mapNotNull { backendRequest -> backendRequest.url.takeIf { it.isNotBlank() } }
             val fromNested = response.nestedResponses.values.flatMap { collect(it) }
             return fromThis + fromNested
         }
@@ -206,7 +209,8 @@ open class SerializableMap {
             is T -> raw
             is Map<*, *> -> SHARED_MAPPER
                 .convertValue(raw, T::class.java)
-                .also { properties[key] = it as Any}
+                .also { properties[key] = it as Any }
+
             else -> null
         }
     }
@@ -230,8 +234,10 @@ open class SerializableMap {
     }
 
     companion object {
-        val SHARED_MAPPER: ObjectMapper = ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .registerKotlinModule()
+        val SHARED_MAPPER: ObjectMapper =
+            YAMLMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .addModule(kotlinModule())
+                .build()
     }
 }

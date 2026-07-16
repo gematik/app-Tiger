@@ -20,12 +20,12 @@
  */
 package de.gematik.rbellogger.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.Map.Entry;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 public class JsonUtils {
 
@@ -38,11 +38,9 @@ public class JsonUtils {
       String jsonObjectString) {
     List<Entry<String, String>> result = new ArrayList<>();
 
-    for (Iterator<Entry<String, JsonNode>> it = OBJECT_MAPPER.readTree(jsonObjectString).fields();
-        it.hasNext(); ) {
-      var entry = it.next();
-      if (entry.getValue().isValueNode() && entry.getValue().isTextual()) {
-        result.add(Pair.of(entry.getKey(), entry.getValue().textValue()));
+    for (Entry<String, JsonNode> entry : OBJECT_MAPPER.readTree(jsonObjectString).properties()) {
+      if (entry.getValue().isValueNode() && entry.getValue().isString()) {
+        result.add(Pair.of(entry.getKey(), entry.getValue().stringValue()));
       } else {
         result.add(Pair.of(entry.getKey(), entry.getValue().toString()));
       }

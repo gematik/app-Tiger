@@ -34,7 +34,6 @@ import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelContent;
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -64,33 +63,31 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
           "deflate", RbelHttpResponseConverter::decodeDeflate,
           "gzip", RbelHttpResponseConverter::decodeGzip);
 
-  private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
+  private static RbelContent decodeGzip(RbelContent bytes, String eol, Charset charset) {
     log.atTrace().log(() -> "Decoding data with gzip");
-    try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
-      return inputStream.readAllBytes();
+    try (final InputStream gzipInput = new GZIPInputStream(bytes.toInputStream())) {
+      return RbelContent.from(gzipInput);
     } catch (Exception e) {
       throw new RbelConversionException("Error while decoding gzip content", e);
     }
   }
 
-  private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
+  private static RbelContent decodeDeflate(RbelContent bytes, String eol, Charset charset) {
     log.atTrace().log(() -> "Decoding data with deflate");
-    try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
-      return inputStream.readAllBytes();
+    try (final InputStream inflater = new InflaterInputStream(bytes.toInputStream())) {
+      return RbelContent.from(inflater);
     } catch (Exception e) {
       throw new RbelConversionException("Error while decoding gzip content", e);
     }
   }
 
-  private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
+  private static RbelContent decodeChunked(RbelContent inputData, String eol, Charset charset) {
     log.atTrace().log(() -> "Decoding data with chunked encoding");
-    int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
+    int chunkSeparator = inputData.indexOf(eol.getBytes()) + eol.length();
 
-    final int indexOfChunkTerminator =
-        determineEndOfChunkedBody(RbelContent.of(inputData), 0, eol) - 7;
+    final int indexOfChunkTerminator = determineEndOfChunkedBody(inputData, 0, eol) - 7;
     if (indexOfChunkTerminator >= 0) {
-      return Arrays.copyOfRange(
-          inputData, Math.min(inputData.length, chunkSeparator), indexOfChunkTerminator);
+      return inputData.subArray(Math.min(inputData.size(), chunkSeparator), indexOfChunkTerminator);
     } else {
       throw new RbelConversionException(
           "Detected incorrect use of chunked encoding: Chunked was given as"
@@ -159,15 +156,13 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
         return;
       }
 
-      RbelElement headerElement =
-          extractHeaderFromMessage(targetElement, converter, eol, stringContent);
-      RbelHttpHeaderFacet httpHeaderFacet = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
-      final byte[] rawBodyData =
-          extractBodyData(targetElement, endOfHeaderIndex, httpHeaderFacet, eol);
-      final RbelElement bodyElement =
-          new RbelElement(rawBodyData, targetElement, findCharsetInHeader(httpHeaderFacet));
-      final RbelElement responseCode = extractResponseCodeFromMessage(stringContent);
-      final RbelHttpResponseFacet rbelHttpResponse =
+      val headerElement = extractHeaderFromMessage(targetElement, converter, eol, stringContent);
+      val httpHeaderFacet = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
+      val bodyData = extractBodyData(targetElement, endOfHeaderIndex, httpHeaderFacet, eol);
+      val bodyElement =
+          new RbelElement(null, bodyData, targetElement, findCharsetInHeader(httpHeaderFacet));
+      val responseCode = extractResponseCodeFromMessage(stringContent);
+      val rbelHttpResponse =
           RbelHttpResponseFacet.builder()
               .responseCode(responseCode)
               .reasonPhrase(extractReasonPhraseFromMessage(stringContent))
@@ -175,7 +170,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
 
       targetElement.addFacet(rbelHttpResponse);
       targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
-      final var httpVersion =
+      val httpVersion =
           new RbelElement(
               stringContent.substring(0, stringContent.indexOf(" ")).getBytes(), targetElement);
       val httpMessageFacet =
@@ -306,8 +301,8 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     return new SimpleImmutableEntry<>(key, rbelElement);
   }
 
-  public byte[] applyCodings(
-      final byte[] inputData,
+  public RbelContent applyCodings(
+      final RbelContent inputData,
       final RbelHttpHeaderFacet headerMap,
       final String eol,
       Charset charset,
@@ -332,7 +327,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
                 })
             .toList();
 
-    byte[] data = inputData;
+    RbelContent data = inputData;
 
     for (RbelHttpCodingConverter codingConverter : codingConverters) {
       data = codingConverter.decode(data, eol, charset);
@@ -341,7 +336,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     return data;
   }
 
-  public byte[] extractBodyData(
+  public RbelContent extractBodyData(
       RbelElement targetElement,
       int bodyDataStartOffset,
       final RbelHttpHeaderFacet headerMap,
@@ -352,9 +347,12 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     if (contentEndIndex > content.size()) {
       throw new RbelConversionException("Hit end of messages while trying to determine body size.");
     }
-    byte[] inputData =
-        content.toByteArray(Math.min(bodyDataStartOffset, contentEndIndex), contentEndIndex);
+    RbelContent inputData =
+        content.subArray(Math.min(bodyDataStartOffset, contentEndIndex), contentEndIndex);
 
+    if (inputData.isEmpty()) {
+      return inputData;
+    }
     Charset elementCharset = targetElement.getElementCharset();
     return applyCodings(
         applyCodings(inputData, headerMap, eol, elementCharset, "Content-Encoding"),

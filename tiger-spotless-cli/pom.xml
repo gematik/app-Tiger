@@ -5,7 +5,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.3.2</version>
+    <version>4.4.0</version>
   </parent>
 
   <artifactId>tiger-spotless-cli</artifactId>
@@ -14,7 +14,7 @@
 
   <properties>
     <!-- spotless-lib has different versioning from spotless-maven-plugin -->
-    <version.spotless-lib>4.6.1</version.spotless-lib>
+    <version.spotless-lib>4.8.0</version.spotless-lib>
     <version.flexmark>0.64.8</version.flexmark>
     <version.sortpom>4.0.0</version.sortpom>
     <surefireJacocoAgent/>

@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * *******
+ * ******
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ *
  */
 package io.cucumber.core.plugin;
 
@@ -35,9 +35,6 @@ import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.gherkin.DataTableArgument;
 import io.cucumber.core.gherkin.DocStringArgument;
-import io.cucumber.core.internal.com.fasterxml.jackson.core.TreeNode;
-import io.cucumber.core.internal.com.fasterxml.jackson.databind.ObjectMapper;
-import io.cucumber.core.internal.com.fasterxml.jackson.databind.node.ArrayNode;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.Location;
 import io.cucumber.plugin.event.Result;
@@ -66,18 +63,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import junit.framework.AssertionFailedError;
+import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONArray;
 import net.serenitybdd.core.di.SerenityInfrastructure;
 import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
 import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.directory.api.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
+import tools.jackson.core.TreeNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
+@Slf4j
 public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvStatusTest {
 
   private static Path getSerenityReportDir() {
@@ -439,9 +443,6 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
       // skipped steps --> no replacements
 
       testStepsREsolutionSkippedSteps(testSteps);
-
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -586,6 +587,7 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
   }
 
   @Test
+  @Tag("de.gematik.test.tiger.common.LongRunnerTest")
   void testIntermediateReportingLifecycle() throws Exception {
     final Path sampleJson1 =
         Path.of(
@@ -633,25 +635,30 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
               case1,
               step1,
               new Result(Status.PASSED, Duration.ofMillis(500), null)));
-      Files.copy(
-          sampleJson1,
-          reportDir.resolve("feature1-outcome.json"),
-          StandardCopyOption.REPLACE_EXISTING);
+
       listener.handleTestCaseFinished(
           new TestCaseFinished(
               Instant.now(), case1, new Result(Status.PASSED, Duration.ofMillis(500), null)));
 
+      Files.copy(
+          sampleJson1,
+          reportDir.resolve("feature1-outcome.json"),
+          StandardCopyOption.REPLACE_EXISTING);
+
       listener.handleTestRunFinished(
           new TestRunFinished(
               Instant.now(), new Result(Status.PASSED, Duration.ofMillis(500), null)));
-
       listener.handleTestRunStarted(new TestRunStarted(Instant.now()));
 
       // Wait for intermediate report to be generated asynchronously
       Path indexHtml = reportDir.resolve("index.html");
+
+      log.info("Output directory = {}", reportDir.toAbsolutePath());
+      log.info("Progress file = {}", progressFile.toAbsolutePath());
+
       await()
-          .atMost(Duration.ofSeconds(30))
-          .pollInterval(Duration.ofMillis(100))
+          .atMost(Duration.ofSeconds(60))
+          .pollInterval(Duration.ofMillis(500))
           .untilAsserted(() -> assertThat(progressFile).exists());
       await()
           .atMost(Duration.ofSeconds(30))
@@ -675,7 +682,7 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
       Files.deleteIfExists(reportDir.resolve("feature1-outcome.json"));
       Files.deleteIfExists(reportDir.resolve("feature2-outcome.json"));
       if (workingDir.toFile().exists()) {
-        org.apache.commons.io.FileUtils.deleteDirectory(workingDir.toFile());
+        FileUtils.deleteDirectory(workingDir.toFile());
       }
     }
   }

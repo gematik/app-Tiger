@@ -21,16 +21,7 @@
 package de.gematik.rbellogger.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.gematik.test.tiger.exceptions.RbelHostnameFormatException;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.*;
 import java.util.Arrays;
@@ -41,6 +32,15 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
 
 @Data
 @Builder
@@ -194,11 +194,11 @@ public class RbelSocketAddress implements Serializable {
     return address.printValidHostname();
   }
 
-  public static class RbelSocketAddressSerializer extends JsonSerializer<RbelSocketAddress> {
+  public static class RbelSocketAddressSerializer extends ValueSerializer<RbelSocketAddress> {
+
     @Override
-    public void serialize(
-        RbelSocketAddress value, JsonGenerator gen, SerializerProvider serializers)
-        throws IOException {
+    public void serialize(RbelSocketAddress value, JsonGenerator gen, SerializationContext ctxt)
+        throws JacksonException {
       // Prefer the resolved IP address when serializing socket addresses so that
       // JSON output is stable and environment-independent (e.g. '127.0.0.1:8080'
       // instead of 'localhost:8080'). Fall back to the printed hostname on error.
@@ -228,11 +228,10 @@ public class RbelSocketAddress implements Serializable {
     return hostPort;
   }
 
-  public static class RbelSocketAddressDeserializer extends JsonDeserializer<RbelSocketAddress> {
+  public static class RbelSocketAddressDeserializer extends ValueDeserializer<RbelSocketAddress> {
 
     @Override
-    public RbelSocketAddress deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException {
+    public RbelSocketAddress deserialize(JsonParser p, DeserializationContext ctxt) {
       return RbelSocketAddress.fromString(p.getValueAsString()).orElse(null);
     }
   }

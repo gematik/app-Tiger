@@ -95,7 +95,7 @@ fun convertConfigurationToDiagramModel(
     model += createRouteToComposeServiceEdges(config, model, resolvePlaceholders)
 
     // 5. Edges from route nodes to the servers they target (by serverPort match)
-    model += createRouteToServerEdges(config, resolvePlaceholders)
+    model += createRouteToServerEdges(config, model, resolvePlaceholders)
 
     // 6. Direct reverse proxy edges (matching localhost targets to servers by port)
     model += createDirectReverseProxyEdges(config, resolvePlaceholders)

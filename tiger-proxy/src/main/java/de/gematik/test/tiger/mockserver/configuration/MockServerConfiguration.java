@@ -69,6 +69,7 @@ public class MockServerConfiguration {
   // socket
   private Long maxSocketTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
   private Long socketConnectionTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
+  private Integer tcpIdleTimeoutInMillis = null;
   private boolean alwaysCloseSocketConnections = false;
 
   // http request parsing

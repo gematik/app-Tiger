@@ -25,6 +25,15 @@ import BannerMessage from "../types/BannerMessage";
 import BannerType from "../types/BannerType";
 import type QuitReason from "../types/QuitReason";
 
+vi.mock("../composables/useFavicon", () => ({
+  useFavicon: vi.fn(() => ({
+    setNotification: vi.fn(),
+    hasNotification: { value: false },
+    resetFavicon: vi.fn(),
+    updateFavicon: vi.fn(),
+  })),
+}));
+
 describe("BannerMessageWindow.vue - Accessibility Tests", () => {
   const defaultQuitReason: QuitReason = {
     message: "Test quit",

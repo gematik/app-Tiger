@@ -38,8 +38,6 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
-import org.springframework.web.socket.server.standard.TomcatRequestUpgradeStrategy;
-import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -92,12 +90,10 @@ public class TracingEndpointConfiguration
 
     registry
         .addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
-        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
         .setAllowedOriginPatterns("*");
 
     registry
         .addEndpoint("/newMessages")
-        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
         .withSockJS()
         .setTaskScheduler(getThreadPoolTaskScheduler());
   }

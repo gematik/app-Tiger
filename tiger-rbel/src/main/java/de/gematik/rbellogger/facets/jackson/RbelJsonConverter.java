@@ -20,13 +20,12 @@
  */
 package de.gematik.rbellogger.facets.jackson;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.RbelContent;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
@@ -37,12 +36,12 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
   public RbelJsonConverter() {
     super(
-        new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true),
+        JsonMapper.builder().enable(JsonReadFeature.ALLOW_SINGLE_QUOTES).build(),
         RbelJsonFacet.class);
   }
 
   @Override
-  JsonNode convertContentUsingJackson(RbelElement target) throws IOException {
+  JsonNode convertContentUsingJackson(RbelElement target) {
     return getMapper()
         .readTree(
             new InputStreamReader(target.getContent().toInputStream(), target.getElementCharset()));

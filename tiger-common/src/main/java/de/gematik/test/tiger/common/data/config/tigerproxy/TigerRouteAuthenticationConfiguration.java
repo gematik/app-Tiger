@@ -20,16 +20,20 @@
  */
 package de.gematik.test.tiger.common.data.config.tigerproxy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @Builder(toBuilder = true)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Data
 public class TigerRouteAuthenticationConfiguration implements Serializable {
 

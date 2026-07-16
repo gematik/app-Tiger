@@ -29,6 +29,7 @@ import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import kong.unirest.core.Unirest;
@@ -166,15 +167,13 @@ servers:
           .atMost(20, TimeUnit.SECONDS)
           .until(
               () ->
-                  proxy.getRbelLogger().getMessages().stream()
+                  List.copyOf(proxy.getRbelLogger().getMessages()).stream()
                           .filter(el -> el.getConversionPhase().isFinished())
                           .count()
                       >= expectedMessageCount);
     } catch (ConditionTimeoutException e) {
       log.error("Timed out waiting for tiger to receive {} messages", expectedMessageCount);
-      proxy
-          .getRbelLogger()
-          .getMessages()
+      List.copyOf(proxy.getRbelLogger().getMessages())
           .forEach(
               el ->
                   log.error("Message {}: {}", el.getUuid(), el.printTreeStructureWithoutColors()));

@@ -22,6 +22,7 @@ package de.gematik.rbellogger.file;
 
 import static de.gematik.rbellogger.file.RbelFileWriter.*;
 
+import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
@@ -110,7 +111,8 @@ public class RbelFileReader {
         .map(messageObject -> parseFileObject(messageObject, readFilter, contentProvider))
         .filter(Optional::isPresent)
         .peek(onEveryMessageParsed)
-        .map(Optional::get);
+        .map(Optional::get)
+        .filter(rbelElement -> rbelElement.getConversionPhase() != RbelConversionPhase.DELETED);
   }
 
   private static boolean isMessageObject(JSONObject messageObject) {

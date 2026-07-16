@@ -616,6 +616,18 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
+  void testEmptyGzip() {
+    readTgrFileAndStoreForRbelMessageRetriever(
+        "src/test/resources/testdata/empty-gzip-content.tgr");
+    RbelMessageRetriever validator = rbelMessageRetriever;
+
+    for (RbelElement message : validator.getMessageHistory().getMessages()) {
+      assertThat(message).hasChildWithPath("$.body");
+      assertThat(message).hasStringContentEqualToAtPosition("$.header.content-length", "0");
+    }
+  }
+
+  @Test
   void testCurrentMessagesNotFound() {
     readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/interleavedRequests.tgr");

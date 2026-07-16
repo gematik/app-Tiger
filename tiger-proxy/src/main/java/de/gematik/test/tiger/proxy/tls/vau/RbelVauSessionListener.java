@@ -20,7 +20,6 @@
  */
 package de.gematik.test.tiger.proxy.tls.vau;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
@@ -39,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import tools.jackson.databind.JsonNode;
 
 @ConverterInfo(onlyActivateFor = "epa-vau")
 @Slf4j
@@ -117,21 +117,20 @@ public class RbelVauSessionListener extends RbelConverterPlugin {
     findVauHandshakeMessageWithCommandAndHttpType(
             rbelElement, "VAUClientSigFin", RbelHttpRequestFacet.class)
         .ifPresent(
-            jsonRoot -> {
-              jsonRoot
-                  .findElement("$.VAUClientHelloDataHash")
-                  .map(RbelElement::getRawStringContent)
-                  .map(clientHelloHashToSessionMap::get)
-                  .ifPresent(
-                      vauSessionFacet -> {
-                        VauSessionFacet.buildFromOtherInstanceForRoot(vauSessionFacet, jsonRoot);
+            jsonRoot ->
+                jsonRoot
+                    .findElement("$.VAUClientHelloDataHash")
+                    .map(RbelElement::getRawStringContent)
+                    .map(clientHelloHashToSessionMap::get)
+                    .ifPresent(
+                        vauSessionFacet -> {
+                          VauSessionFacet.buildFromOtherInstanceForRoot(vauSessionFacet, jsonRoot);
 
-                        jsonRoot
-                            .findElement("$.FinishedData.content.keyId")
-                            .map(RbelElement::getRawStringContent)
-                            .ifPresent(hash -> keyIdToSessionMap.put(hash, vauSessionFacet));
-                      });
-            });
+                          jsonRoot
+                              .findElement("$.FinishedData.content.keyId")
+                              .map(RbelElement::getRawStringContent)
+                              .ifPresent(hash -> keyIdToSessionMap.put(hash, vauSessionFacet));
+                        }));
   }
 
   private void tagVauServerFin(RbelElement rbelElement) {
@@ -205,7 +204,7 @@ public class RbelVauSessionListener extends RbelConverterPlugin {
         .flatMap(el -> el.getFacet(RbelJsonFacet.class))
         .map(RbelJsonFacet::getJsonElement)
         .map(json -> json.get("MessageType"))
-        .map(JsonNode::textValue)
+        .map(JsonNode::stringValue)
         .orElse("")
         .equals(command)) {
       return Optional.empty();

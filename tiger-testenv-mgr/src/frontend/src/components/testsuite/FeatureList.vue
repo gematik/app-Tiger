@@ -138,11 +138,12 @@ import Tree from "primevue/tree";
 import type { TreeNode } from "primevue/treenode";
 import type ScenarioUpdate from "@/types/testsuite/ScenarioUpdate.ts";
 import { visitTreeNodes } from "@/components/testselector/TreeNodeVisitor.ts";
+import { storeToRefs } from "pinia";
 
-const featureUpdateMap = useFeaturesStore().featureUpdateMap;
+const { featureUpdateMap } = storeToRefs(useFeaturesStore());
 const selectedTests = useSelectedTestsStore();
 const testsToSelectTreeNodes = computed(() =>
-  convertToTreeNode(featureUpdateMap, true),
+  convertToTreeNode(featureUpdateMap.value, true),
 );
 
 const expandedKeys: Ref<Record<string, boolean>> = ref({});

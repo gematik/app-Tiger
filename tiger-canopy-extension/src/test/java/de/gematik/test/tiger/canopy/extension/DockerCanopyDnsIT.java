@@ -24,8 +24,6 @@ package de.gematik.test.tiger.canopy.extension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.events.BeforeContainerStartEvent;
@@ -35,6 +33,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.DockerClientFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * End-to-end integration test for the canopy auto-DNS handoff between {@link CanopyServer} and
@@ -63,7 +63,7 @@ class DockerCanopyDnsIT {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void canopyAndDockerSibling_autoInjectsDnsAndOrderedStart(TigerTestEnvMgr mgr) throws Exception {
+  void canopyAndDockerSibling_autoInjectsDnsAndOrderedStart(TigerTestEnvMgr mgr) {
     assumeTrue(DockerClientFactory.instance().isDockerAvailable(), "Docker daemon not available");
     Optional<String> resolved = CanopyItImageResolver.resolve();
     assumeTrue(

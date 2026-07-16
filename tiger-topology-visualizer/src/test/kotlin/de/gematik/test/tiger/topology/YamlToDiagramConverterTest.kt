@@ -315,12 +315,23 @@ class YamlToDiagramConverterTest {
 
         val diagramModel = convertUploadedFilesToDiagramModel(listOf(UploadedYamlFile("test.yaml", yaml)))
 
-        assertThat(diagramModel.nodes).hasSize(2)
-        val localProxyNode = diagramModel.nodes.find { it.id.value == "localTigerProxy" }!!
-        val routeNode = diagramModel.nodes.find { it.id.value == "localTigerProxy-route-0" }!!
-        assertThat(diagramModel.edges).hasSize(1)
-        assertThat(diagramModel.edges[0].source).isEqualTo(localProxyNode.id)
-        assertThat(diagramModel.edges[0].target).isEqualTo(routeNode.id)
+        assertThat(diagramModel.nodes)
+            .usingRecursiveComparison()
+            .ignoringFields("data")
+            .isEqualTo(listOf(
+                DiagramNode(id = NodeId("localTigerProxy"), type = NodeType.TIGER_PROXY, NodeData("")),
+                DiagramNode(id = NodeId("localTigerProxy-route-0"), type = NodeType.ROUTE, NodeData("")),
+                DiagramNode(id = NodeId("external-backend-http-orf-at"), type = NodeType.SYNTHETIC_EXTERNAL_URL, NodeData("")),
+            ))
+        assertThat(diagramModel.nodes.map { it.data.label }).containsExactly(
+            "Local Tiger Proxy",
+            "http://my.domain",
+            "http://orf.at"
+        )
+        assertThat(diagramModel.edges).containsExactly(
+            DiagramEdge.proxyToRoute("localTigerProxy", 0, source= NodeId("localTigerProxy"), target=NodeId("localTigerProxy-route-0")),
+            DiagramEdge.routeToTarget(NodeId("localTigerProxy-route-0"), NodeId("external-backend-http-orf-at"))
+        )
     }
 
     @Test
@@ -464,7 +475,7 @@ class YamlToDiagramConverterTest {
 
         val syntheticNode = diagramModel.nodes.find { it.data.config["hostname"] == "unknown-service.example.com" }
         assertThat(syntheticNode).isNotNull
-        assertThat(syntheticNode!!.type.value).isEqualTo("externalUrl")
+        assertThat(syntheticNode!!.type.value).isEqualTo("syntheticExternalUrl")
         assertThat(diagramModel.edges.any { it.source == NodeId("mockServer") && it.target == syntheticNode.id }).isTrue()
     }
 

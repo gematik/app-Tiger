@@ -19,19 +19,27 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-export default class MessageMetaDataDto {
-  uuid: string = "";
-  menuInfoString: string = "";
-  symbol: string = "";
-  recipient: string = "";
-  sender: string = "";
-  bundledServerNameSender: string = "";
-  bundledServerNameReceiver: string = "";
-  sequenceNumber: number = -1;
-  timestamp: Date | string = "";
-  removed: boolean = false;
+export interface TransmissionHop {
+  proxyName: string;
+  sequenceNumbers: number[];
+}
 
-  public toString() {
-    return `{ uuid: "${this.uuid}" }\n`;
-  }
+export default interface MessageMetaDataDto {
+  uuid: string;
+  menuInfoString: string;
+  symbol: string;
+  recipient: string;
+  sender: string;
+  bundledServerNameSender: string;
+  bundledServerNameReceiver: string;
+  sequenceNumber: number;
+  timestamp: Date | string;
+  request: boolean;
+  removed: boolean;
+  additionalInformation: Record<string, any>;
+  transmissionHops: TransmissionHop[];
+}
+
+export function initiallyCapturedByProxy(metadata: MessageMetaDataDto): string {
+  return metadata.transmissionHops?.[0]?.proxyName ?? "localTigerProxy";
 }

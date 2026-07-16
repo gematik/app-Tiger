@@ -26,14 +26,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.type.CollectionType;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.IOException;
@@ -55,6 +47,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.node.StringNode;
+import tools.jackson.databind.type.CollectionType;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @Slf4j
@@ -625,19 +625,20 @@ public class TigerConfigurationTest { // NOSONAR
   @Test
   void registerCustomObjectMapper_shouldBeUsed() {
     try {
-      TigerGlobalConfiguration.getObjectMapper()
-          .registerModule(
-              new SimpleModule()
-                  .addDeserializer(
-                      DummyBean.class,
-                      new StdDeserializer<>(DummyBean.class) {
-                        @Override
-                        public DummyBean deserialize(JsonParser p, DeserializationContext ctxt)
-                            throws IOException {
-                          final TextNode node = (TextNode) p.readValueAsTree().get("frick");
-                          return DummyBean.builder().string(node.asText()).build();
-                        }
-                      }));
+      TigerGlobalConfiguration.addCustomMapper(
+          builder ->
+              builder.addModule(
+                  new SimpleModule()
+                      .addDeserializer(
+                          DummyBean.class,
+                          new StdDeserializer<>(DummyBean.class) {
+                            @Override
+                            public DummyBean deserialize(
+                                JsonParser p, DeserializationContext ctxt) {
+                              final StringNode node = (StringNode) p.readValueAsTree().get("frick");
+                              return DummyBean.builder().string(node.asString()).build();
+                            }
+                          })));
 
       TigerGlobalConfiguration.readFromYaml("frick: 'on a stick'");
       var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();

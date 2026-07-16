@@ -21,9 +21,13 @@
 
 package de.gematik.test.tiger.topology
 
+import de.gematik.test.tiger.topology.deserialization.LightTigerProxyConfiguration
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration
 import de.gematik.test.tiger.topology.deserialization.LightTigerConfigModel
+import io.github.oshai.kotlinlogging.KotlinLogging
 
+private val logger = KotlinLogging.logger {}
 // ──────────────────────────────────────────────────────────────────────────────
 // Builds a topology diagram from the live TigerGlobalConfiguration.
 //
@@ -50,9 +54,53 @@ fun buildDiagramFromLiveConfiguration(): ConfigurationDiagramModel {
     ).orElse(LightTigerConfigModel())
 
     return convertConfigurationToDiagramModel(
-        config = tigerConfig,
+        config = tigerConfig ?: LightTigerConfigModel(),
         yamlResolver = FilesystemYamlResolver(),
         resolvePlaceholders = TigerGlobalConfiguration::resolvePlaceholders
     )
 }
+
+/**
+ * Variant that enriches external tiger proxy nodes by attempting to read their live
+ * configuration from the remote proxy admin endpoint. If the remote config cannot be
+ * read (null or exception), the node is left unchanged.
+ */
+fun buildDiagramFromLiveConfiguration(
+    reader: RemoteProxyConfigurationReader
+): ConfigurationDiagramModel {
+    val base = buildDiagramFromLiveConfiguration()
+
+    val updatedNodes = base.nodes.map { node ->
+        if (node.type != NodeType.TIGER_PROXY_EXTERNAL) return@map node
+
+        //We store the url from trafficSubscription in the label
+        val adminUrl = node.data.label
+
+        val uri = try {
+            java.net.URI.create(adminUrl)
+        } catch (e: Exception) {
+            logger.warn{"Failed to parse admin url for node '${node.id.value}': ${e.message?.take(200)}"}
+            null
+        }
+
+        if (uri == null) return@map node
+
+        val fetched: LightTigerProxyConfiguration? = try {
+            reader.readTigerProxyConfig(uri)
+        } catch (e: Exception) {
+            logger.warn{"Failed to read remote config for node '${node.id.value}': ${e.message?.take(200)}"}
+            null
+        }
+
+        if (fetched == null) return@map node
+
+        // Replace node.data.config with the fetched config backing map
+        val newData = node.data.copy(config = fetched.properties)
+        node.copy(data = newData)
+    }
+
+    return ConfigurationDiagramModel(updatedNodes, base.edges)
+}
+
+
 

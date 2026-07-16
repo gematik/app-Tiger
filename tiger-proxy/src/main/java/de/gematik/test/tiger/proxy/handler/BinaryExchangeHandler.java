@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.proxy.handler;
 
+import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
@@ -61,32 +62,35 @@ public class BinaryExchangeHandler {
   public void propagateExceptionMessageSafe(
       Throwable exception, RbelSocketAddress senderAddress, RbelSocketAddress receiverAddress) {
     try {
-      log.warn("Exception during Direct-Proxy handling:", exception);
-
-      tigerProxy.propagateException(exception);
 
       final TigerProxyRoutingException routingException =
           new TigerProxyRoutingException(
-              "Exception during handling of HTTP request: " + exception.getMessage(),
+              "Exception during handling of binary request: " + exception.getMessage(),
               senderAddress,
               receiverAddress,
               exception);
-      log.info(routingException.getMessage(), routingException);
 
       val message = new RbelElement(new byte[] {}, null);
       message.addFacet(new TigerRoutingErrorFacet(routingException));
-      tigerProxy
-          .getRbelLogger()
-          .getRbelConverter()
-          .parseMessage(
-              message,
-              new RbelMessageMetadata()
-                  .withSender(senderAddress)
-                  .withReceiver(receiverAddress)
-                  .withTransmissionTime(routingException.getTimestamp()));
+      try {
+        tigerProxy
+            .getRbelLogger()
+            .getRbelConverter()
+            .parseMessage(
+                message,
+                new RbelMessageMetadata()
+                    .withSender(senderAddress)
+                    .withReceiver(receiverAddress)
+                    .withTransmissionTime(routingException.getTimestamp()));
+      } finally {
+        if (message.getConversionPhase() != RbelConversionPhase.DELETED) {
+          log.error(routingException.getMessage(), routingException);
+          tigerProxy.propagateException(exception);
+        }
+      }
     } catch (Exception handlingException) {
       log.warn(
-          "While propagating an exception another error occured (ignoring):", handlingException);
+          "While propagating an exception another error occurred (ignoring):", handlingException);
     }
   }
 

@@ -24,14 +24,14 @@ package de.gematik.test.tiger.canopy.extension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Pre-startup validation tests for {@link CanopyServer}. End-to-end "actually boot the container"
@@ -39,7 +39,7 @@ import org.junit.jupiter.api.Test;
  */
 class CanopyServerValidationTest {
 
-  private static CfgServer cfgWith(String json) throws Exception {
+  private static CfgServer cfgWith(String json) {
     CfgServer cfg = new CfgServer().setType("canopy").setHostname("canopyunit");
     if (json != null) {
       JsonNode tree = new ObjectMapper().readTree(json);
@@ -50,7 +50,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_acceptsEmptyCanopyBlock(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_acceptsEmptyCanopyBlock(TigerTestEnvMgr mgr) {
     // Empty/missing block → defaults (image=null → DEFAULT_IMAGE, dnsPort=53, etc.)
     CanopyServer s = new CanopyServer("c1", cfgWith(null), mgr);
 
@@ -64,7 +64,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_readsFullConfigViaTypedConfigSlot(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_readsFullConfigViaTypedConfigSlot(TigerTestEnvMgr mgr) {
     String json =
         """
         {
@@ -88,7 +88,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_rejectsAdminPortOutOfRange(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_rejectsAdminPortOutOfRange(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith("{\"adminPort\":70000}"), mgr);
 
     s.prepareDependencies();
@@ -100,7 +100,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_rejectsDnsHostPortOutOfRange(TigerTestEnvMgr mgr) throws Exception {
+  void assertConfig_rejectsDnsHostPortOutOfRange(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith("{\"dnsHostPort\":-1}"), mgr);
 
     s.prepareDependencies();
@@ -111,8 +111,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void assertConfig_failsClearly_whenPrepareDependenciesWasNotCalled(TigerTestEnvMgr mgr)
-      throws Exception {
+  void assertConfig_failsClearly_whenPrepareDependenciesWasNotCalled(TigerTestEnvMgr mgr) {
     // Guards the new invariant: assertThat* is pure validation and must not silently initialise
     // canopyConfig. If a caller skips prepareDependencies(), we want a clear, actionable error
     // rather than an NPE-shaped one or — worse — a silent pass.
@@ -136,7 +135,7 @@ class CanopyServerValidationTest {
                 adminPort: 44321
                 proxyPort: 44322
           """)
-  void autoWires_tigerProxyUrl_fromSingleSiblingTigerProxy(TigerTestEnvMgr mgr) throws Exception {
+  void autoWires_tigerProxyUrl_fromSingleSiblingTigerProxy(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith(null), mgr);
 
     s.prepareDependencies();
@@ -159,7 +158,7 @@ class CanopyServerValidationTest {
                 adminPort: 44331
                 proxyPort: 44332
           """)
-  void autoWire_doesNotOverrideExplicitTigerProxyUrl(TigerTestEnvMgr mgr) throws Exception {
+  void autoWire_doesNotOverrideExplicitTigerProxyUrl(TigerTestEnvMgr mgr) {
     CanopyServer s =
         new CanopyServer("c1", cfgWith("{\"tigerProxyUrl\":\"http://my-explicit:9999\"}"), mgr);
 
@@ -174,7 +173,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void autoWire_isNoOp_whenNoSiblingTigerProxy(TigerTestEnvMgr mgr) throws Exception {
+  void autoWire_isNoOp_whenNoSiblingTigerProxy(TigerTestEnvMgr mgr) {
     CanopyServer s = new CanopyServer("c1", cfgWith(null), mgr);
 
     s.prepareDependencies();
@@ -206,8 +205,7 @@ class CanopyServerValidationTest {
                 adminPort: 44345
                 proxyPort: 44346
           """)
-  void perHostOverride_addsDependsUponForEveryReferencedProxy(TigerTestEnvMgr mgr)
-      throws Exception {
+  void perHostOverride_addsDependsUponForEveryReferencedProxy(TigerTestEnvMgr mgr) {
     // Multi-proxy setup: top-level tigerProxyUrl is set explicitly (auto-wire would skip anyway
     // because there are 3 siblings), and per-host overrides pin pop3/smtp to dedicated proxies.
     // Expected: dependsUpon picks up *every* placeholder-referenced proxy id, so canopy waits
@@ -241,8 +239,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void perHostOverride_hardCodedUrlIsTolerated_noDependsUponAdded(TigerTestEnvMgr mgr)
-      throws Exception {
+  void perHostOverride_hardCodedUrlIsTolerated_noDependsUponAdded(TigerTestEnvMgr mgr) {
     // Hard-coded URLs (no ${...} placeholder) bypass auto-wire — the user is on their own for
     // ordering. No dependsUpon edge, no warning, no crash.
     String yaml =
@@ -265,7 +262,7 @@ class CanopyServerValidationTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void perHostOverride_selfReferenceIsSkipped(TigerTestEnvMgr mgr) throws Exception {
+  void perHostOverride_selfReferenceIsSkipped(TigerTestEnvMgr mgr) {
     // Defensive: a self-pointing placeholder would create a cycle. We deliberately drop it and
     // let any genuine cycle surface through other edges in the env mgr's cycle check.
     String yaml =

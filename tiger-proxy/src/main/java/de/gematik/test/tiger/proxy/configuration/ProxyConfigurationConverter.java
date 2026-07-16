@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 public class ProxyConfigurationConverter {
 
@@ -61,7 +62,7 @@ public class ProxyConfigurationConverter {
     if (StringUtils.isEmpty(forwardProxyInfo.getHostname())) {
       return Optional.empty();
     }
-    if (StringUtils.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
+    if (Strings.CS.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
       return convertSystemProxyConfig(forwardProxyInfo);
     } else {
       final ProxyConfiguration result =

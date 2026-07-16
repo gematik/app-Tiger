@@ -20,30 +20,28 @@
  */
 package de.gematik.test.tiger.proxy.client;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
 /**
  * Custom Jackson deserializer for additionalInformation that converts timestamp strings back to
  * ZonedDateTime objects where appropriate.
  */
 @Slf4j
-public class TimestampAwareMapDeserializer extends JsonDeserializer<Map<String, Object>> {
+public class TimestampAwareMapDeserializer extends ValueDeserializer<Map<String, Object>> {
 
   private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
   @Override
-  public Map<String, Object> deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException {
-    Map<String, Object> rawMap = p.getCodec().readValue(p, MAP_TYPE_REF);
+  public Map<String, Object> deserialize(JsonParser p, DeserializationContext ctxt) {
+    Map<String, Object> rawMap = ctxt.readValue(p, MAP_TYPE_REF);
     Map<String, Object> processedMap = new HashMap<>(rawMap);
 
     convertTimestampField(processedMap, RbelMessageMetadata.PREVIOUS_MESSAGE_TIMESTAMP.getKey());

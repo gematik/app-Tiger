@@ -20,14 +20,15 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @Builder
-@AllArgsConstructor
 @Data
 public class TigerRouteDto {
 

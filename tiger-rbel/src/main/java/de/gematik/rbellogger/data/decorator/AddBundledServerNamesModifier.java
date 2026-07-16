@@ -23,7 +23,6 @@ package de.gematik.rbellogger.data.decorator;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
-import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -47,12 +46,7 @@ public class AddBundledServerNamesModifier implements MessageMetadataModifier {
    */
   public static MessageMetadataModifier createModifier(
       Function<RbelElement, Optional<String>> bundledServernameSupplier) {
-    if (Boolean.TRUE.equals(
-        TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.getValueOrDefault())) {
-      return new AddBundledServerNamesModifier(bundledServernameSupplier);
-    } else {
-      return new DoesNothingModifier();
-    }
+    return new AddBundledServerNamesModifier(bundledServernameSupplier);
   }
 
   @Override

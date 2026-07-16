@@ -74,7 +74,7 @@ watch(
     const trimmedLabel = labelText.trim();
 
     // Labels without text are intentionally excluded from collision tracking.
-    if (!trimmedLabel) {
+    if (!trimmedLabel && !hasProxyIcon) {
       labelLayoutStore.releaseEdge(edgeId);
       labelPosition.value = { x: baseX, y: baseY };
       return;

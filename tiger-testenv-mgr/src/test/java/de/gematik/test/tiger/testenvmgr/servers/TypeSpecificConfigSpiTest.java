@@ -24,14 +24,14 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import java.util.List;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * Tests for the typed-config slot SPI: {@link CfgServer#getTypeSpecificConfig()} and {@link
@@ -87,7 +87,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void readsTypedConfigFromBareTopLevelYamlKey() throws Exception {
+  void readsTypedConfigFromBareTopLevelYamlKey() {
     String yaml =
         """
         type: sample
@@ -114,7 +114,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void toleratesUnknownFieldsForForwardCompatibility() throws Exception {
+  void toleratesUnknownFieldsForForwardCompatibility() {
     String yaml =
         """
         type: sample
@@ -133,7 +133,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void multipleBareKeysAreIndependent() throws Exception {
+  void multipleBareKeysAreIndependent() {
     String yaml =
         """
         type: sample
@@ -148,7 +148,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void failsWithStartupExceptionWhenValueCannotBeBound() throws Exception {
+  void failsWithStartupExceptionWhenValueCannotBeBound() {
     String yaml =
         """
         type: sample
@@ -166,7 +166,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void roundTripsThroughJsonWritingBareTopLevelKeys() throws Exception {
+  void roundTripsThroughJsonWritingBareTopLevelKeys() {
     CfgServer original = new CfgServer();
     original.setType("sample");
     ObjectMapper mapper = new ObjectMapper();
@@ -188,7 +188,7 @@ class TypeSpecificConfigSpiTest {
   }
 
   @Test
-  void unreadKeysAreReportedAfterReads() throws Exception {
+  void unreadKeysAreReportedAfterReads() {
     String yaml =
         """
         type: sample

@@ -23,22 +23,164 @@ import { defineStore } from "pinia";
 import {
   type ConfigurationDiagramDto,
   createDiagramNodeDto,
+  type DiagramEdgeDto,
+  type DiagramNodeDto,
+  mergeDiagramModels,
 } from "../types/topology.ts";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import type { ProblemDetails } from "../types/ProblemDetails.ts";
 
 type UploadedFileStatus = "pending" | "processing" | "processed" | "error";
 
+export interface AdditionalEdge {
+  sender: string;
+  receiver: string;
+  proxiedVia: string;
+}
+
+type FetchErrorBody = ProblemDetails | string | null;
+
+function buildAdditionalEdgeId(sender: string, receiver: string): string {
+  return `edge-${sender}-${receiver}`;
+}
+
+function extractHost(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname;
+  } catch {
+    // maybe it is just a hostname
+    if (url.includes("/")) {
+      return null;
+    }
+    return url;
+  }
+}
+
+function findNodeIdFor(
+  nodeIdOrUrl: string,
+  nodes: DiagramNodeDto[],
+): string | null {
+  const directMatch = nodes.find((n) => n.id === nodeIdOrUrl);
+  if (directMatch) {
+    return directMatch.id;
+  }
+
+  const host = extractHost(nodeIdOrUrl);
+  if (!host) {
+    return null;
+  }
+
+  const hostMatch = nodes.find((n) => {
+    if (n.id === host) return true;
+    const config = n.data?.config;
+    if (!config) return false;
+
+    if (config.hostname === host) return true;
+
+    if (n.type === "externalUrl") {
+      const sources = config.source;
+      if (Array.isArray(sources)) {
+        return sources.some((s) => extractHost(String(s)) === host);
+      }
+    }
+    if (n.type === "composeService") {
+      const parts = nodeIdOrUrl.split("-");
+
+      if (parts.length === 3) {
+        const expectedComposeServiceId = `${parts[0]}-${parts[1]}`;
+        return n.id === expectedComposeServiceId;
+      }
+    }
+    return false;
+  });
+
+  return hostMatch?.id ?? null;
+}
+
+function createModelFromAdditionalEdges(
+  currentModel: ConfigurationDiagramDto,
+  additionalEdges: AdditionalEdge[],
+): ConfigurationDiagramDto {
+  const existingNodeIds = new Set(currentModel.nodes.map((node) => node.id));
+  const existingDynamicTrafficEdges = currentModel.edges.filter(
+    (edge) => edge.type === "dynamicTraffic",
+  );
+  const knownDynamicTrafficIds = new Set(
+    existingDynamicTrafficEdges.map((edge) => edge.id),
+  );
+  const nodes: DiagramNodeDto[] = [];
+  const edges: DiagramEdgeDto[] = [];
+
+  for (const additionalEdge of additionalEdges) {
+    const rawSender = additionalEdge.sender.trim();
+    const rawReceiver = additionalEdge.receiver.trim();
+
+    if (!rawSender || !rawReceiver) {
+      console.warn("Additional edge excluded: sender or receiver is blank", {
+        sender: additionalEdge.sender,
+        receiver: additionalEdge.receiver,
+        proxiedVia: additionalEdge.proxiedVia,
+      });
+      continue;
+    }
+
+    const sender = findNodeIdFor(rawSender, currentModel.nodes) ?? rawSender;
+    const receiver =
+      findNodeIdFor(rawReceiver, currentModel.nodes) ?? rawReceiver;
+
+    if (sender === receiver) {
+      continue;
+    }
+
+    const edgeId = buildAdditionalEdgeId(sender, receiver);
+    if (knownDynamicTrafficIds.has(edgeId)) {
+      continue;
+    }
+
+    for (const nodeId of [sender, receiver]) {
+      if (!existingNodeIds.has(nodeId)) {
+        existingNodeIds.add(nodeId);
+        nodes.push(
+          createDiagramNodeDto({
+            id: nodeId,
+            type: "default",
+            data: { label: nodeId },
+            parentNode: undefined,
+            expandParent: undefined,
+          }),
+        );
+      }
+    }
+
+    edges.push({
+      id: edgeId,
+      type: "dynamicTraffic",
+      source: sender,
+      target: receiver,
+      label: undefined,
+      markerEnd: "arrowclosed",
+      markerStart: undefined,
+      data: {
+        proxiedVia: additionalEdge.proxiedVia,
+      },
+    });
+    knownDynamicTrafficIds.add(edgeId);
+  }
+
+  return {
+    nodes,
+    edges,
+    warnings: [],
+  };
+}
+
 class FetchError extends Error {
   readonly status: number;
   readonly statusText: string;
-  readonly body?: ProblemDetails | string | null;
+  readonly body?: FetchErrorBody;
 
-  constructor(
-    status: number,
-    statusText: string,
-    body?: ProblemDetails | string | null,
-  ) {
+  constructor(status: number, statusText: string, body?: FetchErrorBody) {
     super(`${status} ${statusText}`);
     this.name = "FetchError";
     this.status = status;
@@ -72,6 +214,26 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     nodes: [],
     edges: [],
     warnings: [],
+  });
+  const edgeDisplayMode = ref<"ALL" | "LIVE" | "STATIC">("ALL");
+
+  const filteredEdges = computed(() => {
+    if (edgeDisplayMode.value === "ALL") {
+      return model.value.edges;
+    }
+    if (edgeDisplayMode.value === "LIVE") {
+      return model.value.edges.filter((e) => e.type === "dynamicTraffic");
+    }
+    if (edgeDisplayMode.value === "STATIC") {
+      return model.value.edges.filter((e) => e.type !== "dynamicTraffic");
+    }
+    return model.value.edges;
+  });
+
+  const filteredNodes = computed(() => {
+    // Always include all nodes for now, unless we want to hide nodes that have no edges in live mode.
+    // But usually we want to see the topology.
+    return model.value.nodes;
   });
   const uploadedFiles = ref<File[]>([]);
   const uploadedFileStatuses = ref<Record<string, UploadedFileStatus>>({});
@@ -162,8 +324,11 @@ export const useDiagramModel = defineStore("diagramModel", () => {
         { method: "POST", body: form },
       );
       model.value = {
-        ...receivedModel,
-        nodes: receivedModel.nodes.map((item) => createDiagramNodeDto(item)),
+        nodes: (receivedModel.nodes ?? []).map((item) =>
+          createDiagramNodeDto(item),
+        ),
+        edges: receivedModel.edges ?? [],
+        warnings: receivedModel.warnings ?? [],
       };
       updateStatuses(uploadedFiles.value, "processed");
     } catch (error) {
@@ -208,13 +373,45 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     try {
       const receivedModel = await fetchJson<ConfigurationDiagramDto>(url);
       model.value = {
-        ...receivedModel,
-        nodes: receivedModel.nodes.map((item) => createDiagramNodeDto(item)),
+        nodes: (receivedModel.nodes ?? []).map((item) =>
+          createDiagramNodeDto(item),
+        ),
+        edges: receivedModel.edges ?? [],
+        warnings: receivedModel.warnings ?? [],
       };
       uploadError.value = null;
     } catch (error) {
       uploadError.value = extractUploadErrorMessage(error);
     }
+  }
+
+  function enrichModel(additionalData: ConfigurationDiagramDto) {
+    model.value = mergeDiagramModels(model.value, additionalData);
+  }
+
+  function addAdditionalEdge(additionalEdge: AdditionalEdge) {
+    addAdditionalEdges([additionalEdge]);
+  }
+
+  function addAdditionalEdges(additionalEdges: AdditionalEdge[]) {
+    if (additionalEdges.length === 0) {
+      return;
+    }
+
+    const additionalData = createModelFromAdditionalEdges(
+      model.value,
+      additionalEdges,
+    );
+
+    if (
+      additionalData.nodes.length === 0 &&
+      additionalData.edges.length === 0 &&
+      additionalData.warnings.length === 0
+    ) {
+      return;
+    }
+
+    enrichModel(additionalData);
   }
 
   return {
@@ -231,6 +428,12 @@ export const useDiagramModel = defineStore("diagramModel", () => {
     loadFromLiveEndpoint,
     highlightNode,
     clearHighlight,
+    enrichModel,
+    addAdditionalEdge,
+    addAdditionalEdges,
+    edgeDisplayMode,
+    filteredEdges,
+    filteredNodes,
   };
 });
 

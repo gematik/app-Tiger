@@ -21,11 +21,12 @@
 package de.gematik.test.tiger.mockserver.serialization;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.*;
+import tools.jackson.databind.cfg.EnumFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 /*
  * @author jamesdbloom
@@ -42,58 +43,49 @@ public class ObjectMapperFactory {
 
   @SuppressWarnings("deprecation")
   public static ObjectMapper buildObjectMapperWithoutRemovingEmptyValues() {
-    ObjectMapper objectMapper = new ObjectMapper();
+    return JsonMapper.builder()
 
-    // ignore failures
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, false);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, false);
-    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-    objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-    objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
-    objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_VALUES, true);
-    objectMapper.configure(MapperFeature.ALLOW_COERCION_OF_SCALARS, true);
-    objectMapper.configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true);
-    objectMapper.configure(MapperFeature.REQUIRE_SETTERS_FOR_GETTERS, false);
-    objectMapper.configure(MapperFeature.AUTO_DETECT_GETTERS, true);
+        // ignore failures
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+        .configure(EnumFeature.FAIL_ON_NUMBERS_FOR_ENUMS, false)
+        .configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, false)
+        .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_VALUES, true)
+        .configure(MapperFeature.ALLOW_COERCION_OF_SCALARS, true)
+        .configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true)
+        .configure(MapperFeature.REQUIRE_SETTERS_FOR_GETTERS, false)
 
-    // relax parsing
-    objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-    objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
-    objectMapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_MISSING_VALUES, true);
-    objectMapper.configure(JsonParser.Feature.ALLOW_TRAILING_COMMA, true);
-    objectMapper.configure(JsonParser.Feature.IGNORE_UNDEFINED, true);
+        // relax parsing
+        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+        .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+        .configure(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true)
+        .configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true)
+        .configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true)
+        .configure(JsonReadFeature.ALLOW_YAML_COMMENTS, true)
+        .configure(JsonReadFeature.ALLOW_UNQUOTED_PROPERTY_NAMES, true)
+        .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true)
+        .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS, true)
+        .configure(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true)
+        .configure(JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS, true)
+        .configure(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, true)
+        .configure(JsonReadFeature.ALLOW_MISSING_VALUES, true)
+        .configure(JsonReadFeature.ALLOW_TRAILING_COMMA, true)
 
-    // use arrays
-    objectMapper.configure(DeserializationFeature.USE_JAVA_ARRAY_FOR_JSON_ARRAY, true);
-
-    // consistent json output
-    objectMapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
-
-    return objectMapper;
+        // consistent json output
+        .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+        .build();
   }
 
   public static ObjectMapper buildObjectMapperWithOnlyConfigurationDefaults() {
-    ObjectMapper objectMapper = buildObjectMapperWithoutRemovingEmptyValues();
-
-    // remove empty values from JSON
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-
-    // add support for java date time serialisation and de-serialisation
-    objectMapper.registerModule(new JavaTimeModule());
-
-    return objectMapper;
+    return buildObjectMapperWithoutRemovingEmptyValues()
+        .rebuild()
+        .changeDefaultPropertyInclusion(
+            incl ->
+                incl.withContentInclusion(JsonInclude.Include.NON_DEFAULT)
+                    .withValueInclusion(JsonInclude.Include.NON_DEFAULT))
+        .build();
   }
 }

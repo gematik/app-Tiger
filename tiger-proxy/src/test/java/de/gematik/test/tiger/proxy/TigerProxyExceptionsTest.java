@@ -144,7 +144,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
           .hasFacet(TigerRoutingErrorFacet.class)
           .extractChildWithPath("$.error.message")
           .asString()
-          .contains("Exception during handling of HTTP request: Connection reset");
+          .matches("Exception during handling of .* request: Connection reset");
     }
   }
 

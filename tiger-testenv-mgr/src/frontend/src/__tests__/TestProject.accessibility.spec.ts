@@ -46,6 +46,8 @@ vi.mock("tiger-topology-visualizer", () => ({
   TopologyDiagram: { template: "<div />" },
   useDiagramModel: () => ({
     loadFromLiveEndpoint: vi.fn(),
+    addAdditionalEdges: vi.fn(),
+    addAdditionalEdge: vi.fn(),
   }),
 }));
 

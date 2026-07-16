@@ -105,11 +105,11 @@ public class TestDirectForwardProxyWithRaceCondition {
       Awaitility.await()
           .atMost(5, TimeUnit.SECONDS)
           .until(
-              () -> tigerProxy.getRbelMessagesList().stream().filter(filter).count(),
+              () -> List.copyOf(tigerProxy.getRbelMessagesList()).stream().filter(filter).count(),
               i -> i == expectedMessages);
-      return tigerProxy.getRbelMessagesList().stream().filter(filter).toList();
+      return List.copyOf(tigerProxy.getRbelMessagesList()).stream().filter(filter).toList();
     } catch (ConditionTimeoutException ex) {
-      tigerProxy.getRbelMessagesList().stream()
+      List.copyOf(tigerProxy.getRbelMessagesList()).stream()
           .map(RbelElement::printTreeStructure)
           .forEach(System.out::println);
       throw ex;

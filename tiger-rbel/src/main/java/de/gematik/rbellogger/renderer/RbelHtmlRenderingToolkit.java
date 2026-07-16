@@ -25,13 +25,6 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonA
 import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.unchecked;
 import static j2html.TagCreator.*;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
@@ -75,6 +68,14 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 @Builder(access = lombok.AccessLevel.PRIVATE, toBuilder = true)
 @AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
@@ -95,9 +96,10 @@ public class RbelHtmlRenderingToolkit {
   }
 
   private static final ObjectMapper SHARED_OBJECT_MAPPER =
-      new ObjectMapper()
+      JsonMapper.builder()
+          .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true)
           .enable(SerializationFeature.INDENT_OUTPUT)
-          .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+          .build();
 
   @Getter private final ObjectMapper objectMapper;
   private final Map<UUID, NotePlaceholderEntry> notePlaceholders;
@@ -390,7 +392,7 @@ public class RbelHtmlRenderingToolkit {
                     .withSrc(
                         localRessources
                             ? "../webjars/jquery/jquery.min.js"
-                            : "https://code.jquery.com/jquery-3.7.1.js"),
+                            : "https://code.jquery.com/jquery-4.0.0.js"),
                 script()
                     .withSrc(
                         localRessources
@@ -519,7 +521,9 @@ public class RbelHtmlRenderingToolkit {
             () -> {
               try {
                 return IOUtils.resourceToString(
-                    "/tiger-monochrome-64.png.base64", StandardCharsets.UTF_8);
+                    "tiger-monochrome-64.png.base64",
+                    StandardCharsets.UTF_8,
+                    getClass().getClassLoader());
               } catch (IOException e) {
                 throw new RbelRenderingException("Could not load file", e);
               }
@@ -595,8 +599,7 @@ public class RbelHtmlRenderingToolkit {
       output.put("note", uuid.toString());
     }
     final var childLookup = new HashMap<String, RbelElement>();
-    for (Iterator<Entry<String, JsonNode>> it = input.fields(); it.hasNext(); ) {
-      Entry<String, JsonNode> element = it.next();
+    for (Entry<String, JsonNode> element : input.properties()) {
       output.set(
           element.getKey(),
           shadeJson(
@@ -621,14 +624,16 @@ public class RbelHtmlRenderingToolkit {
         rbelHtmlRenderer
             .getRbelValueShader()
             .shadeValue(input, key)
-            .map(shadedValue -> (JsonNode) new TextNode(StringEscapeUtils.escapeHtml4(shadedValue)))
+            .map(
+                shadedValue ->
+                    (JsonNode) new StringNode(StringEscapeUtils.escapeHtml4(shadedValue)))
             .orElse(input);
 
     if (!originalElement.getNotes().isEmpty()) {
       final UUID uuid = UUID.randomUUID();
       addNotePlaceholder(
           uuid, "\"" + uuid + "\"", span(jsonElement.toString()).render(), originalElement);
-      return new TextNode(uuid.toString());
+      return new StringNode(uuid.toString());
     } else {
       return jsonElement;
     }

@@ -20,8 +20,6 @@
  */
 package de.gematik.rbellogger.facets.jackson;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
@@ -30,13 +28,14 @@ import de.gematik.rbellogger.data.core.*;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Abstract converter for structured formats that are parsed via Jackson. */
 @RequiredArgsConstructor
@@ -79,7 +78,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
       return;
     }
     convertToJacksonNode(rbelElement)
-        .filter(JsonNode::isContainerNode)
+        .filter(JsonNode::isContainer)
         .ifPresent(
             json -> {
               augmentRbelElementWithFacet(json, converter, rbelElement);
@@ -105,9 +104,9 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
   abstract F buildFacetForNode(JsonNode node);
 
   private void convertPrimitive(
-      JsonNode node, RbelConversionExecutor context, RbelElement parentElement) throws IOException {
-    if (node.isTextual()) {
-      addFacetAndConvertNestedElement(parentElement, node.asText(), context);
+      JsonNode node, RbelConversionExecutor context, RbelElement parentElement) {
+    if (node.isString()) {
+      addFacetAndConvertNestedElement(parentElement, node.asString(), context);
     } else if (node.isFloatingPointNumber()) {
       addFacetAndConvertNestedElement(parentElement, node.doubleValue(), context);
     } else if (node.isNumber()) {
@@ -129,8 +128,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
 
     parentElement.addFacet(RbelListFacet.builder().childNodes(elementList).build());
 
-    for (Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
-      JsonNode el = it.next();
+    for (JsonNode el : node.values()) {
       RbelElement newChild =
           new RbelElement(el.toString().getBytes(parentElement.getElementCharset()), parentElement);
       augmentRbelElementWithFacet(el, context, newChild);
@@ -142,8 +140,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
       JsonNode node, RbelConversionExecutor context, RbelElement parentElement) {
     final RbelMultiMap<RbelElement> elementMap = new RbelMultiMap<>();
     parentElement.addFacet(RbelMapFacet.builder().childNodes(elementMap).build());
-    for (Iterator<Entry<String, JsonNode>> it = node.fields(); it.hasNext(); ) {
-      Entry<String, JsonNode> entry = it.next();
+    for (Entry<String, JsonNode> entry : node.properties()) {
       RbelElement newChild =
           new RbelElement(
               entry.getValue().toString().getBytes(parentElement.getElementCharset()),

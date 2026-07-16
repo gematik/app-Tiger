@@ -41,7 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
@@ -139,7 +139,7 @@ class UpdatePushControllerTest {
         new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
 
     var stompClient = new WebSocketStompClient(webSocketClient);
-    stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+    stompClient.setMessageConverter(new JacksonJsonMessageConverter());
 
     final var connectFuture = stompClient.connectAsync(webSocketUrl, handler);
 

@@ -106,8 +106,18 @@ public abstract class RbelContent {
 
   public abstract int getChunkSize();
 
-  public RbelContent getBaseContent() {
-    return this;
+  // Backwards-compatible signature: historically callers expected this method to return
+  // RbelContentBase. Keep that return type to avoid NoSuchMethodError when older
+  // compiled callers (or other modules) call this method on the base class.
+  public RbelContentBase getBaseContent() {
+    if (this instanceof RbelContentBase) {
+      return (RbelContentBase) this;
+    }
+    // For other subclasses (e.g. RbelContentSlice) an overriding method is generated
+    // (via Lombok) that returns the correct base content. If we reach here, it's
+    // unexpected: throw a clear exception.
+    throw new UnsupportedOperationException(
+        "getBaseContent not implemented for " + this.getClass());
   }
 
   public abstract List<RbelContent> split(byte[] delimiter);

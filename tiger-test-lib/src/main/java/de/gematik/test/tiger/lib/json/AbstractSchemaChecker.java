@@ -20,9 +20,6 @@
  */
 package de.gematik.test.tiger.lib.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
@@ -30,6 +27,9 @@ import com.networknt.schema.SpecificationVersion;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.stream.Collectors;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Base class for schema-based content checkers (JSON and YAML). */
 public abstract class AbstractSchemaChecker extends AbstractRbelJsonChecker {
@@ -57,7 +57,7 @@ public abstract class AbstractSchemaChecker extends AbstractRbelJsonChecker {
             errors.stream().map(Error::toString).collect(Collectors.joining("\n  "));
         throw new SchemaAssertionError("Schema validation failed:\n  " + errorMessages);
       }
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new SchemaProcessingError("Failed to process content and/or schema", e);
     }
   }

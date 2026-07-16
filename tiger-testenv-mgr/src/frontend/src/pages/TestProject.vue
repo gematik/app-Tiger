@@ -295,13 +295,10 @@
               value="traffic-visualization-tab"
               v-if="featureFlags.trafficVisualization"
             >
-              <traffic-visualization
-                v-if="featureFlags.trafficVisualization"
-                :feature-update-map="featuresStore.featureUpdateMap"
-              />
+              <traffic-visualization v-if="featureFlags.trafficVisualization" />
             </TabPanel>
             <TabPanel value="topology-tab" class="topology-tab-panel">
-              <TopologyDiagram></TopologyDiagram>
+              <TopologyTab></TopologyTab>
             </TabPanel>
           </TabPanels>
         </Tabs>
@@ -379,9 +376,8 @@ import TabList from "primevue/tablist";
 import Tab from "primevue/tab";
 import TabPanels from "primevue/tabpanels";
 import TabPanel from "primevue/tabpanel";
-import { TopologyDiagram, useDiagramModel } from "tiger-topology-visualizer";
+import TopologyTab from "@/components/testsuite/TopologyTab.vue";
 
-const topologyStore = useDiagramModel();
 const { loadSubsetOfProperties } = useConfigurationLoader();
 const featureFlags = ref(new FeatureFlags());
 const baseURL = import.meta.env.BASE_URL;
@@ -467,12 +463,7 @@ onMounted(() => {
   fetchTigerVersion();
   fetchTigerBuild();
   loadFeatureFlags();
-  loadTopology();
 });
-
-function loadTopology() {
-  topologyStore.loadFromLiveEndpoint(baseURL + "topology");
-}
 
 const dialog = useDialog();
 const openTestSelectorDialog = () => {

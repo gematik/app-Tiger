@@ -19,9 +19,9 @@
  */
 package de.gematik.test.tiger.screenshots;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** Retain command — deletes old baselines beyond the retention limit. */
 @Slf4j

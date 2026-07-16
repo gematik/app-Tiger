@@ -22,7 +22,6 @@ package de.gematik.rbellogger.data.core;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.util.RbelInternetAddress;
 import de.gematik.rbellogger.util.RbelInternetAddressParser;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.net.InetAddress;
@@ -32,7 +31,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Data
@@ -81,16 +79,7 @@ public class RbelSocketAddressFacet implements RbelFacet {
   }
 
   public RbelSocketAddress toRbelSocketAddress() {
-    val localAddress = RbelInternetAddressParser.parseInetAddress(domain.getRawStringContent());
-    return RbelSocketAddress.builder()
-        .address(
-            bundledServerName
-                .flatMap(el -> el.seekValue(String.class))
-                .map(RbelInternetAddressParser::parseInetAddress)
-                .map(bsn -> combineHostnameAndIpAddress(bsn, localAddress))
-                .orElse(localAddress))
-        .port(port.seekValue(Integer.class).orElse(0))
-        .build();
+    return toUnbundledRbelSocketAddress();
   }
 
   public RbelSocketAddress toUnbundledRbelSocketAddress() {
@@ -99,36 +88,6 @@ public class RbelSocketAddressFacet implements RbelFacet {
         .address(localAddress)
         .port(port.seekValue(Integer.class).orElse(0))
         .build();
-  }
-
-  private static RbelInternetAddress combineHostnameAndIpAddress(
-      RbelInternetAddress bundledServerName, RbelInternetAddress localAddress) {
-    return new RbelInternetAddress(bundledServerName.getHostname(), localAddress.getIpAddress());
-  }
-
-  public static Optional<String> tryToExtractServerName(RbelElement element) {
-    final Optional<RbelSocketAddressFacet> socketAddressFacet =
-        element.getFacet(RbelSocketAddressFacet.class);
-    if (socketAddressFacet.isEmpty()) {
-      return Optional.empty();
-    }
-    return socketAddressFacet
-        .flatMap(RbelSocketAddressFacet::getBundledServerName)
-        .filter(e -> e.getRawStringContent() != null)
-        .flatMap(e -> Optional.of(e.getRawStringContent()))
-        .or( // try to get a clear hostname from the socket address
-            () ->
-                socketAddressFacet
-                    .map(RbelSocketAddressFacet::toRbelSocketAddress)
-                    .map(RbelSocketAddress::getAddress)
-                    .map(RbelInternetAddress::printValidHostname)
-                    .filter(StringUtils::isNotEmpty))
-        .or( // fallback, might be an IP address
-            () ->
-                socketAddressFacet
-                    .map(RbelSocketAddressFacet::getDomain)
-                    .map(RbelElement::getRawStringContent)
-                    .filter(StringUtils::isNotEmpty));
   }
 
   @Override

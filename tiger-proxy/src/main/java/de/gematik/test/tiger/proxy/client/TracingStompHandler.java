@@ -20,9 +20,6 @@
  */
 package de.gematik.test.tiger.proxy.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.proxy.client.legacy.TigerTracingDtoLegacy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import java.lang.reflect.Type;
@@ -32,6 +29,8 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 class TracingStompHandler implements StompFrameHandler {
@@ -67,10 +66,9 @@ class TracingStompHandler implements StompFrameHandler {
             () -> {
               try {
                 return new ObjectMapper()
-                    .registerModule(new JavaTimeModule())
                     .writerWithDefaultPrettyPrinter()
                     .writeValueAsString(frameContent);
-              } catch (JsonProcessingException e) {
+              } catch (JacksonException e) {
                 return "<>";
               }
             })

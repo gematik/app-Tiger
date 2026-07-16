@@ -44,6 +44,13 @@ type MessageBase = {
   sequenceNumber: number;
 };
 
+export type MessageUiState = {
+  details?: boolean;
+  headers?: boolean;
+  body?: boolean;
+  sections?: Record<string, boolean>;
+};
+
 export type Message = MessageBase &
   (
     | {
@@ -92,6 +99,8 @@ export interface UseMessageQueueReturn {
     ) => void;
     messages: Ref<Message[]>;
     ref: Ref<any | null>;
+    getUiState: (uuid: string) => MessageUiState;
+    setUiState: (uuid: string, state: Partial<MessageUiState>) => void;
   };
 }
 
@@ -171,6 +180,22 @@ export function useMessageQueue(
   });
 
   const total = computed(() => latestMessageOverview.value?.totalFiltered ?? 0);
+  const uiStateMap: Map<string, MessageUiState> = new Map();
+
+  function getUiState(uuid: string): MessageUiState {
+    let s = uiStateMap.get(uuid);
+    if (!s) {
+      s = { details: true, headers: true, body: true, sections: {} };
+      uiStateMap.set(uuid, s);
+    }
+    return s;
+  }
+
+  function setUiState(uuid: string, newState: Partial<MessageUiState>) {
+    const s = getUiState(uuid);
+    Object.assign(s, newState);
+  }
+
   const messages = computed(() => {
     const overview = latestMessageOverview.value;
     if (!overview) return [];
@@ -304,6 +329,8 @@ export function useMessageQueue(
       update,
       messages,
       ref: dynamicScrollerRef,
+      getUiState,
+      setUiState,
     },
   };
 }

@@ -23,7 +23,6 @@ package de.gematik.test.tiger.testenvmgr.config;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.common.data.config.CfgHelmChartOptions;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import tools.jackson.databind.JsonNode;
 
 @Data
 @Accessors(fluent = false, chain = true)

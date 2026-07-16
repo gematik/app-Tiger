@@ -20,8 +20,6 @@
  */
 package de.gematik.test.tiger.proxy.handler;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
@@ -30,14 +28,20 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 public interface RbelBinaryModifierPlugin {
 
   static final ObjectMapper objectMapper =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      JsonMapper.builder()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+          .build();
+
   Set<Class<? extends RbelBinaryModifierPlugin>> pluginClassList = new HashSet<>();
 
   Optional<byte[]> modify(RbelElement target, RbelConverter rbelConverter);
@@ -66,7 +70,7 @@ public interface RbelBinaryModifierPlugin {
           new Reflections(
               new ConfigurationBuilder()
                   .setUrls(ClasspathHelper.forJavaClassPath())
-                  .setScanners(new SubTypesScanner(false)));
+                  .setScanners(Scanners.SubTypes.filterResultsBy(s -> true)));
       pluginClassList.addAll(reflections.getSubTypesOf(RbelBinaryModifierPlugin.class));
     }
     return pluginClassList.stream()

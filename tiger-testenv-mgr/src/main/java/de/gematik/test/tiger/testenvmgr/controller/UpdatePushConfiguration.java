@@ -30,8 +30,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.server.standard.TomcatRequestUpgradeStrategy;
-import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -49,14 +47,8 @@ public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer
 
   @Override
   public void registerStompEndpoints(final StompEndpointRegistry registry) {
-    registry
-        .addEndpoint("/testEnv")
-        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-        .withSockJS();
-    registry
-        .addEndpoint("/testLog")
-        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-        .withSockJS();
+    registry.addEndpoint("/testEnv").withSockJS();
+    registry.addEndpoint("/testLog").withSockJS();
   }
 
   @Override

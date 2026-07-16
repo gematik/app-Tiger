@@ -99,7 +99,7 @@ public class BackendAlpnProber {
 
       return doAlpnProbe(host, port, forwardProxy, sslContext);
     } catch (IOException | GeneralSecurityException | RuntimeException e) {
-      log.warn("ALPN probe to {}:{} failed: {}", host, port, e.getMessage(), e);
+      log.debug("ALPN probe to {}:{} failed: {}", host, port, e.getMessage(), e);
       return Optional.empty();
     }
   }

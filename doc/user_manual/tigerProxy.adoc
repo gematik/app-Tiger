@@ -36,12 +36,24 @@ This is less of a problem with a reverse proxy since it is technically not a man
 [#_tiger_proxy_basics]
 === Tiger Proxy basics
 
-The tiger proxy is a proxy server.
-It comes in two flavors: tiger proxy and Tiger Standalone Proxy.
+The Tiger Proxy is a proxy server that can be deployed in three distinct modes:
 
-The test environment manager boots the main tiger proxy (so-called local tiger proxy) and also any additional ones (remote tiger proxy, not standalone).
+* **Local Tiger Proxy** — automatically started by the Test Environment Manager (TestenvMgr) as part of every Tiger test suite.
+It is the central traffic recording point for the test suite.
 
-The local tiger proxy has the following configuration properties in the tiger.yaml:
+* **Remote Tiger Proxy** (`type: tigerProxy` in the `servers` block) — an additional proxy instance started and managed by the TestenvMgr alongside other servers.
+It is useful to intercept traffic between two components that do not communicate through the local test suite proxy.
+
+* **Standalone Tiger Proxy** — a self-contained Spring Boot JAR or Docker image that runs independently of any test suite.
+It is the recommended choice for permanently running traffic recorders, sidecar containers, or mesh-setup nodes.
+See xref:tigerProxy.adoc#_standalone_proxy[Tiger Standalone Proxy] for details.
+
+==== Configuration structure by deployment mode
+
+The configuration structure differs depending on the deployment mode.
+
+*Local Tiger Proxy* and *Standalone Tiger Proxy* share the same flat structure — all properties are placed directly under the `tigerProxy` key:
+
 [source,YAML]
 ----
 tigerProxy:
@@ -49,176 +61,178 @@ tigerProxy:
   proxyPort: 3128
   # and so on
 ----
-That means the properties are directly under the `tigerProxy`-node.
 
-Whereas in the case of a remote tiger proxy, the properties are under `tigerProxy.tigerProxyConfiguration`:
+*Remote Tiger Proxy* (declared as a server of `type: tigerProxy`) places its proxy-specific properties under `tigerProxyConfiguration` inside the server entry:
+
 [source,YAML]
 ----
-tigerProxy:
-  tigerProxyConfiguration:
-    adminPort: 9090
-    proxyPort: 3128
-  # and so on
+servers:
+  myProxy:
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: 9090
+      proxyPort: 3128
+      # and so on
 ----
 
-Both types (local and remote) have a proxy port (configurable via `tigerProxy.proxyPort` resp. `tigerProxy.tigerProxyConfiguration.proxyPort`), which supports both HTTP and HTTPS traffic (so you do not have to differentiate between the two).
-Additionally, they have an admin port (configurable via `tigerProxy.adminPort` resp. `tigerProxy.tigerProxyConfiguration.adminPort`).
-This provides the tiger proxy log to monitor the traffic (described in detail xref:tigerWebUI.adoc#_web_ui[here]), a REST interface to customize the behavior (add/delete routes, add/delete modifications), and a WebSocket interface to stream RBel messages between multiple tiger proxies.
+All three deployment modes expose the same two ports: a **proxy port** for HTTP/HTTPS traffic, and an **admin port** providing the Tiger Proxy Web UI (described in detail xref:tigerWebUI.adoc#_web_ui[here]), a REST interface to manage routes and modifications at runtime, and a WebSocket/STOMP interface to stream RBel messages to other Tiger Proxy instances.
 
-The following example shows a complete tiger proxy configuration with all available properties (keep in mind that the local tiger proxy does not need the additional `.tigerProxyConfiguration`).
+The following example shows a complete Tiger Proxy configuration with all available properties.
+When used as a *local* or *standalone* proxy the properties are placed directly under `tigerProxy` (without an additional `tigerProxyConfiguration` nesting).
+When used as a *remote* proxy server they are placed under `servers.<name>.tigerProxyConfiguration`.
 The individual attributes are described in detail in the subsections below.
 
 .Complete tiger proxy configuration example
 [source,YAML]
 ----
-tigerProxy:
-  # ----General-------------------------------------------------
-  name: "my-tiger-proxy"            # OPTIONAL display name for this proxy instance
-  tigerProxyConfiguration:
-    adminPort: 9090                   # port for the admin UI and REST interface
-    proxyPort: 3128                   # port for proxying HTTP/HTTPS traffic
-    additionalProxyPorts:             # OPTIONAL additional proxy ports
-      - 3129
-    proxyLogLevel: WARN               # log level: TRACE, DEBUG, INFO, WARN, ERROR
-    localResources: true              # serve UI resources locally (no internet needed)
-    username: "admin"                 # OPTIONAL: credentials for the admin interface
-    password: "secret"
+servers:
+  myTigerProxy:
+    # ----General-------------------------------------------------
+    name: "my-tiger-proxy"              # OPTIONAL display name for this proxy instance
+    tigerProxyConfiguration:
+      adminPort: 9090                   # port for the admin UI and REST interface
+      proxyPort: 3128                   # port for proxying HTTP/HTTPS traffic
+      additionalProxyPorts:             # OPTIONAL additional proxy ports
+        - 3129
+      proxyLogLevel: WARN               # log level: TRACE, DEBUG, INFO, WARN, ERROR
+      localResources: true              # serve UI resources locally (no internet needed)
 
-    # ----Routes--------------------------------------------------
-    proxyRoutes:
-      - from: http://my.domain/       # forward-proxy route (absolute URL)
-        to: http://backend.example.de/
-        hosts:                        # OPTIONAL: match specific Host headers
-          - "www.google.com"
-        criterions:                   # OPTIONAL: JEXL conditions for route matching
-          - "$.header.foo == 'bar'"
-        disableRbelLogging: false     # set to true to skip RBel parsing for this route
-        authentication:               # OPTIONAL: add authentication to forwarded requests
-          username: "user"
-          password: "pass"
-          # bearerToken: "mytoken"    # alternatively use Bearer Token
-        matchForProxyType: true       # match only the proxy-mode suggested by "from"
-        preserveHostHeader: false     # set to true to keep the original Host header
+      # ----Routes--------------------------------------------------
+      proxyRoutes:
+        - from: http://my.domain/       # forward-proxy route (absolute URL)
+          to: http://backend.example.de/
+          hosts:                        # OPTIONAL: match specific Host headers
+            - "www.google.com"
+          criterions:                   # OPTIONAL: JEXL conditions for route matching
+            - "$.header.foo == 'bar'"
+          disableRbelLogging: false     # set to true to skip RBel parsing for this route
+          authentication:               # OPTIONAL: add authentication to forwarded requests
+            username: "user"
+            password: "pass"
+            # bearerToken: "mytoken"    # alternatively use Bearer Token
+          matchForProxyType: true       # match only the proxy-mode suggested by "from"
+          preserveHostHeader: false     # set to true to keep the original Host header
 
-    # ----TLS-----------------------------------------------------
-    tls:
-      domainName: "my.backend.example.de"
-      serverRootCa: "certificate.pem;privateKey.pem;PKCS8"     # custom CA for cert generation
-      serverIdentity: "myIdentity.p12;changeit"                # fixed server identity
-      allowGenericFallbackIdentity: false
-      serverIdentities:                                        # multiple server identities
-        - "identity1.p12;00"
-        - "identity2.p12;changeit"
-      ocspSignerIdentity: "myOcspSigner.p12;Password"
-      masterSecretsFile: "masterSecrets.txt"
-      forwardMutualTlsIdentity: "clientIdentity.jks;changeit;JKS"  # mTLS client identity
-      alternativeNames:
-        - "localhost"
-        - "127.0.0.1"
-      serverSslSuites:                                       # restrict allowed TLS cipher suites on the server side (replaces defaults)
-        - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
-      clientSslSuites:                                       # restrict allowed TLS cipher suites on the client side (when proxy connects to upstream)
-        - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
-      serverTlsProtocols:                                    # allowed TLS protocol versions for the server side
-        - "TLSv1.2"
-      clientSupportedGroups:                                 # ECDH groups to offer in the TLS ClientHello (e.g. brainpool curves)
-        - "brainpoolP256r1"
+      # ----TLS-----------------------------------------------------
+      tls:
+        domainName: "my.backend.example.de"
+        serverRootCa: "certificate.pem;privateKey.pem;PKCS8"     # custom CA for cert generation
+        serverIdentity: "myIdentity.p12;changeit"                # fixed server identity
+        allowGenericFallbackIdentity: false
+        serverIdentities:                                        # multiple server identities
+          - "identity1.p12;00"
+          - "identity2.p12;changeit"
+        ocspSignerIdentity: "myOcspSigner.p12;Password"
+        masterSecretsFile: "masterSecrets.txt"
+        forwardMutualTlsIdentity: "clientIdentity.jks;changeit;JKS"  # mTLS client identity
+        alternativeNames:
+          - "localhost"
+          - "127.0.0.1"
+        serverSslSuites:                                       # restrict allowed TLS cipher suites on the server side (replaces defaults)
+          - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+        clientSslSuites:                                       # restrict allowed TLS cipher suites on the client side (when proxy connects to upstream)
+          - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+        serverTlsProtocols:                                    # allowed TLS protocol versions for the server side
+          - "TLSv1.2"
+        clientSupportedGroups:                                 # ECDH groups to offer in the TLS ClientHello (e.g. brainpool curves)
+          - "brainpoolP256r1"
 
-    # ----Modifications-------------------------------------------
-    modifications:
-      - condition: "isRequest"
-        targetElement: "$.header.user-agent"
-        replaceWith: "Tiger-Proxy"
-      - condition: "isResponse && $.responseCode == 200"
-        targetElement: "$.body"
-        name: "body-replacement"
-        replaceWith: "{\"status\":\"ok\"}"
+      # ----Modifications-------------------------------------------
+      modifications:
+        - condition: "isRequest"
+          targetElement: "$.header.user-agent"
+          replaceWith: "Tiger-Proxy"
+        - condition: "isResponse && $.responseCode == 200"
+          targetElement: "$.body"
+          name: "body-replacement"
+          replaceWith: "{\"status\":\"ok\"}"
 
-    # ----Traffic file save/load----------------------------------
-    enableLegacyTraffic: false          # enables support for legacy traffic formats, this is useful when integrating with older tiger proxy instances, default is false
-      writeToFile: false                # true = dump all traffic to a .tgr file on shutdown
-      filename: "tiger-proxy.tgr"       # name of the file to write traffic to
-      name: "tigerProxy Tracing Point"  # display name shown
-      sourceFile: ""                    # OPTIONAL path to a .tgr file to load traffic from at startup
-      readFilter: ""                    # JEXL filter; only messages matching this expression are loaded from source file
+      # ----Traffic file save/load----------------------------------
+      enableLegacyTraffic: false          # enables support for legacy traffic formats, this is useful when integrating with older tiger proxy instances, default is false
+        writeToFile: false                # true = dump all traffic to a .tgr file on shutdown
+        filename: "tiger-proxy.tgr"       # name of the file to write traffic to
+        name: "tigerProxy Tracing Point"  # display name shown
+        sourceFile: ""                    # OPTIONAL path to a .tgr file to load traffic from at startup
+        readFilter: ""                    # JEXL filter; only messages matching this expression are loaded from source file
 
-    # ----Mesh setup (traffic endpoints)--------------------------
-    trafficEndpoints:
-      - http://another.tiger.proxy:9090
-    skipTrafficEndpointsSubscription: false
-    failOnOfflineTrafficEndpoints: false
-    requireHealthyTrafficEndpoints: false
-    downloadInitialTrafficFromEndpoints: false
-    enableLegacyTraffic: false          # enables support for legacy traffic formats, this is useful when integrating with older tiger proxy instances, default is false
-    trafficEndpointFilterString: ""
-    trafficEndpointConfiguration:
-      name: "TigerProxy Tracing Point"  # display name shown
-      wsEndpoint: "/tracing"            # WebSocket endpoint path used for STOMP connections
-      stompTopic: "/traces"             # STOMP topic to subscribe to for receiving traffic
+      # ----Mesh setup (traffic endpoints)--------------------------
+      trafficEndpoints:
+        - http://another.tiger.proxy:9090
+      skipTrafficEndpointsSubscription: false
+      failOnOfflineTrafficEndpoints: false
+      requireHealthyTrafficEndpoints: false
+      downloadInitialTrafficFromEndpoints: false
+      enableLegacyTraffic: false          # enables support for legacy traffic formats, this is useful when integrating with older tiger proxy instances, default is false
+      trafficEndpointFilterString: ""
+      trafficEndpointConfiguration:
+        name: "TigerProxy Tracing Point"  # display name shown
+        wsEndpoint: "/tracing"            # WebSocket endpoint path used for STOMP connections
+        stompTopic: "/traces"             # STOMP topic to subscribe to for receiving traffic
 
-    # ----Forward proxy (if the target is behind another proxy)---
-    forwardToProxy:
-      hostname: 192.168.1.10            # hostname/IP of the upstream forward proxy
-      port: 3128                        # port of the upstream forward proxy
-      type: HTTP                        # HTTP or HTTPS, default is HTTP
-      username: "proxyuser"             # OPTIONAL credentials for the upstream proxy
-      password: "proxypass"
-      noProxyHosts:                     # list of hosts that should bypass the upstream proxy
-        - "localhost"
-        - "127.0.0.1"
+      # ----Forward proxy (if the target is behind another proxy)---
+      forwardToProxy:
+        hostname: 192.168.1.10            # hostname/IP of the upstream forward proxy
+        port: 3128                        # port of the upstream forward proxy
+        type: HTTP                        # HTTP or HTTPS, default is HTTP
+        username: "proxyuser"             # OPTIONAL credentials for the upstream proxy
+        password: "proxypass"
+        noProxyHosts:                     # list of hosts that should bypass the upstream proxy
+          - "localhost"
+          - "127.0.0.1"
 
-    # ----Direct reverse proxy for non-HTTP traffic---------------
-    directReverseProxy:
-      hostname: 127.0.0.1               # target hostname to forward TCP traffic to
-      port: 3858                        # target port
-      ignoreConnectionErrors: false     # true = suppress connection error logs
-      modifierPlugins: []               # OPTIONAL plugin classes to modify traffic on the TCP layer before forwarding
+      # ----Direct reverse proxy for non-HTTP traffic---------------
+      directReverseProxy:
+        hostname: 127.0.0.1               # target hostname to forward TCP traffic to
+        port: 3858                        # target port
+        ignoreConnectionErrors: false     # true = suppress connection error logs
+        tcpIdleTimeoutInSeconds: 5.0        # OPTIONAL TCP keep-alive timeout in seconds (default: 5), null = disabled
+        modifierPlugins: []               # OPTIONAL plugin classes to modify traffic on the TCP layer before forwarding
 
-    # ----Notes on messages---------------------------------------
-    notes:
-      - message: "This is a note"
-        jexlCriterion: "isRequest && path == '$.method'"
+      # ----Notes on messages---------------------------------------
+      notes:
+        - message: "This is a note"
+          jexlCriterion: "isRequest && path == '$.method'"
 
-    logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
-    # Folders containing keys (e.g. PEM, P12) loaded into RBel for decrypting traffic during analysis
-    keyFolders:
-      - "."
+      logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
+      # Folders containing keys (e.g. PEM, P12) loaded into RBel for decrypting traffic during analysis
+      keyFolders:
+        - "."
 
-    # ----RBel parsing--------------------------------------------
-    activateRbelParsing: true
-    activateRbelParsingFor:
-      - epa-vau
-      - X509
-    activateForwardAllLogging: true
-    activateTlsTermination: true
-    parsingShouldBlockCommunication: false
-    activateTrafficLogging: true
-    logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
+      # ----RBel parsing--------------------------------------------
+      activateRbelParsing: true
+      activateRbelParsingFor:
+        - epa-vau
+        - X509
+      activateForwardAllLogging: true
+      activateTlsTermination: true
+      parsingShouldBlockCommunication: false
+      activateTrafficLogging: true
+      logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
 
-    # ----Buffer sizes--------------------------------------------
-    rbelBufferSizeInMb: 1024
-    stompClientBufferSizeInMb: 1
-    perMessageBufferSizeInMb: 100
-    skipParsingWhenMessageLargerThanKb: 8000
-    skipDisplayWhenMessageLargerThanKb: 512
+      # ----Buffer sizes--------------------------------------------
+      rbelBufferSizeInMb: 1024
+      stompClientBufferSizeInMb: 1
+      perMessageBufferSizeInMb: 100
+      skipParsingWhenMessageLargerThanKb: 8000
+      skipDisplayWhenMessageLargerThanKb: 512
 
-    # ----Timeouts------------------------------------------------
-    connectionTimeoutInSeconds: 10            # Timeout for establishing connections (default: 10)
-    maximumPartialMessageAgeInSeconds: 300    # Maximum age of incomplete/partial messages before they are discarded (default: 300)
-    waitForPreviousMessageBeforeParsingInSeconds: 5.0
-    previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
-    previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
-    previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0
+      # ----Timeouts------------------------------------------------
+      connectionTimeoutInSeconds: 10            # Timeout for establishing connections (default: 10)
+      maximumPartialMessageAgeInSeconds: 300    # Maximum age of incomplete/partial messages before they are discarded (default: 300)
+      waitForPreviousMessageBeforeParsingInSeconds: 5.0
+      previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
+      previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
+      previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0
 
-    # ----Display-------------------------------------------------
-    maximumDefaultExpandedMessageDepth: 3
+      # ----Display-------------------------------------------------
+      maximumDefaultExpandedMessageDepth: 3
 
-    # ----Header rewriting----------------------------------------
-    rewriteHostHeader: false
-    rewriteLocationHeader: true
-    honorHostHeaderRouting: false
-    # ----Traffic download pagination-----------------------------
-    maximumTrafficDownloadPageSize: 100000    # Maximum number of messages per download (default: 100000)
+      # ----Header rewriting----------------------------------------
+      rewriteHostHeader: false
+      rewriteLocationHeader: true
+      honorHostHeaderRouting: false
+      # ----Traffic download pagination-----------------------------
+      maximumTrafficDownloadPageSize: 100000    # Maximum number of messages per download (default: 100000)
 ----
 
 === Understanding routes
@@ -572,6 +586,7 @@ tigerProxy:
 ----
 
 Example for a one-line string:
+
 [source,yaml]
 ----
 tigerProxy:
@@ -581,6 +596,7 @@ tigerProxy:
 ----
 
 Example for sub properties:
+
 [source,yaml]
 ----
 tigerProxy:
@@ -734,7 +750,10 @@ The server will then use this OCSP-Signer to create a fake OCSP-Response during 
 
 ==== forwardMutualTlsIdentity
 
-The forwardMutualTlsIdentity property specifies the client certificate (identity) that the tiger proxy should use when establishing a mutual TLS (mTLS) connection to an upstream server. This is required if the target server expects the proxy to authenticate itself using a client certificate. You can provide the identity as a string (e.g., myIdentity.p12;changeit;JKS) or as a map with filename, password, and storeType. This ensures secure, authenticated communication between the proxy and the upstream server.
+The forwardMutualTlsIdentity property specifies the client certificate (identity) that the tiger proxy should use when establishing a mutual TLS (mTLS) connection to an upstream server.
+This is required if the target server expects the proxy to authenticate itself using a client certificate.
+You can provide the identity as a string (e.g., myIdentity.p12;changeit;JKS) or as a map with filename, password, and storeType.
+This ensures secure, authenticated communication between the proxy and the upstream server.
 
 [source,yaml]
 ----
@@ -1004,6 +1023,31 @@ tigerProxy:
               - pluginClass: "de.gematik.test.tiger.proxy.modifier.MyCustomModifier"
 ----
 
+==== directReverseProxy TCP Idle Timeout (Keep-Alive)
+
+The `directReverseProxy` configuration supports an optional `tcpIdleTimeoutInSeconds` parameter to enable the configuration of the TCP keep-alive behavior for connections to the backend server.
+This is useful for long-lived connections (like SMTP) that may have long periods of inactivity to prevent the proxy or server from closing the connection:
+
+[source,yaml]
+----
+tigerProxy:
+    tigerProxyConfiguration:
+        directReverseProxy:
+            hostname: 127.0.0.1
+            port: 3858
+            ignoreConnectionErrors: false
+            tcpIdleTimeoutInSeconds: 5.0
+----
+
+When configured, the proxy sends periodic keep-alive pings to the backend server at the specified interval (in seconds).
+This helps maintain connection stability in scenarios with long periods of inactivity, such as SMTP communication where the client may wait a long time before sending the next command.
+
+**Important**: The keep-alive interval should be **shorter** than the socket read timeout (typically 20 seconds).
+For example, if you set `tcpIdleTimeoutInSeconds` to 5 seconds, the keep-alive pings every 5 seconds will reset the socket timeout counter before it expires, keeping the connection alive indefinitely.
+
+How it works:
+1. Keep-alive pings are sent at the configured interval on idle connections 2. Each ping resets the socket read timeout counter 3. As long as pings arrive before the timeout expires, the connection stays open 4. When the client sends actual data, the ping cycle resumes after the next idle period
+
 === Adding notes to messages
 
 To add notes to certain messages, you can add a list of criteria with messages that shall be added to any message in the rbel log matching the specific criterion.
@@ -1103,7 +1147,6 @@ This can lead to a verbose and bloated log.
 If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag.
 Default is true.
 
-
 === Buffer sizes
 
 Several buffer-size properties allow fine-tuning of memory usage:
@@ -1120,6 +1163,7 @@ tigerProxy:
 ----
 
 === Timeouts and waiting times
+
 ==== waitForPreviousMessageBeforeParsingInSeconds
 
 Defines the timeout in seconds (supports decimal values) to wait for a previous message before parsing the current message when messages reference each other in mesh setups.
@@ -1170,6 +1214,7 @@ tigerProxy:
 ----
 
 === Header rewriting and routing behavior
+
 ==== rewriteHostHeader
 
 This flag activates the rewriting of the host-header.
@@ -1263,7 +1308,10 @@ So when would filter out every second message via a tiger proxy Log-Filter every
 [#_rbel_path_details]
 === Understanding RBelPath
 
-RBelPath is a powerful expression language specifically designed for navigating and analyzing messages within the Tiger Proxy. Inspired by well-known concepts like XPath and JSONPath, RBelPath is tailored to the unique requirements of HTTP traffic and complex testing scenarios. With RBelPath, testers and developers can precisely access any part of a message, extract values, filter, or compare data—regardless of whether the content is JSON, XML, JWT, HTTP headers, or other supported formats. This flexibility greatly simplifies the validation and evaluation of test data, making message analysis more efficient and adaptable.
+RBelPath is a powerful expression language specifically designed for navigating and analyzing messages within the Tiger Proxy.
+Inspired by well-known concepts like XPath and JSONPath, RBelPath is tailored to the unique requirements of HTTP traffic and complex testing scenarios.
+With RBelPath, testers and developers can precisely access any part of a message, extract values, filter, or compare data—regardless of whether the content is JSON, XML, JWT, HTTP headers, or other supported formats.
+This flexibility greatly simplifies the validation and evaluation of test data, making message analysis more efficient and adaptable.
 
 RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of captured RBeL-Traffic (navigation of the RbelElement-tree).
 
@@ -1284,7 +1332,8 @@ assertThat(convertedMessage.findElement("$.header"))
     .isSameAs(convertedMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
 ----
 
-(The first example executes the RbelPath and returns a list of all matching elements; the second one returns an Optional containing a single result. If there are multiple matches, an exception is given.)
+(The first example executes the RbelPath and returns a list of all matching elements; the second one returns an Optional containing a single result.
+If there are multiple matches, an exception is given.)
 
 RBeL-Path provides seamless retrieval of nested members.
 
@@ -1497,16 +1546,110 @@ RbelElementTreePrinter.builder()
 === Tiger Standalone Proxy
 
 The Tiger Standalone Proxy repackages the Tiger Proxy as a self-contained, runnable Spring Boot JAR and as a Docker image.
-It is the recommended way to run a Tiger Proxy outside of a Tiger test suite — for example as a permanently running traffic recorder, as part of a mesh setup, or as a sidecar container.
+It is the recommended way to run a Tiger Proxy **outside of a Tiger test suite** — for example as a permanently running traffic recorder, as part of a mesh setup, or as a sidecar container.
 
-All configuration options described in xref:tigerProxy.adoc#_tiger_proxy[the Tiger Proxy chapter] apply equally to the standalone proxy.
-There is, however, one additional property specific to the standalone proxy:
+==== Standalone Proxy vs. Remote Tiger Proxy (`type: tigerProxy`)
+
+Both the Standalone Proxy and a remote proxy server (`type: tigerProxy` in the `servers` block) use the same underlying Tiger Proxy engine with identical capabilities (routes, TLS, modifications, RBel parsing, mesh setup, etc.).
+The key difference lies in how and where they are managed:
+
+[%autowidth,cols="1,2,2"]
+|===
+| | `type: tigerProxy` (remote server) | Tiger Standalone Proxy
+
+| **Started by**
+| TestenvMgr (automatically on test suite start)
+| Manually (JAR or Docker)
+
+| **Lifecycle**
+| Tied to the test suite — started and stopped with it
+| Independent — runs as a long-lived process or container
+
+| **Configuration location**
+| `servers.<name>.tigerProxyConfiguration` in `tiger.yaml`
+| Directly under `tigerProxy` in `application.yaml`
+
+| **`dependsUpon` / server ordering**
+| Supported — can depend on other servers
+| Not applicable
+
+| **Typical use case**
+| Sniffer between two components in the same test environment
+| Permanent traffic recorder, mesh node, sidecar container
+|===
+
+Use `type: tigerProxy` when the additional proxy is part of a test environment that is set up and torn down with each test run.
+Use the Standalone Proxy when the proxy should run independently of any particular test suite — for example, as a constantly running traffic forwarder in a mesh setup, or in CI/CD pipelines where the proxy is shared across multiple test runs.
+
+==== Configuration
+
+All configuration options described in xref:tigerProxy.adoc#_tiger_proxy[the Tiger Proxy chapter] apply equally to the Standalone Proxy.
+The properties are placed directly under the `tigerProxy` key — the same flat structure used by the local Tiger Proxy.
+
+Place the file as `application.yaml` next to the JAR (Spring Boot picks it up automatically), or supply it explicitly via `--spring.config.additional-location`.
+
+The following example shows a typical `application.yaml` for a standalone instance acting as a forward proxy with a mesh connection to a remote Tiger Proxy:
+
+.Example `application.yaml` for the Tiger Standalone Proxy
+[source,yaml]
+----
+tigerProxy:
+  # ---- Ports ---------------------------------------------------
+  adminPort: 9090          # Web UI and REST API reachable at http://localhost:8080
+  proxyPort: 8080          # HTTP/HTTPS forward- and reverse-proxy port
+
+  # ---- Display name --------------------------------------------
+  name: "my-standalone-proxy"
+
+  # ---- Offline mode --------------------------------------------
+  # Set to true to serve the Web UI from the classpath (no internet required).
+  localResources: false
+
+  # ---- Routes --------------------------------------------------
+  proxyRoutes:
+    - from: http://backend.example.de/   # forward-proxy route
+      to: http://internal.service:8080/
+
+  # ---- TLS -----------------------------------------------------
+  tls:
+    serverRootCa: "ca-cert.pem;ca-key.pem;PKCS8"   # custom CA for on-the-fly cert generation
+
+  # ---- Mesh setup ----------------------------------------------
+  # Connect to another Tiger Proxy and receive its traffic.
+  trafficEndpoints:
+    - http://other-tiger-proxy:8080
+  downloadInitialTrafficFromEndpoints: true
+
+  # ---- Traffic file --------------------------------------------
+  fileSaveInfo:
+    writeToFile: true
+    filename: "traffic.tgr"
+
+  # ---- RBel parsing --------------------------------------------
+  activateRbelParsing: true
+  activateRbelParsingFor:
+    - epa-vau
+    - X509
+
+  # ---- Buffer sizes --------------------------------------------
+  rbelBufferSizeInMb: 512
+
+# ---- Spring Boot server port (= the admin port above) ---------
+# This must match tigerProxy.adminPort. Required for health checks.
+server:
+  port: 9090
+----
+
+NOTE: The `server.port` Spring Boot property must always match `tigerProxy.adminPort`.
+The container health check and the mesh STOMP endpoint both use this port.
+If you change `adminPort`, update `server.port` accordingly.
+
+There is one property exclusive to the Standalone Proxy (not available for `type: tigerProxy` servers):
 
 [source,yaml]
 ----
-# Load all resources (JS, CSS) from the classpath instead of via CDN.
-# Set to true if the environment has no internet access.
-localResources: false
+tigerProxy:
+  localResources: false   # true = serve Web UI assets from classpath (offline/air-gapped environments)
 ----
 
 ==== Running tiger proxy as a standalone JAR
@@ -1530,35 +1673,41 @@ java -jar tiger-standalone-proxy-<version>.jar \
 
 All properties described in xref:tigerProxy.adoc#_tiger_proxy_basics[Tiger Proxy basics] can be used directly in that file.
 
-==== Running tiger proxy as a docker container
+==== Running tiger proxy as a Docker container
 
-You can also simply run the tiger proxy as a docker container:
+You can also run the Tiger Proxy as a Docker container:
 
 [source,bash]
 ----
 docker run -p 8080:8080 -p 9090:9090 --rm gematik1/tiger-proxy-image:latest
 ----
 
-This exposes the admin-port (8080) and the proxy-port (9090) on the host.
-Be aware: When you change configuration in the container, make sure to always keep the admin port on 8080. Otherwise, the health-check of the container will fail.
+This exposes the admin port (8080) and the proxy port (9090) on the host.
 
-If you want to use a custom configuration, you can mount a configuration file into the container:
+IMPORTANT: Always keep the admin port mapped to 8080 inside the container.
+The container health check connects to port 8080 — if you change this mapping, the health check will fail and the container will be considered unhealthy.
+
+To supply a custom configuration, mount an `application.yaml` into the container:
 
 [source,bash]
 ----
 docker run \
-  -v application.yaml:/app/application.yaml \
+  -v ./application.yaml:/app/application.yaml \
   -p 8080:8080 -p 9090:9090 --rm \
   gematik1/tiger-proxy-image:latest
 ----
 
-Once the proxy is running, the following endpoints are available:
+==== Available endpoints
 
+Once the Standalone Proxy is running, the following endpoints are available on the admin port:
+
+- **Tiger Proxy Web UI** — traffic viewer and live filter:
+`http://localhost:{adminPort}/webui`
 - **Swagger UI** — interactive browser-based API explorer:
-`http://localhost:{port}/swagger-ui/index.html`
+`http://localhost:{adminPort}/swagger-ui/index.html`
 - **OpenAPI JSON spec**:
-`http://localhost:{port}/v3/api-docs`
+`http://localhost:{adminPort}/v3/api-docs`
 - **OpenAPI YAML spec**:
-`http://localhost:{port}/v3/api-docs.yaml`
+`http://localhost:{adminPort}/v3/api-docs.yaml`
 
-The spec covers all Tiger-Proxy REST endpoints, including route management (`/route`), traffic modifications (`/modification`), tracing points (`/tracingpoints`), traffic push (`/traffic`), and the Web UI endpoints.
+The OpenAPI spec covers all Tiger Proxy REST endpoints, including route management (`/route`), traffic modifications (`/modification`), tracing points (`/tracingpoints`), traffic push (`/traffic`), and the Web UI endpoints.

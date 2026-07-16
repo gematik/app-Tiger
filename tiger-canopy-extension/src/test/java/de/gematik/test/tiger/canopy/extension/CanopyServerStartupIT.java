@@ -24,8 +24,6 @@ package de.gematik.test.tiger.canopy.extension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -33,6 +31,8 @@ import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.DockerClientFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 /**
  * End-to-end integration test for {@link CanopyServer}. Boots a real canopy container from a
@@ -60,7 +60,7 @@ class CanopyServerStartupIT {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void startsRealCanopyContainerAndPublishesPlaceholders(TigerTestEnvMgr mgr) throws Exception {
+  void startsRealCanopyContainerAndPublishesPlaceholders(TigerTestEnvMgr mgr) {
     assumeTrue(DockerClientFactory.instance().isDockerAvailable(), "Docker daemon not available");
     Optional<String> resolved = CanopyItImageResolver.resolve();
     assumeTrue(

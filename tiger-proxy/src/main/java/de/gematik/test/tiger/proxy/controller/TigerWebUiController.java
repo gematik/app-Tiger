@@ -58,6 +58,8 @@ import lombok.val;
 import org.apache.commons.jexl3.JexlException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -73,6 +75,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @Data
 @RequiredArgsConstructor
@@ -100,6 +105,13 @@ public class TigerWebUiController implements ApplicationContextAware {
       new RbelHtmlRenderer().withNoMaximumEntitySize();
 
   private final TigerProxyConfiguration proxyConfiguration;
+
+  // Because lombok does not copy the @Qualifier to the constructor, constructor
+  // injection does not work here.
+  @Autowired
+  @Qualifier("passwordHidingMapper")
+  private ObjectMapper passwordHidingMapper;
+
   private ApplicationContext applicationContext;
 
   public final SimpMessagingTemplate template;
@@ -107,6 +119,31 @@ public class TigerWebUiController implements ApplicationContextAware {
   @Override
   public void setApplicationContext(final ApplicationContext appContext) throws BeansException {
     this.applicationContext = appContext;
+  }
+
+  @Operation(summary = "Read the configuration of the tiger proxy")
+  @ApiResponse(
+      responseCode = "200",
+      content =
+          @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = TigerProxyConfiguration.class)))
+  @GetMapping(value = "/configuration", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<String> getConfiguration() {
+    try {
+      // Use the injected password-hiding mapper (mixins) to serialize the configuration.
+      final JsonNode tree = passwordHidingMapper.valueToTree(proxyConfiguration);
+
+      ConfigurationRedactor.applyRedactions(
+          (ObjectNode) tree, proxyConfiguration.getRedactedConfigurationPaths());
+
+      String json = passwordHidingMapper.writeValueAsString(tree);
+      return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(json);
+    } catch (Exception e) {
+      log.error("Failed to serialize proxy configuration", e);
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR, "Failed to serialize configuration", e);
+    }
   }
 
   @Operation(summary = "Serve the Web UI index page")

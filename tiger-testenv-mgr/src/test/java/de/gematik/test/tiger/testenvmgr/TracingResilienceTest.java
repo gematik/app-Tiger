@@ -253,17 +253,17 @@ class TracingResilienceTest {
 
   @NotNull
   private List<RbelElement> getLastRequestPaths(List<RbelElement> rbelMessages, int skip) {
-    return rbelMessages.stream().skip(skip).collect(Collectors.toList());
+    return rbelMessages.stream().skip(skip).toList();
   }
 
   private void randomlyRebootAggregatingProxy(int aggregatingAdminPort) {
-    if (aggregatingProxyContext == null && RandomUtils.nextInt(0, 20) < 1) {
+    if (aggregatingProxyContext == null && RandomUtils.insecure().randomInt(0, 20) < 1) {
       bootTigerProxy(aggregatingAdminPort);
     }
   }
 
   private void randomlyCrashAggregatingProxy() {
-    if (aggregatingProxyContext != null && RandomUtils.nextInt(0, 30) < 1) {
+    if (aggregatingProxyContext != null && RandomUtils.insecure().randomInt(0, 30) < 1) {
       log.info("Stopping aggregating proxy...");
       aggregatingProxyContext.getBean(TigerProxy.class).close();
       aggregatingProxyContext.stop();

@@ -23,26 +23,40 @@ package de.gematik.test.tiger.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import lombok.val;
 import org.apache.commons.io.FileUtils;
 
 public class CurlTestdataUtil {
 
   public static String readCurlFromFileWithCorrectedLineBreaks(String fileName) {
     try {
-      String fromFile = FileUtils.readFileToString(new File(fileName), Charset.defaultCharset());
-      val messageParts = fromFile.split("(\r\n\r\n)|(\n\n)|(\r\r)", 2);
-      messageParts[0] = messageParts[0].replaceAll("(?<!\\r)\\n", "\r\n");
-      if (!messageParts[1].endsWith("\r\n")) {
-        messageParts[1] += "\r\n";
+      // Convert ALL line endings (headers and body) to \r\n
+      String fromFile =
+          FileUtils.readFileToString(new File(fileName), Charset.defaultCharset())
+              .replaceAll("(?<!\\r)\\n", "\r\n");
+      boolean addedTrailingCRLF = false;
+      if (!fromFile.endsWith("\r\n")) {
+        fromFile += "\r\n";
+        addedTrailingCRLF = true;
       }
-      if (!messageParts[0].contains("\r\nContent-Length: ")) {
-        fromFile =
-            messageParts[0]
-                + "\r\nContent-Length: "
-                + (messageParts[1].length() + 2)
-                + "\r\n\r\n"
-                + messageParts[1];
+      // Strip any existing Content-Length so we can recalculate it correctly
+      fromFile = fromFile.replaceAll("(?i)\r\nContent-Length: [0-9]+", "");
+      int headerEndIndex = fromFile.indexOf("\r\n\r\n");
+      if (headerEndIndex >= 0) {
+        String body = fromFile.substring(headerEndIndex + 4);
+        // The artificially added trailing \r\n is HTTP message framing, not body content
+        String bodyForLength =
+            (addedTrailingCRLF && body.endsWith("\r\n"))
+                ? body.substring(0, body.length() - 2)
+                : body;
+        int bodyLength = bodyForLength.getBytes(Charset.defaultCharset()).length;
+        if (bodyLength > 0) {
+          fromFile =
+              fromFile.substring(0, headerEndIndex)
+                  + "\r\nContent-Length: "
+                  + bodyLength
+                  + "\r\n\r\n"
+                  + body;
+        }
       }
       return fromFile;
     } catch (IOException e) {

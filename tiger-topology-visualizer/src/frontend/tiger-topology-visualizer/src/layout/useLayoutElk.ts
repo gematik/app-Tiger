@@ -24,6 +24,7 @@ import { type Edge, type Node, Position } from "@vue-flow/core";
 import type { ElkNode } from "elkjs/lib/elk-api";
 
 export type ElkDirectionType = "RIGHT" | "LEFT" | "UP" | "DOWN";
+export type ElkLayoutModeType = "auto" | "compact" | "spread";
 type FlowNode = Node;
 type FlowEdge = Edge;
 
@@ -63,6 +64,7 @@ export async function layoutWithElk(
   nodes: FlowNode[],
   edges: FlowEdge[],
   direction: ElkDirectionType = "DOWN",
+  layoutMode: ElkLayoutModeType = "auto",
 ): Promise<LayoutResult> {
   const sanitizedNodes = sanitizeNodes(nodes);
   const nodesById = new Map(sanitizedNodes.map((node) => [node.id, node]));
@@ -72,6 +74,8 @@ export async function layoutWithElk(
   );
   const knownNodeIds = new Set(nodesById.keys());
   const safeEdges = sanitizeEdges(edges, knownNodeIds);
+  const effectiveLayoutMode =
+    layoutMode === "auto" ? chooseLayoutMode(sanitizedNodes, safeEdges) : layoutMode;
 
   const graph: {
     id: string;
@@ -80,22 +84,36 @@ export async function layoutWithElk(
     edges: ElkInputEdge[];
   } = {
     id: "root",
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.hierarchyHandling": "INCLUDE_CHILDREN",
-      "elk.direction": direction,
-      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-      "elk.edgeRouting": "SPLINES",
-      "elk.layered.considerNodeAmongLayerConstraints": "true",
-      "elk.layered.crossingPenalty": "5000",
-      "elk.layered.unnecessaryBendPenalty": "1000",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "220",
-      "elk.layered.spacing.edgeNodeBetweenLayers": "80",
-      "elk.spacing.nodeNode": "100",
-      "elk.spacing.edgeNode": "40",
-      "elk.spacing.edgeEdge": "30",
-      "elk.padding": "[top=36,left=36,bottom=36,right=36]",
-    },
+    layoutOptions:
+      effectiveLayoutMode === "spread"
+        ? {
+            "elk.algorithm": "force",
+            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+            "elk.direction": direction,
+            "elk.force.iterations": "220",
+            "elk.force.repulsivePower": "1.1",
+            "elk.force.temperature": "0.06",
+            "elk.spacing.nodeNode": "145",
+            "elk.spacing.edgeNode": "30",
+            "elk.spacing.edgeEdge": "35",
+            "elk.padding": "[top=36,left=36,bottom=36,right=36]",
+          }
+        : {
+            "elk.algorithm": "layered",
+            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+            "elk.direction": direction,
+            "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+            "elk.edgeRouting": "SPLINES",
+            "elk.layered.considerNodeAmongLayerConstraints": "true",
+            "elk.layered.crossingPenalty": "5000",
+            "elk.layered.unnecessaryBendPenalty": "1000",
+            "elk.layered.spacing.nodeNodeBetweenLayers": "220",
+            "elk.layered.spacing.edgeNodeBetweenLayers": "80",
+            "elk.spacing.nodeNode": "100",
+            "elk.spacing.edgeNode": "40",
+            "elk.spacing.edgeEdge": "30",
+            "elk.padding": "[top=36,left=36,bottom=36,right=36]",
+          },
     children: elkChildren,
     edges: safeEdges.map((edge) => ({
       id: edge.id,
@@ -117,6 +135,34 @@ export async function layoutWithElk(
       edges: safeEdges,
     };
   }
+}
+
+function chooseLayoutMode(
+  nodes: FlowNode[],
+  edges: FlowEdge[],
+): Exclude<ElkLayoutModeType, "auto"> {
+  if (nodes.length <= 4) return "compact";
+  if (edges.length === 0) return "compact";
+
+  const routeNodeCount = nodes.filter((node) => node.type === "route").length;
+  const routeRatio = routeNodeCount / nodes.length;
+  const density = edges.length / Math.max(1, nodes.length - 1);
+
+  const degreeById = new Map<string, number>();
+  for (const edge of edges) {
+    degreeById.set(edge.source, (degreeById.get(edge.source) ?? 0) + 1);
+    degreeById.set(edge.target, (degreeById.get(edge.target) ?? 0) + 1);
+  }
+  const maxDegree = Math.max(0, ...degreeById.values());
+  const avgDegree = Array.from(degreeById.values()).reduce((sum, d) => sum + d, 0) /
+    Math.max(1, degreeById.size);
+
+  // Spread works better for dense/hub-heavy graphs where layered layout hides parallel edges.
+  if (routeRatio >= 0.25 && (density >= 1.1 || maxDegree >= 4 || avgDegree >= 2.4)) {
+    return "spread";
+  }
+
+  return density >= 1.4 ? "spread" : "compact";
 }
 
 function sanitizeNodes(nodes: FlowNode[]): FlowNode[] {
@@ -222,7 +268,12 @@ function getNodeSize(
 ): { width: number; height: number } {
   const label = getNodeLabel(node);
   const labelWidth = estimateLabelWidthPx(label);
-  const minWidth = isContainer ? DEFAULT_GROUP_WIDTH : DEFAULT_NODE_WIDTH;
+  let minWidth = DEFAULT_NODE_WIDTH;
+  if (isContainer) {
+    minWidth = DEFAULT_GROUP_WIDTH;
+  } else if (node.type === "route") {
+    minWidth = 140;
+  }
   const minHeight = isContainer ? DEFAULT_GROUP_HEIGHT : DEFAULT_NODE_HEIGHT;
   const existingWidth = typeof node.width === "number" ? node.width : 0;
   const existingHeight = typeof node.height === "number" ? node.height : 0;

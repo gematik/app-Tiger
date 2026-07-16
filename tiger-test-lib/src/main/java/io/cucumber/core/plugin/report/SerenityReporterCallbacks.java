@@ -89,7 +89,7 @@ import net.serenitybdd.core.Serenity;
 import net.serenitybdd.core.listeners.AbstractStepListener;
 import net.serenitybdd.cucumber.core.plugin.FeatureFileLoader;
 import net.serenitybdd.cucumber.core.plugin.IScenarioContext;
-import net.serenitybdd.cucumber.core.plugin.SerenityUtils;
+import net.serenitybdd.cucumber.core.plugin.SerenityReporterParallel;
 import net.thucydides.model.domain.TestOutcome;
 import net.thucydides.model.screenshots.ScreenshotAndHtmlSource;
 import net.thucydides.model.steps.ExecutedStepDescription;
@@ -889,7 +889,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
               new OutputStreamWriter(new FileOutputStream(logFile), StandardCharsets.UTF_8))) {
         rbelRenderer.doRender(
             LocalProxyRbelMessageListener.getInstance()
-                .getValidatableMessages()
+                .getRbelReportMessages()
                 .getMessagesByTimestamp(),
             writer);
       }
@@ -903,7 +903,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     } catch (final IOException e) {
       log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
     } finally {
-      LocalProxyRbelMessageListener.getInstance().clearMessages();
+      LocalProxyRbelMessageListener.getInstance().clearReportRbelLogMessages();
     }
   }
 
@@ -998,7 +998,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   }
 
   public String scenarioIdFrom(TestCase testCase) {
-    return SerenityUtils.scenarioIdFrom(featureLoader, testCase);
+    return SerenityReporterParallel.scenarioIdFrom(featureLoader, testCase).orElseThrow();
   }
 
   private void resetSubSteps() {

@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.3.2</version>
+    <version>4.4.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-testenv-mgr</artifactId>
@@ -103,6 +103,13 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <!-- bridges JCL (org.apache.commons.logging) to SLF4J;
+         required because spring-jcl was removed in Spring Framework 7.x
+         and commons-logging is excluded (provided) in the BOM -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -203,7 +210,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.10.0</version>
+        <version>3.11.0</version>
         <configuration>
           <artifactItems>
             <artifactItem>
@@ -366,7 +373,7 @@
       <plugin>
         <groupId>org.openapitools</groupId>
         <artifactId>openapi-generator-maven-plugin</artifactId>
-        <version>7.22.0</version>
+        <version>7.23.0</version>
         <executions>
           <execution>
             <id>generate java code</id>

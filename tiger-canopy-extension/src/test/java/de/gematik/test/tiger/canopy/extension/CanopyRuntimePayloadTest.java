@@ -23,9 +23,6 @@ package de.gematik.test.tiger.canopy.extension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -33,6 +30,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Verifies that the {@code SPRING_APPLICATION_JSON} envelope forwarded into the canopy container is
@@ -47,7 +48,7 @@ import org.junit.jupiter.api.Test;
  */
 class CanopyRuntimePayloadTest {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
   /**
    * The exact runtime field set canopy's {@code CanopyConfiguration} binds (as of 2026-05). If
@@ -83,7 +84,7 @@ class CanopyRuntimePayloadTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void envelope_containsOnlyRuntimeFields_noDockerKnobs(TigerTestEnvMgr mgr) throws Exception {
+  void envelope_containsOnlyRuntimeFields_noDockerKnobs(TigerTestEnvMgr mgr) {
     String json =
         """
         {
@@ -119,31 +120,34 @@ class CanopyRuntimePayloadTest {
 
     // The forwarded key set must match canopy's runtime bind surface exactly.
     Set<String> fieldsPresent = new HashSet<>();
-    canopyNode.fieldNames().forEachRemaining(fieldsPresent::add);
+    canopyNode.propertyNames().iterator().forEachRemaining(fieldsPresent::add);
     assertThat(fieldsPresent).isEqualTo(CANOPY_RUNTIME_FIELDS);
 
     // And the user values are forwarded.
-    assertThat(canopyNode.get("tigerProxyUrl").asText()).isEqualTo("http://tp:9090");
-    assertThat(canopyNode.get("controlMode").asText()).isEqualTo("ROUTE_PER_HOST");
+    assertThat(canopyNode.get("tigerProxyUrl").asString()).isEqualTo("http://tp:9090");
+    assertThat(canopyNode.get("controlMode").asString()).isEqualTo("ROUTE_PER_HOST");
     assertThat(canopyNode.get("dnsPort").asInt()).isEqualTo(5353);
     assertThat(canopyNode.get("defaultTtlSeconds").asInt()).isEqualTo(120);
-    assertThat(canopyNode.get("proxyClientHttpVersion").asText()).isEqualTo("HTTP_1_1");
-    assertThat(canopyNode.get("upstreamDnsServers").get(0).asText()).isEqualTo("8.8.8.8");
-    assertThat(canopyNode.get("proxiedHosts").get(0).get("host").asText())
+    assertThat(canopyNode.get("proxyClientHttpVersion").asString()).isEqualTo("HTTP_1_1");
+    assertThat(canopyNode.get("upstreamDnsServers").get(0).asString()).isEqualTo("8.8.8.8");
+    assertThat(canopyNode.get("proxiedHosts").get(0).get("host").asString())
         .isEqualTo("api.example.com");
-    assertThat(canopyNode.get("proxiedHosts").get(0).get("matchType").asText()).isEqualTo("SUFFIX");
+    assertThat(canopyNode.get("proxiedHosts").get(0).get("matchType").asString())
+        .isEqualTo("SUFFIX");
   }
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void envelope_roundTripsThroughStrictMapper(TigerTestEnvMgr mgr) throws Exception {
+  void envelope_roundTripsThroughStrictMapper(TigerTestEnvMgr mgr) {
     // FAIL_ON_UNKNOWN_PROPERTIES simulates a future tightening of canopy's config binding. The
     // trimmed envelope must parse cleanly under those rules. (The Tiger-side
     // TigerCanopyConfiguration
     // is *not* strict on purpose — see TigerCanopyConfigurationTest — but the wire format we send
     // to canopy must be.)
     ObjectMapper strict =
-        new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+            .build();
 
     String json =
         """
@@ -181,7 +185,7 @@ class CanopyRuntimePayloadTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void envelope_emptyConfigForwardsCanopyDefaults(TigerTestEnvMgr mgr) throws Exception {
+  void envelope_emptyConfigForwardsCanopyDefaults(TigerTestEnvMgr mgr) {
     CfgServer cfg = new CfgServer().setType("canopy").setHostname("canopyunit");
     CanopyServer s = new CanopyServer("c1", cfg, mgr);
     s.prepareDependencies();
@@ -191,9 +195,9 @@ class CanopyRuntimePayloadTest {
     JsonNode canopyNode = MAPPER.readTree(saj).get("canopy");
 
     assertThat(canopyNode.get("dnsPort").asInt()).isEqualTo(53);
-    assertThat(canopyNode.get("controlMode").asText()).isEqualTo("NONE");
+    assertThat(canopyNode.get("controlMode").asString()).isEqualTo("NONE");
     assertThat(canopyNode.get("defaultTtlSeconds").asInt()).isEqualTo(30);
-    assertThat(canopyNode.get("proxyClientHttpVersion").asText()).isEqualTo("AUTO");
+    assertThat(canopyNode.get("proxyClientHttpVersion").asString()).isEqualTo("AUTO");
     assertThat(canopyNode.get("proxiedHosts")).isEmpty();
     assertThat(canopyNode.get("upstreamDnsServers")).isEmpty();
     // tigerProxyUrl unset → null and excluded by NON_NULL inclusion.
@@ -202,7 +206,7 @@ class CanopyRuntimePayloadTest {
 
   @Test
   @TigerTest(tigerYaml = "localProxyActive: false")
-  void envelope_perHostTigerProxyUrlOverrideIsForwarded(TigerTestEnvMgr mgr) throws Exception {
+  void envelope_perHostTigerProxyUrlOverrideIsForwarded(TigerTestEnvMgr mgr) {
     // Per-entry override → key appears in that host's map. Entries without an override get no
     // tigerProxyUrl key at all (NON_NULL inclusion + explicit skip in CanopyRuntimePayload.from()).
     String json =
@@ -224,12 +228,12 @@ class CanopyRuntimePayloadTest {
     String saj = s.buildSpringApplicationJson();
     JsonNode hosts = MAPPER.readTree(saj).get("canopy").get("proxiedHosts");
 
-    assertThat(hosts.get(0).get("host").asText()).isEqualTo("api.example.com");
+    assertThat(hosts.get(0).get("host").asString()).isEqualTo("api.example.com");
     assertThat(hosts.get(0).has("tigerProxyUrl"))
         .as("entry without override must not carry the key")
         .isFalse();
 
-    assertThat(hosts.get(1).get("host").asText()).isEqualTo("pop3.example.com");
-    assertThat(hosts.get(1).get("tigerProxyUrl").asText()).isEqualTo("http://pop3-tp:9100");
+    assertThat(hosts.get(1).get("host").asString()).isEqualTo("pop3.example.com");
+    assertThat(hosts.get(1).get("tigerProxyUrl").asString()).isEqualTo("http://pop3-tp:9100");
   }
 }

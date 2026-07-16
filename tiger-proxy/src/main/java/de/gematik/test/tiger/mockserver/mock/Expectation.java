@@ -39,6 +39,7 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.http.client.utils.URIBuilder;
 
 /*
@@ -197,7 +198,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
         ignorePortsInHostHeader
             ? requestPattern.getFirstHeader("Host").split(":")[0]
             : requestPattern.getFirstHeader("Host");
-    if (StringUtils.equals(cleanedPatternHostHeader, cleanedHostHeader)
+    if (Strings.CS.equals(cleanedPatternHostHeader, cleanedHostHeader)
         || compareHostRegexList(cleanedHostHeader)
         || resolveHostHeaderAndCompare(cleanedHostHeader, cleanedPatternHostHeader)) {
       return true;

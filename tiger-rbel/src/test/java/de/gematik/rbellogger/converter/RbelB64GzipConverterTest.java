@@ -22,9 +22,6 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -44,6 +41,10 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class RbelB64GzipConverterTest {
 
@@ -90,7 +91,7 @@ class RbelB64GzipConverterTest {
   @Test
   void convertMessage_shouldConvertValidMessages() {
     final ObjectMapper jsonMapper =
-        new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        JsonMapper.builder().configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true).build();
     final Map<String, String> test_cases =
         jsonMapper.readValue(
             FileUtils.readFileToByteArray(new File("src/test/resources/gzip/zippedMessages.json")),

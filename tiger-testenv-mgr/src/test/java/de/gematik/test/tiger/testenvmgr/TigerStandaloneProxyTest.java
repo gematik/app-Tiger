@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Proxy;
 import kong.unirest.core.Unirest;
 import kong.unirest.core.UnirestInstance;
 import lombok.Getter;
@@ -61,7 +62,7 @@ class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
             .get();
 
     unirestInstance = Unirest.spawnInstance();
-    unirestInstance.config().proxy(null);
+    unirestInstance.config().proxy((Proxy) null);
 
     File newFile =
         new File(standaloneJar.getParentFile().getAbsolutePath() + File.separatorChar + "test.jar");

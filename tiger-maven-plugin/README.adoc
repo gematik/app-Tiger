@@ -95,6 +95,7 @@ By setting the parameter `openSerenityReportInBrowser` to true, the `html` repor
 
 Adding the plugin as shown below will allow you to start a test environment in standalone mode by starting mvn as follows: ```mvn tiger:setup-testenv```.
 Please be aware that this is a blocking call, you may specify a timeout configuration property ```autoShutdownAfterSeconds``` with timeout in seconds.
+This is a Maven plugin configuration/system property, not a property from the tiger yaml file.
 To prematurely stop the process either press Ctrl+C in your console or kill it with operating system specific kill commands / tools.
 In order to customize the tiger yaml to be used either set the environment variable ```TIGER_TESTENV_CFGFILE``` or set the system property ```tiger.testenv.cfgfile```.
 

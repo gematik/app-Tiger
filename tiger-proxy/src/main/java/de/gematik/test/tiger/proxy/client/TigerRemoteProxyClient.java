@@ -23,7 +23,6 @@ package de.gematik.test.tiger.proxy.client;
 import static de.gematik.rbellogger.data.RbelMessageMetadata.PREVIOUS_MESSAGE_UUID;
 import static de.gematik.rbellogger.util.MemoryConstants.MB;
 
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
@@ -41,6 +40,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyMessageDeletedPlugin;
 import de.gematik.test.tiger.proxy.TigerProxyRemoteTransmissionConversionPlugin;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
+import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.MultipleBinaryConnectionParser;
 import de.gematik.test.tiger.proxy.handler.SingleConnectionParser;
@@ -65,7 +65,7 @@ import lombok.Setter;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.util.Assert;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -142,8 +142,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     container.setDefaultMaxBinaryMessageBufferSize(perMessageBufferSize);
     container.setDefaultMaxTextMessageBufferSize(perMessageBufferSize);
 
-    final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
-    messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
+    final JacksonJsonMessageConverter messageConverter = new JacksonJsonMessageConverter();
 
     StandardWebSocketClient wsClient = new StandardWebSocketClient(container);
     webSocketClient = new SockJsClient(List.of(new WebSocketTransport(wsClient)));
@@ -295,7 +294,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Override
   public TigerProxyRoute addRoute(TigerProxyRoute tigerRoute) {
     return Unirest.put(getBaseUrl() + "/route")
-        .body(tigerRoute)
+        .body(TigerRouteDto.create(tigerRoute))
         .contentType(MediaType.APPLICATION_JSON_VALUE)
         .asObject(TigerProxyRoute.class)
         .ifFailure(

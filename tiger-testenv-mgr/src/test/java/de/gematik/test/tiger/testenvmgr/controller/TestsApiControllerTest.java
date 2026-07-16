@@ -26,7 +26,6 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -73,6 +72,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(
     classes = TigerTestEnvMgrApplication.class,

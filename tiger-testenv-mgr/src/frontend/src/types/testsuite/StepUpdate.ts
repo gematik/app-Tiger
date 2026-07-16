@@ -20,7 +20,7 @@
 ///
 
 import TestResult from "./TestResult";
-import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
+import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 import { type IMismatchNote } from "./MismatchNote";
 
 export interface IStep {

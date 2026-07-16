@@ -24,7 +24,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-starter-parent</artifactId>
-  <version>4.3.2</version>
+  <version>4.4.0</version>
   <packaging>pom</packaging>
   <name>tiger-starter-parent</name>
   <description>Parent pom for getting a tiger test suite project quickly up and running</description>
@@ -57,10 +57,10 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <version.maven.failsafe>3.5.5</version.maven.failsafe>
+    <version.maven.failsafe>3.5.6</version.maven.failsafe>
     <tiger.featuresDir>${basedir}/src/test/resources/features</tiger.featuresDir>
     <tiger.glues>${project.groupId}</tiger.glues>
-    <version.central-publishing-maven-plugin>0.10.0</version.central-publishing-maven-plugin>
+    <version.central-publishing-maven-plugin>0.11.0</version.central-publishing-maven-plugin>
     <version.maven.javadoc>3.12.0</version.maven.javadoc>
     <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
   </properties>
@@ -69,7 +69,7 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>4.3.2</version>
+        <version>4.4.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -103,7 +103,7 @@
         <plugin>
           <groupId>de.gematik.test</groupId>
           <artifactId>tiger-maven-plugin</artifactId>
-          <version>4.3.2</version>
+          <version>4.4.0</version>
         </plugin>
       </plugins>
     </pluginManagement>

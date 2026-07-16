@@ -72,7 +72,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     var method = firstLineParts.method;
     var httpVersion = firstLineParts.version;
 
-    final RbelElement pathElement = converter.convertElement(path, targetElement);
+    val pathElement = converter.convertElement(path, targetElement);
 
     var stringContent = targetElement.getRawStringContent();
     if (stringContent == null) {
@@ -84,12 +84,12 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     RbelHttpHeaderFacet httpHeader = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
     verifyHeader(httpHeader, httpVersion, targetElement);
 
-    final byte[] bodyData =
+    val bodyData =
         extractBodyData(targetElement, endOfHeadIndex + 2 * eol.length(), httpHeader, eol);
-    final RbelElement bodyElement =
-        new RbelElement(bodyData, targetElement, findCharsetInHeader(httpHeader));
+    val bodyElement =
+        new RbelElement(null, bodyData, targetElement, findCharsetInHeader(httpHeader));
 
-    final RbelHttpRequestFacet httpRequest =
+    val httpRequest =
         RbelHttpRequestFacet.builder()
             .method(converter.convertElement(method, targetElement))
             .path(pathElement)
@@ -109,16 +109,15 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
   private void verifyHeader(
       RbelHttpHeaderFacet httpHeader, RbelElement httpVersion, RbelElement targetElement) {
-    if (httpVersion.getContent().startsWith(HTTP_11_BYTES)) {
-      if (httpHeader.getCaseInsensitiveMatches("host").findAny().isEmpty()) {
-        targetElement.addFacet(
-            RbelNoteFacet.builder()
-                .value("HTTP/1.1 request does not contain Host header")
-                .style(styleParsingError(targetElement))
-                .build());
-        if (!isLenientParsingMode() && isTcpMessage(targetElement)) {
-          throw new RbelConversionException("HTTP/1.1 request does not contain Host header");
-        }
+    if (httpVersion.getContent().startsWith(HTTP_11_BYTES)
+        && httpHeader.getCaseInsensitiveMatches("host").findAny().isEmpty()) {
+      targetElement.addFacet(
+          RbelNoteFacet.builder()
+              .value("HTTP/1.1 request does not contain Host header")
+              .style(styleParsingError(targetElement))
+              .build());
+      if (!isLenientParsingMode() && isTcpMessage(targetElement)) {
+        throw new RbelConversionException("HTTP/1.1 request does not contain Host header");
       }
     }
   }

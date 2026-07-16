@@ -20,13 +20,10 @@
  */
 package de.gematik.test.tiger.common.util;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.gematik.test.tiger.common.config.DuplicateMapKeysForbiddenConstructor;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,14 +36,25 @@ import org.json.JSONObject;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.representer.Representer;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @SuppressWarnings("unused")
 public class TigerSerializationUtil {
 
   private TigerSerializationUtil() {}
 
-  private static final ObjectMapper objMapper =
-      new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
+  private static final ObjectMapper objMapper = createSimpleJsonMapper();
+
+  public static ObjectMapper createSimpleJsonMapper() {
+    return JsonMapper.builder()
+        .changeDefaultPropertyInclusion(
+            incl -> incl.withValueInclusion(JsonInclude.Include.NON_NULL))
+        .changeDefaultPropertyInclusion(
+            incl -> incl.withContentInclusion(JsonInclude.Include.NON_NULL))
+        .build();
+  }
 
   public static JSONObject yamlToJsonObject(String yamlStr) {
     Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
@@ -57,7 +65,7 @@ public class TigerSerializationUtil {
   public static <T> T fromJson(String jsonFile, Class<T> targetClass) {
     try {
       return objMapper.readValue(jsonFile, targetClass);
-    } catch (IOException e) {
+    } catch (RuntimeException e) {
       throw new TigerConfigurationException(
           "Failed to convert given JSON string to object of class " + targetClass.getName() + "!",
           e);
@@ -67,7 +75,7 @@ public class TigerSerializationUtil {
   public static String toJson(Object value) {
     try {
       return objMapper.writerWithDefaultPrettyPrinter().writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new TigerConfigurationException("Failed to convert given object to JSON!", e);
     }
   }

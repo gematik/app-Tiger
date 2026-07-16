@@ -47,6 +47,7 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
@@ -58,19 +59,15 @@ import org.testcontainers.utility.DockerImageName;
 @Slf4j
 @ResetTigerConfiguration
 class TestWebsocketDockerProxy {
-  private static final int DOCKER_INTERNAL_PROXY_PORT = 8080;
-  private static final int DOCKER_INTERNAL_ADMIN_PORT = 8081;
+  private static final int DOCKER_INTERNAL_PROXY_PORT = 9090;
+  private static final int DOCKER_INTERNAL_ADMIN_PORT = 8080;
   private static final String DOCKER_IMAGE_PROPERTY = "tigerProxy.docker.image";
   // Use the image tag that CI builds. Can be overridden via system property.
   private static final String DEFAULT_DOCKER_IMAGE = "tiger/tiger-proxy:latest";
 
   @Test
+  @EnabledIf(value = "isDockerAvailable", disabledReason = "Docker not available")
   void dockerProxyInMiddle_shouldCaptureWebsocketMessages() throws Exception {
-    // Skip test if Docker is not available (common in CI environments without Docker daemon)
-    if (!isDockerAvailable()) {
-      log.warn("Docker not available, skipping WebSocket Docker proxy test");
-      return;
-    }
 
     CountDownLatch latch = new CountDownLatch(2);
     int backendPort = TigerGlobalConfiguration.readIntegerOptional("free.port.4").orElseThrow();
@@ -139,7 +136,6 @@ class TestWebsocketDockerProxy {
                           .port(dockerProxy.getMappedPort(DOCKER_INTERNAL_PROXY_PORT))
                           .build())
                   .build())) {
-
         WebSocketClient client =
             new WebSocketClient(new URI("ws://localhost:" + localProxy.getProxyPort())) {
               @Override
@@ -216,6 +212,7 @@ class TestWebsocketDockerProxy {
         .withEnv("TIGERPROXY_PROXYPORT", String.valueOf(DOCKER_INTERNAL_PROXY_PORT))
         .withEnv("TIGERPROXY_ADMINPORT", String.valueOf(DOCKER_INTERNAL_ADMIN_PORT))
         .withEnv("MANAGEMENT_SERVER_PORT", "")
+        .withEnv("TIGERPROXY_ACTIVATERBELPARSINGFOR_0", "websocket")
         .withExposedPorts(DOCKER_INTERNAL_PROXY_PORT, DOCKER_INTERNAL_ADMIN_PORT)
         .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(60)));
     proxyContainer.start();
@@ -229,7 +226,7 @@ class TestWebsocketDockerProxy {
         + dockerProxy.getMappedPort(DOCKER_INTERNAL_ADMIN_PORT);
   }
 
-  private static boolean isDockerAvailable() {
+  public static boolean isDockerAvailable() {
     try {
       // Try to get the Docker client - this will fail if Docker is not available
       DockerClientFactory.instance().client();
