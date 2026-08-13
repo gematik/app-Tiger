@@ -33,5 +33,6 @@ public class RbelTreeResponseScrollableDto {
   private String messageUuid;
   private String query;
   private List<Map.Entry<String, String>> elementsWithTree;
+  private List<Map.Entry<String, RbelElementTreeNode>> elementsWithJsonTree;
   private String errorMessage;
 }

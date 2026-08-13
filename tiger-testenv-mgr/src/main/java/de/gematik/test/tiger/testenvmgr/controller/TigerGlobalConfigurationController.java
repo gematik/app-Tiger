@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -76,8 +77,31 @@ public class TigerGlobalConfigurationController {
     if (exists) {
       TigerGlobalConfiguration.putValue(propertyToUpdate.getKey(), propertyToUpdate.getValue());
     } else {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      TigerGlobalConfiguration.putValue(
+          propertyToUpdate.getKey(),
+          propertyToUpdate.getValue(),
+          parseScope(propertyToUpdate.getSource()));
     }
+  }
+
+  private ConfigurationValuePrecedence parseScope(String scope) {
+    if (scope == null || scope.isBlank()) {
+      return ConfigurationValuePrecedence.RUNTIME_EXPORT;
+    }
+    try {
+      return ConfigurationValuePrecedence.valueOf(scope);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Unknown configuration scope: " + scope);
+    }
+  }
+
+  @PostMapping(
+      value = "/resolvePlaceholders",
+      consumes = MediaType.TEXT_PLAIN_VALUE,
+      produces = MediaType.TEXT_PLAIN_VALUE)
+  public String resolvePlaceholders(@RequestBody String stringToResolve) {
+    return TigerGlobalConfiguration.resolvePlaceholders(stringToResolve);
   }
 
   @DeleteMapping()

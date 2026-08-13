@@ -628,6 +628,17 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
+  void testInnerVauDecryptedHttpBody_shouldNotBeEmpty() {
+    readTgrFileAndStoreForRbelMessageRetriever(
+        "src/test/resources/testdata/empty-response-log.tgr", List.of("epa3-vau"));
+    RbelMessageRetriever validator = rbelMessageRetriever;
+
+    assertThat(validator.getMessageHistory().getMessages()).hasSize(2);
+    RbelElement response = validator.getMessageHistory().getMessages().stream().toList().get(1);
+    assertThat(response).extractChildWithPath("$.body.decrypted.body").getContent().isNotEmpty();
+  }
+
+  @Test
   void testCurrentMessagesNotFound() {
     readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/interleavedRequests.tgr");

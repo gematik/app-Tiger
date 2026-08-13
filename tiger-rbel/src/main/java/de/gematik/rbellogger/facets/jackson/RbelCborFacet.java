@@ -90,7 +90,7 @@ public class RbelCborFacet implements RbelFacet {
                 pre(new UnescapedText(formattedJson)).withClass("binary"),
                 br(),
                 ancestorTitle()
-                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+                    .with(vertParentTitle().with(renderingToolkit.convertNested(element, false))));
           }
         });
   }

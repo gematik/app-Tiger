@@ -59,7 +59,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -192,7 +191,7 @@ class TigerRemoteProxyClientTest {
     log.info("Configuring routes...");
     tigerRemoteProxyClient.clearAllMessages();
     tigerRemoteProxyClient.clearAllRoutes();
-    ReflectionTestUtils.setField(tigerProxy, "name", Optional.of("Main TigerProxy"));
+    ReflectionTestUtils.setField(tigerProxy, "name", "Main TigerProxy");
     tigerProxy.clearAllRoutes();
     tigerProxy.clearAllMessages();
     tigerProxy.getRbelLogger().getRbelConverter().setName("Main TigerProxy");

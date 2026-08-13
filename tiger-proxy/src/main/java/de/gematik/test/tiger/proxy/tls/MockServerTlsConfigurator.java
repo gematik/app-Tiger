@@ -51,7 +51,7 @@ public class MockServerTlsConfigurator {
   private final TigerProxyConfiguration tigerProxyConfiguration;
   private Optional<TigerTlsConfiguration> tlsConfiguration;
   @Getter private TigerPkiIdentity serverRootCa;
-  private final Optional<String> tigerProxyName;
+  private final String tigerProxyName;
   private final List<KeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private boolean usingGenericCa;
 
@@ -109,8 +109,7 @@ public class MockServerTlsConfigurator {
               return sslContextBuilder.build();
             } catch (SSLException e) {
               throw new TigerProxySslException(
-                  "Error while building SSL context in Tiger-Proxy " + tigerProxyName.orElse(""),
-                  e);
+                  "Error while building SSL context in Tiger-Proxy " + tigerProxyName, e);
             } finally {
               if (previousGroups != null) {
                 System.setProperty(NAMED_GROUPS, previousGroups);

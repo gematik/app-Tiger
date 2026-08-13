@@ -65,7 +65,7 @@ public class RbelB64GzipFacet implements RbelFacet {
                         .with(
                             div()
                                 .withClass("tile is-child pe-3")
-                                .with(pre(unzippedContent).withClass("json language-json"))
+                                .with(pre(unzippedContent).withClass("rendered-body language-json"))
                                 .with(renderingToolkit.convertNested(element))));
           }
         });

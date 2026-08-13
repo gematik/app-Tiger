@@ -178,7 +178,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private void createNewMockServer() {
     MockServerConfiguration mockServerConfiguration = MockServerConfiguration.configuration();
-    mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
+    mockServerConfiguration.mockServerName(getName());
     mockServerConfiguration.rbelConverter(getRbelLogger().getRbelConverter());
 
     Optional.ofNullable(getTigerProxyConfiguration().getMaxSocketTimeoutInMillis())
@@ -234,7 +234,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     } else {
       mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration);
     }
-    String proxyName = getName().orElse("?");
+    String proxyName = getName();
     log.info("Proxy '{}' started on port {}", proxyName, mockServer.getLocalPort());
   }
 
@@ -308,7 +308,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     if (log.isInfoEnabled()) {
       log.info(
           "Subscribing to traffic endpoints for Tiger Proxy '{}'. Found {} endpoints",
-          getName().orElse("?"),
+          getName(),
           trafficEndpointUrls.size());
     }
 
@@ -630,7 +630,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Override
   @PreDestroy
   public void close() {
-    String tigerProxyName = getName().orElse("");
+    String tigerProxyName = getName();
     log.info("Shutting down Tiger-Proxy {}", tigerProxyName);
     remoteProxyClients.forEach(TigerRemoteProxyClient::close);
     mockServer.stop();

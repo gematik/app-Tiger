@@ -251,15 +251,18 @@ public class TigerWebUiController implements ApplicationContextAware {
           .elementsWithTree(
               targetElements.stream()
                   .map(
-                      rbelElement -> {
-                        final var html = createRbelTreeForElement(rbelElement, query);
-                        final var key = rbelElement.findNodePath();
-                        final var el =
-                            key.endsWith(RBEL_KEY_CONTENT) && !query.endsWith(RBEL_KEY_CONTENT)
-                                ? "$." + key.substring(0, key.length() - RBEL_KEY_CONTENT.length())
-                                : "$." + key;
-                        return new AbstractMap.SimpleEntry<>(el, html);
-                      })
+                      rbelElement ->
+                          new AbstractMap.SimpleEntry<>(
+                              mapPathKey(rbelElement, query),
+                              createRbelTreeForElement(rbelElement, query)))
+                  .collect(Collectors.toList()))
+          .elementsWithJsonTree(
+              targetElements.stream()
+                  .map(
+                      rbelElement ->
+                          new AbstractMap.SimpleEntry<>(
+                              mapPathKey(rbelElement, query),
+                              RbelElementTreeNode.from(resolveTreeRootElement(rbelElement, query))))
                   .collect(Collectors.toList()))
           .build();
     } catch (JexlException | TigerJexlException jexlException) {
@@ -277,16 +280,8 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   private String createRbelTreeForElement(RbelElement targetElement, String rbelPath) {
-
-    RbelElement rootElement =
-        targetElement
-            .getKey()
-            .filter(key -> key.endsWith("content") && !rbelPath.endsWith("content"))
-            .map(key -> targetElement.getParentNode())
-            .orElse(targetElement);
-
     return RbelElementTreePrinter.builder()
-        .rootElement(rootElement)
+        .rootElement(resolveTreeRootElement(targetElement, rbelPath))
         .printFacets(true)
         .htmlEscaping(true)
         .addJexlResponseLinkCssClass(true)
@@ -294,24 +289,24 @@ public class TigerWebUiController implements ApplicationContextAware {
         .execute();
   }
 
-  /**
-   * Returns a fingerprint that changes whenever the visible message set has been mutated. Combines:
-   *
-   * <ul>
-   *   <li>{@code size} – detects any pure removal;
-   *   <li>{@link de.gematik.rbellogger.RbelMessageHistory.MessageHistory#getMessageSequenceNumber()
-   *       messageSequenceNumber} – strictly monotonic across additions, so it detects any insertion
-   *       even when paired with a same-count eviction (which leaves {@code size}, head and tail
-   *       UUIDs all unchanged – this can happen e.g. in {@link MessageSortOrder#TIMESTAMP} mode
-   *       where a late-arriving message can land mid-list);
-   *   <li>the {@link MessageSortOrder} itself – switching the sort key on the client triggers a
-   *       refresh.
-   * </ul>
-   */
-  private String messageHash(List<RbelElement> messages, MessageSortOrder sortOrder) {
-    long messageSequenceNumber =
-        getTigerProxy().getRbelLogger().getMessageHistory().getMessageSequenceNumber();
-    return messages.size() + "-" + messageSequenceNumber + "-" + sortOrder.name();
+  private RbelElement resolveTreeRootElement(RbelElement targetElement, String rbelPath) {
+    return targetElement
+        .getKey()
+        .filter(key -> key.endsWith("content") && !rbelPath.endsWith("content"))
+        .map(key -> targetElement.getParentNode())
+        .orElse(targetElement);
+  }
+
+  private String mapPathKey(RbelElement rbelElement, String query) {
+    final var key = rbelElement.findNodePath();
+    return key.endsWith(RBEL_KEY_CONTENT) && !query.endsWith(RBEL_KEY_CONTENT)
+        ? "$." + key.substring(0, key.length() - RBEL_KEY_CONTENT.length())
+        : "$." + key;
+  }
+
+  /** Returns the global revision token for the current message history. */
+  private String messageHash() {
+    return String.valueOf(getTigerProxy().getRbelLogger().getMessageHistory().getHistoryRevision());
   }
 
   private List<RbelElement> resolveMessages(MessageSortOrder sortOrder) {
@@ -347,7 +342,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     result.setTotal(total);
 
-    result.setHash(messageHash(parsedMessages, sortOrder));
+    result.setHash(messageHash());
 
     var messageStream = parsedMessages.stream();
     messageStream = filterMessages(messageStream, filterRbelPath);
@@ -384,7 +379,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     var result = new GetMessagesWithMetaScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages, sortOrder));
+    result.setHash(messageHash());
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
     var messageStream = parsedMessages.stream();
@@ -410,7 +405,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages, sortOrder));
+    result.setHash(messageHash());
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
 
     var messageStream = parsedMessages.stream();
@@ -446,7 +441,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     var result = new SearchMessagesScrollableDto();
 
     result.setTotal(total);
-    result.setHash(messageHash(parsedMessages, sortOrder));
+    result.setHash(messageHash());
     result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
     result.setSearchFilter(
         GetMessagesFilterScrollableDto.builder().rbelPath(searchRbelPath).build());
@@ -664,7 +659,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   public TigerVersionResponse getVersion() {
     String version = versionService.tigerVersionAsString();
     String buildDate = versionService.tigerBuildDateAsString();
-    return new TigerVersionResponse(version, buildDate, tigerProxy.getName().orElse(""));
+    return new TigerVersionResponse(version, buildDate, tigerProxy.getName());
   }
 
   public record TigerVersionResponse(String version, String buildDate, String proxyName) {}

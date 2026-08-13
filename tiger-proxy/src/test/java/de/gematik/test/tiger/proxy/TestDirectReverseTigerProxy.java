@@ -37,6 +37,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
@@ -74,6 +75,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
               .build());
       log.info("Backendserver running on port {}", backendServer.getLocalPort());
       try (Socket clientSocket = new Socket("localhost", tigerProxy.getProxyPort())) {
+        clientSocket.setSoTimeout((int) Duration.ofSeconds(10).toMillis());
         final byte[] requestPayload = "{'msg':'Hallo Welt!'}".getBytes(UTF_8);
         final byte[] responsePayload = "{'msg':'Response String'}".getBytes(UTF_8);
 
@@ -85,6 +87,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .write(ArrayUtils.subarray(requestPayload, 10, requestPayload.length));
 
         final Socket serverSocket = backendServer.accept();
+        serverSocket.setSoTimeout((int) Duration.ofSeconds(10).toMillis());
         assertThat(serverSocket.getInputStream().readNBytes(requestPayload.length))
             .isEqualTo(requestPayload);
 
@@ -94,7 +97,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo(responsePayload);
         ZonedDateTime afterRespone = ZonedDateTime.now();
 
-        await().until(() -> tigerProxy.getMessageHistory().size() >= 2);
+        awaitMessagesInTigerProxy(tigerProxy, 2);
 
         // check content
         assertThat(tigerProxy.getRbelMessagesList().get(0).getRawContent())
@@ -268,6 +271,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
   void directForwardWithTcpIdleTimeout_shouldConfigureKeepAlive()
       throws IOException, InterruptedException {
     try (ServerSocket backendServer = new ServerSocket(0)) {
+      backendServer.setSoTimeout((int) Duration.ofSeconds(10).toMillis());
       // Configure TCP keep-alive to maintain connections during idle periods (like SMTP)
       // Keep-alive interval (1s) must be SHORTER than socket timeout (2s) to prevent connection
       // from closing
@@ -287,6 +291,8 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
       log.info("Backendserver running on port {}", backendServer.getLocalPort());
 
       try (Socket clientSocket = new Socket("localhost", tigerProxy.getProxyPort())) {
+
+        clientSocket.setSoTimeout((int) Duration.ofSeconds(10).toMillis());
         final byte[] requestPayload1 = "{\"foo\": \"bar\"}".getBytes(UTF_8);
         final byte[] responsePayload1 = "{\"status\": \"ok\"}".getBytes(UTF_8);
 
@@ -294,6 +300,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
         clientSocket.getOutputStream().flush();
 
         final Socket serverSocket = backendServer.accept();
+        serverSocket.setSoTimeout((int) Duration.ofSeconds(10).toMillis());
         assertThat(serverSocket.getInputStream().readNBytes(requestPayload1.length))
             .isEqualTo(requestPayload1);
 

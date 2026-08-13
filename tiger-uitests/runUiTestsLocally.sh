@@ -19,8 +19,8 @@
 #
 #
 
-# Usage: ./run-tiger-tests.sh [stage]
-# Stages: base, replay, sequencediagram, testselector
+# Usage: ./runUiTestsLocally.sh [stage]
+# Stages: base, report, replay, sequencediagram, testselector
 trap 'echo "Interrupted. Killing background jobs..."; jobs -p | xargs -r kill; exit 130' INT
 
 STAGE="$1"
@@ -36,6 +36,11 @@ run_base() {
   mvn --no-transfer-progress -DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt &
   mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify &
   wait
+}
+
+run_report() {
+  echo "Running: Serenity report tests"
+  mvn --no-transfer-progress -P run-playwright-test -Dit.test=de.gematik.test.tiger.playwright.workflowui.report.SerenityReportTest failsafe:integration-test failsafe:verify
 }
 
 
@@ -68,12 +73,14 @@ run_testselector() {
 
 if [[ -z "$STAGE" ]]; then
   run_base
+  run_report
   run_replay
   run_sequencediagram
   run_testselector
 else
   case "$STAGE" in
     base) run_base ;;
+    report) run_report ;;
     replay) run_replay ;;
     sequencediagram) run_sequencediagram ;;
     testselector) run_testselector ;;

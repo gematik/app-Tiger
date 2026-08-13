@@ -46,7 +46,6 @@ let msgIndex = 1;
 // called implicitly by the HTML code created by the server at
 // de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.renderDocument (end of method)
 function createMenuEntry(msgMetaData) {
-    let isRequest = msgMetaData.request;
 
     let menuItem = menuHtmlMessage;
     menuItem = menuItem
@@ -157,10 +156,109 @@ function toggleCollapsableIcon(target) {
     classList.toggle("fa-toggle-off", flag);
 }
 
+let jsonNoteTokenCounter = 0;
+
+function createJsonNoteToken() {
+    const uuid = (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+        ? globalThis.crypto.randomUUID()
+        : `${Date.now()}_${jsonNoteTokenCounter++}`;
+    return `RBEL_JSON_NOTE_${uuid}`;
+}
+
+function createJsonNotePlaceholderText(token) {
+    // Use a quoted placeholder so JSON highlighting treats the anchor like one string token.
+    return `"${token}"`;
+}
+
+function extractJsonNotes(preEl) {
+    const extractedNotes = [];
+    preEl.querySelectorAll('.json-note-data').forEach(noteEl => {
+        const token = createJsonNoteToken();
+        const placeholderText = createJsonNotePlaceholderText(token);
+        try {
+            const notes = JSON.parse(noteEl.dataset.notes || '[]');
+            extractedNotes.push({placeholderText, notes});
+            // Keep a plain-text anchor at exactly the old element position.
+            noteEl.replaceWith(document.createTextNode(placeholderText));
+        } catch {
+            // Leave malformed note payload untouched.
+        }
+    });
+    return extractedNotes;
+}
+
+function findRangeInSingleTextNode(rootEl, searchText) {
+    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        const value = node.nodeValue || '';
+        const start = value.indexOf(searchText);
+        if (start === -1) {
+            continue;
+        }
+
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + searchText.length);
+        return range;
+    }
+    return null;
+}
+
+function restoreJsonNotes(preEl, extractedNotes) {
+    extractedNotes.forEach(({placeholderText, notes}) => {
+        const tokenRange = findRangeInSingleTextNode(preEl, placeholderText);
+        if (!tokenRange) {
+            return;
+        }
+
+        const wrapper = document.createElement('span');
+        wrapper.className = 'json-note';
+        notes.forEach(note => {
+            const noteSpan = document.createElement('span');
+            noteSpan.className = `rbel-postit rbel-postit__line ${note.style}`.trim();
+            const em = document.createElement('i');
+            em.textContent = note.text;
+            noteSpan.appendChild(em);
+            wrapper.appendChild(noteSpan);
+        });
+
+        tokenRange.deleteContents();
+        tokenRange.insertNode(wrapper);
+    });
+}
+
+function shouldHighlight(preEl) {
+    return preEl.dataset.hljsHighlighted !== "true"
+        && !preEl.classList.contains('no-highlight')
+        && !preEl.classList.contains('nohighlight');
+}
+
+function highlightRenderedBody(preEl) {
+    // Always extract/restore note placeholders, even when highlight.js already ran.
+    // This prevents notes from being skipped if a block is pre-marked as highlighted.
+    const extractedNotes = extractJsonNotes(preEl);
+    if (shouldHighlight(preEl)) {
+        hljs.highlightElement(preEl);
+        preEl.dataset.hljsHighlighted = "true";
+    }
+    restoreJsonNotes(preEl, extractedNotes);
+}
+
+function processRenderedBodies(rootEl) {
+    if (!rootEl) {
+        return;
+    }
+    if (rootEl.matches?.('pre.rendered-body')) {
+        highlightRenderedBody(rootEl);
+    }
+    rootEl.querySelectorAll?.('pre.rendered-body').forEach(highlightRenderedBody);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     let msgCards = document.getElementsByClassName('msg-card');
-    for (let i = 0; i < msgCards.length; i++) {
-        msgCards[i].children[0].children[0].children[0].children[1].addEventListener(
+    for (const element of msgCards) {
+        element.children[0].children[0].children[0].children[1].addEventListener(
             'click', e => {
                 e.currentTarget
                     .parentElement.parentElement.parentElement.parentElement
@@ -170,17 +268,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 return false;
             });
 
-        document.querySelectorAll('pre.json').forEach(el => {
-            if (el.getAttribute("data-hljs-highlighted") !== "true") {
-                hljs.highlightElement(el);
-                el.setAttribute("data-hljs-highlighted", "true");
-            }
+    }
+
+    processRenderedBodies(document);
+
+    const rbelMainContent = document.querySelector('.rbel-main-content');
+    if (rbelMainContent) {
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        processRenderedBodies(node);
+                    }
+                });
+            });
         });
+        observer.observe(rbelMainContent, {childList: true, subtree: true});
     }
 
     let notification = document.getElementsByClassName('card notification');
-    for (let i = 0; i < notification.length; i++) {
-        notification[i].children[0].children[0].children[0].children[0].addEventListener(
+    for (const element of notification) {
+        element.children[0].children[0].children[0].children[0].addEventListener(
             'click', e => {
                 e.currentTarget
                     .parentElement.parentElement.parentElement.parentElement

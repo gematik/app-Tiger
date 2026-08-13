@@ -141,5 +141,13 @@ public class MockServerHttpRequestToFullHttpRequest {
     if (request.content().readableBytes() > 0) {
       request.headers().set(CONTENT_LENGTH, request.content().readableBytes());
     }
+    // Explicitly signal keep-alive to the backend so it does not close the connection after each
+    // response. Without this the outgoing HTTP client would open+close a new TCP connection per
+    // request, adding ~50ms of handshake overhead per forwarded request (regression from TGR-1930,
+    // which removed the explicit Connection header handling here).
+    if (!HttpProtocol.HTTP_2.equals(httpRequest.getProtocol())
+        && !request.headers().contains(CONNECTION)) {
+      request.headers().set(CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+    }
   }
 }

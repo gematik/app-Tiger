@@ -35,10 +35,6 @@ public class TigerHtmlReporter implements TigerReporter {
   private final HtmlAggregateStoryReporter reporter;
   private TestResult testResult;
 
-  public TigerHtmlReporter(Path reportDirectory, Path requirementsBaseDir) {
-    this(reportDirectory, reportDirectory, requirementsBaseDir);
-  }
-
   public TigerHtmlReporter(Path sourceDirectory, Path outputDirectory, Path requirementsBaseDir) {
     reporter =
         new HtmlAggregateStoryReporter(
@@ -59,6 +55,8 @@ public class TigerHtmlReporter implements TigerReporter {
   public void generateReport() {
     TestOutcomes outcomes =
         reporter.generateReportsForTestResultsFrom(reporter.getSourceDirectory());
+    SerenityStartedColumnReactivator.reactivateInDirectory(reporter.getOutputDirectory().toPath());
+
     testResult = new ResultChecker(reporter.getOutputDirectory()).checkTestResults(outcomes);
   }
 

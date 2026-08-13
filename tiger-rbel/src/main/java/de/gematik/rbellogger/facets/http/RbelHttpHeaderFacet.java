@@ -63,15 +63,13 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
                                     entry ->
                                         tr(
                                             td(pre(entry.getKey())),
-                                            td(pre()
+                                            td(
+                                                pre()
                                                     .with(
                                                         renderingToolkit.convert(
                                                             entry.getValue(),
                                                             Optional.ofNullable(entry.getKey())))
-                                                    .withClass("value"))
-                                                .with(
-                                                    RbelHtmlRenderingToolkit.addNotes(
-                                                        entry.getValue()))))
+                                                    .withClass("value"))))
                                 .toList()));
           }
         });

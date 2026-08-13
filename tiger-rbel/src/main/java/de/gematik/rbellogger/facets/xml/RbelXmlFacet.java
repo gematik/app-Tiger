@@ -68,8 +68,10 @@ public class RbelXmlFacet implements RbelFacet {
                         .with(
                             div()
                                 .withClass("tile is-child pe-2")
-                                .with(pre(new Text(formattedXml)).withClass("json language-xml"))
-                                .with(renderingToolkit.convertNested(element))));
+                                .with(
+                                    pre(new Text(formattedXml))
+                                        .withClass("rendered-body language-xml"))
+                                .with(renderingToolkit.convertNested(element, false))));
           }
         });
   }

@@ -30,6 +30,7 @@ import { settingsSymbol } from "../Settings.ts";
 import { rawContentModalSymbol } from "../RawContentModal.ts";
 import hljs from "highlight.js/lib/core";
 import "highlight.js/styles/stackoverflow-dark.css";
+import { extractJsonNotes, restoreJsonNotes } from "./messageNoteDom.ts";
 
 const props = defineProps<{
   message: Message;
@@ -50,6 +51,7 @@ const messageQueue = inject(messageQueueSymbol)!;
 
 const delegatedHandlerAttached = ref(false);
 const attachedElement: Ref<HTMLElement | null> = ref(null);
+let jsonNoteTokenCounter = 0;
 
 // Track which messages have been initialized using a WeakMap on the uiState object
 // This persists across component unmount/remount cycles (unlike component state refs)
@@ -66,24 +68,23 @@ function markMessageInitialized(uuid: string) {
 function handleSectionToggle(
   event: MouseEvent,
   findAncestorWithClass: (el: Element | null, cls: string) => Element | null,
-  sectionToggle: Element,
+  sectionToggle: HTMLElement,
 ) {
   event.stopPropagation();
   event.preventDefault();
   const section = findAncestorWithClass(sectionToggle, "msg-section");
   if (!section) return;
-  const sectionContent = section.querySelector(".msg-section-content");
+  const sectionContent = section.querySelector<HTMLElement>(".msg-section-content");
   if (!sectionContent) return;
   const isHidden = sectionContent.classList.toggle("d-none");
   elementToggleIcon(sectionToggle, !isHidden);
   const state = messageQueue.internal.getUiState(props.message.uuid);
   const sections = state.sections ?? (state.sections = {});
-  let sid =
-    sectionToggle.getAttribute("data-section-id") ?? sectionContent.getAttribute("data-section-id");
+  let sid = sectionToggle.dataset.sectionId ?? sectionContent.dataset.sectionId;
   if (!sid) {
     sid = `sec-${Math.random().toString(36).slice(2, 9)}`;
-    sectionToggle.setAttribute("data-section-id", sid);
-    sectionContent.setAttribute("data-section-id", sid);
+    sectionToggle.dataset.sectionId = sid;
+    sectionContent.dataset.sectionId = sid;
   }
   sections[sid] = !isHidden;
   props.onToggleDetailsOrHeader();
@@ -134,9 +135,9 @@ function delegatedClickHandler(event: MouseEvent) {
   const target = event.target as Element;
 
   // helper to find ancestor matching class
-  function findAncestorWithClass(el: Element | null, cls: string): Element | null {
+  function findAncestorWithClass(el: Element | null, cls: string): HTMLElement | null {
     while (el && el !== messageElement.value) {
-      if (el.classList && el.classList.contains(cls)) return el;
+      if (el.classList && el.classList.contains(cls)) return el as HTMLElement;
       el = el.parentElement;
     }
     return null;
@@ -284,13 +285,12 @@ function restoreBodyVisibility(messageContent: any, state: MessageUiState) {
 }
 
 function computeSectionId(
-  sectionToggle: Element,
-  sectionContent: Element,
+  sectionToggle: HTMLElement,
+  sectionContent: HTMLElement,
   sections: Record<string, boolean>,
   i: number,
 ) {
-  let sid =
-    sectionToggle.getAttribute("data-section-id") ?? sectionContent.getAttribute("data-section-id");
+  let sid = sectionToggle.dataset.sectionId ?? sectionContent.dataset.sectionId;
 
   if (!sid && Object.keys(sections).length > 0) {
     const storedIds = Object.keys(sections);
@@ -306,14 +306,14 @@ function computeSectionId(
 }
 
 function restoreSectionVisibilityState(messageSections: any, i: number, state: MessageUiState) {
-  const messageSection = messageSections[i] as Element;
-  const sectionToggle = messageSection.querySelector(".msg-section-toggle");
-  const sectionContent = messageSection.querySelector(".msg-section-content");
+  const messageSection = messageSections[i] as HTMLElement;
+  const sectionToggle = messageSection.querySelector<HTMLElement>(".msg-section-toggle");
+  const sectionContent = messageSection.querySelector<HTMLElement>(".msg-section-content");
   if (sectionToggle && sectionContent) {
     const sections = state.sections ?? (state.sections = {});
     const sid = computeSectionId(sectionToggle, sectionContent, sections, i);
-    sectionToggle.setAttribute("data-section-id", sid);
-    sectionContent.setAttribute("data-section-id", sid);
+    sectionToggle.dataset.sectionId = sid;
+    sectionContent.dataset.sectionId = sid;
 
     const storedVisible = sections[sid];
     if (storedVisible !== undefined) {
@@ -350,13 +350,12 @@ function restoreMessageState(msgUuid: any) {
 
 function restoreSectionVisibility(
   state: MessageUiState,
-  sectionToggle: Element,
-  sectionContent: Element,
+  sectionToggle: HTMLElement,
+  sectionContent: HTMLElement,
   i: number,
 ) {
   const sections = state.sections ?? (state.sections = {});
-  let sid =
-    sectionToggle.getAttribute("data-section-id") ?? sectionContent.getAttribute("data-section-id");
+  let sid = sectionToggle.dataset.sectionId ?? sectionContent.dataset.sectionId;
 
   if (!sid && Object.keys(sections).length > 0) {
     const storedIds = Object.keys(sections);
@@ -368,8 +367,8 @@ function restoreSectionVisibility(
   if (!sid) {
     sid = `sec-${Math.random().toString(36).slice(2, 9)}`;
   }
-  sectionToggle.setAttribute("data-section-id", sid);
-  sectionContent.setAttribute("data-section-id", sid);
+  sectionToggle.dataset.sectionId = sid;
+  sectionContent.dataset.sectionId = sid;
 
   const storedVisible = sections[sid];
   const currentlyHidden = sectionContent.classList.contains("d-none");
@@ -391,8 +390,8 @@ function restoreSectionsVisibility(state: MessageUiState) {
   if (messageSections) {
     for (let i = 0; i < messageSections.length; i++) {
       const messageSection = messageSections[i] as Element;
-      const sectionToggle = messageSection.querySelector(".msg-section-toggle");
-      const sectionContent = messageSection.querySelector(".msg-section-content");
+      const sectionToggle = messageSection.querySelector<HTMLElement>(".msg-section-toggle");
+      const sectionContent = messageSection.querySelector<HTMLElement>(".msg-section-content");
       if (sectionToggle && sectionContent) {
         restoreSectionVisibility(state, sectionToggle, sectionContent, i);
       }
@@ -439,10 +438,11 @@ function detachListenerForChangedElement() {
 
 function setupRawMessageButton() {
   // The raw content of the message (e.g. the http message)
-  const rawContentModalButtons = messageElement.value?.querySelectorAll(
+  const rawContentModalButtons = messageElement.value?.querySelectorAll<HTMLElement>(
     "div [data-bs-target^='#dialog']",
   );
-  const rawContentModalContents = messageElement.value?.querySelectorAll("div [role='dialog']");
+  const rawContentModalContents =
+    messageElement.value?.querySelectorAll<HTMLElement>("div [role='dialog']");
   if (
     rawContentModalButtons &&
     rawContentModalContents &&
@@ -453,7 +453,7 @@ function setupRawMessageButton() {
       const rawContentModalContent = rawContentModalContents[i];
       const rawContentText = rawContentModalContent.querySelector("pre")?.innerHTML ?? "";
 
-      rawContentModalButton.setAttribute("data-bs-target", "#rawContentModal");
+      rawContentModalButton.dataset.bsTarget = "#rawContentModal";
       rawContentModalButton.addEventListener("click", () => {
         rawContentModal.show(props.message, rawContentText);
       });
@@ -477,13 +477,35 @@ function setupFullRenderButton() {
   }
 }
 
+function createJsonNoteToken() {
+  const uuid =
+    globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now()}_${jsonNoteTokenCounter++}`;
+  return `RBEL_JSON_NOTE_${uuid}`;
+}
+
+function shouldHighlight(el: HTMLElement) {
+  return el.dataset.hljsHighlighted !== "true";
+}
+
 function setupCodeHighlighting() {
   // Code highlighting
-  messageElement.value?.querySelectorAll("pre.json").forEach((el) => {
-    if (el.getAttribute("data-hljs-highlighted") !== "true") {
-      hljs.highlightElement(el as HTMLElement);
-      el.setAttribute("data-hljs-highlighted", "true");
+  messageElement.value?.querySelectorAll<HTMLElement>("pre.rendered-body").forEach((el) => {
+    // Always extract/restore note placeholders, even when highlight.js already ran.
+    // This prevents notes from being skipped if a block is pre-marked as highlighted.
+    const extractedNotes = extractJsonNotes(el, createJsonNoteToken);
+    if (shouldHighlight(el)) {
+      hljs.highlightElement(el);
+      el.dataset.hljsHighlighted = "true";
     }
+    restoreJsonNotes(el, extractedNotes);
+  });
+}
+
+function waitForPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve());
   });
 }
 
@@ -568,6 +590,8 @@ async function setHtmlContentForRecycledElement(htmlContent: string, msgUuid: an
   if (messageElement.value) {
     messageElement.value.innerHTML = htmlContent;
     await nextTick();
+    await waitForPaint();
+    setupCodeHighlighting();
   }
 
   // Reattach handler to the new element if it changed
@@ -625,11 +649,21 @@ async function handleUninitializedElement(msgUuid: any, htmlContent: string) {
   }
   // Wait for the inner html to be rendered
   await nextTick();
+  await waitForPaint();
 
   await setupInteractiveMessageContent(msgUuid);
 }
 
-watch(messageElement, async () => {
+watch(
+  () => (props.message.type === "loaded" ? props.message.htmlContent : null),
+  async (newHtml, oldHtml) => {
+    if (newHtml && newHtml !== oldHtml && isMessageInitialized(props.message.uuid)) {
+      await setHtmlContentForRecycledElement(newHtml, props.message.uuid);
+    }
+  },
+);
+
+watch([messageElement, () => props.message.uuid], async () => {
   if (messageElement.value && props.message.type === "loaded") {
     const msgUuid = (props.message as any).uuid;
 

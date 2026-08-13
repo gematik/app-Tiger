@@ -61,7 +61,7 @@ class TracingStompHandler implements StompFrameHandler {
                     .map(Object::getClass)
                     .map(Class::getSimpleName)
                     .orElse("<>"))
-        .addArgument(remoteProxyClient.getName().orElse("<>"))
+        .addArgument(remoteProxyClient.getName())
         .addArgument(
             () -> {
               try {

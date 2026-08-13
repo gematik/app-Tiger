@@ -464,8 +464,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
   }
 
   private void addServerNameForSender(HttpRequest request) {
-    tigerProxy
-        .getName()
+    Optional.of(tigerProxy.getName())
         .filter(name -> !name.equals("local_tiger_proxy"))
         .ifPresent(
             serverName ->

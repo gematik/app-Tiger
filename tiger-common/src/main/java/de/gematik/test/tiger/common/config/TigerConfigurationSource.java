@@ -20,8 +20,6 @@
  */
 package de.gematik.test.tiger.common.config;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
-
 import java.util.*;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -30,6 +28,7 @@ import lombok.val;
 import org.apache.commons.lang3.ClassUtils;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.BinaryNode;
+import tools.jackson.databind.node.POJONode;
 
 /** Stores a map of key/value-pairs. */
 @Getter
@@ -93,19 +92,9 @@ public class TigerConfigurationSource implements Comparable<TigerConfigurationSo
     }
 
     if (value instanceof Map<?, ?> asMap) {
-      asMap.forEach(
-          (subKey, entryValue) -> {
-            var combinedKey = new TigerConfigurationKey(baseKey);
-            combinedKey.add(subKey.toString());
-            putValue(combinedKey, entryValue);
-          });
+      putMapValue(baseKey, asMap);
     } else if (value instanceof List<?> asList) {
-      int counter = 0;
-      for (Object entry : asList) {
-        TigerConfigurationKey newList = new TigerConfigurationKey(baseKey);
-        newList.add(wrapAsKey(Integer.toString(counter++)));
-        putValue(newList, entry);
-      }
+      putListValue(baseKey, asList);
     } else if (value instanceof byte[] bytes) {
       values.put(baseKey, Base64.getEncoder().encodeToString(bytes));
     } else if (ClassUtils.isPrimitiveOrWrapper(value.getClass())
@@ -113,26 +102,46 @@ public class TigerConfigurationSource implements Comparable<TigerConfigurationSo
         || value instanceof Enum<?>) {
       values.put(baseKey, value.toString());
     } else if (value instanceof JsonNode jsonNode) {
-      if (jsonNode.isObject()) {
-        for (val field : jsonNode.properties()) {
-          putValue(new TigerConfigurationKey(baseKey, field.getKey()), field.getValue());
-        }
-      } else if (jsonNode.isArray()) {
-        for (int i = 0; i < jsonNode.size(); i++) {
-          putValue(new TigerConfigurationKey(baseKey, Integer.toString(i)), jsonNode.get(i));
-        }
-      } else if (jsonNode instanceof BinaryNode binaryNode) {
-        putValue(
-            new TigerConfigurationKey(baseKey),
-            Base64.getEncoder().encodeToString(binaryNode.binaryValue()));
-      } else if (jsonNode.isString()) {
-        values.put(baseKey, jsonNode.stringValue());
-      } else if (jsonNode.isValueNode() && !jsonNode.isNull()) {
-        values.put(baseKey, jsonNode.toString());
-      }
+      putNodeValue(baseKey, jsonNode);
     } else {
       val treeView = configurationLoader.getObjectMapper().valueToTree(value);
-      putValue(new TigerConfigurationKey(baseKey), treeView);
+      putValue(baseKey, treeView);
+    }
+  }
+
+  private void putMapValue(TigerConfigurationKey baseKey, Map<?, ?> asMap) {
+    asMap.forEach(
+        (subKey, entryValue) -> {
+          var combinedKey = new TigerConfigurationKey(baseKey);
+          combinedKey.add(subKey.toString());
+          putValue(combinedKey, entryValue);
+        });
+  }
+
+  private void putListValue(TigerConfigurationKey baseKey, List<?> asList) {
+    int counter = 0;
+    for (Object entry : asList) {
+      putValue(new TigerConfigurationKey(baseKey, Integer.toString(counter++)), entry);
+    }
+  }
+
+  private void putNodeValue(TigerConfigurationKey baseKey, JsonNode jsonNode) {
+    if (jsonNode.isObject()) {
+      for (val field : jsonNode.properties()) {
+        putValue(new TigerConfigurationKey(baseKey, field.getKey()), field.getValue());
+      }
+    } else if (jsonNode.isArray()) {
+      for (int i = 0; i < jsonNode.size(); i++) {
+        putValue(new TigerConfigurationKey(baseKey, Integer.toString(i)), jsonNode.get(i));
+      }
+    } else if (jsonNode instanceof BinaryNode binaryNode) {
+      putValue(baseKey, Base64.getEncoder().encodeToString(binaryNode.binaryValue()));
+    } else if (jsonNode.isString()) {
+      values.put(baseKey, jsonNode.stringValue());
+    } else if (jsonNode.isPojo() && ((POJONode) jsonNode).getPojo() instanceof byte[] bytes) {
+      putValue(baseKey, Base64.getEncoder().encodeToString(bytes));
+    } else if (jsonNode.isValueNode() && !jsonNode.isNull()) {
+      values.put(baseKey, jsonNode.toString());
     }
   }
 

@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.exceptions.NotedAssertionError;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +87,8 @@ public class RbelValidator {
     }
     if (elements.size() == 1) {
       RbelElement element = elements.get(0);
-      throw new AssertionError(
+      throw NotedAssertionError.createNotedAssertionError(
+          element,
           String.format(
               """
               Element value:

@@ -22,6 +22,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -34,6 +35,7 @@ import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.util.NoProxyUtils;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
@@ -97,6 +99,18 @@ public class NettyHttpClient {
     }
 
     final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
+    doSendRequest(requestInfo, customTimeout, false, httpResponseFuture);
+    return httpResponseFuture;
+  }
+
+  private void doSendRequest(
+      HttpRequestInfo requestInfo,
+      Long customTimeout,
+      boolean forceNewChannel,
+      CompletableFuture<HttpResponse> httpResponseFuture) {
+
+    long requestStartTime = System.currentTimeMillis();
+
     final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
     final HttpProtocol httpProtocol =
         requestInfo.getDataToSend().getProtocol() != null
@@ -109,41 +123,10 @@ public class NettyHttpClient {
 
     var onCreationListener =
         (ChannelFutureListener)
-            future -> {
-              if (future.isSuccess()) {
-                future.channel().attr(INCOMING_CHANNEL).set(requestInfo.getIncomingChannel());
-                requestInfo.getIncomingChannel().attr(HTTP_CLIENT).set(this);
-
-                // ensure if HTTP2 is used then settings have been received from server
-                clientInitializer.whenComplete(
-                    (protocol, throwable) -> {
-                      if (throwable != null) {
-                        httpResponseFuture.completeExceptionally(throwable);
-                      } else {
-                        // send the HTTP request
-                        log.trace(
-                            "sending request: {}",
-                            requestInfo.getDataToSend().printLogLineDescription());
-                        future.channel().writeAndFlush(requestInfo.getDataToSend());
-                      }
-                    });
-              } else {
-                httpResponseFuture.completeExceptionally(future.cause());
-              }
-            };
+            future -> handleCreation(requestInfo, httpResponseFuture, future, clientInitializer);
 
     var onReuseListener =
-        (ChannelFutureListener)
-            future -> {
-              if (future.isSuccess()) {
-                // send the HTTP request
-                log.trace(
-                    "sending request: {}", requestInfo.getDataToSend().printLogLineDescription());
-                future.channel().writeAndFlush(requestInfo.getDataToSend());
-              } else {
-                httpResponseFuture.completeExceptionally(future.cause());
-              }
-            };
+        (ChannelFutureListener) future -> handleReuse(requestInfo, httpResponseFuture, future);
 
     clientBootstrapFactory
         .configureChannel()
@@ -155,22 +138,107 @@ public class NettyHttpClient {
         .timeoutInMilliseconds(customTimeout)
         .onCreationListener(onCreationListener)
         .onReuseListener(onReuseListener)
+        .forceNewChannel(forceNewChannel)
+        .dedicatedChannel(requestInfo.getDataToSend().isWebsocketHandshake())
         .connectToChannel();
 
     responseFuture.whenComplete(
-        (message, throwable) -> {
-          if (throwable == null) {
-            if (message != null) {
-              httpResponseFuture.complete((HttpResponse) message);
-            } else {
-              httpResponseFuture.complete(response());
-            }
-          } else {
-            httpResponseFuture.completeExceptionally(throwable);
-          }
-        });
+        (message, throwable) ->
+            handleResponseComplete(
+                requestInfo,
+                customTimeout,
+                forceNewChannel,
+                httpResponseFuture,
+                message,
+                throwable,
+                requestStartTime));
+  }
 
-    return httpResponseFuture;
+  private void handleCreation(
+      HttpRequestInfo requestInfo,
+      CompletableFuture<HttpResponse> httpResponseFuture,
+      ChannelFuture future,
+      HttpClientInitializer clientInitializer) {
+    if (future.isSuccess()) {
+      future.channel().attr(INCOMING_CHANNEL).set(requestInfo.getIncomingChannel());
+      requestInfo.getIncomingChannel().attr(HTTP_CLIENT).set(this);
+
+      // ensure if HTTP2 is used then settings have been received from server
+      clientInitializer.whenComplete(
+          (protocol, throwable) -> {
+            if (throwable != null) {
+              httpResponseFuture.completeExceptionally(throwable);
+            } else {
+              // send the HTTP request
+              log.trace(
+                  "sending request: {}", requestInfo.getDataToSend().printLogLineDescription());
+              future.channel().writeAndFlush(requestInfo.getDataToSend());
+            }
+          });
+    } else {
+      httpResponseFuture.completeExceptionally(future.cause());
+    }
+  }
+
+  private void handleReuse(
+      HttpRequestInfo requestInfo,
+      CompletableFuture<HttpResponse> httpResponseFuture,
+      ChannelFuture future) {
+    if (future.isSuccess()) {
+      requestInfo.getIncomingChannel().attr(HTTP_CLIENT).set(this);
+      // send the HTTP request
+      log.trace("sending request: {}", requestInfo.getDataToSend().printLogLineDescription());
+      future.channel().writeAndFlush(requestInfo.getDataToSend());
+    } else {
+      httpResponseFuture.completeExceptionally(future.cause());
+    }
+  }
+
+  private void handleResponseComplete(
+      HttpRequestInfo requestInfo,
+      Long customTimeout,
+      boolean forceNewChannel,
+      CompletableFuture<HttpResponse> httpResponseFuture,
+      Message message,
+      Throwable throwable,
+      long requestStartTime) {
+    long elapsed = System.currentTimeMillis() - requestStartTime;
+    if (throwable == null) {
+      if (message != null) {
+        httpResponseFuture.complete((HttpResponse) message);
+      } else {
+        httpResponseFuture.complete(response());
+      }
+    } else {
+      // Half-open connection race: channel looked active but remote had already closed it.
+      // Remove the dead channel from the pool and retry once with a fresh connection.
+      // The incoming channel points at exactly the outgoing channel this request used, so we
+      // never evict an unrelated healthy channel to the same remote address. If another request
+      // has meanwhile taken ownership of the outgoing channel the attribute is null and we simply
+      // skip the removal.
+      if (throwable instanceof SocketConnectionException && !forceNewChannel) {
+        var deadChannel = requestInfo.getIncomingChannel().attr(OUTGOING_CHANNEL).get();
+        if (deadChannel != null) {
+          clientBootstrapFactory.removeChannelFromPool(deadChannel);
+        }
+        doSendRequest(requestInfo, customTimeout, true, httpResponseFuture);
+      } else {
+        log.atWarn()
+            .addArgument(elapsed)
+            .addArgument(
+                () ->
+                    Optional.ofNullable(requestInfo.getRemoteServerAddress())
+                        .map(InetSocketAddress::getHostString)
+                        .orElse("unknown"))
+            .addArgument(
+                () ->
+                    Optional.ofNullable(requestInfo.getRemoteServerAddress())
+                        .map(InetSocketAddress::getPort)
+                        .orElse(-1))
+            .log("Request failed after {}ms to {}:{}", throwable);
+        httpResponseFuture.completeExceptionally(throwable);
+      }
+    }
   }
 
   private void modifyProxyInformation(HttpRequestInfo requestInfo) {
@@ -239,6 +307,7 @@ public class NettyHttpClient {
           .errorIfChannelClosedWithoutResponse(false)
           .onReuseListener(onCreateAndReuseListener)
           .onCreationListener(onCreateAndReuseListener)
+          .dedicatedChannel(true)
           .connectToChannel();
 
       responseFuture.whenComplete(
@@ -246,7 +315,7 @@ public class NettyHttpClient {
             if (throwable == null) {
               binaryResponseFuture.complete((BinaryMessage) message);
             } else {
-              throwable.printStackTrace(); // NOSONAR
+              log.error("Request failed", throwable);
               binaryResponseFuture.completeExceptionally(throwable);
             }
           });
@@ -278,5 +347,9 @@ public class NettyHttpClient {
 
   public SslContext createClientSslContext(Optional<HttpProtocol> httpProtocol) {
     return nettySslContextFactory.createClientSslContext(httpProtocol);
+  }
+
+  public void shutdown() {
+    clientBootstrapFactory.shutdown();
   }
 }

@@ -122,6 +122,11 @@ public class MockHistoryFacade implements RbelMessageHistory.MessageHistory {
   }
 
   @Override
+  public long getHistoryRevision() {
+    return 1L;
+  }
+
+  @Override
   public Collection<RbelElement> getMessagesAfter(
       RbelElement element, boolean includeElement, MessageSortOrder sortOrder) {
     if (sortOrder == MessageSortOrder.TIMESTAMP) {

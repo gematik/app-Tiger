@@ -236,7 +236,7 @@ public class RbelLdapFacet implements RbelFacet {
                         .with(
                             div()
                                 .withClass("tile is-child pe-2")
-                                .with(pre("LDAP message").withClass("json language-json"))
+                                .with(pre("LDAP message").withClass("rendered-body language-json"))
                                 .with(table)
                                 .with(renderingToolkit.convertNested(element))));
           }

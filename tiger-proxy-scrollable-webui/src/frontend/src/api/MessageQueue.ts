@@ -204,7 +204,9 @@ export function useMessageQueue(
 
     const messages: Message[] = new Array(overview.totalFiltered);
     for (let i = 0; i < overview.totalFiltered; i++) {
-      const msg = latestMessage.value?.messages?.find((msg) => msg.offset === i);
+      const msg = latestMessage.value?.messages?.find(
+        (msg) => msg.uuid === overview.messages[i].uuid,
+      );
       if (msg) {
         messages[i] = {
           type: "loaded",
@@ -230,7 +232,14 @@ export function useMessageQueue(
     toOffsetExcluding: number;
     filterRbelPath?: string;
     sortOrder?: MessageSortOrder;
-  } = { fromOffset: -1, toOffsetExcluding: -1, filterRbelPath: "", sortOrder: undefined };
+    hash?: string;
+  } = {
+    fromOffset: -1,
+    toOffsetExcluding: -1,
+    filterRbelPath: "",
+    sortOrder: undefined,
+    hash: "",
+  };
   let messageFetchAbortController = new AbortController();
   const update = async (orderedStartIndex: number, orderedEndIndex: number) => {
     // prevent an endless loading loop if we're already inside the current view
@@ -249,7 +258,8 @@ export function useMessageQueue(
       messageFetchParams?.fromOffset === startIndex &&
       messageFetchParams?.toOffsetExcluding === endIndex + 1 &&
       messageFetchParams?.filterRbelPath === filterRbelPath.value &&
-      messageFetchParams?.sortOrder === messageSortOrder.value;
+      messageFetchParams?.sortOrder === messageSortOrder.value &&
+      messageFetchParams?.hash === latestMessageOverview.value?.hash;
 
     if (latestMessage.value == null || !isSame) {
       try {
@@ -260,6 +270,7 @@ export function useMessageQueue(
           toOffsetExcluding: endIndex + 1,
           filterRbelPath: filterRbelPath.value,
           sortOrder: messageSortOrder.value,
+          hash: latestMessageOverview.value?.hash,
         };
         const result = await proxyController.getMessages(
           {

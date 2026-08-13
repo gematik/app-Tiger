@@ -26,11 +26,8 @@ import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.RESPONSE_FUTURE;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.SECURE;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.httpclient.ClientBootstrapFactory.ReusableChannelMap.ChannelId;
+import de.gematik.test.tiger.mockserver.httpclient.ReusableChannelMap.ChannelId;
 import de.gematik.test.tiger.mockserver.model.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -46,20 +43,19 @@ import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import jdk.net.ExtendedSocketOptions;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-@RequiredArgsConstructor
 @Slf4j
 public class ClientBootstrapFactory {
 
@@ -67,6 +63,26 @@ public class ClientBootstrapFactory {
   private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoop;
   @Getter private final ReusableChannelMap channelMap = new ReusableChannelMap();
+  private final ScheduledExecutorService cleanupScheduler =
+      new ScheduledThreadPoolExecutor(
+          1,
+          r -> {
+            var t = new Thread(r, "TGR-CONNECTION-POOL-CLEANUP");
+            t.setDaemon(true);
+            return t;
+          });
+
+  public void shutdown() {
+    cleanupScheduler.shutdownNow();
+  }
+
+  public ClientBootstrapFactory(MockServerConfiguration configuration, EventLoopGroup eventLoop) {
+    this.configuration = configuration;
+    this.eventLoop = eventLoop;
+    // Start periodic cleanup task: run every minute
+    cleanupScheduler.scheduleAtFixedRate(
+        channelMap::cleanupExpiredChannels, 1, 1, TimeUnit.MINUTES);
+  }
 
   /** Groups channel configuration parameters to reduce method parameter count. */
   @Builder
@@ -98,12 +114,26 @@ public class ClientBootstrapFactory {
       @Nullable ChannelFutureListener onCreationListener,
       @Nullable ChannelFutureListener onReuseListener,
       @Nullable Long timeoutInMilliseconds,
-      @Nullable EventLoopGroup eventLoopGroup) {
+      @Nullable EventLoopGroup eventLoopGroup,
+      boolean forceNewChannel,
+      boolean dedicatedChannel) {
 
     val resolvedParams = resolveChannelParameters(requestInfo, incomingChannel, remoteAddress);
+    val explicitOutgoingChannel = requestInfo != null ? requestInfo.getOutgoingChannel() : null;
+    if (!forceNewChannel && explicitOutgoingChannel != null && explicitOutgoingChannel.isActive()) {
+      return reuseExistingChannel(
+          explicitOutgoingChannel.newSucceededFuture(),
+          resolvedParams.incomingChannel(),
+          responseFuture,
+          onReuseListener);
+    }
 
     val channelToReuse =
-        Optional.ofNullable(requestInfo).map(channelMap::getChannelToReuse).orElse(null);
+        forceNewChannel
+            ? null
+            : Optional.ofNullable(requestInfo)
+                .map(info -> channelMap.getChannelToReuse(info, dedicatedChannel))
+                .orElse(null);
     if (channelToReuse != null) {
       return reuseExistingChannel(
           channelToReuse, resolvedParams.incomingChannel(), responseFuture, onReuseListener);
@@ -120,10 +150,17 @@ public class ClientBootstrapFactory {
             .build();
 
     return createNewChannel(
+        requestInfo,
         config,
         resolvedParams.incomingChannel(),
         resolvedParams.remoteAddress(),
-        onCreationListener);
+        onCreationListener,
+        dedicatedChannel);
+  }
+
+  /** Remove a channel from the pool (e.g., when it fails during reuse). */
+  public void removeChannelFromPool(Channel outgoingChannel) {
+    channelMap.remove(outgoingChannel);
   }
 
   private record ResolvedChannelParams(Channel incomingChannel, InetSocketAddress remoteAddress) {}
@@ -155,6 +192,15 @@ public class ClientBootstrapFactory {
                     .ifPresent(oldFuture -> oldFuture.complete(null));
 
                 future.channel().attr(RESPONSE_FUTURE).set(responseFuture);
+
+                // Transfer ownership: previous incoming must NOT close the outgoing on disconnect,
+                // otherwise the newly bound incoming would see a dead channel. See
+                // HttpRequestHandler.channelInactive which closes attr(OUTGOING_CHANNEL).
+                Channel previousIncoming = future.channel().attr(INCOMING_CHANNEL).get();
+                if (previousIncoming != null && previousIncoming != incomingChannel) {
+                  previousIncoming.attr(BinaryBridgeHandler.OUTGOING_CHANNEL).set(null);
+                }
+                future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
                 incomingChannel.attr(BinaryBridgeHandler.OUTGOING_CHANNEL).set(future.channel());
               }
             });
@@ -166,10 +212,12 @@ public class ClientBootstrapFactory {
   }
 
   private ChannelFuture createNewChannel(
+      RequestInfo<?> requestInfo,
       ChannelConfig config,
       Channel incomingChannel,
       InetSocketAddress remoteAddress,
-      @Nullable ChannelFutureListener onCreationListener) {
+      @Nullable ChannelFutureListener onCreationListener,
+      boolean dedicatedChannel) {
     log.trace("creating a new channel");
 
     val timeout = resolveTimeout(config.timeoutInMilliseconds());
@@ -179,7 +227,13 @@ public class ClientBootstrapFactory {
     var channelFuture =
         createBootstrap(config, incomingChannel, remoteAddress, timeout, effectiveEventLoopGroup)
             .connect(remoteAddress);
-    registerNewChannel(channelFuture, incomingChannel, remoteAddress, onCreationListener);
+    registerNewChannel(
+        requestInfo,
+        channelFuture,
+        incomingChannel,
+        remoteAddress,
+        onCreationListener,
+        dedicatedChannel);
 
     return channelFuture;
   }
@@ -242,12 +296,15 @@ public class ClientBootstrapFactory {
   }
 
   private void registerNewChannel(
+      RequestInfo<?> requestInfo,
       ChannelFuture channelFuture,
       Channel incomingChannel,
       InetSocketAddress remoteAddress,
-      @Nullable ChannelFutureListener onCreationListener) {
+      @Nullable ChannelFutureListener onCreationListener,
+      boolean dedicatedChannel) {
 
-    channelMap.addChannel(ChannelId.from(incomingChannel, remoteAddress), channelFuture);
+    Channel boundIncomingChannel = requestInfo == null || dedicatedChannel ? incomingChannel : null;
+    channelMap.addChannel(ChannelId.from(remoteAddress), channelFuture, boundIncomingChannel);
 
     if (onCreationListener != null) {
       channelFuture.addListener(onCreationListener);
@@ -255,10 +312,13 @@ public class ClientBootstrapFactory {
 
     channelFuture.addListener(
         (ChannelFutureListener)
-            future -> {
-              future.channel().closeFuture().addListener(f -> channelMap.remove(future));
-              incomingChannel.attr(BinaryBridgeHandler.OUTGOING_CHANNEL).set(future.channel());
-            });
+            future ->
+                // NOTE: Do NOT remove from pool on close. Channels stay in pool until explicitly
+                // cleaned up. ReusableChannel.canBeReused() checks if channel is still active
+                // before allowing reuse. This allows connection keep-alive to work: if backend
+                // closes
+                // the connection, next request will see channel is inactive and create a new one.
+                incomingChannel.attr(BinaryBridgeHandler.OUTGOING_CHANNEL).set(future.channel()));
   }
 
   public int getLoopCounterForOpenConnectionFromPort(int port) {
@@ -277,51 +337,5 @@ public class ClientBootstrapFactory {
       return localAddress.getPort() == port;
     }
     return false;
-  }
-
-  public static class ReusableChannelMap {
-    private final Multimap<ChannelId, ReusableChannel> channelMap =
-        Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
-
-    public synchronized ChannelFuture getChannelToReuse(RequestInfo<?> requestInfo) {
-      return channelMap.get(ChannelId.from(requestInfo)).stream()
-          .filter(ReusableChannel::canBeReused)
-          .findAny()
-          .map(ReusableChannel::getFutureOutgoingChannel)
-          .orElse(null);
-    }
-
-    public Collection<Entry<ChannelId, ReusableChannel>> getEntries() {
-      return new ArrayList<>(channelMap.entries());
-    }
-
-    public synchronized ChannelFuture getChannelInUse(RequestInfo<?> requestInfo) {
-      return channelMap.get(ChannelId.from(requestInfo)).stream()
-          .findAny()
-          .map(ReusableChannel::getFutureOutgoingChannel)
-          .orElse(null);
-    }
-
-    public synchronized void addChannel(ChannelId channelId, ChannelFuture channelFuture) {
-      channelMap.put(channelId, new ReusableChannel(channelFuture));
-    }
-
-    public synchronized void remove(ChannelFuture channelFuture) {
-      var toRemove =
-          channelMap.entries().stream()
-              .filter(entry -> entry.getValue().getFutureOutgoingChannel().equals(channelFuture))
-              .toList();
-      toRemove.forEach(entry -> channelMap.remove(entry.getKey(), entry.getValue()));
-    }
-
-    public record ChannelId(Channel incomingChannel, InetSocketAddress remoteAddress) {
-      public static ChannelId from(RequestInfo<?> info) {
-        return from(info.getIncomingChannel(), info.getRemoteServerAddress());
-      }
-
-      public static ChannelId from(Channel incomingChannel, InetSocketAddress remoteAddress) {
-        return new ChannelId(incomingChannel, remoteAddress);
-      }
-    }
   }
 }

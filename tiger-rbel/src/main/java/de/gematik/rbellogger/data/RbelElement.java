@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.util.*;
+import de.gematik.test.tiger.common.util.ObservableQueue;
 import de.gematik.test.tiger.common.util.RecursiveTreeIterator;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.lang.ref.WeakReference;
@@ -33,7 +34,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -60,12 +62,35 @@ public class RbelElement extends RbelPathAble {
       new WeakReference<>(null);
 
   private final RbelElement parentNode;
-  private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
+  private final Queue<RbelFacet> facets = new ObservableQueue<>(this::triggerFacetMetadataUpdate);
   @Setter private Optional<Charset> charset;
   @Setter private RbelConversionPhase conversionPhase = RbelConversionPhase.UNPARSED;
 
   private long size;
   @Setter private long conversionTimeInNanos = 0;
+
+  @Getter(AccessLevel.NONE)
+  private final AtomicLong facetMetadataVersion = new AtomicLong(0);
+
+  @Getter(AccessLevel.NONE)
+  private final List<Runnable> facetMetadataUpdateListeners = new CopyOnWriteArrayList<>();
+
+  public void addFacetMetadataUpdateListener(Runnable listener) {
+    facetMetadataUpdateListeners.add(listener);
+  }
+
+  public void removeFacetMetadataUpdateListener(Runnable listener) {
+    facetMetadataUpdateListeners.remove(listener);
+  }
+
+  public void triggerFacetMetadataUpdate() {
+    facetMetadataVersion.incrementAndGet();
+    if (parentNode != null) {
+      parentNode.triggerFacetMetadataUpdate();
+      return;
+    }
+    facetMetadataUpdateListeners.forEach(Runnable::run);
+  }
 
   public byte[] getRawContent() {
     return content.isNull() ? null : content.toByteArray();

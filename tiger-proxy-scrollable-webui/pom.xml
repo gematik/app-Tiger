@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -89,7 +89,10 @@
             </goals>
             <phase>test</phase>
             <configuration>
-              <arguments>exec playwright install --with-deps chromium</arguments>
+              <arguments>run playwright:install</arguments>
+              <environmentVariables>
+                <PLAYWRIGHT_BROWSERS_PATH>${project.build.directory}/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
             </configuration>
           </execution>
           <!-- Run Unit tests with Jest -->
@@ -101,6 +104,9 @@
             <phase>test</phase>
             <configuration>
               <arguments>run test</arguments>
+              <environmentVariables>
+                <PLAYWRIGHT_BROWSERS_PATH>${project.build.directory}/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
             </configuration>
           </execution>
         </executions>

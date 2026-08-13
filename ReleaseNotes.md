@@ -1,5 +1,48 @@
 # Changelog Tiger Test platform
 
+# Release 4.4.1
+
+## Features
+
+* TGR-2158: TigerProxy: tiger proxies without an explicit configured name, will generate a random but consistent name based on the configuration.
+* TGR-2187: Tiger Proxy WebUI: Add notes about failed assertions into the RbelLog html representation.
+* TGR-2202: Tiger-Proxy and Tiger-Testenv-Mgr now expose a few REST endpoints that were previously only reachable
+  through the Workflow UI, making it easier to drive Tiger from external tools (e.g. Postman-like request
+  builders).
+
+  - `GET /webui/testRbelExpression` now also returns a structured JSON tree via a new
+    `elementsWithJsonTree` field, alongside the existing HTML tree in `elementsWithTree`. Each node contains
+    `key`, `content`, `facets` and `children`, with the full (non-abbreviated) content of every element -
+    no more scraping the ASCII/HTML tree fragment to get at the underlying data.
+
+  - `PUT /global_configuration` can now create a brand-new key, not just update an existing one. Include the
+    desired scope in the `source` field (e.g. `RUNTIME_EXPORT`, `TEST_YAML`, ...); if omitted, new keys default
+    to `RUNTIME_EXPORT`. Previously, creating a key required a full YAML round-trip via
+    `POST /global_configuration/file`, which reset every other value's precedence as a side effect.
+
+  - New endpoint `POST /global_configuration/resolvePlaceholders` resolves `${...}` placeholders in a plain-text
+    string against the current global configuration, e.g. sending `http://localhost:${my.port}` returns
+    `http://localhost:1234`. Useful for resolving mixed literal/placeholder fields (like URLs) when firing a
+    request directly instead of through a Tiger test run.
+
+## Bugfixes
+
+* TGR-2182: Close downstream TCP connection when upstream connection is closed. This prevents the proxy from keeping the connection to the backend open when the client has already closed its connection.
+* TGR-2199: Broken single message view fixed.
+* TGR-2201: Forwarded HTTP requests now reuse the connection to the backend instead of opening a new one every time. In versions
+  after 4.2.5 every request paid for a fresh TCP handshake, adding roughly 50 ms per request between proxy and server.
+  This fixes the regression introduced by TGR-1930.
+* TGR-2203: Merged multiple `Dann` steps into a single step with
+  less loose syntax to avoid steps not being found in the TigerGlue class.
+
+  Also used correct German 'gib' alternative to 'gebe' in the step definitions.
+* TGR-2206: Fixed body-removal for wrapped/inner HTTP response content without content-length header.
+* TGR-2210: Fixed adding byte-array values to tiger configuration.
+
+  They could not properly read from the configuration after being wrongly converted when adding them to the configuration.
+* TGR-2211: Make the "Started" column in the serenity HTML report visible again.
+
+
 # Release 4.4.0
 
 ## Dependencies
@@ -157,8 +200,8 @@
 * TGR-2142: Topology Visualizer: represent automatic route edges of docker and compose server types.
 * TGR-2145: WebSocket frames arriving from proxy servers on different TCP connections than the handshake are now correctly recognized and parsed.
   The converter now implements cross-hop handshake detection with three strategies:
-  (1) fast sibling connection lookup for bidirectional sessions, 
-  (2) cross-hop search for frames on different physical connections, and 
+  (1) fast sibling connection lookup for bidirectional sessions,
+  (2) cross-hop search for frames on different physical connections, and
   (3) logical endpoint normalization to show the original server/client addresses instead of proxy addresses in test output.
   Frames are additionally classified as REQUEST or RESPONSE based on the logical message direction, enabling proper assertion chains in cross-proxy scenarios.
 * TGR-2148: Topology Visualizer: when a route points to a zion server by server port, it is now correctly connected in the diagram.

@@ -28,23 +28,27 @@ import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.vau.asl.RbelAslEncryptionFacet;
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.util.RbelContent;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.Key;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
+import lombok.val;
 
 @Slf4j
 public abstract class AbstractAslDecryptionConverter extends RbelConverterPlugin {
+
+  // These numbers are derived from A_24628 to A_24633 in gemSpec_Krypt V2.30.0
+  public static final int HEADER_LENGTH = 32 + 8 + 1 + 1 + 1;
   static final int HEADER_PU_INDEX = 1;
   static final int HEADER_REQ_INDEX = 2;
   static final int HEADER_REQ_COUNTER_INDEX = 3;
@@ -71,74 +75,65 @@ public abstract class AbstractAslDecryptionConverter extends RbelConverterPlugin
   private void decryptPayloadSuccessful(
       RbelElement element, Key key, RbelConversionExecutor context) {
     try {
-      final byte[] rawContent = element.getRawContent();
-      // These numbers are derived from A_24628 to A_24633 in gemSpec_Krypt V2.30.0
-      final int headerLength = 32 + 8 + 1 + 1 + 1;
-      byte[] header = ArrayUtils.subarray(rawContent, 0, headerLength);
-      byte[] iv = ArrayUtils.subarray(rawContent, headerLength, headerLength + BODY_IV_LENGTH);
-      byte[] ct = ArrayUtils.subarray(rawContent, BODY_CT_INDEX, rawContent.length);
-      final byte[] cleartext = performActualDecryption(key, iv, ct, header);
-      if (log.isTraceEnabled()) {
-        log.trace("Decrypted VAU3/ASL message: {}", new String(cleartext));
-      }
-      final RbelElement headerElement = context.convertElement(header, element);
-      final byte[] reqCounterBytes =
-          Arrays.copyOfRange(
-              header,
-              HEADER_REQ_COUNTER_INDEX,
-              HEADER_REQ_COUNTER_INDEX + HEADER_REQ_COUNTER_LENGTH);
-      headerElement.addFacet(
-          new RbelMapFacet(
-              new RbelMultiMap<RbelElement>()
-                  .with(
-                      "version", RbelElement.wrap(new byte[] {header[0]}, headerElement, header[0]))
-                  .with(
-                      "pu",
-                      RbelElement.wrap(
-                          new byte[] {header[HEADER_PU_INDEX]},
-                          headerElement,
-                          header[HEADER_PU_INDEX]))
-                  .with(
-                      "req",
-                      RbelElement.wrap(
-                          new byte[] {header[HEADER_REQ_INDEX]},
-                          headerElement,
-                          header[HEADER_REQ_INDEX]))
-                  .with(
-                      "reqCtr",
-                      RbelElement.wrap(
-                          reqCounterBytes,
-                          headerElement,
-                          ByteBuffer.wrap(reqCounterBytes).getLong()))
-                  .with(
-                      "keyId",
-                      RbelElement.wrap(
-                          Arrays.copyOfRange(
-                              header,
-                              HEADER_KEY_ID_INDEX,
-                              HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH),
-                          headerElement,
-                          new BigInteger(
-                              Arrays.copyOfRange(
-                                  header,
-                                  HEADER_KEY_ID_INDEX,
-                                  HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH))))));
-      final RbelElement cleartextElement = context.convertElement(cleartext, element);
+      val content = element.getContent();
+      val header = content.subArray(0, HEADER_LENGTH);
+      val ad = header.toByteArray();
+      val cleartext = decryptEncryptedContent(key, content, ad);
+      val headerElement = convertHeader(element, context, header);
+      val cleartextElement = context.convertElement(cleartext, element);
       element.addFacet(buildFacet(cleartextElement, headerElement));
     } catch (Exception e) {
       log.trace("Failed to parse VAU EPA3: ", e);
     }
   }
 
+  private static RbelContent decryptEncryptedContent(Key key, RbelContent content, byte[] ad) {
+    val iv = content.subArray(HEADER_LENGTH, HEADER_LENGTH + BODY_IV_LENGTH).toByteArray();
+    val ct = content.subArray(BODY_CT_INDEX, content.size());
+    val cleartext = performActualDecryption(key, iv, ct, ad);
+    log.atTrace().addArgument(cleartext::toReadableString).log("Decrypted VAU3/ASL message: {}");
+    return cleartext;
+  }
+
+  private static RbelElement convertHeader(
+      RbelElement element, RbelConversionExecutor context, RbelContent header) {
+    val headerElement = context.convertElement(header, element);
+    val version = header.get(0);
+    val pu = header.get(HEADER_PU_INDEX);
+    val req = header.get(HEADER_REQ_INDEX);
+    val reqCounterBytes =
+        header
+            .subArray(
+                HEADER_REQ_COUNTER_INDEX, HEADER_REQ_COUNTER_INDEX + HEADER_REQ_COUNTER_LENGTH)
+            .toByteArray();
+    val keyId =
+        header
+            .subArray(HEADER_KEY_ID_INDEX, HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH)
+            .toByteArray();
+    headerElement.addFacet(
+        new RbelMapFacet(
+            new RbelMultiMap<RbelElement>()
+                .with("version", RbelElement.wrap(new byte[] {version}, headerElement, version))
+                .with("pu", RbelElement.wrap(new byte[] {pu}, headerElement, pu))
+                .with("req", RbelElement.wrap(new byte[] {req}, headerElement, req))
+                .with(
+                    "reqCtr",
+                    RbelElement.wrap(
+                        reqCounterBytes, headerElement, ByteBuffer.wrap(reqCounterBytes).getLong()))
+                .with("keyId", RbelElement.wrap(keyId, headerElement, new BigInteger(keyId)))));
+    return headerElement;
+  }
+
   public abstract RbelAslEncryptionFacet buildFacet(
       RbelElement cleartextElement, RbelElement headerElement);
 
   @SneakyThrows
-  private static byte[] performActualDecryption(Key key, byte[] iv, byte[] ciphertext, byte[] ad) {
+  private static RbelContent performActualDecryption(
+      Key key, byte[] iv, RbelContent ciphertext, byte[] ad) {
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); // NOSONAR
     cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
     cipher.updateAAD(ad);
-    return cipher.doFinal(ciphertext);
+    return RbelContent.from(new CipherInputStream(ciphertext.toInputStream(), cipher));
   }
 
   public void tryToExtractVauNonPuTracingKeys(RbelElement element, RbelConversionExecutor context) {

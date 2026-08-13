@@ -82,7 +82,7 @@ public class RBelValidatorGlue {
    * Specify the amount of seconds Tiger should wait when filtering for requests / responses before
    * reporting them as not found.
    */
-  @Gegebensei("TGR setze Anfrage Timeout auf {int} Sekunden")
+  @Gegebensei("TGR setze Anfrage/Request Timeout auf {int} Sekunden")
   @Given("TGR set request wait timeout to {int} seconds")
   public void tgrSetRequestWaitTimeout(final int waitsec) {
     TigerGlobalConfiguration.putValue(
@@ -105,7 +105,7 @@ public class RBelValidatorGlue {
    *
    * @param hostname host name (regex supported) to filter for
    */
-  @Wenn("TGR filtere Anfragen nach Server {tigerResolvedString}")
+  @Wenn("TGR filtere Anfragen/Requests nach Server {tigerResolvedString}")
   @When("TGR filter requests based on host {tigerResolvedString}")
   public void tgrFilterBasedOnHost(final String hostname) {
     TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(
@@ -117,7 +117,7 @@ public class RBelValidatorGlue {
    *
    * @param port to filter for
    */
-  @Wenn("TGR filtere Anfragen nach Port {tigerResolvedString}")
+  @Wenn("TGR filtere Anfragen/Requests nach Port {tigerResolvedString}")
   @When("TGR filter requests based on port {tigerResolvedString}")
   public void tgrFilterBasedOnPort(final String port) {
     if (StringUtils.isBlank(port)) {
@@ -157,7 +157,7 @@ public class RBelValidatorGlue {
    *
    * @param method method to filter for
    */
-  @Wenn("TGR filtere Anfragen nach HTTP Methode {tigerResolvedString}")
+  @Wenn("TGR filtere Anfragen/Requests nach HTTP Methode {tigerResolvedString}")
   @When("TGR filter requests based on method {tigerResolvedString}")
   public void tgrFilterBasedOnMethod(final String method) {
     TigerConfigurationKeys.REQUEST_FILTER_METHOD.putValue(
@@ -222,7 +222,7 @@ public class RBelValidatorGlue {
    *
    * @param path path to match
    */
-  @Wenn("TGR finde die erste Anfrage mit Pfad {string}")
+  @Wenn("TGR finde die/den erste(n) Anfrage/Request mit Pfad {string}")
   @When("TGR find first request to path {string}")
   public void findRequestToPath(final String path) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -266,7 +266,7 @@ public class RBelValidatorGlue {
    * @param value value to match at given node/attribute
    */
   @Wenn(
-      "TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string}"
+      "TGR finde die/den erste(n) Anfrage/Request mit Pfad {string} und Knoten {string} der mit {string}"
           + " übereinstimmt")
   @When("TGR find first request to path {string} with {string} matching {string}")
   public void findRequestToPathWithCommand(
@@ -286,7 +286,7 @@ public class RBelValidatorGlue {
    *
    * @param path path to match
    */
-  @Wenn("TGR finde die nächste Anfrage mit dem Pfad {string}")
+  @Wenn("TGR finde die/den nächste(n) Anfrage/Request mit dem Pfad {string}")
   @When("TGR find next request to path {string}")
   public void findNextRequestToPath(final String path) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -304,7 +304,7 @@ public class RBelValidatorGlue {
    * @param host host to match
    * @param port port to match
    */
-  @Wenn("TGR finde Anfrage mit Host {tigerResolvedString} und Port {tigerResolvedString}")
+  @Wenn("TGR finde Anfrage/Request mit Host {tigerResolvedString} und Port {tigerResolvedString}")
   @When("TGR find request with host {tigerResolvedString} and port {tigerResolvedString}")
   public void findRequestWithHostAndPort(final String host, final String port) {
     tgrFilterBasedOnHost(host);
@@ -320,7 +320,7 @@ public class RBelValidatorGlue {
    * find the NEXT request on the same connection as the last found request and memorize it in the
    * {@link #rbelMessageRetriever} instance
    */
-  @Wenn("TGR finde die nächste Anfrage auf derselben Verbindung")
+  @Wenn("TGR finde die/den nächste(n) Anfrage/Request auf derselben Verbindung")
   @When("TGR find next request on same connection")
   public void findNextMessageOnSameConnection() {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -340,7 +340,7 @@ public class RBelValidatorGlue {
    * @param value value to match at given node/attribute
    */
   @Wenn(
-      "TGR finde die nächste Anfrage mit Pfad {string} und Knoten {string} der mit {string}"
+      "TGR finde die/den nächste(n) Anfrage/Request mit Pfad {string} und Knoten {string} der mit {string}"
           + " übereinstimmt")
   @When("TGR find next request to path {string} with {string} matching {string}")
   public void findNextRequestToPathWithCommand(
@@ -362,7 +362,8 @@ public class RBelValidatorGlue {
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
    */
-  @Wenn("TGR finde die erste Anfrage mit Pfad {string} die den Knoten {string} enthält")
+  @Wenn(
+      "TGR finde die/den erste(n) Anfrage/Request mit Pfad {string} die den Knoten {string} enthält")
   @When("TGR find first request to path {string} containing node {string}")
   public void findFirstRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -388,7 +389,8 @@ public class RBelValidatorGlue {
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
    */
-  @Wenn("TGR finde die nächste Anfrage mit Pfad {string} die den Knoten {string} enthält")
+  @Wenn(
+      "TGR finde die/den nächste(n) Anfrage/Request mit Pfad {string} die den Knoten {string} enthält")
   @When("TGR find next request to path {string} containing node {string}")
   public void findNextRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -406,7 +408,7 @@ public class RBelValidatorGlue {
    *
    * @param path path to match
    */
-  @Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
+  @Wenn("TGR finde die/den letzte(n) Anfrage/Request mit dem Pfad {string}")
   @When("TGR find last request to path {string}")
   public void findLastRequestToPath(final String path) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -426,7 +428,7 @@ public class RBelValidatorGlue {
    * @param value value to match at given node/attribute
    */
   @Wenn(
-      "TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string}"
+      "TGR finde die/den letzte(n) Anfrage/Request mit Pfad {string} und Knoten {string} der mit {string}"
           + " übereinstimmt")
   @When("TGR find last request to path {string} with {string} matching {string}")
   public void findLastRequestToPathWithCommand(
@@ -448,7 +450,9 @@ public class RBelValidatorGlue {
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
    */
-  @Wenn("TGR finde die letzte Anfrage mit Knoten {string} der mit {string}" + " übereinstimmt")
+  @Wenn(
+      "TGR finde die/den letzte(n) Anfrage/Request mit Knoten {string} der mit {string}"
+          + " übereinstimmt")
   @When("TGR find last request with {string} matching {string}")
   public void findLastRequestWithNodeMatching(final String rbelPath, final String value) {
     rbelMessageRetriever.filterRequestsAndStoreInContext(
@@ -462,7 +466,7 @@ public class RBelValidatorGlue {
   }
 
   /** find the LAST request. */
-  @Wenn("TGR finde die letzte Anfrage")
+  @Wenn("TGR finde die/den letzte(n) Anfrage/Request")
   @When("TGR find the last request")
   public void findLastRequest() {
     rbelMessageRetriever.findLastRequest();
@@ -600,8 +604,7 @@ public class RBelValidatorGlue {
    *
    * @param docString value / regex that should equal or match
    */
-  @Dann("TGR prüfe aktueller Request stimmt im Body überein mit:")
-  @Dann("TGR prüfe aktuelle Anfrage stimmt im Body überein mit:")
+  @Dann("TGR prüfe aktuelle(r) Anfrage/Request stimmt im Body überein mit:")
   @Then("TGR current request body matches:")
   @ResolvableArgument
   public void currentRequestBodyMatches(final String docString) {
@@ -618,10 +621,7 @@ public class RBelValidatorGlue {
    *     DotAll regex option
    */
   @Dann(
-      "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit"
-          + " {tigerResolvedString}")
-  @Dann(
-      "TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} überein mit"
+      "TGR prüfe aktuelle(r) Anfrage/Request stimmt im Knoten {tigerResolvedString} überein mit"
           + " {tigerResolvedString}")
   @Then("TGR current request with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentRequestMessageAttributeMatches(final String rbelPath, final String value) {
@@ -634,8 +634,7 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    */
-  @Dann("TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}")
-  @Dann("TGR prüfe aktuelle Anfrage enthält Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle(r) Anfrage/Request enthält Knoten {tigerResolvedString}")
   @Then("TGR current request contains node {tigerResolvedString}")
   public void currentRequestMessageContainsNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentRequest(rbelPath)).isNotEmpty();
@@ -646,8 +645,7 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    */
-  @Dann("TGR prüfe aktueller Request enthält nicht Knoten {tigerResolvedString}")
-  @Dann("TGR prüfe aktuelle Anfrage enthält nicht Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle(r) Anfrage/Request enthält nicht Knoten {tigerResolvedString}")
   @Then("TGR current request does not contain node {tigerResolvedString}")
   public void currentRequestMessageDoesNotContainNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentRequestOrEmpty(rbelPath)).isEmpty();
@@ -661,8 +659,7 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option supplied as DocString
    */
-  @Dann("TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:")
-  @Dann("TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt überein mit:")
+  @Dann("TGR prüfe aktuelle(r) Anfrage/Request im Knoten {tigerResolvedString} stimmt überein mit:")
   @Then("TGR current request at {tigerResolvedString} matches:")
   @ResolvableArgument
   public void currentRequestMessageAtMatchesDocString(
@@ -681,10 +678,7 @@ public class RBelValidatorGlue {
    * @see JsonChecker#compareJsonStrings(String, String, boolean)
    */
   @Dann(
-      "TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein"
-          + " mit:")
-  @Dann(
-      "TGR prüfe aktuelle Anfrage im Knoten {tigerResolvedString} stimmt als {modeType} überein"
+      "TGR prüfe aktuelle(r) Anfrage/Request im Knoten {tigerResolvedString} stimmt als {modeType} überein"
           + " mit:")
   @Then("TGR current request at {tigerResolvedString} matches as {modeType}:")
   @ResolvableArgument
@@ -706,10 +700,7 @@ public class RBelValidatorGlue {
    *     MultiLine and DotAll regex option
    */
   @Dann(
-      "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit"
-          + " {tigerResolvedString}")
-  @Dann(
-      "TGR prüfe aktuelle Anfrage stimmt im Knoten {tigerResolvedString} nicht überein mit"
+      "TGR prüfe aktuelle(r) Anfrage/Request im Knoten {tigerResolvedString} stimmt nicht überein mit"
           + " {tigerResolvedString}")
   @Then(
       "TGR current request with attribute {tigerResolvedString} does not match"
@@ -817,7 +808,7 @@ public class RBelValidatorGlue {
    *
    * @param docString value / regex that should equal or match
    */
-  @Dann("TGR prüfe aktuelle Antwort stimmt im Body überein mit:")
+  @Dann("TGR prüfe aktuelle Antwort/Response stimmt im Body überein mit:")
   @Then("TGR current response body matches:")
   @ResolvableArgument
   public void currentResponseBodyMatches(final String docString) {
@@ -831,8 +822,7 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    */
-  @Dann("TGR prüfe aktuelle Antwort enthält Knoten {tigerResolvedString}")
-  @Dann("TGR prüfe aktuelle Response enthält Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Antwort/Response enthält Knoten {tigerResolvedString}")
   @Then("TGR current response contains node {tigerResolvedString}")
   public void currentResponseMessageContainsNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentResponse(rbelPath)).isNotEmpty();
@@ -843,8 +833,7 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    */
-  @Dann("TGR prüfe aktuelle Antwort enthält nicht Knoten {tigerResolvedString}")
-  @Dann("TGR prüfe aktuelle Response enthält nicht Knoten {tigerResolvedString}")
+  @Dann("TGR prüfe aktuelle Antwort/Response enthält nicht Knoten {tigerResolvedString}")
   @Then("TGR current response does not contain node {tigerResolvedString}")
   public void currentResponseMessageDoesNotContainNode(final String rbelPath) {
     assertThat(rbelMessageRetriever.findElementsInCurrentResponseOrEmpty(rbelPath)).isEmpty();
@@ -859,7 +848,7 @@ public class RBelValidatorGlue {
    *     DotAll regex option
    */
   @Dann(
-      "TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} überein mit"
+      "TGR prüfe aktuelle Antwort/Response stimmt im Knoten {tigerResolvedString} überein mit"
           + " {tigerResolvedString}")
   @Then("TGR current response with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
@@ -876,7 +865,7 @@ public class RBelValidatorGlue {
    *     MultiLine and DotAll regex option
    */
   @Dann(
-      "TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} nicht überein mit"
+      "TGR prüfe aktuelle Antwort/Response stimmt im Knoten {tigerResolvedString} nicht überein mit"
           + " {tigerResolvedString}")
   @Then(
       "TGR current response with attribute {tigerResolvedString} does not match"
@@ -895,7 +884,7 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option supplied as DocString
    */
-  @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt überein mit:")
+  @Dann("TGR prüfe aktuelle Antwort/Response im Knoten {tigerResolvedString} stimmt überein mit:")
   @Then("TGR current response at {tigerResolvedString} matches:")
   @ResolvableArgument
   public void currentResponseMessageAtMatchesDocString(
@@ -912,7 +901,8 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option supplied as DocString
    */
-  @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt nicht überein mit:")
+  @Dann(
+      "TGR prüfe aktuelle Antwort/Response im Knoten {tigerResolvedString} stimmt nicht überein mit:")
   @Then("TGR current response at {tigerResolvedString} does not match:")
   @ResolvableArgument
   public void currentResponseMessageAtDoesNotMatchDocString(
@@ -934,7 +924,7 @@ public class RBelValidatorGlue {
    * @see JsonChecker#compareJsonStrings(String, String, boolean)
    */
   @Dann(
-      "TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als {modeType} überein"
+      "TGR prüfe aktuelle Antwort/Response im Knoten {tigerResolvedString} stimmt als {modeType} überein"
           + " mit:")
   @Then("TGR current response at {tigerResolvedString} matches as {modeType}:")
   @ResolvableArgument
@@ -964,7 +954,7 @@ public class RBelValidatorGlue {
    *     DifferenceEvaluator</a>
    */
   @Dann(
-      "TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als XML mit folgenden diff"
+      "TGR prüfe aktuelle Antwort/Response im Knoten {tigerResolvedString} stimmt als XML mit folgenden diff"
           + " Optionen {tigerResolvedString} überein mit:")
   @Then(
       "TGR current response at {tigerResolvedString} matches as XML and diff options"
@@ -981,7 +971,7 @@ public class RBelValidatorGlue {
   }
 
   /** Prints the rbel-tree of all requests and responses to the System-out */
-  @Dann("TGR gebe alle Nachrichten als Rbel-Tree aus")
+  @Dann("TGR gebe/gib alle Nachrichten als Rbel-Tree aus")
   @Then("TGR print all messages as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printAllMessages() {
@@ -995,8 +985,7 @@ public class RBelValidatorGlue {
   }
 
   /** Prints the rbel-tree of the current response to the System-out */
-  @Dann("TGR gebe aktuelle Response als Rbel-Tree aus")
-  @Dann("TGR gebe aktuelle Antwort als Rbel-Tree aus")
+  @Dann("TGR gebe/gib aktuelle Antwort/Response als Rbel-Tree aus")
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
@@ -1004,8 +993,7 @@ public class RBelValidatorGlue {
   }
 
   /** Prints the rbel-tree of the current request to the System-out */
-  @Dann("TGR gebe aktuelle Request als Rbel-Tree aus")
-  @Dann("TGR gebe aktuelle Anfrage als Rbel-Tree aus")
+  @Dann("TGR gebe/gib aktuelle(n) Anfrage/Request als Rbel-Tree aus")
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {

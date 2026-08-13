@@ -24,6 +24,7 @@ import static de.gematik.test.tiger.lib.rbel.RbelMessageRetriever.getValueOrCont
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.exceptions.NotedAssertionError;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -64,13 +65,14 @@ public class RbelMessageNodeElementMatchExecutor {
     }
     if (shouldMatch && !foundMatchingNode) {
       if (elements.size() == 1) {
-        throw new AssertionError(
-            "Element value:\n"
-                + getValueOrContentString(elements.get(0))
-                + "\nExpected:\n"
-                + oracle);
+        throw NotedAssertionError.createNotedAssertionError(
+            elements.get(0),
+            String.format(
+                "Element value:%n%s%nExpected:%n%s",
+                getValueOrContentString(elements.get(0)), oracle));
       } else {
-        throw new AssertionError(
+        throw NotedAssertionError.createNotedAssertionError(
+            elements.get(0),
             String.format(
                 "Expected that nodes to rbel path '%s' are equal to or match '%s'",
                 rbelPath, oracle));
@@ -94,17 +96,18 @@ public class RbelMessageNodeElementMatchExecutor {
     String text = getValueOrContentString(element);
     boolean itMatches =
         text.equals(oracle) || (regexPattern != null && regexPattern.matcher(text).matches());
-    if (shouldMatch) {
-      if (itMatches) {
-        foundMatchingNode = true;
-      }
-    } else {
-      if (itMatches) {
-        throw new AssertionError(
-            String.format(
-                "Did not expect that value '%s' of node '%s' is equal to or matches '%s'",
-                text, rbelPath, oracle));
-      }
+    if (!itMatches) {
+      return;
     }
+
+    if (shouldMatch) {
+      foundMatchingNode = true;
+      return;
+    }
+    throw NotedAssertionError.createNotedAssertionError(
+        element,
+        String.format(
+            "Did not expect that value '%s' of node '%s' is equal to or matches '%s'",
+            text, rbelPath, oracle));
   }
 }
