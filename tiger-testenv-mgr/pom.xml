@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-testenv-mgr</artifactId>
@@ -373,7 +373,7 @@
       <plugin>
         <groupId>org.openapitools</groupId>
         <artifactId>openapi-generator-maven-plugin</artifactId>
-        <version>7.23.0</version>
+        <version>7.24.0</version>
         <executions>
           <execution>
             <id>generate java code</id>

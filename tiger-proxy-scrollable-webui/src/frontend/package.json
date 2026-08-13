@@ -14,7 +14,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "format": "prettier --write src/",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "playwright:install": "npx playwright install chromium"
   },
   "overrides": {
     "ansi-regex": "5.0.1",
@@ -54,7 +55,7 @@
     "vitest": "4.1.8",
     "vue": "3.5.32",
     "vue-router": "5.0.4",
-    "vue-virtual-scroller": "2.0.1"
+    "vue-virtual-scroller": "3.0.4"
   },
   "devDependencies": {
     "@types/bootstrap": "5.2.10",

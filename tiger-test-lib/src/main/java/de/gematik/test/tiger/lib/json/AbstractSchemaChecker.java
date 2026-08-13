@@ -26,6 +26,7 @@ import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
+import de.gematik.test.tiger.exceptions.NotedAssertionError;
 import java.util.stream.Collectors;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
@@ -38,7 +39,12 @@ public abstract class AbstractSchemaChecker extends AbstractRbelJsonChecker {
 
   @Override
   public void verify(String oracle, RbelElement element, String diffOptionCSV) {
-    compareToSchema(getAsJsonString(element), oracle);
+    try {
+
+      compareToSchema(getAsJsonString(element), oracle);
+    } catch (SchemaAssertionError e) {
+      throw NotedAssertionError.createNotedException(element, e.getMessage(), () -> e);
+    }
   }
 
   public void compareToSchema(String contentToCheck, String schema) {

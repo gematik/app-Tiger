@@ -156,7 +156,7 @@ public class RbelHtmlRenderingToolkit {
   public static DivTag createNote(String className, RbelNoteFacet note) {
     return div(i().with(new UnescapedText(note.getValue().replace("\n", "<br/>"))))
         .withClass(
-            "is-family-primary has-text-weight-light m-3 "
+            "rbel-postit is-family-primary has-text-weight-light m-3 "
                 + className
                 + " "
                 + note.getStyle().toCssClass())
@@ -381,16 +381,6 @@ public class RbelHtmlRenderingToolkit {
                 script()
                     .withSrc(
                         localRessources
-                            ? "../webjars/sockjs-client/sockjs.min.js"
-                            : "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"),
-                script()
-                    .withSrc(
-                        localRessources
-                            ? "../webjars/stomp-websocket/stomp.min.js"
-                            : "https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"),
-                script()
-                    .withSrc(
-                        localRessources
                             ? "../webjars/jquery/jquery.min.js"
                             : "https://code.jquery.com/jquery-4.0.0.js"),
                 script()
@@ -561,13 +551,16 @@ public class RbelHtmlRenderingToolkit {
   }
 
   private static String renderNoteValues(RbelElement element) {
-    return span()
-        .with(
-            element.getNotes().stream()
-                .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
-                .toList())
-        .withClass(JSON_NOTE)
-        .render();
+    String notesJson =
+        element.getNotes().stream()
+            .map(
+                note ->
+                    String.format(
+                        "{\"text\":\"%s\",\"style\":\"%s\"}",
+                        StringEscapeUtils.escapeJson(note.getValue()),
+                        note.getStyle().toCssClass()))
+            .collect(Collectors.joining(",", "[", "]"));
+    return span().withClass("json-note-data").attr("data-notes", notesJson).render();
   }
 
   private JsonNode shadeJsonArray(
@@ -575,7 +568,7 @@ public class RbelHtmlRenderingToolkit {
     final ArrayNode output = objectMapper.createArrayNode();
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
-      addNotePlaceholder(uuid, "\"" + uuid + "\"", span().render(), originalElement);
+      addNotePlaceholder(uuid, "\"" + uuid + "\"", "", originalElement);
       output.add(uuid.toString());
     }
     for (int i = 0; i < input.size(); i++) {
@@ -592,10 +585,7 @@ public class RbelHtmlRenderingToolkit {
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
       addNotePlaceholder(
-          uuid,
-          "\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","),
-          span().render(),
-          originalElement);
+          uuid, "\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","), "", originalElement);
       output.put("note", uuid.toString());
     }
     final var childLookup = new HashMap<String, RbelElement>();
@@ -640,6 +630,11 @@ public class RbelHtmlRenderingToolkit {
   }
 
   public List<DomContent> convertNested(final RbelElement el) {
+    return convertNested(el, true);
+  }
+
+  public List<DomContent> convertNested(
+      final RbelElement el, boolean includeNotesInSubsectionHeader) {
     return el.traverseNestedMembers()
         .filter(entry -> !entry.getFacets().isEmpty())
         .map(
@@ -654,11 +649,19 @@ public class RbelHtmlRenderingToolkit {
         .map(
             pair ->
                 generateSubsection(
-                    pair.getKey().findNodePath(), pair.getKey(), pair.getValue().get()))
+                    pair.getKey().findNodePath(),
+                    pair.getKey(),
+                    pair.getValue().get(),
+                    includeNotesInSubsectionHeader))
         .toList();
   }
 
   public DomContent generateSubsection(String title, RbelElement element, ContainerTag<?> content) {
+    return generateSubsection(title, element, content, true);
+  }
+
+  public DomContent generateSubsection(
+      String title, RbelElement element, ContainerTag<?> content, boolean includeNotesInHeader) {
     boolean showExpanded = showElementExpanded(element);
     DivTag titleDiv =
         div(h2(title).withClass("title").withStyle("word-break: break-word;"))
@@ -666,8 +669,10 @@ public class RbelHtmlRenderingToolkit {
             .with(
                 RbelMessageRenderer.showBodyToggleButton(
                     showExpanded, "msg-section-toggle", Optional.empty()))
-            .with(showContentButtonAndDialog(element, this))
-            .with(addNotes(element));
+            .with(showContentButtonAndDialog(element, this));
+    if (includeNotesInHeader) {
+      titleDiv.with(addNotes(element));
+    }
     DivTag bodyDiv =
         div(div(content.withClass("notification tile is-child box pe-2"))
                 .withClass("notification tile is-parent pe-2"))

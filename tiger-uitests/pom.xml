@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -189,6 +189,10 @@
               <includes>
                 <include>**/workflowui/main/*.java</include>
               </includes>
+              <environmentVariables>
+                <!-- Point this to the exact same relative or absolute path where the frontend downloaded it -->
+                <PLAYWRIGHT_BROWSERS_PATH>${maven.multiModuleProjectDirectory}/tiger-proxy-scrollable-webui/src/frontend/target/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
               <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
             </configuration>
             <executions>
@@ -206,9 +210,14 @@
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-maven-plugin</artifactId>
             <version>${project.version}</version>
-            <goals>
-              <goal>generate-serenity-reports</goal>
-            </goals>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>generate-serenity-reports</goal>
+                </goals>
+                <phase>verify</phase>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
@@ -297,6 +306,10 @@
               <includes>
                 <include>**/workflowui/replay/*.java</include>
               </includes>
+              <environmentVariables>
+                <!-- Point this to the exact same relative or absolute path where the frontend downloaded it -->
+                <PLAYWRIGHT_BROWSERS_PATH>${maven.multiModuleProjectDirectory}/tiger-proxy-scrollable-webui/src/frontend/target/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
               <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
             </configuration>
             <executions>
@@ -405,6 +418,10 @@
               <includes>
                 <include>**/workflowui/sequencediagram/*.java</include>
               </includes>
+              <environmentVariables>
+                <!-- Point this to the exact same relative or absolute path where the frontend downloaded it -->
+                <PLAYWRIGHT_BROWSERS_PATH>${maven.multiModuleProjectDirectory}/tiger-proxy-scrollable-webui/src/frontend/target/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
               <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
             </configuration>
             <executions>
@@ -512,6 +529,10 @@
               <includes>
                 <include>**/workflowui/testselector/*.java</include>
               </includes>
+              <environmentVariables>
+                <!-- Point this to the exact same relative or absolute path where the frontend downloaded it -->
+                <PLAYWRIGHT_BROWSERS_PATH>${maven.multiModuleProjectDirectory}/tiger-proxy-scrollable-webui/src/frontend/target/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
               <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
             </configuration>
             <executions>
@@ -554,6 +575,10 @@
               <includes>
                 <include>**/workflowui/topology/*.java</include>
               </includes>
+              <environmentVariables>
+                <!-- Point this to the exact same relative or absolute path where the frontend downloaded it -->
+                <PLAYWRIGHT_BROWSERS_PATH>${maven.multiModuleProjectDirectory}/tiger-proxy-scrollable-webui/src/frontend/target/playwright-browsers</PLAYWRIGHT_BROWSERS_PATH>
+              </environmentVariables>
               <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
             </configuration>
             <executions>

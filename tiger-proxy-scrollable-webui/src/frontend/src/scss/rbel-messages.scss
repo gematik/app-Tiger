@@ -65,12 +65,59 @@
 
   .json-note {
     position: relative;
-    border-radius: 0.4em;
-    border: 1px solid #6b999f;
-    color: #8aecf7;
-    padding: 0.3rem;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    vertical-align: baseline;
+    max-width: 100%;
+  }
+
+  .rbel-postit {
+    position: relative;
     display: inline-block;
-    margin-left: 0.5rem;
+    min-width: 0;
+    width: fit-content;
+    max-width: min(100%, 16rem);
+    margin: 0.2rem 0.15rem;
+    padding: 0.3rem 0.45rem;
+    border-radius: 0.35rem;
+    border: 1px solid transparent;
+    box-shadow: 0 0.15rem 0.4rem rgba(0, 0, 0, 0.14);
+    font-style: normal;
+    font-size: 1em;
+    line-height: 1.2;
+    vertical-align: baseline;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .json-note > span,
+  .rbel-postit > span,
+  .rbel-postit__line {
+    display: block;
+  }
+
+  .json-note.text-info,
+  .json-note.has-text-info,
+  .rbel-postit.text-info,
+  .rbel-postit.has-text-info {
+    color: #075985 !important;
+    background: #e0f2fe !important;
+    border-color: #7dd3fc !important;
+  }
+
+  .json-note.has-text-warning,
+  .rbel-postit.has-text-warning {
+    color: #713f12 !important;
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+  }
+
+  .json-note.has-text-danger,
+  .rbel-postit.has-text-danger {
+    color: #7f1d1d !important;
+    background: #fee2e2 !important;
+    border-color: #f87171 !important;
   }
 
   h1.title {
@@ -116,8 +163,13 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     padding: 0.5rem;
-    font-size: 0.7em;
+    font-size: 0.75rem;
     margin-bottom: 0;
+  }
+
+  /* Note data is a server-rendered data container; keep it invisible until JS replaces it */
+  .json-note-data {
+    display: none;
   }
 
   prekey {
@@ -128,7 +180,7 @@
     padding: 0.2rem;
   }
 
-  pre.json {
+  pre.rendered-body {
     color: greenyellow !important;
   }
 
@@ -137,14 +189,14 @@
   }
 
   pre.value,
-  pre.json,
+  pre.rendered-body,
   pre.value div,
-  pre.json div {
+  pre.rendered-body div {
     word-break: break-all;
     white-space: break-spaces;
   }
 
-  pre.json {
+  pre.rendered-body {
     word-break: break-all;
     white-space: break-spaces;
     color: greenyellow !important;
@@ -183,7 +235,7 @@
     }
 
     pre,
-    pre.json,
+    pre.rendered-body,
     pre.value {
       color: darkred !important;
       background-color: white !important;
@@ -197,7 +249,7 @@
       break-before: page;
     }
 
-    div pre.json,
+    div pre.rendered-body,
     div pre.value {
       break-inside: avoid-page;
     }
@@ -209,7 +261,6 @@
       display: none;
     }
   }
-
 
   .radio-item {
     display: inline-block;
@@ -705,4 +756,3 @@
 @page {
   size: 594mm 420mm;
 }
-

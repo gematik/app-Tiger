@@ -420,9 +420,11 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       final int endOfChunkedBody = determineEndOfChunkedBody(content, bodyDataStartOffset, eol);
       targetElement.setUsedBytes(endOfChunkedBody);
       return endOfChunkedBody;
-    } else {
+    } else if (targetElement.getParentNode() == null) {
       targetElement.setUsedBytes(bodyDataStartOffset);
       return bodyDataStartOffset;
+    } else {
+      return content.size();
     }
   }
 

@@ -27,6 +27,7 @@ import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -63,6 +64,7 @@ public class RbelMessageHistory {
   private final List<Consumer<RbelElement>> messageRemovedFromHistoryCallbacks = new LinkedList<>();
 
   private long messageSequenceNumber = 0;
+  private final AtomicLong historyRevision = new AtomicLong(0);
 
   @Getter private long currentBufferSize = 0;
 
@@ -102,11 +104,13 @@ public class RbelMessageHistory {
     rbelElement.addOrReplaceFacet(
         RbelMessageTimingFacet.builder().transmissionTime(transmissionTime).build());
     timestampSortedMessages.add(rbelElement);
+    rbelElement.addFacetMetadataUpdateListener(this::bumpHistoryRevision);
 
     if (!rbelElement.getConversionPhase().isFinished()) {
       unfinishedMessages.put(seqNumber, rbelElement);
     }
     manageRbelBufferSize();
+    bumpHistoryRevision();
   }
 
   private long addSequenceNumber(RbelElement rbelElement) {
@@ -141,6 +145,7 @@ public class RbelMessageHistory {
         messageByUuid.clear();
         unfinishedMessages.clear();
         timestampSortedMessages.clear();
+        bumpHistoryRevision();
       }
       if (rbelBufferSizeInMb > 0) {
         long exceedingLimit = currentBufferSize - ((long) rbelBufferSizeInMb * 1024 * 1024);
@@ -150,6 +155,7 @@ public class RbelMessageHistory {
               .addArgument(rbelBufferSizeInMb)
               .log("Buffer is currently at {} MB which exceeds the limit of {} MB");
         }
+        boolean removedMessages = false;
         while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
           log.trace("Exceeded buffer size, dropping oldest message in history");
           final RbelElement messageToDrop = messageHistory.pollFirstEntry().getValue();
@@ -160,6 +166,11 @@ public class RbelMessageHistory {
           messageByUuid.remove(messageToDrop.getUuid());
           messageToDrop.getSequenceNumber().ifPresent(unfinishedMessages::remove);
           timestampSortedMessages.remove(messageToDrop);
+          messageToDrop.removeFacetMetadataUpdateListener(this::bumpHistoryRevision);
+          removedMessages = true;
+        }
+        if (removedMessages) {
+          bumpHistoryRevision();
         }
       }
     }
@@ -187,6 +198,12 @@ public class RbelMessageHistory {
   }
 
   public synchronized void clearAllMessages() {
+    if (messageHistory.isEmpty()) {
+      return;
+    }
+    messageHistory
+        .values()
+        .forEach(msg -> msg.removeFacetMetadataUpdateListener(this::bumpHistoryRevision));
     currentBufferSize = 0;
     messageHistory.clear();
     knownMessageUuids.clear();
@@ -194,6 +211,7 @@ public class RbelMessageHistory {
     unfinishedMessages.clear();
     timestampSortedMessages.clear();
     historyClearCallbacks.forEach(Runnable::run);
+    bumpHistoryRevision();
   }
 
   public synchronized void removeMessage(RbelElement rbelMessage) {
@@ -209,6 +227,8 @@ public class RbelMessageHistory {
                 messageByUuid.remove(rbelMessage.getUuid());
                 unfinishedMessages.remove(seq);
                 timestampSortedMessages.remove(rbelMessage);
+                rbelMessage.removeFacetMetadataUpdateListener(this::bumpHistoryRevision);
+                bumpHistoryRevision();
               }
             });
   }
@@ -284,8 +304,19 @@ public class RbelMessageHistory {
     if (element.getParentNode() != null) {
       return;
     }
-    element.getSequenceNumber().ifPresent(unfinishedMessages::remove);
+    boolean wasUnfinished =
+        element
+            .getSequenceNumber()
+            .map(seq -> unfinishedMessages.remove(seq) != null)
+            .orElse(false);
+    if (wasUnfinished) {
+      bumpHistoryRevision();
+    }
     removeFuturesWaitingForCompletionOf(element).forEach(future -> future.complete(element));
+  }
+
+  private void bumpHistoryRevision() {
+    historyRevision.incrementAndGet();
   }
 
   private List<CompletableFuture<RbelElement>> removeFuturesWaitingForCompletionOf(
@@ -347,6 +378,12 @@ public class RbelMessageHistory {
      * incremented on every successful registration and is <em>not</em> decreased by removals.
      */
     long getMessageSequenceNumber();
+
+    /**
+     * Returns a monotonic revision that increases whenever the visible history or any message
+     * metadata that impacts rendering changes.
+     */
+    long getHistoryRevision();
 
     /**
      * Returns the messages located "after" the given anchor in the requested {@link
@@ -475,6 +512,11 @@ public class RbelMessageHistory {
     @Override
     public long getMessageSequenceNumber() {
       return messageSequenceNumber;
+    }
+
+    @Override
+    public long getHistoryRevision() {
+      return historyRevision.get();
     }
 
     @Override

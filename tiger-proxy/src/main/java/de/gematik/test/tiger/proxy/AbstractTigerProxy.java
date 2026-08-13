@@ -36,6 +36,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
+import de.gematik.test.tiger.proxy.name.NameGenerator;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -49,11 +50,7 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -65,6 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 @EqualsAndHashCode
 public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
@@ -82,7 +80,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   @Getter private RbelLogger rbelLogger;
   @Getter private RbelFileWriter rbelFileWriter;
   @Getter private RbelFileReader rbelFileReader;
-  @Getter private Optional<String> name;
+  @Getter private String name;
   @Getter protected final Logger log;
   @Getter private boolean isShuttingDown = false;
 
@@ -91,7 +89,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       Executors.newCachedThreadPool(
           r -> {
             Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setName("TigerProxy" + getName().map(n -> "-" + n).orElse("") + "-" + t.getId());
+            t.setName("TigerProxy-%s-%d".formatted(name, t.getId()));
             return t;
           });
 
@@ -104,10 +102,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
   protected AbstractTigerProxy(
       TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
-    final String loggerName =
-        StringUtils.isNotBlank(configuration.getName()) ? "(" + configuration.getName() + ")" : "";
+    name = getOrGenerateProxyName(configuration);
+    final String loggerName = StringUtils.isNotBlank(getName()) ? "(" + getName() + ")" : "";
     log = LoggerFactory.getLogger(this.getClass().getName() + loggerName);
-    name = Optional.ofNullable(configuration.getName());
     if (configuration.getTls() == null) {
       throw new TigerProxyStartupException("no TLS-configuration found!");
     }
@@ -130,6 +127,16 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       readTrafficFromSourceFile(configuration.getFileSaveInfo().getSourceFile());
     } else {
       fileParsingFuture = CompletableFuture.completedFuture(null);
+    }
+  }
+
+  @SneakyThrows
+  private String getOrGenerateProxyName(TigerProxyConfiguration configuration) {
+    if (StringUtils.isEmpty(configuration.getName())) {
+      return NameGenerator.generateName(
+          JsonMapper.builder().build().writeValueAsString(configuration).hashCode());
+    } else {
+      return configuration.getName();
     }
   }
 
@@ -433,7 +440,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public String proxyName() {
-    return name.orElse("");
+    return name;
   }
 
   public void clearAllMessages() {

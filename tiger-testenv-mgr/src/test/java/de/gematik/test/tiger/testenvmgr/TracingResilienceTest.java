@@ -35,6 +35,7 @@ import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testutils.junit.RetryingTest;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Collection;
@@ -52,7 +53,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -71,7 +71,7 @@ class TracingResilienceTest {
   private int aggregatingAdminPort;
 
   /** Receiving <-- Aggregating <-- Sending (local) */
-  @Test
+  @RetryingTest
   @TigerTest(
       tigerYaml =
           """

@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.4.0</version>
+  <version>4.4.1</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -58,37 +58,37 @@
                                          https://service.gematik.de/browse/DEVOPS-1233
                                     -->
 
-    <version.apache-mime4j>0.8.13</version.apache-mime4j>
+    <version.apache-mime4j>0.8.14</version.apache-mime4j>
     <version.archunit>1.4.2</version.archunit>
     <version.asm>9.10.1</version.asm>
 
     <version.assertj>3.27.7</version.assertj>
     <version.awaitility>4.3.0</version.awaitility>
     <version.bootstrap>5.3.8</version.bootstrap>
-    <version.bouncycastle>1.83</version.bouncycastle>
+    <version.bouncycastle>1.85</version.bouncycastle>
     <version.central-publishing-maven-plugin>0.11.0</version.central-publishing-maven-plugin>
-    <version.commons-codec>1.21.0</version.commons-codec>
+    <version.commons-codec>1.22.1</version.commons-codec>
     <version.commons-collections4>4.5.0</version.commons-collections4>
     <version.commons-compress>1.28.0</version.commons-compress>
     <version.commons-io>2.22.0</version.commons-io>
-    <version.commons-jexl3>3.6.1</version.commons-jexl3>
+    <version.commons-jexl3>3.7.0</version.commons-jexl3>
     <version.commons-lang3>3.20.0</version.commons-lang3>
     <version.commons-text>1.15.0</version.commons-text>
-    <version.cucumber>7.34.0</version.cucumber>
+    <version.cucumber>7.34.6</version.cucumber>
     <version.dnsjava>3.6.5</version.dnsjava>
     <version.dokka-maven-plugin>2.2.0</version.dokka-maven-plugin>
     <version.exec-maven-plugin>3.6.3</version.exec-maven-plugin>
-    <version.font-awesome>7.2.0</version.font-awesome>
-    <version.frontend-maven-plugin>2.0.1</version.frontend-maven-plugin>
+    <version.font-awesome>7.3.0</version.font-awesome>
+    <version.frontend-maven-plugin>2.0.2</version.frontend-maven-plugin>
     <!-- serenity -> restassured -> groovy - restassured is not yet compatible with groovy v5 -->
-    <version.groovy>5.0.7</version.groovy>
+    <version.groovy>5.0.8</version.groovy>
     <version.gson>2.14.0</version.gson>
     <version.hamcrest>3.0</version.hamcrest>
     <version.highlightjs>11.11.1</version.highlightjs>
     <version.htmlunit>3.55.0</version.htmlunit>
-    <version.io.rest-assured>6.0.0</version.io.rest-assured>
+    <version.io.rest-assured>6.0.1</version.io.rest-assured>
     <version.jackson>2.17.2</version.jackson>
-    <version.jackson-databind-nullable>0.2.10</version.jackson-databind-nullable>
+    <version.jackson-databind-nullable>0.2.11</version.jackson-databind-nullable>
     <version.jacoco-maven-plugin>0.8.15</version.jacoco-maven-plugin>
     <version.jakarta.xml.bind>4.0.5</version.jakarta.xml.bind>
     <version.javaparser>3.28.2</version.javaparser>
@@ -99,17 +99,17 @@
     <version.jose4j>0.9.6</version.jose4j>
     <version.java-websocket>1.6.0</version.java-websocket>
     <version.jquery>4.0.0</version.jquery>
-    <version.json>20260522</version.json>
+    <version.json>20260719</version.json>
     <version.json-schema-validator>3.0.6</version.json-schema-validator>
     <!-- 20240303 -->
-    <version.json-unit>5.1.0</version.json-unit>
+    <version.json-unit>5.1.2</version.json-unit>
     <version.jsonschema-generator>5.0.0</version.jsonschema-generator>
-    <version.jsoup>1.22.2</version.jsoup>
+    <version.jsoup>1.23.1</version.jsoup>
     <!-- junit 6: platform and jupiter now share the same version -->
-    <version.junit>6.1.1</version.junit>
+    <version.junit>6.1.2</version.junit>
     <version.junit-platform>${version.junit}</version.junit-platform>
     <version.junit5>${version.junit}</version.junit5>
-    <version.kotlin>2.4.0</version.kotlin>
+    <version.kotlin>2.4.10</version.kotlin>
     <version.kotlin-io>0.9.1</version.kotlin-io>
     <version.kotlin-serialization>1.11.0</version.kotlin-serialization>
     <version.kotlinx-coroutines>1.11.0</version.kotlinx-coroutines>
@@ -121,7 +121,7 @@
     <version.maven-assembly-plugin>3.8.0</version.maven-assembly-plugin>
     <version.maven-compiler-plugin>3.15.0</version.maven-compiler-plugin>
     <version.maven-deploy-plugin>3.1.4</version.maven-deploy-plugin>
-    <version.maven-jar-plugin>3.5.0</version.maven-jar-plugin>
+    <version.maven-jar-plugin>3.5.1</version.maven-jar-plugin>
     <version.maven-plugin-testing>3.5.1</version.maven-plugin-testing>
     <version.maven-plugin-tools>3.15.2</version.maven-plugin-tools>
     <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
@@ -132,15 +132,15 @@
     <version.mockito>5.23.0</version.mockito>
     <version.mockserver>5.15.0</version.mockserver>
     <version.netty>4.2.16.Final</version.netty>
-    <version.node>v24.18.0</version.node>
-    <version.npm>11.17.0</version.npm>
+    <version.node>v24.19.0</version.node>
+    <version.npm>12.0.2</version.npm>
     <version.objenesis>3.5</version.objenesis>
     <version.okhttp>5.4.0</version.okhttp>
     <version.pcap4j>1.8.2</version.pcap4j>
     <version.org.glassfish.jaxb>4.0.9</version.org.glassfish.jaxb>
-    <version.selenium>4.45.0</version.selenium>
-    <version.serenity.core>5.3.10</version.serenity.core>
-    <version.serenity.maven.plugin>5.3.10</version.serenity.maven.plugin>
+    <version.selenium>4.46.0</version.selenium>
+    <version.serenity.core>5.3.11</version.serenity.core>
+    <version.serenity.maven.plugin>5.3.11</version.serenity.maven.plugin>
     <version.slf4j>2.0.18</version.slf4j>
     <version.snakeyaml>2.6</version.snakeyaml>
     <version.sockjs-client>1.5.1</version.sockjs-client>
@@ -152,12 +152,12 @@
     <version.stomp-websocket>2.3.4</version.stomp-websocket>
     <version.swagger-parser>2.1.45</version.swagger-parser>
     <version.system-stubs>2.1.8</version.system-stubs>
-    <version.unirest>4.10.0</version.unirest>
+    <version.unirest>4.10.1</version.unirest>
     <version.velocity>2.3</version.velocity>
     <version.webjars-locator-core>0.59</version.webjars-locator-core>
     <version.wiremock>3.13.2</version.wiremock>
     <version.xmlunit>2.12.0</version.xmlunit>
-    <version.byte-buddy>1.18.11</version.byte-buddy>
+    <version.byte-buddy>1.18.11-jdk5</version.byte-buddy>
   </properties>
 
   <dependencyManagement>
@@ -261,7 +261,7 @@
       <dependency>
         <groupId>tools.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.1</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -278,7 +278,7 @@
       <dependency>
         <groupId>com.github.oshi</groupId>
         <artifactId>oshi-core</artifactId>
-        <version>7.3.2</version>
+        <version>7.4.2</version>
       </dependency>
       <dependency>
         <groupId>com.github.victools</groupId>
@@ -344,83 +344,83 @@
       <dependency>
         <groupId>commons-validator</groupId>
         <artifactId>commons-validator</artifactId>
-        <version>1.10.1</version>
+        <version>1.11.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-client</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-extension</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.4.0</version>
+        <version>4.4.1</version>
       </dependency>
       <dependency>
         <groupId>dnsjava</groupId>
@@ -430,7 +430,7 @@
       <dependency>
         <groupId>io.github.classgraph</groupId>
         <artifactId>classgraph</artifactId>
-        <version>4.8.184</version>
+        <version>4.8.186</version>
       </dependency>
       <dependency>
         <groupId>io.github.oshai</groupId>
@@ -476,7 +476,7 @@
         <!-- transitive from serenity-core - in conflict with swagger-parser -->
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.14.2</version>
+        <version>2.14.3</version>
       </dependency>
       <dependency>
         <groupId>net.bytebuddy</groupId>
@@ -487,6 +487,17 @@
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy-agent</artifactId>
         <version>${version.byte-buddy}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.datafaker</groupId>
+        <artifactId>datafaker</artifactId>
+        <version>2.7.0</version>
+      </dependency>
+      <dependency>
+        <!-- conflict between datafaker and swagger-parser -->
+        <groupId>com.googlecode.libphonenumber</groupId>
+        <artifactId>libphonenumber</artifactId>
+        <version>9.0.36</version>
       </dependency>
       <dependency>
         <groupId>net.java.dev.jna</groupId>
@@ -617,7 +628,7 @@
       <dependency>
         <groupId>org.apache.httpcomponents.client5</groupId>
         <artifactId>httpclient5</artifactId>
-        <version>5.6.2</version>
+        <version>5.6.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.james</groupId>

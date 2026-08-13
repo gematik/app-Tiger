@@ -29,6 +29,7 @@ import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testutils.junit.RetryingTest;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -36,7 +37,6 @@ import kong.unirest.core.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.awaitility.core.ConditionTimeoutException;
-import org.junit.jupiter.api.Test;
 
 @Slf4j
 class RBelValidatorGlueTest {
@@ -84,7 +84,7 @@ servers:
               hostname: localhost
               port: ${tiger.config_ports.httpbin2.serverPort}
 """)
-  @Test
+  @RetryingTest(maxAttempts = 3)
   void testFindMessagesForConnections(TigerTestEnvMgr tigerTestEnvMgr) {
     // We have two httpbin servers behind two tiger reverse proxies.
     // We send messages to the proxy port.

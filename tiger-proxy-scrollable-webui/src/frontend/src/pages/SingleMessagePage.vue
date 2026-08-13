@@ -32,6 +32,7 @@ import RawContentModal from "@/components/RawContentModal.vue";
 import Message from "@/components/Message.vue";
 import RbelQueryModal from "@/components/RbelQueryModal.vue";
 import SettingsHeader from "@/components/SettingsHeader.vue";
+import { messageQueueSymbol } from "@/api/MessageQueue.ts";
 import type { Message as MessageType, UseMessageQueueReturn } from "@/api/MessageQueue.ts";
 
 const route = useRoute();
@@ -103,6 +104,7 @@ function createMockMessageQueue(): UseMessageQueueReturn {
 }
 
 const mockMessageQueue = createMockMessageQueue();
+provide(messageQueueSymbol, mockMessageQueue);
 
 async function fetchMessageByUuid(uuid: string) {
   isLoading.value = true;

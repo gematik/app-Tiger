@@ -23,6 +23,7 @@ package de.gematik.test.tiger.lib.json;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.test.tiger.exceptions.NotedAssertionError;
 import de.gematik.test.tiger.lib.rbel.RbelContentValidator;
 import tools.jackson.databind.JsonNode;
 
@@ -38,7 +39,8 @@ public abstract class AbstractRbelJsonChecker implements RbelContentValidator {
           .map(JsonNode::toString)
           .orElse("");
     } else {
-      throw new AssertionError("Node is neither JSON nor CBOR, can not match with JSON");
+      throw NotedAssertionError.createNotedAssertionError(
+          target, "Node is neither JSON nor CBOR, can not match with JSON");
     }
   }
 }

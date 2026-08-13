@@ -22,6 +22,7 @@ package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.enableSslUpstreamAndDownstream;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
@@ -35,6 +36,7 @@ import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.netty.proxy.connect.HttpConnectHandler;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -152,5 +154,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
           cause);
     }
     closeOnFlush(ctx.channel());
+  }
+
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    Optional.ofNullable(ctx.channel().attr(OUTGOING_CHANNEL).get()).ifPresent(Channel::close);
+    ctx.fireChannelInactive();
   }
 }

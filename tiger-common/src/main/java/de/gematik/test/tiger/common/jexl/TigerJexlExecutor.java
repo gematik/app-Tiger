@@ -132,10 +132,15 @@ public class TigerJexlExecutor {
   }
 
   private static JexlEngine getJexlEngine() {
+    // commons-jexl3 3.7.0 forbids assignments to global (non-local) variables by default;
+    // scripts such as the tgrFor loop rely on assigning to a global "t" variable, so this needs
+    // to be explicitly re-enabled.
+    JexlFeatures features = JexlFeatures.createDefault().sideEffectGlobal(true);
     JexlBuilder jexlBuilder =
         new JexlBuilder()
             .namespaces(NAMESPACE_MAP)
             .permissions(JexlPermissions.UNRESTRICTED)
+            .features(features)
             .strict(true);
     jexlBuilder.options().setStrictArithmetic(false);
     return jexlBuilder.create();

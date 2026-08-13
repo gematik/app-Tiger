@@ -416,7 +416,7 @@ public class TigerTestEnvMgr
                 new LinkedHashMap<>(
                     Map.of(
                         getLocalTigerProxyOptional()
-                            .flatMap(TigerProxy::getName)
+                            .map(TigerProxy::getName)
                             .orElse(getLocalTigerProxyOrFail().proxyName()),
                         update)))
             .build(),

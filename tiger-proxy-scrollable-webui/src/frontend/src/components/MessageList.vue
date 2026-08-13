@@ -94,14 +94,16 @@ watch(files, async (newFiles) => {
     :items="messageQueue.internal.messages.value"
     :min-item-size="200"
     :emit-update="true"
+    :hidden-position="-999999"
     keyField="uuid"
     class="h-100 overflow-y-scroll scroll-container"
     @update="messageQueue.internal.update"
   >
-    <template #default="{ item, active }">
+    <template #default="{ item, active, index }">
       <DynamicScrollerItem
         :item="item"
         :active="active"
+        :index="index"
         :size-dependencies="[
           item,
           messageItemSizeRef,
@@ -112,7 +114,7 @@ watch(files, async (newFiles) => {
       >
         <Message
           :message="item"
-          :key="item.uuid + item.type"
+          :key="item.uuid"
           :on-toggle-details-or-header="triggerMessageItemSize"
         />
       </DynamicScrollerItem>

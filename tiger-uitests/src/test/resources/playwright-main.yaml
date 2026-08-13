@@ -26,6 +26,7 @@ lib:
   rbelPathDebugging: false
   activateWorkflowUi: true
   startBrowser: false
+  createIntermediateReports: true
 
 additionalConfigurationFiles:
   - filename: additionalYaml.yaml

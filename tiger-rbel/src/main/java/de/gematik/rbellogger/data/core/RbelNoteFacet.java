@@ -63,7 +63,7 @@ public class RbelNoteFacet implements RbelFacet {
 
   public DivTag renderToHtml() {
     return div(i(new UnescapedText(getValue().replace("\n", "<br/>"))))
-        .withClass(getStyle().toCssClass());
+        .withClass("rbel-postit " + getStyle().toCssClass());
   }
 
   @RequiredArgsConstructor

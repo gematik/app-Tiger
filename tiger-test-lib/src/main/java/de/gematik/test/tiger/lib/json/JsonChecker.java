@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
+import de.gematik.test.tiger.exceptions.NotedAssertionError;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -56,7 +57,11 @@ public class JsonChecker extends AbstractRbelJsonChecker {
 
   @Override
   public void verify(String oracle, RbelElement element, String diffOptionCSV) {
-    compareJsonStrings(getAsJsonString(element), oracle, false);
+    try {
+      compareJsonStrings(getAsJsonString(element), oracle, false);
+    } catch (JsonCheckerMismatchException e) {
+      throw NotedAssertionError.createNotedException(element, e.getMessage(), () -> e);
+    }
   }
 
   @Step
@@ -287,11 +292,11 @@ public class JsonChecker extends AbstractRbelJsonChecker {
       }
       return;
     }
-    var jsoValue = json.get(claimName).toString();
-    if (!jsoValue.equals(regex)) {
+    var jsonValue = json.get(claimName).toString();
+    if (!jsonValue.equals(regex)) {
       try {
-        assertThat(jsoValue)
-            .withFailMessage(dumpComparisonAtKeyDiffer(regex, jsoValue))
+        assertThat(jsonValue)
+            .withFailMessage(dumpComparisonAtKeyDiffer(regex, jsonValue))
             .matches(regex);
       } catch (AssertionError e) {
         throw new JsonCheckerMismatchException("Assertion failed at key '" + claimName + "'", e);

@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.testenvmgr.data.TigerConfigurationPropertyDto;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
 import org.junit.jupiter.api.AfterEach;
@@ -156,6 +157,105 @@ os.version: '10.0'
       assertThat(TigerGlobalConfiguration.readString("os")).isEqualTo("Windows NT");
       assertThat(TigerGlobalConfiguration.readString("os.arch")).isEqualTo("amd64");
       assertThat(TigerGlobalConfiguration.readString("os.version")).isEqualTo("10.0");
+    }
+  }
+
+  @Test
+  void putConfiguration_newKey_withGivenScope_shouldCreateItAtThatScope() {
+    TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
+
+    try (var unirest = Unirest.spawnInstance()) {
+      HttpResponse<String> response =
+          unirest
+              .put("http://localhost:" + port + "/global_configuration")
+              .contentType("application/json")
+              .body(TigerConfigurationPropertyDto.of("new.key", "new value", "TEST_YAML"))
+              .asString();
+
+      assertThat(response.getStatus()).isEqualTo(HttpStatus.NO_CONTENT.value());
+    }
+
+    assertThat(TigerGlobalConfiguration.readString("new.key")).isEqualTo("new value");
+    assertThat(TigerGlobalConfiguration.exportConfiguration().get("new.key").getLeft())
+        .isEqualTo(ConfigurationValuePrecedence.TEST_YAML);
+  }
+
+  @Test
+  void putConfiguration_newKey_withoutScope_shouldDefaultToRuntimeExport() {
+    TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
+
+    try (var unirest = Unirest.spawnInstance()) {
+      HttpResponse<String> response =
+          unirest
+              .put("http://localhost:" + port + "/global_configuration")
+              .contentType("application/json")
+              .body(TigerConfigurationPropertyDto.of("new.key", "new value", null))
+              .asString();
+
+      assertThat(response.getStatus()).isEqualTo(HttpStatus.NO_CONTENT.value());
+    }
+
+    assertThat(TigerGlobalConfiguration.readString("new.key")).isEqualTo("new value");
+    assertThat(TigerGlobalConfiguration.exportConfiguration().get("new.key").getLeft())
+        .isEqualTo(ConfigurationValuePrecedence.RUNTIME_EXPORT);
+  }
+
+  @Test
+  void putConfiguration_newKey_withUnknownScope_shouldReturnBadRequestAndNotCreateKey() {
+    TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
+
+    try (var unirest = Unirest.spawnInstance()) {
+      HttpResponse<String> response =
+          unirest
+              .put("http://localhost:" + port + "/global_configuration")
+              .contentType("application/json")
+              .body(TigerConfigurationPropertyDto.of("new.key", "new value", "NOT_A_SCOPE"))
+              .asString();
+
+      assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    }
+
+    assertThat(TigerGlobalConfiguration.readStringOptional("new.key")).isEmpty();
+  }
+
+  @Test
+  void putConfiguration_existingKey_shouldUpdateValueAndKeepUpdateAsRuntimeExport() {
+    prefillTigerGlobalConfiguration();
+    assertThat(TigerGlobalConfiguration.exportConfiguration().get("os.version").getLeft())
+        .isEqualTo(ConfigurationValuePrecedence.TEST_YAML);
+
+    try (var unirest = Unirest.spawnInstance()) {
+      HttpResponse<String> response =
+          unirest
+              .put("http://localhost:" + port + "/global_configuration")
+              .contentType("application/json")
+              .body(TigerConfigurationPropertyDto.of("os.version", "11.0", "TEST_YAML"))
+              .asString();
+
+      assertThat(response.getStatus()).isEqualTo(HttpStatus.NO_CONTENT.value());
+    }
+
+    assertThat(TigerGlobalConfiguration.readString("os.version")).isEqualTo("11.0");
+    assertThat(TigerGlobalConfiguration.exportConfiguration().get("os.version").getLeft())
+        .isEqualTo(ConfigurationValuePrecedence.RUNTIME_EXPORT);
+  }
+
+  @Test
+  void resolvePlaceholders_shouldSubstituteConfigurationValues() {
+    TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
+    TigerGlobalConfiguration.putValue(
+        "my.port", "1234", ConfigurationValuePrecedence.RUNTIME_EXPORT);
+
+    try (var unirest = Unirest.spawnInstance()) {
+      HttpResponse<String> response =
+          unirest
+              .post("http://localhost:" + port + "/global_configuration/resolvePlaceholders")
+              .contentType("text/plain")
+              .body("http://localhost:${my.port}")
+              .asString();
+
+      assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+      assertThat(response.getBody()).isEqualTo("http://localhost:1234");
     }
   }
 

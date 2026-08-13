@@ -93,11 +93,12 @@ class RbelHtmlRendererTest {
         .getChildNodesStream()
         .forEach(
             element -> {
-              for (int i = 0; i < RandomUtils.nextInt(0, 4); i++) {
+              for (int i = 0; i < RandomUtils.insecure().randomInt(0, 4); i++) {
                 element.addFacet(
                     new RbelNoteFacet(
                         "some note " + RandomStringUtils.insecure().nextAlphanumeric(30),
-                        RbelNoteFacet.NoteStyling.values()[RandomUtils.nextInt(0, 3)]));
+                        RbelNoteFacet.NoteStyling.values()[
+                            RandomUtils.insecure().randomInt(0, 3)]));
               }
             });
     convertedMessage.getFirst("body").get().addFacet(new RbelNoteFacet("foobar Body"));
@@ -127,7 +128,7 @@ class RbelHtmlRendererTest {
         .addFacet(new RbelNoteFacet("scopes_supported: note an einem array"));
 
     final String convertedHtml =
-        RENDERER.render(
+        RbelHtmlRenderer.render(
             wrapHttpMessage(convertedMessage, ZonedDateTime.now()),
             new RbelValueShader()
                 .addSimpleShadingCriterion("Date", "<halt ein date>")
@@ -135,13 +136,29 @@ class RbelHtmlRendererTest {
                 .addSimpleShadingCriterion("exp", "<Nested Shading>")
                 .addSimpleShadingCriterion("nbf", "\"foobar\"")
                 .addSimpleShadingCriterion("iat", "&some&more\"stuff\""));
-    FileUtils.writeStringToFile(new File("target/shaded.html"), convertedHtml);
+    FileUtils.writeStringToFile(
+        new File("target/shaded.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml)
         .contains("&lt;halt ein date&gt;")
         .contains("&lt;Die Länge. Hier 2653&gt;")
         .contains("\"&quot;foobar&quot;\"")
         .contains("&amp;some&amp;more&quot;stuff&quot;");
+  }
+
+  @Test
+  void noteRenderingShouldUsePostitMarkup() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
+
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
+    convertedMessage.addFacet(new RbelNoteFacet("warned", RbelNoteFacet.NoteStyling.WARN));
+
+    final String convertedHtml =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+
+    assertThat(convertedHtml).contains("rbel-postit").contains("has-text-warning");
   }
 
   @Test
@@ -152,20 +169,64 @@ class RbelHtmlRendererTest {
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
     final String convertedHtml =
-        RENDERER.render(
+        RbelHtmlRenderer.render(
             wrapHttpMessage(RBEL_CONVERTER.convertElement(curlMessage, null), ZonedDateTime.now()),
             new RbelValueShader()
                 .addJexlShadingCriterion("key == 'Version'", "<version: %s>")
                 .addJexlShadingCriterion(
                     "key == 'nbf' && empty(element.parentNode)", "<nbf in JWT: %s>"));
 
-    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml)
         .contains("&lt;version: 9.0.0&gt;")
         .contains("nbf-Wert in http header")
         .contains("&lt;nbf in JWT: 1614339303&gt;")
         .doesNotContain("nbf in JWT: nbf-Wert in http header");
+  }
+
+  @Test
+  void shouldRenderHeaderNoteOnlyOnce() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
+
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
+    final RbelElement firstHeaderValue =
+        convertedMessage
+            .getFirst("header")
+            .orElseThrow()
+            .getChildNodesStream()
+            .findFirst()
+            .orElseThrow();
+
+    final String uniqueNote = "duplicate-note-detection-marker";
+    firstHeaderValue.addFacet(new RbelNoteFacet(uniqueNote));
+
+    final String convertedHtml =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+
+    assertThat(countOccurrences(convertedHtml, uniqueNote)).isEqualTo(1);
+  }
+
+  @Test
+  void shouldRenderJwtHeaderNoteOnlyOnce() throws IOException {
+    RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
+
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
+    final String uniqueNote = "duplicate-jwt-header-note-marker";
+    convertedMessage
+        .findElement("$.body.header")
+        .orElseThrow()
+        .addFacet(new RbelNoteFacet(uniqueNote));
+
+    final String convertedHtml =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+
+    assertThat(countOccurrences(convertedHtml, uniqueNote)).isEqualTo(1);
   }
 
   @Test
@@ -181,9 +242,9 @@ class RbelHtmlRendererTest {
                 .withSender(RbelSocketAddress.create("foobar", 666))
                 .withTransmissionTime(ZonedDateTime.now()));
 
-    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
 
-    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml)
         .contains("foobar:666") // hostname
@@ -216,8 +277,9 @@ class RbelHtmlRendererTest {
                 .withTransmissionTime(ZonedDateTime.now()));
     convertedMessage.addFacet(new RbelBinaryFacet());
 
-    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(new File("target/binary.html"), convertedHtml);
+    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(
+        new File("target/binary.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml)
         .contains("08 69")
@@ -237,8 +299,9 @@ class RbelHtmlRendererTest {
                 .withReceiver(RbelSocketAddress.create("receiver", 14512))
                 .withTransmissionTime(ZonedDateTime.now()));
 
-    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(new File("target/directXml.html"), convertedHtml);
+    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(
+        new File("target/directXml.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml).contains("Configuration status=").contains("sender:13421");
   }
@@ -254,8 +317,9 @@ class RbelHtmlRendererTest {
                 .withReceiver(RbelSocketAddress.create("receiver", 14512))
                 .withTransmissionTime(ZonedDateTime.now()));
 
-    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
+    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(
+        new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
 
     assertThat(convertedHtml).contains("\n       &lt;li&gt;LoginCreateToken");
   }
@@ -307,5 +371,15 @@ class RbelHtmlRendererTest {
             .transmissionTime(transmissionTime == null ? ZonedDateTime.now() : transmissionTime[0])
             .build());
     return List.of(convertedMessage);
+  }
+
+  private static int countOccurrences(String text, String term) {
+    int count = 0;
+    int index = 0;
+    while ((index = text.indexOf(term, index)) >= 0) {
+      count++;
+      index += term.length();
+    }
+    return count;
   }
 }

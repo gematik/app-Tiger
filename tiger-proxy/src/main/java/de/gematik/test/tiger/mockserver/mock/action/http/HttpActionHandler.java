@@ -26,6 +26,8 @@ import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import de.gematik.rbellogger.util.RbelInternetAddressParser;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -40,9 +42,12 @@ import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -56,6 +61,16 @@ import lombok.val;
 @SuppressWarnings({"rawtypes", "FieldMayBeFinal"})
 @Slf4j
 public class HttpActionHandler {
+
+  private static final Cache<String, InetSocketAddress> RESOLVED_HOST_CACHE =
+      CacheBuilder.newBuilder()
+          .expireAfterWrite(Duration.ofMinutes(10))
+          .maximumSize(10_000)
+          .build();
+
+  public static void clearResolvedHostCache() {
+    RESOLVED_HOST_CACHE.invalidateAll();
+  }
 
   private final MockServerConfiguration configuration;
   private final HttpState httpStateHandler;
@@ -103,6 +118,8 @@ public class HttpActionHandler {
       } else {
         final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
         final HttpRequest clonedRequest = hopByHopHeaderFilter.onRequest(request);
+
+        long sendStart = log.isTraceEnabled() ? System.currentTimeMillis() : 0L;
         final HttpForwardActionResult responseFuture =
             new HttpForwardActionResult(
                 clonedRequest,
@@ -111,6 +128,13 @@ public class HttpActionHandler {
                     configuration.socketConnectionTimeoutInMillis()),
                 null,
                 remoteAddress);
+
+        log.atTrace()
+            .addArgument(() -> System.currentTimeMillis() - sendStart)
+            .addArgument(remoteAddress::getHostString)
+            .addArgument(remoteAddress::getPort)
+            .log("Forward timing: sendRequest={}ms for {}:{}");
+
         scheduler.submit(
             responseFuture,
             () -> handleResponse(request, responseWriter, responseFuture, remoteAddress),
@@ -256,32 +280,54 @@ public class HttpActionHandler {
   }
 
   public static InetSocketAddress getRemoteAddress(final ChannelHandlerContext ctx) {
-    if (ctx != null && ctx.channel() != null) {
-      val remoteSocket = ctx.channel().attr(REMOTE_SOCKET).get();
-      val outgoingChannel = ctx.channel().attr(OUTGOING_CHANNEL).get();
-      if (remoteSocket != null) {
-        final SocketAddress localAddress = ctx.channel().localAddress();
-        if (remoteSocket.getAddress() != null
-            && remoteSocket.getAddress().isLoopbackAddress()
-            && localAddress instanceof InetSocketAddress localInetSocketAddress) {
-          return new InetSocketAddress(localInetSocketAddress.getAddress(), remoteSocket.getPort());
-        } else {
-          return RbelInternetAddressParser.parseInetAddress(remoteSocket.getHostString())
-              .toInetAddress()
-              .map(inetAdr -> new InetSocketAddress(inetAdr, remoteSocket.getPort()))
-              .orElse(remoteSocket);
-        }
-      } else if (outgoingChannel != null) {
-        val outgoingRemoteSocket = outgoingChannel.attr(REMOTE_SOCKET).get();
-        if (outgoingRemoteSocket != null) {
-          return outgoingRemoteSocket;
-        }
-        if (outgoingChannel.remoteAddress() instanceof InetSocketAddress socketAddress) {
-          return socketAddress;
-        }
+    return Optional.ofNullable(ctx)
+        .map(ChannelHandlerContext::channel)
+        .flatMap(HttpActionHandler::getRemoteAddress)
+        .orElse(null);
+  }
+
+  private static Optional<InetSocketAddress> getRemoteAddress(Channel channel) {
+    return Optional.ofNullable(channel.attr(REMOTE_SOCKET).get())
+        .map(remoteSocket -> getRemoteAddressFromSocket(channel.localAddress(), remoteSocket))
+        .or(
+            () ->
+                Optional.ofNullable(channel.attr(OUTGOING_CHANNEL).get())
+                    .flatMap(HttpActionHandler::getRemoteAddressFromOutgoingChannel));
+  }
+
+  private static InetSocketAddress getRemoteAddressFromSocket(
+      SocketAddress localAddress, InetSocketAddress remoteSocket) {
+    int port = remoteSocket.getPort();
+    if (remoteSocket.getAddress() != null
+        && remoteSocket.getAddress().isLoopbackAddress()
+        && localAddress instanceof InetSocketAddress localInetSocketAddress) {
+      return new InetSocketAddress(localInetSocketAddress.getAddress(), port);
+    } else {
+      String hostString = remoteSocket.getHostString();
+      try {
+        return RESOLVED_HOST_CACHE.get(
+            hostString + ":" + port, () -> getInetSocketAddress(remoteSocket, hostString, port));
+      } catch (ExecutionException e) {
+        return getInetSocketAddress(remoteSocket, hostString, port);
       }
     }
+  }
 
-    return null;
+  private static InetSocketAddress getInetSocketAddress(
+      InetSocketAddress remoteSocket, String hostString, int port) {
+    return RbelInternetAddressParser.parseInetAddress(hostString)
+        .toInetAddress()
+        .map(inetAdr -> new InetSocketAddress(inetAdr, port))
+        .orElse(remoteSocket);
+  }
+
+  private static Optional<InetSocketAddress> getRemoteAddressFromOutgoingChannel(
+      Channel outgoingChannel) {
+    return Optional.ofNullable(outgoingChannel.attr(REMOTE_SOCKET).get())
+        .or(
+            () ->
+                Optional.ofNullable(outgoingChannel.remoteAddress())
+                    .filter(InetSocketAddress.class::isInstance)
+                    .map(InetSocketAddress.class::cast));
   }
 }

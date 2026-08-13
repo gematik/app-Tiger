@@ -69,15 +69,13 @@ public class RbelJwtFacet implements RbelFacet {
                                                 .with(
                                                     showContentButtonAndDialog(
                                                         jwtHeader, renderingToolkit))
-                                                .with(addNotes(jwtHeader))
                                                 .with(renderingToolkit.convert(jwtHeader))),
                                     childBoxNotifTitle(CLS_BODY)
                                         .with(
                                             t2("Body")
                                                 .with(
                                                     showContentButtonAndDialog(
-                                                        jwtBody, renderingToolkit))
-                                                .with(addNotes(jwtBody)))
+                                                        jwtBody, renderingToolkit)))
                                         .with(renderingToolkit.convert(jwtBody)),
                                     renderingToolkit.convert(
                                         element

@@ -179,6 +179,14 @@ public class MockServer extends LifeCycle {
         .ifPresent(BinaryExchangeHandler::waitForAllParsingTasksToBeFinished);
   }
 
+  @Override
+  public void stop() {
+    if (actionHandler != null && actionHandler.getHttpClient() != null) {
+      actionHandler.getHttpClient().shutdown();
+    }
+    super.stop();
+  }
+
   @RequiredArgsConstructor
   class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 

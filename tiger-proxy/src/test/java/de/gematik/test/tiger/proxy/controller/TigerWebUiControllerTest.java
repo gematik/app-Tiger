@@ -33,6 +33,7 @@ import static org.jsoup.Jsoup.parse;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -179,6 +180,31 @@ class TigerWebUiControllerTest {
 
   @Test
   @ResourceLock(value = "TigerWebUiController")
+  void testRbelExpression_returnsJsonTreeAlongsideHtmlTree() {
+    final var uuid = tigerProxy.getRbelMessagesList().get(0).getUuid();
+    final var jsonPath =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/testRbelExpression?query=$.*&messageUuid=" + uuid)
+            .then()
+            .statusCode(200)
+            .extract()
+            .jsonPath();
+
+    List<Map<String, Object>> htmlEntries = jsonPath.getList("elementsWithTree");
+    List<Map<String, Object>> jsonEntries = jsonPath.getList("elementsWithJsonTree");
+
+    assertThat(htmlEntries).isNotEmpty();
+    assertThat(jsonEntries).hasSameSizeAs(htmlEntries);
+
+    Map<String, Object> firstJsonEntry = jsonEntries.get(0);
+    assertThat(firstJsonEntry).hasSize(1);
+    @SuppressWarnings("unchecked")
+    Map<String, Object> treeNode = (Map<String, Object>) firstJsonEntry.values().iterator().next();
+    assertThat(treeNode).containsOnlyKeys("key", "content", "facets", "children");
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkIfParametersAreReplayed_testFilterMessages() {
     RestAssured.given()
         .get(getWebUiUrl() + "/testFilterMessages?filterRbelPath=isRequest")
@@ -239,6 +265,26 @@ class TigerWebUiControllerTest {
 
   @Test
   @ResourceLock(value = "TigerWebUiController")
+  void getMessagesWithMeta_hashChangesWhenNotesChange() {
+    final var baselineHash =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithMeta")
+            .then()
+            .statusCode(200)
+            .extract()
+            .path("hash");
+
+    tigerProxy.getRbelMessagesList().get(0).addFacet(RbelNoteFacet.info("added note"));
+
+    RestAssured.given()
+        .get(getWebUiUrl() + "/getMessagesWithMeta")
+        .then()
+        .statusCode(200)
+        .body("hash", not(equalTo(baselineHash)));
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
   void getMessagesWithHtml_acceptsSortOrderParameter() {
     RestAssured.given()
         .get(
@@ -267,7 +313,7 @@ class TigerWebUiControllerTest {
 
   @Test
   @ResourceLock(value = "TigerWebUiController")
-  void sortOrder_changesHash_soClientRefetches() {
+  void sortOrder_doesNotChangeHash() {
     final String hashTimestamp =
         RestAssured.given()
             .get(getWebUiUrl() + "/getMessagesWithMeta?sortOrder=TIMESTAMP")
@@ -282,7 +328,7 @@ class TigerWebUiControllerTest {
             .statusCode(200)
             .extract()
             .path("hash");
-    assertThat(hashTimestamp).isNotEqualTo(hashSequence);
+    assertThat(hashTimestamp).isEqualTo(hashSequence);
   }
 
   @Test
@@ -874,5 +920,99 @@ class TigerWebUiControllerTest {
     assertThat(document.getElementsByTag("div")).isNotEmpty();
 
     assertThat(content).doesNotContain("redacted"); // Should not be redacted
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void checkHashChangesWhenNoteIsAdded() {
+    Response response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String initialHash = response.jsonPath().getString("hash");
+
+    // Add a note to the first message
+    tigerProxy
+        .getRbelLogger()
+        .getMessages()
+        .iterator()
+        .next()
+        .addFacet(new RbelNoteFacet("Test Note"));
+
+    response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String updatedHash = response.jsonPath().getString("hash");
+
+    assertThat(updatedHash).isNotEqualTo(initialHash);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void checkHashChangesWhenNoteIsRemoved() {
+    val firstMessage = tigerProxy.getRbelLogger().getMessages().iterator().next();
+    val note = new RbelNoteFacet("Test Note");
+    firstMessage.addFacet(note);
+
+    Response response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String initialHash = response.jsonPath().getString("hash");
+
+    // Remove the note
+    firstMessage.removeFacet(note);
+
+    response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String updatedHash = response.jsonPath().getString("hash");
+
+    assertThat(updatedHash).isNotEqualTo(initialHash);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void checkHashChangesWhenNoteIsAddedOutsideRange() {
+    Response response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=1");
+    String initialHash = response.jsonPath().getString("hash");
+
+    // Add a note to the SECOND message (index 1), which is outside the range 0..1
+    val messages = tigerProxy.getRbelLogger().getMessages();
+    val it = messages.iterator();
+    it.next(); // skip first
+    val secondMessage = it.next();
+    secondMessage.addFacet(new RbelNoteFacet("Outside Range Note"));
+
+    response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=1");
+    String updatedHash = response.jsonPath().getString("hash");
+
+    assertThat(updatedHash).isNotEqualTo(initialHash);
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void checkHashChangesWhenAnyFacetIsAdded() {
+    Response response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String initialHash = response.jsonPath().getString("hash");
+
+    // Add a dummy facet to the first message
+    tigerProxy
+        .getRbelLogger()
+        .getMessages()
+        .iterator()
+        .next()
+        .addFacet(new de.gematik.rbellogger.data.core.RbelFacet() {});
+
+    response =
+        RestAssured.given()
+            .get(getWebUiUrl() + "/getMessagesWithHtml?fromOffset=0&toOffsetExcluding=100");
+    String updatedHash = response.jsonPath().getString("hash");
+
+    assertThat(updatedHash).isNotEqualTo(initialHash);
   }
 }

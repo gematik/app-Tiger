@@ -56,9 +56,6 @@ import org.junit.jupiter.api.Test;
 @ResetTigerConfiguration
 class IncomingChannelAttributeRaceConditionTest {
 
-  private static final String IMMEDIATE_SERVER_MESSAGE = "HELLO FROM SERVER\n";
-  private static final String CLIENT_MESSAGE = "HELLO FROM CLIENT\n";
-
   /**
    * Deterministic unit test that verifies the INCOMING_CHANNEL attribute is set via
    * Bootstrap.attr() before the channel connects. This is the key fix for the race condition -
@@ -74,8 +71,9 @@ class IncomingChannelAttributeRaceConditionTest {
     when(mockConfig.tcpIdleTimeoutInMillis()).thenReturn(1000);
 
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1);
+    ClientBootstrapFactory factory = null;
     try {
-      ClientBootstrapFactory factory = new ClientBootstrapFactory(mockConfig, eventLoopGroup);
+      factory = new ClientBootstrapFactory(mockConfig, eventLoopGroup);
 
       // Create a mock incoming channel with necessary attributes
       Channel mockIncomingChannel = mock(Channel.class);
@@ -126,6 +124,9 @@ class IncomingChannelAttributeRaceConditionTest {
         outgoingChannel.close().awaitUninterruptibly();
       }
     } finally {
+      if (factory != null) {
+        factory.shutdown();
+      }
       eventLoopGroup.shutdownGracefully().awaitUninterruptibly();
     }
   }

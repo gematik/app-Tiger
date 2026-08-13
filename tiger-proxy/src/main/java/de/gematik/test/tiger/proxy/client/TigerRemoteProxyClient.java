@@ -64,6 +64,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
@@ -111,8 +112,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
           0,
           r -> {
             Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setName(
-                "TigerProxyClient" + getName().map(n -> "-" + n).orElse("") + "-" + t.getId());
+            t.setName("TigerProxyClient-%s-%d".formatted(getName(), t.getId()));
             return t;
           });
 
@@ -317,7 +317,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             .asObject(new GenericType<List<TigerProxyRoute>>() {})
             .getBody()
             .stream()
-            .filter(route -> StringUtils.equals(route.getId(), routeId))
+            .filter(route -> Strings.CS.equals(route.getId(), routeId))
             .findFirst()
             .map(TigerProxyRoute::isInternalRoute);
     if (isInternalOptional.isEmpty()) {

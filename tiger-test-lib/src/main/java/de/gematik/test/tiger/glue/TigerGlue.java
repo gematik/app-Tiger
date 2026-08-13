@@ -45,6 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -275,7 +276,7 @@ public class TigerGlue {
   }
 
   /** Prints the value of the given variable to the System-out */
-  @Dann("TGR gebe variable {tigerResolvedString} aus")
+  @Dann("TGR gebe/gib variable/Variable {tigerResolvedString} aus")
   @Then("TGR print variable {tigerResolvedString}")
   public void printVariable(String key) {
     final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(key);
@@ -302,9 +303,12 @@ public class TigerGlue {
               + " is not running! Current status is "
               + server.getStatus());
     }
-    log.trace("Starting shutdown at {}", LocalDateTime.now());
+    log.trace("Starting shutdown at {}", LocalDateTime.now(ZoneId.systemDefault()));
     server.stopServerAndCleanUp();
-    log.trace("Shutdown complete at {} with status {}", LocalDateTime.now(), server.getStatus());
+    log.trace(
+        "Shutdown complete at {} with status {}",
+        LocalDateTime.now(ZoneId.systemDefault()),
+        server.getStatus());
   }
 
   /**
