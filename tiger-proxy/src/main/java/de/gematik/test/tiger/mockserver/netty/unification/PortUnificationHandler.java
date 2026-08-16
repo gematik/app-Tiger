@@ -210,6 +210,18 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     channel.attr(TLS_ENABLED_DOWNSTREAM).set(Boolean.TRUE);
   }
 
+  public static void disableSslUpstreamAndDownstream(Channel channel) {
+    channel.attr(TLS_ENABLED_UPSTREAM).set(Boolean.FALSE);
+    channel.attr(TLS_ENABLED_DOWNSTREAM).set(Boolean.FALSE);
+    channel.attr(SniHandler.UPSTREAM_SSL_ENGINE).set(null);
+    channel.attr(SniHandler.UPSTREAM_SSL_HANDLER).set(null);
+    channel.attr(SniHandler.UPSTREAM_CLIENT_CERTIFICATES).set(null);
+    channel.attr(SniHandler.SSL_SESSION).set(null);
+    channel.attr(SniHandler.NEGOTIATED_APPLICATION_PROTOCOL).set(null);
+    channel.attr(SniHandler.SERVER_IDENTITY).set(null);
+    channel.attr(SniHandler.PREFERRED_UPSTREAM_KEY_ALGORITHM).set(null);
+  }
+
   public static boolean isSslEnabledUpstream(Channel channel) {
     if (channel.attr(TLS_ENABLED_UPSTREAM).get() != null) {
       return channel.attr(TLS_ENABLED_UPSTREAM).get();

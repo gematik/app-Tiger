@@ -23,6 +23,7 @@ package de.gematik.test.tiger.mockserver.netty.proxy.connect;
 import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_1_1;
 import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
+import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.disableSslUpstreamAndDownstream;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledDownstream;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.PREFERRED_UPSTREAM_KEY_ALGORITHM;
@@ -217,6 +218,10 @@ public final class HttpConnectHandler extends RelayConnectHandler<HttpRequest> {
     removeHandler(pipeline, HttpContentLengthRemover.class);
     removeHandler(pipeline, MessagePostProcessorAdapter.class);
     removeHandler(pipeline, HttpConnectHandler.class);
+
+    // A local CONNECT tunnel may carry either plain HTTP/WebSocket or TLS. Reset the optimistic
+    // CONNECT defaults so protocol detection is driven by the first bytes after 200 Established.
+    disableSslUpstreamAndDownstream(ctx.channel());
 
     pipeline.addLast(
         new PortUnificationHandler(
