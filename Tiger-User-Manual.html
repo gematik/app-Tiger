@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.4.1 - 2026-08-13</span>
+<span id="revdate">Version 4.4.2 - 2026-08-26</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -249,6 +249,7 @@ video {
 <li><a href="#understanding-filtering">4.13. Understanding filtering</a></li>
 <li><a href="#_rbel_path_details">4.14. Understanding RBelPath</a></li>
 <li><a href="#_standalone_proxy">4.15. Tiger Standalone Proxy</a></li>
+<li><a href="#available-endpoints">4.16. Available endpoints</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library">5. Tiger Test library</a>
@@ -4012,6 +4013,57 @@ For each received traffic data pair (request/response) the tiger proxy will push
               - "127.0.0.1"</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p><code>noProxyHosts</code> is checked per target host (via DNS resolution of the actual destination), so entries can be hostnames or IP addresses that should bypass the forward proxy.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If a forward proxy is configured, its target address (and, if set, username/password) are logged at startup (<code>Forward proxy is set to &#8230;&#8203;</code>). Keep in mind that this log line includes the password in plain text if <code>username</code>/<code>password</code> are set.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="using-the-systemenvironment-proxy-configuration"><a class="anchor" href="#using-the-systemenvironment-proxy-configuration"></a>Using the system/environment proxy configuration</h5>
+<div class="paragraph">
+<p>Instead of specifying <code>hostname</code>/<code>port</code> explicitly, you can set <code>hostname</code> to the special value <code>$SYSTEM</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    tigerProxyConfiguration:
+        forwardToProxy:
+            hostname: "$SYSTEM"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this setting, Tiger determines the forward proxy to use from the environment, checking the following sources in order (the first one found wins):</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>JVM system properties <code>http.proxyHost</code> / <code>http.proxyPort</code> / <code>http.proxyUser</code> / <code>http.proxyPassword</code></p>
+</li>
+<li>
+<p>JVM system properties <code>https.proxyHost</code> / <code>https.proxyPort</code> / <code>https.proxyUser</code> / <code>https.proxyPassword</code></p>
+</li>
+<li>
+<p>Environment variable <code>http_proxy</code> (a full URL, optionally including credentials, e.g. <code><a href="http://user:pass@proxyhost:3128" class="bare">http://user:pass@proxyhost:3128</a></code>)</p>
+</li>
+<li>
+<p>Environment variable <code>https_proxy</code> (same format as <code>http_proxy</code>)</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>When the proxy is resolved from <code>http_proxy</code>/<code>https_proxy</code>, the environment variable <code>no_proxy</code> (a comma-separated list of hosts) is automatically merged into <code>noProxyHosts</code>.</p>
+</div>
+</div>
 </div>
 <div class="sect3">
 <h4 id="directreverseproxy"><a class="anchor" href="#directreverseproxy"></a>4.6.4. directReverseProxy</h4>
@@ -4040,7 +4092,8 @@ If the optional flag <code>ignoreConnectionErrors</code> is true, no connection 
 <div class="sect3">
 <h4 id="directreverseproxy-modifierplugins"><a class="anchor" href="#directreverseproxy-modifierplugins"></a>4.6.5. directReverseProxy modifierPlugins</h4>
 <div class="paragraph">
-<p>The <code>directReverseProxy</code> configuration supports an optional list of modifier plugins that can be used to modify traffic at the TCP layer before it is forwarded:</p>
+<p>The <code>directReverseProxy</code> configuration supports an optional list of modifier plugins that can be used to modify traffic at the raw TCP layer before it is forwarded.<br>
+This is needed for non-HTTP scenarios, where the structured RBel modification mechanism (see <a href="#_modifications">Modifications</a>) cannot be used, since it operates on already-parsed HTTP/JSON/XML/&#8230;&#8203; messages.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -4051,7 +4104,70 @@ If the optional flag <code>ignoreConnectionErrors</code> is true, no connection 
             port: 3858
             ignoreConnectionErrors: false
             modifierPlugins:
-              - pluginClass: "de.gematik.test.tiger.proxy.modifier.MyCustomModifier"</code></pre>
+              - name: "de.gematik.test.tiger.proxy.modifier.MyCustomModifier"
+                parameters:
+                  targetString: "foo"
+                  replacementString: "bar"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each entry is a <code>name</code> (the fully qualified, or simple, class name of the plugin) plus an optional map of <code>parameters</code>.</p>
+</div>
+<div class="sect4">
+<h5 id="how-it-works"><a class="anchor" href="#how-it-works"></a>How it works</h5>
+<div class="ulist">
+<ul>
+<li>
+<p>On startup, Tiger scans the classpath (via <code>Reflections</code>) for all implementations of the <code>RbelBinaryModifierPlugin</code> interface and looks up the class matching <code>name</code>.</p>
+</li>
+<li>
+<p>An instance of that class is created by deserializing the <code>parameters</code> map into it with Jackson - i.e. the plugin class is a plain POJO whose fields correspond to the <code>parameters</code> keys (bean-style getters/setters, or Lombok <code>@Data</code>).</p>
+</li>
+<li>
+<p>For every binary message flowing through the <code>directReverseProxy</code>, the message is first parsed into an <code>RbelElement</code>, then each configured plugin is called, in the order it was registered, via:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">Optional&lt;byte[]&gt; modify(RbelElement target, RbelConverter rbelConverter);</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>If a plugin returns an empty <code>Optional</code>, the message is passed on unchanged for that plugin.</p>
+</li>
+<li>
+<p>If a plugin returns a <code>byte[]</code>, that becomes the new message content, which is re-parsed before being handed to the next plugin in the chain - so every plugin always sees a fully up-to-date, parsed <code>RbelElement</code>.</p>
+</li>
+<li>
+<p>If a plugin throws an exception, it is logged as a warning and the message is passed on unmodified to the remaining plugins (a failing plugin does not abort the chain).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect4">
+<h5 id="writing-a-custom-plugin"><a class="anchor" href="#writing-a-custom-plugin"></a>Writing a custom plugin</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyCustomModifier implements RbelBinaryModifierPlugin {
+
+    private String targetString;
+    private String replacementString;
+
+    // getters/setters (or use Lombok @Data) so Jackson can populate the fields from `parameters`
+
+    @Override
+    public Optional&lt;byte[]&gt; modify(RbelElement target, RbelConverter rbelConverter) {
+        if (target.getRawStringContent().contains(targetString)) {
+            return Optional.of(target.getRawStringContent()
+                    .replace(targetString, replacementString)
+                    .getBytes());
+        }
+        return Optional.empty();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The class must be present on the classpath at runtime (e.g. bundled in your test-suite&#8217;s own jar) and match the <code>name</code> given in the configuration.</p>
 </div>
 </div>
 </div>
@@ -4444,6 +4560,26 @@ For test environments (the primary use case of TigerProxy) this is generally not
 <p>By default, the tiger proxy will keep count of the number of requests it executes on itself (e.g., when a request is forwarded to the tiger proxy itself).<br>
 If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
 The default value is 10 (Meaning after 10 loops, the request will end in an error).<br>
+Note: This behavior can only be customized for all Tiger Proxies.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="dnscachettlseconds"><a class="anchor" href="#dnscachettlseconds"></a>4.12.5. dnsCacheTtlSeconds</h4>
+<div class="paragraph">
+<p>To determine which server a message belongs to, Tiger resolves hostnames while parsing traffic.<br>
+Doing that for every single message is expensive - a name that Tiger routes internally never resolves via real DNS, so each attempt waits for the operating system&#8217;s resolver to time out.<br>
+Tiger therefore remembers the outcome of a lookup, successful or not, for a short while.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tiger:
+  rbel:
+    dnsCacheTtlSeconds: 30</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The default is 30 seconds.<br>
+Lower it if hostnames change during a test run and Tiger keeps using the previous address; set it to <code>0</code> to switch the cache off entirely and resolve every time.<br>
 Note: This behavior can only be customized for all Tiger Proxies.</p>
 </div>
 </div>
@@ -5111,10 +5247,11 @@ The container health check connects to port 8080 — if you change this mapping,
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="available-endpoints"><a class="anchor" href="#available-endpoints"></a>4.15.5. Available endpoints</h4>
+</div>
+<div class="sect2">
+<h3 id="available-endpoints"><a class="anchor" href="#available-endpoints"></a>4.16. Available endpoints</h3>
 <div class="paragraph">
-<p>Once the Standalone Proxy is running, the following endpoints are available on the admin port:</p>
+<p>Once the Tiger Proxy or Standalone Proxy is running, the following endpoints are available on the admin port:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -5137,10 +5274,9 @@ The container health check connects to port 8080 — if you change this mapping,
 </ul>
 </div>
 <div class="paragraph">
-<p>The OpenAPI spec covers all Tiger Proxy REST endpoints, including route management (<code>/route</code>), traffic modifications (<code>/modification</code>), tracing points (<code>/tracingpoints</code>), traffic push (<code>/traffic</code>), and the Web UI endpoints.</p>
+<p>The OpenAPI spec covers all Tiger Proxy REST endpoints, including route management (<code>/route</code>), traffic modifications (<code>/modification</code>), tracing points (<code>/tracingpoints</code>), traffic push (<code>/traffic</code>), and the Web UI endpoints, such as (<code>/getMessagesAsHtmlPage</code>) where the messages can be filtered and stored as HTML page.</p>
 </div>
 <div style="page-break-after: always;"></div>
-</div>
 </div>
 </div>
 </div>
@@ -9122,14 +9258,14 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <h5 id="standalone-mode"><a class="anchor" href="#standalone-mode"></a>Standalone mode</h5>
 <div class="paragraph">
 <p>As an alternative to the integration in the Workflow UI, the topology visualizer can be used in a standalone mode.<br>
-You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.1/tiger-topology-visualizer-4.4.1-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.1/tiger-topology-visualizer-4.4.1-standalone.jar</a></p>
+You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.2/tiger-topology-visualizer-4.4.2-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.2/tiger-topology-visualizer-4.4.2-standalone.jar</a></p>
 </div>
 <div class="paragraph">
 <p>and run it with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.1-standalone.jar</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.2-standalone.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11000,6 +11136,35 @@ To solve the conflicts, please use the versions stated in the release notes via 
 If this property has not been explicitly set, Tiger will automatically set it to "pickle".</p>
 </div>
 </div>
+<div class="sect3">
+<h4 id="fm07-how-can-i-use-fallback-values-in-a-scenario-outline"><a class="anchor" href="#fm07-how-can-i-use-fallback-values-in-a-scenario-outline"></a>12.1.7. FM07 How can I use fallback values in a Scenario Outline?</h4>
+<div class="paragraph">
+<p>Use the syntax <code>${configuration.key\|fallbackValue}</code> in an Examples table.<br>
+The backslash escapes the pipe because <code>|</code> is also the Gherkin table-column separator.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Scenario Outline: Register multiple users
+  Given TGR send GET request to "http://demo/service/register" with:
+    | username | password   |
+    | &lt;name&gt;   | &lt;password&gt; |
+  And TGR find last request to path "/service/register"
+  Then TGR current response with attribute "$.responseCode" matches "201"
+  And TGR print current response as rbel-tree
+  And TGR current response with attribute "$.body.name" matches "&lt;name&gt;"
+
+  Examples:
+    | name                               | password              |
+    | ${demo.user.name}                  | ${demo.user.password} |
+    | ${demo.user.noName\|defaultUser} | xys                   |</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For the first example, Tiger resolves <code>demo.user.name</code> and <code>demo.user.password</code> from the configuration.<br>
+For the second example, Tiger tries to resolve <code>demo.user.noName</code>.<br>
+If no value is available for this key, Tiger uses <code>defaultUser</code> as the username.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="extensions"><a class="anchor" href="#extensions"></a>12.2. Extensions</h3>
@@ -11206,7 +11371,7 @@ Then  TGR CANOPY contains proxied host api.example.com</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-08-13 09:02:54 +0200
+Last updated 2026-08-26 11:23:44 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
