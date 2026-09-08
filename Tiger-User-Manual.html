@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.4.2 - 2026-08-26</span>
+<span id="revdate">Version 4.4.3 - 2026-09-08</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -226,10 +226,9 @@ video {
 <li><a href="#_yaml_loading_and_overriding">3.2. YAML loading and overriding logic</a></li>
 <li><a href="#_server_types">3.3. Server type reference</a></li>
 <li><a href="#server-type-example">3.4. Server type example</a></li>
-<li><a href="#provided-node-templates">3.5. Provided node templates</a></li>
-<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.6. Configuring the local test suite Tiger Proxy</a></li>
-<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.7. Standalone mode vs. implicit startup with test suite</a></li>
-<li><a href="#using-environment-variables-and-system-properties">3.8. Using Environment variables and system properties</a></li>
+<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.5. Configuring the local test suite Tiger Proxy</a></li>
+<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.6. Standalone mode vs. implicit startup with test suite</a></li>
+<li><a href="#using-environment-variables-and-system-properties">3.7. Using Environment variables and system properties</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_proxy">4. Tiger Proxy</a>
@@ -240,16 +239,15 @@ video {
 <li><a href="#tls-keys-certificates-a-quick-tour-on-proxies">4.4. TLS, keys, certificates a quick tour on proxies</a></li>
 <li><a href="#_modifications">4.5. Modifications</a></li>
 <li><a href="#_mesh_setup_traffic_endpoints">4.6. Mesh set up</a></li>
-<li><a href="#adding-notes-to-messages">4.7. Adding notes to messages</a></li>
-<li><a href="#rbel-parsing">4.8. Rbel Parsing</a></li>
-<li><a href="#buffer-sizes">4.9. Buffer sizes</a></li>
-<li><a href="#timeouts-and-waiting-times">4.10. Timeouts and waiting times</a></li>
-<li><a href="#displaying-nested-messages">4.11. Displaying Nested Messages</a></li>
-<li><a href="#header-rewriting-and-routing-behavior">4.12. Header rewriting and routing behavior</a></li>
-<li><a href="#understanding-filtering">4.13. Understanding filtering</a></li>
-<li><a href="#_rbel_path_details">4.14. Understanding RBelPath</a></li>
-<li><a href="#_standalone_proxy">4.15. Tiger Standalone Proxy</a></li>
-<li><a href="#available-endpoints">4.16. Available endpoints</a></li>
+<li><a href="#rbel-parsing">4.7. Rbel Parsing</a></li>
+<li><a href="#buffer-sizes">4.8. Buffer sizes</a></li>
+<li><a href="#timeouts-and-waiting-times">4.9. Timeouts and waiting times</a></li>
+<li><a href="#displaying-nested-messages">4.10. Displaying Nested Messages</a></li>
+<li><a href="#header-rewriting-and-routing-behavior">4.11. Header rewriting and routing behavior</a></li>
+<li><a href="#understanding-filtering">4.12. Understanding filtering</a></li>
+<li><a href="#_rbel_path_details">4.13. Understanding RBelPath</a></li>
+<li><a href="#_standalone_proxy">4.14. Tiger Standalone Proxy</a></li>
+<li><a href="#available-endpoints">4.15. Available endpoints</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_library">5. Tiger Test library</a>
@@ -272,17 +270,18 @@ video {
 <ul class="sectlevel2">
 <li><a href="#_inlets">6.1. Inlets</a></li>
 <li><a href="#tiger-yaml-file-resolution">6.2. Tiger YAML file resolution</a></li>
-<li><a href="#_additional_yaml_files">6.3. Additional YAML files</a></li>
-<li><a href="#key-translation">6.4. Key-translation</a></li>
-<li><a href="#thread-based-configuration">6.5. Thread-based configuration</a></li>
-<li><a href="#placeholders">6.6. Placeholders</a></li>
-<li><a href="#rbelpath-style-retrieval">6.7. RbelPath-style retrieval</a></li>
-<li><a href="#fallback-values">6.8. Fallback values</a></li>
-<li><a href="#localized-configuration">6.9. Localized configuration</a></li>
-<li><a href="#examples">6.10. Examples</a></li>
-<li><a href="#pre-defined-values">6.11. Pre-Defined values</a></li>
-<li><a href="#inline-jexl">6.12. Inline JEXL</a></li>
-<li><a href="#_tiger_configuration_editor">6.13. Configuration Editor</a></li>
+<li><a href="#_tiger_rootfolder">6.3. tiger.rootfolder</a></li>
+<li><a href="#_additional_yaml_files">6.4. Additional YAML files</a></li>
+<li><a href="#key-translation">6.5. Key-translation</a></li>
+<li><a href="#thread-based-configuration">6.6. Thread-based configuration</a></li>
+<li><a href="#placeholders">6.7. Placeholders</a></li>
+<li><a href="#rbelpath-style-retrieval">6.8. RbelPath-style retrieval</a></li>
+<li><a href="#fallback-values">6.9. Fallback values</a></li>
+<li><a href="#localized-configuration">6.10. Localized configuration</a></li>
+<li><a href="#examples">6.11. Examples</a></li>
+<li><a href="#pre-defined-values">6.12. Pre-Defined values</a></li>
+<li><a href="#inline-jexl">6.13. Inline JEXL</a></li>
+<li><a href="#_tiger_configuration_editor">6.14. Configuration Editor</a></li>
 </ul>
 </li>
 <li><a href="#tiger-user-interfaces">7. Tiger User interfaces</a>
@@ -2357,108 +2356,10 @@ The server port on which the server starts can be configured.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="provided-node-templates"><a class="anchor" href="#provided-node-templates"></a>3.5. Provided node templates</h3>
-<div class="paragraph">
-<p>Besides these basic nodes we also support tailored templates for nodes like IDP, ePA, ERp and DEMIS.<br>
-This should allow you to bring up project specific test environments very fast.</p>
-</div>
-<div class="paragraph">
-<p>All currently supported templates can be found in the tiger-testenv-mgr modul in the yaml file at /src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml</p>
-</div>
-<div class="paragraph">
-<p>To use such a template, just use the template attribute:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">myPersonalTestIDPInTheRU:
-  template: idp-rise-ru</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>or if you want to have an environment with a local reference implementation of the ERezept Fachdienst</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">myLocalTestIDP:
-  template: idp-ref
-  hostname: idp
-
-myLocalTestERp:
-  template: erzpt-fd-ref
-  dependsUpon: myLocalTestIDP</code></pre>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-idp-reference-nodes"><a class="anchor" href="#local-idp-reference-nodes"></a>3.5.1. Local IDP reference nodes</h4>
-<div class="paragraph">
-<p>This template provides the reference implementation of the IDP server as a local docker container.<br>
-The docker image is loaded from a gematik internal docker registry server.</p>
-</div>
-<div class="paragraph">
-<p>The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available for all subsequently initiated test environment nodes.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="external-idp-rise-instance-nodes"><a class="anchor" href="#external-idp-rise-instance-nodes"></a>3.5.2. External IDP RISE instance nodes</h4>
-<div class="paragraph">
-<p>The idp-rise-ru template provides the RU instance of RISE&#8217;s IDP server as an "external URL".<br>
-The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL of the Discovery Document end point and a config-file for the IDP test suite respectively.<br>
-They are available for all subsequently initiated test environment nodes.</p>
-</div>
-<div class="paragraph">
-<p>The idp-rise-tu template provides the TU instance accordingly.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-erp-reference-nodes"><a class="anchor" href="#local-erp-reference-nodes"></a>3.5.3. Local ERp reference nodes</h4>
-<div class="paragraph">
-<p>This template provides the reference implementation of the eRezept server as a local docker container.<br>
-The docker image is loaded from a gematik internal docker registry server.<br>
-Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under <a href="http://idp" class="bare">http://idp</a> or adapt the environment variable configuration.</p>
-</div>
-<div class="paragraph">
-<p>A large list of environment variables is set.<br>
-But don&#8217;t worry, it is just the server that uses them.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-epa2-reference-nodes"><a class="anchor" href="#local-epa2-reference-nodes"></a>3.5.4. Local ePA2 reference nodes</h4>
-<div class="paragraph">
-<p>This template provides the gematik reference Aktensystem simulation as docker compose.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-pssim-node"><a class="anchor" href="#local-pssim-node"></a>3.5.5. Local PSSim node</h4>
-<div class="paragraph">
-<p>This template provides a Primärsystem simulation (as a jar), usable for ePA.<br>
-See <a href="https://wiki.gematik.de/display/PTP/epa-ps" class="bare">https://wiki.gematik.de/display/PTP/epa-ps</a> for more information.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-konsim-node"><a class="anchor" href="#local-konsim-node"></a>3.5.6. Local KonSim node</h4>
-<div class="paragraph">
-<p>This template provides a Konnektor simulation (as external jar).<br>
-See <a href="https://wiki.gematik.de/display/PTP/KonSim" class="bare">https://wiki.gematik.de/display/PTP/KonSim</a> for more information.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-epa-fdv-sim"><a class="anchor" href="#local-epa-fdv-sim"></a>3.5.7. Local ePA FdV Sim</h4>
-<div class="paragraph">
-<p>This template provides FdV simulation, usable for ePA.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="local-demis-reference-nodes"><a class="anchor" href="#local-demis-reference-nodes"></a>3.5.8. Local DEMIS reference nodes</h4>
-<div class="paragraph">
-<p>This template provides the DEMIS Meldeportal as local docker compose.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.6. Configuring the local test suite Tiger Proxy</h3>
+<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.5. Configuring the local test suite Tiger Proxy</h3>
 <div class="paragraph">
 <p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the <code>tiger.yaml</code> file.<br>
-For more information about what the Tiger Proxy is and how it works see the chapter <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
+For more information about what the Tiger Proxy is and how it works, see the chapter <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2659,7 +2560,7 @@ tigerProxy:
 </div>
 </div>
 <div class="sect2">
-<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.7. Standalone mode vs. implicit startup with test suite</h3>
+<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.6. Standalone mode vs. implicit startup with test suite</h3>
 <div class="paragraph">
 <p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios, thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.<br>
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.</p>
@@ -2721,7 +2622,7 @@ So you may skip the first and just use it with two different values being set.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.8. Using Environment variables and system properties</h3>
+<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.7. Using Environment variables and system properties</h3>
 <div class="paragraph">
 <p>In many configuration values (e.g. <code>exports</code>, <code>environment</code>, <code>source</code>, etc.), placeholders like <code>${PORT:xxxx}</code> or <code>${NAME}</code> can be used.<br>
 These are replaced at runtime with the actual values (e.g. the exposed port of a Docker container or the hostname of a node).</p>
@@ -2942,11 +2843,6 @@ The individual attributes are described in detail in the subsections below.</p>
         tcpIdleTimeoutInSeconds: 5.0        # OPTIONAL TCP keep-alive timeout in seconds (default: 5), null = disabled
         modifierPlugins: []               # OPTIONAL plugin classes to modify traffic on the TCP layer before forwarding
 
-      # ----Notes on messages---------------------------------------
-      notes:
-        - message: "This is a note"
-          jexlCriterion: "isRequest &amp;&amp; path == '$.method'"
-
       logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
       # Folders containing keys (e.g. PEM, P12) loaded into RBel for decrypting traffic during analysis
       keyFolders:
@@ -2966,13 +2862,16 @@ The individual attributes are described in detail in the subsections below.</p>
       # ----Buffer sizes--------------------------------------------
       rbelBufferSizeInMb: 1024
       stompClientBufferSizeInMb: 1
+      stompServerSendBufferSizeInMb: 16
+      stompServerSendTimeLimitInSeconds: 20
+      stompHeartbeatInSeconds: 10
       perMessageBufferSizeInMb: 100
       skipParsingWhenMessageLargerThanKb: 8000
       skipDisplayWhenMessageLargerThanKb: 512
 
       # ----Timeouts------------------------------------------------
       connectionTimeoutInSeconds: 10            # Timeout for establishing connections (default: 10)
-      maximumPartialMessageAgeInSeconds: 300    # Maximum age of incomplete/partial messages before they are discarded (default: 300)
+      maximumPartialMessageAgeInSeconds: 30     # How long an incomplete message may go without a new part before it is discarded (default: 30)
       waitForPreviousMessageBeforeParsingInSeconds: 5.0
       previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
       previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
@@ -4203,37 +4102,19 @@ For example, if you set <code>tcpIdleTimeoutInSeconds</code> to 5 seconds, the k
 </div>
 </div>
 <div class="sect2">
-<h3 id="adding-notes-to-messages"><a class="anchor" href="#adding-notes-to-messages"></a>4.7. Adding notes to messages</h3>
-<div class="paragraph">
-<p>To add notes to certain messages, you can add a list of criteria with messages that shall be added to any message in the rbel log matching the specific criterion.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
-    tigerProxyConfiguration:
-      proxyId: meshProxy2
-      notes:
-        - message: "This is a note on the HTTP method"
-          jexlCriterion: "isRequest &amp;&amp; path == '$.method'"
-        - message: "Hackers were here..."
-          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"</code></pre>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="rbel-parsing"><a class="anchor" href="#rbel-parsing"></a>4.8. Rbel Parsing</h3>
+<h3 id="rbel-parsing"><a class="anchor" href="#rbel-parsing"></a>4.7. Rbel Parsing</h3>
 <div class="paragraph">
 <p>For a detailed description of RBelPath, please refer to the <a href="#_rbel_path_details">Understanding RBelPath</a>.</p>
 </div>
 <div class="sect3">
-<h4 id="activaterbelparsing"><a class="anchor" href="#activaterbelparsing"></a>4.8.1. activateRbelParsing</h4>
+<h4 id="activaterbelparsing"><a class="anchor" href="#activaterbelparsing"></a>4.7.1. activateRbelParsing</h4>
 <div class="paragraph">
 <p>Deactivating this flag turns off all Rbel-Analysis of the incoming traffic.<br>
 This is a huge deal in terms of memory- and CPU-consumption, but you will lose all benefits of performing Rbel-Analysis.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="activaterbelparsingfor"><a class="anchor" href="#activaterbelparsingfor"></a>4.8.2. activateRbelParsingFor</h4>
+<h4 id="activaterbelparsingfor"><a class="anchor" href="#activaterbelparsingfor"></a>4.7.2. activateRbelParsingFor</h4>
 <div class="paragraph">
 <p>Tiger RBel parses and decodes a wide range of formats and protocols out of the box.<br>
 The following formats are supported <strong>by default</strong> (always active):</p>
@@ -4397,7 +4278,7 @@ See <a href="#_complete_set_of_steps_in_validation_glue_code">Complete set of st
 </div>
 </div>
 <div class="sect3">
-<h4 id="parsingshouldblockcommunication"><a class="anchor" href="#parsingshouldblockcommunication"></a>4.8.3. parsingShouldBlockCommunication</h4>
+<h4 id="parsingshouldblockcommunication"><a class="anchor" href="#parsingshouldblockcommunication"></a>4.7.3. parsingShouldBlockCommunication</h4>
 <div class="paragraph">
 <p>If blocking is enabled, the tiger proxy will only return the response when message parsing is completed.<br>
 This is inadvisable in high-speed scenarios.<br>
@@ -4408,7 +4289,7 @@ For all Tiger Proxies this default behavior can be changed.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.8.4. activateTrafficLogging</h4>
+<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.7.4. activateTrafficLogging</h4>
 <div class="paragraph">
 <p>This flag controls whether the tiger proxy will log all traffic.<br>
 If activated, every request and response is noted in the log.<br>
@@ -4419,7 +4300,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="buffer-sizes"><a class="anchor" href="#buffer-sizes"></a>4.9. Buffer sizes</h3>
+<h3 id="buffer-sizes"><a class="anchor" href="#buffer-sizes"></a>4.8. Buffer sizes</h3>
 <div class="paragraph">
 <p>Several buffer-size properties allow fine-tuning of memory usage:</p>
 </div>
@@ -4428,7 +4309,10 @@ Default is true.</p>
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
   tigerProxyConfiguration:
     rbelBufferSizeInMb: 1024          # Limits the RBel buffer to approximately this size (default: 1024)
-    stompClientBufferSizeInMb: 1      # Buffer size for STOMP client connections (default: 1)
+    stompClientBufferSizeInMb: 1      # Buffer size for reassembling an inbound STOMP message on the remote-proxy client (default: 1)
+    stompServerSendBufferSizeInMb: 16 # Pending-send buffer per tracing WebSocket session before the tracing broker closes it as unreliable (default: 16)
+    stompServerSendTimeLimitInSeconds: 20 # How long the tracing broker may take to flush a message to a session before giving up on it (default: 20)
+    stompHeartbeatInSeconds: 10       # Interval at which both ends of a tracing connection exchange STOMP heartbeats (default: 10)
     perMessageBufferSizeInMb: 100     # Maximum buffer size per single message (default: 100)
     skipParsingWhenMessageLargerThanKb: 8000   # Skip RBel parsing for messages larger than this (default: 8000)
     skipDisplayWhenMessageLargerThanKb: 512    # Skip display for messages larger than this (default: 512)</code></pre>
@@ -4436,9 +4320,9 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="timeouts-and-waiting-times"><a class="anchor" href="#timeouts-and-waiting-times"></a>4.10. Timeouts and waiting times</h3>
+<h3 id="timeouts-and-waiting-times"><a class="anchor" href="#timeouts-and-waiting-times"></a>4.9. Timeouts and waiting times</h3>
 <div class="sect3">
-<h4 id="waitforpreviousmessagebeforeparsinginseconds"><a class="anchor" href="#waitforpreviousmessagebeforeparsinginseconds"></a>4.10.1. waitForPreviousMessageBeforeParsingInSeconds</h4>
+<h4 id="waitforpreviousmessagebeforeparsinginseconds"><a class="anchor" href="#waitforpreviousmessagebeforeparsinginseconds"></a>4.9.1. waitForPreviousMessageBeforeParsingInSeconds</h4>
 <div class="paragraph">
 <p>Defines the timeout in seconds (supports decimal values) to wait for a previous message before parsing the current message when messages reference each other in mesh setups.<br>
 If the referenced previous message doesn&#8217;t arrive within this timeframe, the current message will be parsed anyway.<br>
@@ -4446,7 +4330,7 @@ Default is 5.0 seconds.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="previousmessagetimeoutdetectiongraceperiodinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiongraceperiodinseconds"></a>4.10.2. previousMessageTimeoutDetectionGracePeriodInSeconds</h4>
+<h4 id="previousmessagetimeoutdetectiongraceperiodinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiongraceperiodinseconds"></a>4.9.2. previousMessageTimeoutDetectionGracePeriodInSeconds</h4>
 <div class="paragraph">
 <p>Grace period in seconds (supports decimal values) for clock skew between mesh nodes when detecting messages that will never arrive.<br>
 This compensates for small time differences between different proxy instances.<br>
@@ -4454,7 +4338,7 @@ Default is 10.0 seconds.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="previousmessagetimeoutdetectiontimegapthresholdinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiontimegapthresholdinseconds"></a>4.10.3. previousMessageTimeoutDetectionTimeGapThresholdInSeconds</h4>
+<h4 id="previousmessagetimeoutdetectiontimegapthresholdinseconds"><a class="anchor" href="#previousmessagetimeoutdetectiontimegapthresholdinseconds"></a>4.9.3. previousMessageTimeoutDetectionTimeGapThresholdInSeconds</h4>
 <div class="paragraph">
 <p>Minimum age in seconds (supports decimal values) for previous messages to trigger timeout detection.<br>
 If a referenced previous message has a timestamp older than this threshold, it may be considered as "will never arrive" and the current message will be processed immediately.<br>
@@ -4462,7 +4346,7 @@ Default is 30.0 seconds.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"><a class="anchor" href="#previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"></a>4.10.4. previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes</h4>
+<h4 id="previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"><a class="anchor" href="#previousmessagetimeoutdetectionrecentconnectionthresholdinminutes"></a>4.9.4. previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes</h4>
 <div class="paragraph">
 <p>Time threshold in minutes (supports decimal values) for considering a mesh connection as "recent".<br>
 Timeout detection only applies to connections that are newer than this threshold to avoid false positives in long-running connections.<br>
@@ -4481,7 +4365,7 @@ Default is 5.0 minutes.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="displaying-nested-messages"><a class="anchor" href="#displaying-nested-messages"></a>4.11. Displaying Nested Messages</h3>
+<h3 id="displaying-nested-messages"><a class="anchor" href="#displaying-nested-messages"></a>4.10. Displaying Nested Messages</h3>
 <div class="paragraph">
 <p>Some messages are deeply nested and thus inconvenient to handle in the UI.</p>
 </div>
@@ -4500,9 +4384,9 @@ Default is 5.0 minutes.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="header-rewriting-and-routing-behavior"><a class="anchor" href="#header-rewriting-and-routing-behavior"></a>4.12. Header rewriting and routing behavior</h3>
+<h3 id="header-rewriting-and-routing-behavior"><a class="anchor" href="#header-rewriting-and-routing-behavior"></a>4.11. Header rewriting and routing behavior</h3>
 <div class="sect3">
-<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.12.1. rewriteHostHeader</h4>
+<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.11.1. rewriteHostHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the host-header.<br>
 If activated, the host-header will be rewritten to the target host (only applicably for reverse proxy routes).<br>
@@ -4510,7 +4394,7 @@ Default is false.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.12.2. rewriteLocationHeader</h4>
+<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.11.2. rewriteLocationHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the location-header for 3xx responses.<br>
 If activated, the location-header will be modified, so the client will still use the proxy to reach the new location.<br>
@@ -4518,7 +4402,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="honorhostheaderrouting"><a class="anchor" href="#honorhostheaderrouting"></a>4.12.3. honorHostHeaderRouting</h4>
+<h4 id="honorhostheaderrouting"><a class="anchor" href="#honorhostheaderrouting"></a>4.11.3. honorHostHeaderRouting</h4>
 <div class="paragraph">
 <p>When enabled, reverse proxy requests that do not match any configured route will be forwarded to the host specified in the incoming <code>Host</code> header.<br>
 This is useful when the TigerProxy acts as a transparent reverse proxy in front of a dynamic set of backends, or when clients already set the <code>Host</code> header correctly to the actual backend.</p>
@@ -4555,7 +4439,7 @@ For test environments (the primary use case of TigerProxy) this is generally not
 </div>
 </div>
 <div class="sect3">
-<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.12.4. maxLoopCounter</h4>
+<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.11.4. maxLoopCounter</h4>
 <div class="paragraph">
 <p>By default, the tiger proxy will keep count of the number of requests it executes on itself (e.g., when a request is forwarded to the tiger proxy itself).<br>
 If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
@@ -4564,7 +4448,7 @@ Note: This behavior can only be customized for all Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="dnscachettlseconds"><a class="anchor" href="#dnscachettlseconds"></a>4.12.5. dnsCacheTtlSeconds</h4>
+<h4 id="dnscachettlseconds"><a class="anchor" href="#dnscachettlseconds"></a>4.11.5. dnsCacheTtlSeconds</h4>
 <div class="paragraph">
 <p>To determine which server a message belongs to, Tiger resolves hostnames while parsing traffic.<br>
 Doing that for every single message is expensive - a name that Tiger routes internally never resolves via real DNS, so each attempt waits for the operating system&#8217;s resolver to time out.<br>
@@ -4585,7 +4469,7 @@ Note: This behavior can only be customized for all Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.13. Understanding filtering</h3>
+<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.12. Understanding filtering</h3>
 <div class="paragraph">
 <p>The filtering of messages in the tiger proxy consists of three main stages.<br>
 These are:</p>
@@ -4607,7 +4491,7 @@ These are:</p>
 <p>Lets dive a bit deeper!</p>
 </div>
 <div class="sect3">
-<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.13.1. Traffic filter</h4>
+<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.12.1. Traffic filter</h4>
 <div class="paragraph">
 <p>At the core of the tiger proxy sits a RbelLogger instance.<br>
 Here the messages are parsed and stored.<br>
@@ -4641,7 +4525,7 @@ They are however kept in memory since the partner, the response in that case, do
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.13.2. Tiger Proxy Log filter</h4>
+<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.12.2. Tiger Proxy Log filter</h4>
 <div class="paragraph">
 <p>When you display the messages on the tiger proxy Log you have the ability to filter out certain messages to be displayed exclusively.<br>
 The messages, which are filtered out, do still remain stored in the tiger proxy.<br>
@@ -4657,7 +4541,7 @@ This way they are consistent across different tiger proxy Log filters (message #
 </div>
 </div>
 <div class="sect3">
-<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.13.3. Pagination</h4>
+<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.12.3. Pagination</h4>
 <div class="paragraph">
 <p>Finally, pagination is applied in the tiger proxy Log.<br>
 This comes after the tiger proxy Log-Filter has been applied.<br>
@@ -4666,7 +4550,7 @@ So when would filter out every second message via a tiger proxy Log-Filter every
 </div>
 </div>
 <div class="sect2">
-<h3 id="_rbel_path_details"><a class="anchor" href="#_rbel_path_details"></a>4.14. Understanding RBelPath</h3>
+<h3 id="_rbel_path_details"><a class="anchor" href="#_rbel_path_details"></a>4.13. Understanding RBelPath</h3>
 <div class="paragraph">
 <p>RBelPath is a powerful expression language specifically designed for navigating and analyzing messages within the Tiger Proxy.<br>
 Inspired by well-known concepts like XPath and JSONPath, RBelPath is tailored to the unique requirements of HTTP traffic and complex testing scenarios.<br>
@@ -4783,7 +4667,7 @@ This expression would also work if the HTTP message contained a JSON object, an 
 So to use special characters, please URL encode them (space is a special case since + and ' ' are allowed, depending on the exact position).</p>
 </div>
 <div class="sect3">
-<h4 id="arrays"><a class="anchor" href="#arrays"></a>4.14.1. Arrays</h4>
+<h4 id="arrays"><a class="anchor" href="#arrays"></a>4.13.1. Arrays</h4>
 <div class="paragraph">
 <p>To make things easy and consistent, the entries of an array are simply stored as a map with the index as key.<br>
 So the following expression will return the first element of the array:</p>
@@ -4793,7 +4677,7 @@ So the following expression will return the first element of the array:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="differentiating-between-multiple-elements"><a class="anchor" href="#differentiating-between-multiple-elements"></a>4.14.2. Differentiating between multiple elements</h4>
+<h4 id="differentiating-between-multiple-elements"><a class="anchor" href="#differentiating-between-multiple-elements"></a>4.13.2. Differentiating between multiple elements</h4>
 <div class="paragraph">
 <p>When a key is present multiple times, all elements are returned.<br>
 To differentiate between them, you can use the index:</p>
@@ -4814,7 +4698,7 @@ To differentiate between them, you can use the index:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="alternate-keys"><a class="anchor" href="#alternate-keys"></a>4.14.3. Alternate keys</h4>
+<h4 id="alternate-keys"><a class="anchor" href="#alternate-keys"></a>4.13.3. Alternate keys</h4>
 <div class="paragraph">
 <p>To find alternating values, concatenate them using the pipe symbols, like so:<br>
 <code>$.body.['foo'|'bar'].key</code></p>
@@ -4827,7 +4711,7 @@ So if only always one of the two elements is present, only a single element will
 </div>
 </div>
 <div class="sect3">
-<h4 id="case-insensitive-matching"><a class="anchor" href="#case-insensitive-matching"></a>4.14.4. Case-insensitive matching</h4>
+<h4 id="case-insensitive-matching"><a class="anchor" href="#case-insensitive-matching"></a>4.13.4. Case-insensitive matching</h4>
 <div class="paragraph">
 <p>Sometimes it can be helpful to match keys in a case-insensitive manner.<br>
 To achieve this you can use the <code>~</code>-operator:<br>
@@ -4843,7 +4727,7 @@ With this expression, the following nodes will be found: <code>$.body.foo.key</c
 </div>
 </div>
 <div class="sect3">
-<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.14.5. JEXL expressions</h4>
+<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.13.5. JEXL expressions</h4>
 <div class="paragraph">
 <p>RBeL-Path can be integrated with JEXL expression, giving a much more powerful and flexible tool to extract a certain element.<br>
 This can be done using the syntax from the following example:</p>
@@ -4940,7 +4824,7 @@ Let&#8217;s explain this using an example.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="nested-rbelpath-expressions"><a class="anchor" href="#nested-rbelpath-expressions"></a>4.14.6. Nested RbelPath expressions</h4>
+<h4 id="nested-rbelpath-expressions"><a class="anchor" href="#nested-rbelpath-expressions"></a>4.13.6. Nested RbelPath expressions</h4>
 <div class="paragraph">
 <p>Consider the following rbel tree:</p>
 </div>
@@ -5007,7 +4891,7 @@ Currently, it is not recommended to use these. (e.g. <code>$.body.[?(not (@.. ==
 </div>
 </div>
 <div class="sect3">
-<h4 id="debugging-rbel-expressions"><a class="anchor" href="#debugging-rbel-expressions"></a>4.14.7. Debugging Rbel-Expressions</h4>
+<h4 id="debugging-rbel-expressions"><a class="anchor" href="#debugging-rbel-expressions"></a>4.13.7. Debugging Rbel-Expressions</h4>
 <div class="paragraph">
 <p>To help users create RbelPath-Expressions, there is a Debug-Functionality that produces log messages designed to help.<br>
 These can be activated by <code>RbelOptions.activateRbelPathDebugging();</code>.<br>
@@ -5041,13 +4925,13 @@ It brings various options:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_standalone_proxy"><a class="anchor" href="#_standalone_proxy"></a>4.15. Tiger Standalone Proxy</h3>
+<h3 id="_standalone_proxy"><a class="anchor" href="#_standalone_proxy"></a>4.14. Tiger Standalone Proxy</h3>
 <div class="paragraph">
 <p>The Tiger Standalone Proxy repackages the Tiger Proxy as a self-contained, runnable Spring Boot JAR and as a Docker image.<br>
 It is the recommended way to run a Tiger Proxy <strong>outside of a Tiger test suite</strong> — for example as a permanently running traffic recorder, as part of a mesh setup, or as a sidecar container.</p>
 </div>
 <div class="sect3">
-<h4 id="standalone-proxy-vs-remote-tiger-proxy-type-tigerproxy"><a class="anchor" href="#standalone-proxy-vs-remote-tiger-proxy-type-tigerproxy"></a>4.15.1. Standalone Proxy vs. Remote Tiger Proxy (<code>type: tigerProxy</code>)</h4>
+<h4 id="standalone-proxy-vs-remote-tiger-proxy-type-tigerproxy"><a class="anchor" href="#standalone-proxy-vs-remote-tiger-proxy-type-tigerproxy"></a>4.14.1. Standalone Proxy vs. Remote Tiger Proxy (<code>type: tigerProxy</code>)</h4>
 <div class="paragraph">
 <p>Both the Standalone Proxy and a remote proxy server (<code>type: tigerProxy</code> in the <code>servers</code> block) use the same underlying Tiger Proxy engine with identical capabilities (routes, TLS, modifications, RBel parsing, mesh setup, etc.).<br>
 The key difference lies in how and where they are managed:</p>
@@ -5099,7 +4983,7 @@ Use the Standalone Proxy when the proxy should run independently of any particul
 </div>
 </div>
 <div class="sect3">
-<h4 id="configuration"><a class="anchor" href="#configuration"></a>4.15.2. Configuration</h4>
+<h4 id="configuration"><a class="anchor" href="#configuration"></a>4.14.2. Configuration</h4>
 <div class="paragraph">
 <p>All configuration options described in <a href="#_tiger_proxy">the Tiger Proxy chapter</a> apply equally to the Standalone Proxy.<br>
 The properties are placed directly under the <code>tigerProxy</code> key — the same flat structure used by the local Tiger Proxy.</p>
@@ -5185,7 +5069,7 @@ If you change <code>adminPort</code>, update <code>server.port</code> accordingl
 </div>
 </div>
 <div class="sect3">
-<h4 id="running-tiger-proxy-as-a-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-a-standalone-jar"></a>4.15.3. Running tiger proxy as a standalone JAR</h4>
+<h4 id="running-tiger-proxy-as-a-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-a-standalone-jar"></a>4.14.3. Running tiger proxy as a standalone JAR</h4>
 <div class="paragraph">
 <p>A Spring Boot executable JAR is available via <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy">Maven Central</a>.<br>
 Download the JAR and start it with:</p>
@@ -5210,7 +5094,7 @@ Alternatively, point Spring Boot at any file via <code>--spring.config.additiona
 </div>
 </div>
 <div class="sect3">
-<h4 id="running-tiger-proxy-as-a-docker-container"><a class="anchor" href="#running-tiger-proxy-as-a-docker-container"></a>4.15.4. Running tiger proxy as a Docker container</h4>
+<h4 id="running-tiger-proxy-as-a-docker-container"><a class="anchor" href="#running-tiger-proxy-as-a-docker-container"></a>4.14.4. Running tiger proxy as a Docker container</h4>
 <div class="paragraph">
 <p>You can also run the Tiger Proxy as a Docker container:</p>
 </div>
@@ -5249,7 +5133,7 @@ The container health check connects to port 8080 — if you change this mapping,
 </div>
 </div>
 <div class="sect2">
-<h3 id="available-endpoints"><a class="anchor" href="#available-endpoints"></a>4.16. Available endpoints</h3>
+<h3 id="available-endpoints"><a class="anchor" href="#available-endpoints"></a>4.15. Available endpoints</h3>
 <div class="paragraph">
 <p>Once the Tiger Proxy or Standalone Proxy is running, the following endpoints are available on the admin port:</p>
 </div>
@@ -8072,7 +7956,42 @@ The VCS root itself is still checked for a tiger YAML before stopping.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_additional_yaml_files"><a class="anchor" href="#_additional_yaml_files"></a>6.3. Additional YAML files</h3>
+<h3 id="_tiger_rootfolder"><a class="anchor" href="#_tiger_rootfolder"></a>6.3. tiger.rootfolder</h3>
+<div class="paragraph">
+<p>Once the main <code>tiger.yaml</code> has been located (see <a href="#_tiger_yaml_file_resolution">[_tiger_yaml_file_resolution]</a>), Tiger stores the <strong>directory containing it</strong> as the read-only configuration key <code>tiger.rootfolder</code>.<br>
+If no <code>tiger.yaml</code> is found at all (e.g. <code>tiger.testenv.cfgfile</code> was set but does not point to an existing file, or none is required), <code>tiger.rootfolder</code> falls back to the current working directory.</p>
+</div>
+<div class="paragraph">
+<p><code>tiger.rootfolder</code> is used internally as the anchor for resolving <strong>relative file paths</strong> referenced from within the configuration, so that such paths are interpreted relative to the location of <code>tiger.yaml</code> rather than relative to whatever directory the JVM happens to be started from. Examples of settings resolved against <code>tiger.rootfolder</code>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>tigerProxy.fileSaveInfo.sourceFile</code> (the <code>.tgr</code> file a Tiger Proxy replays traffic from at startup)</p>
+</li>
+<li>
+<p><code>tigerProxy.keyFolders</code> (folders scanned for cryptographic keys)</p>
+</li>
+<li>
+<p>the master-secrets file used for TLS decryption</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>tiger.rootfolder</code> is set automatically by Tiger and should not be configured manually; it is documented here only to explain how relative paths in the configuration are resolved.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_additional_yaml_files"><a class="anchor" href="#_additional_yaml_files"></a>6.4. Additional YAML files</h3>
 <div class="paragraph">
 <p>You can specify additional YAML files to be loaded into the TigerGlobalConfiguration.<br>
 This allows you to split your configuration into multiple files, for example to separate default values from environment-specific overrides or to keep sensitive data in a separate file that is not checked into version control.</p>
@@ -8124,7 +8043,7 @@ The <code>${environment}</code> placeholder is resolved at runtime from the Tige
 </div>
 </div>
 <div class="sect2">
-<h3 id="key-translation"><a class="anchor" href="#key-translation"></a>6.4. Key-translation</h3>
+<h3 id="key-translation"><a class="anchor" href="#key-translation"></a>6.5. Key-translation</h3>
 <div class="paragraph">
 <p>To easily convert between the multiple sources the TigerGlobalConfiguration offers key-translation:</p>
 </div>
@@ -8147,7 +8066,7 @@ To allow a clean startup on systems that have values like this configured the gi
 </div>
 </div>
 <div class="sect2">
-<h3 id="thread-based-configuration"><a class="anchor" href="#thread-based-configuration"></a>6.5. Thread-based configuration</h3>
+<h3 id="thread-based-configuration"><a class="anchor" href="#thread-based-configuration"></a>6.6. Thread-based configuration</h3>
 <div class="paragraph">
 <p>To enable execution of multiple tests simultaneously some data has to be stored in a thread-based manner (the first step could for example store the result of a request in a variable, the second step could read it from that variable).</p>
 </div>
@@ -8164,7 +8083,7 @@ To allow a clean startup on systems that have values like this configured the gi
 </div>
 </div>
 <div class="sect2">
-<h3 id="placeholders"><a class="anchor" href="#placeholders"></a>6.6. Placeholders</h3>
+<h3 id="placeholders"><a class="anchor" href="#placeholders"></a>6.7. Placeholders</h3>
 <div class="paragraph">
 <p>The TigerGlobalConfiguration supports the use of placeholders.<br>
 Say for example you have a test-environment with two servers, "A" and "B".<br>
@@ -8223,7 +8142,7 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="sect2">
-<h3 id="rbelpath-style-retrieval"><a class="anchor" href="#rbelpath-style-retrieval"></a>6.7. RbelPath-style retrieval</h3>
+<h3 id="rbelpath-style-retrieval"><a class="anchor" href="#rbelpath-style-retrieval"></a>6.8. RbelPath-style retrieval</h3>
 <div class="paragraph">
 <p>The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties.<br>
 Consider for example the following YAML:</p>
@@ -8262,7 +8181,7 @@ This expression uses the recursive descent mechanic of RbelPath.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="fallback-values"><a class="anchor" href="#fallback-values"></a>6.8. Fallback values</h3>
+<h3 id="fallback-values"><a class="anchor" href="#fallback-values"></a>6.9. Fallback values</h3>
 <div class="paragraph">
 <p>Sometimes a default value is desired when a given key is not set.<br>
 To define such a value, just use the pipe (|) after the key, like so:</p>
@@ -8282,7 +8201,7 @@ If that key is not found, the fallback value "orThisValue" will be used.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="localized-configuration"><a class="anchor" href="#localized-configuration"></a>6.9. Localized configuration</h3>
+<h3 id="localized-configuration"><a class="anchor" href="#localized-configuration"></a>6.10. Localized configuration</h3>
 <div class="paragraph">
 <p>It is possible to set a local variable in the TigerGlobalConfiguration which will only be active for the duration of the test case execution.</p>
 </div>
@@ -8314,12 +8233,12 @@ TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}</c
 </div>
 </div>
 <div class="sect2">
-<h3 id="examples"><a class="anchor" href="#examples"></a>6.10. Examples</h3>
+<h3 id="examples"><a class="anchor" href="#examples"></a>6.11. Examples</h3>
 <div class="paragraph">
 <p>Below there are some examples of how to use the TigerGlobalConfiguration in different scenarios.</p>
 </div>
 <div class="sect3">
-<h4 id="example-overriding-proxy-routes-via-environment-variables"><a class="anchor" href="#example-overriding-proxy-routes-via-environment-variables"></a>6.10.1. Example: Overriding Proxy Routes via Environment Variables</h4>
+<h4 id="example-overriding-proxy-routes-via-environment-variables"><a class="anchor" href="#example-overriding-proxy-routes-via-environment-variables"></a>6.11.1. Example: Overriding Proxy Routes via Environment Variables</h4>
 <div class="paragraph">
 <p>Say you have an environment configured in your testenv.yaml.<br>
 You want the tiger proxy to forward traffic on one route to your backend-server.<br>
@@ -8346,7 +8265,7 @@ Below are the relevant snippets:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="example-customizing-individual-values-via-placeholders"><a class="anchor" href="#example-customizing-individual-values-via-placeholders"></a>6.10.2. Example: Customizing Individual Values via Placeholders</h4>
+<h4 id="example-customizing-individual-values-via-placeholders"><a class="anchor" href="#example-customizing-individual-values-via-placeholders"></a>6.11.2. Example: Customizing Individual Values via Placeholders</h4>
 <div class="paragraph">
 <p>In the above example let&#8217;s say you only want to customize the port.<br>
 This can be done by using placeholders:</p>
@@ -8370,7 +8289,7 @@ This can be done by using placeholders:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="example-referencing-dynamic-values-in-test-assertions"><a class="anchor" href="#example-referencing-dynamic-values-in-test-assertions"></a>6.10.3. Example: Referencing Dynamic Values in Test Assertions</h4>
+<h4 id="example-referencing-dynamic-values-in-test-assertions"><a class="anchor" href="#example-referencing-dynamic-values-in-test-assertions"></a>6.11.3. Example: Referencing Dynamic Values in Test Assertions</h4>
 <div class="paragraph">
 <p>Now we want to assert that the reply coming from the server has the correct backend-url in the XML that is returned to the sender.<br>
 To do this we have to reference the configured URL from above, since the value could be different on every execution.<br>
@@ -8388,7 +8307,7 @@ We can solve this using placeholders:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="pre-defined-values"><a class="anchor" href="#pre-defined-values"></a>6.11. Pre-Defined values</h3>
+<h3 id="pre-defined-values"><a class="anchor" href="#pre-defined-values"></a>6.12. Pre-Defined values</h3>
 <div class="paragraph">
 <p>Tiger adds some pre-defined values to make your life easier configuring the environment.<br>
 Currently, these are:</p>
@@ -8403,7 +8322,7 @@ This enables side effect free execution of the testsuite.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="inline-jexl"><a class="anchor" href="#inline-jexl"></a>6.12. Inline JEXL</h3>
+<h3 id="inline-jexl"><a class="anchor" href="#inline-jexl"></a>6.13. Inline JEXL</h3>
 <div class="paragraph">
 <p>In addition to the <code>${foo.bar}</code> syntax allowing the retrieval of configuration values there exists the <code>!{'foo' != 'bar'}</code> syntax allowing the execution of JEXL expressions.<br>
 The JEXL-syntax is described in more depth here: <a href="https://commons.apache.org/proper/commons-jexl/reference/syntax.html" class="bare">https://commons.apache.org/proper/commons-jexl/reference/syntax.html</a></p>
@@ -8413,7 +8332,7 @@ The JEXL-syntax is described in more depth here: <a href="https://commons.apache
 You will find two predefined namespaces and also the ability to add your own, allowing further customization.</p>
 </div>
 <div class="sect3">
-<h4 id="the-default-namespace"><a class="anchor" href="#the-default-namespace"></a>6.12.1. The default namespace</h4>
+<h4 id="the-default-namespace"><a class="anchor" href="#the-default-namespace"></a>6.13.1. The default namespace</h4>
 <div class="paragraph">
 <p>The default-namespace of the inline JEXL-expression carries the following functions:</p>
 </div>
@@ -8464,7 +8383,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="the-rbel-namespace"><a class="anchor" href="#the-rbel-namespace"></a>6.12.2. The rbel namespace</h4>
+<h4 id="the-rbel-namespace"><a class="anchor" href="#the-rbel-namespace"></a>6.13.2. The rbel namespace</h4>
 <div class="paragraph">
 <p>To give you direct access to the messages sent please use the rbel-namespace:</p>
 </div>
@@ -8497,7 +8416,7 @@ You will find two predefined namespaces and also the ability to add your own, al
 </div>
 </div>
 <div class="sect3">
-<h4 id="adding-custom-namespaces"><a class="anchor" href="#adding-custom-namespaces"></a>6.12.3. Adding custom namespaces</h4>
+<h4 id="adding-custom-namespaces"><a class="anchor" href="#adding-custom-namespaces"></a>6.13.3. Adding custom namespaces</h4>
 <div class="sect4">
 <h5 id="using-code"><a class="anchor" href="#using-code"></a>Using code</h5>
 <div class="paragraph">
@@ -8532,7 +8451,7 @@ public class DummyJexlMethods {
 </div>
 </div>
 <div class="sect2">
-<h3 id="_tiger_configuration_editor"><a class="anchor" href="#_tiger_configuration_editor"></a>6.13. Configuration Editor</h3>
+<h3 id="_tiger_configuration_editor"><a class="anchor" href="#_tiger_configuration_editor"></a>6.14. Configuration Editor</h3>
 <div class="paragraph">
 <p>The configuration editor allows to view and edit the tiger configuration during a test run.<br>
 The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 12</a>).</p>
@@ -9258,14 +9177,14 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <h5 id="standalone-mode"><a class="anchor" href="#standalone-mode"></a>Standalone mode</h5>
 <div class="paragraph">
 <p>As an alternative to the integration in the Workflow UI, the topology visualizer can be used in a standalone mode.<br>
-You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.2/tiger-topology-visualizer-4.4.2-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.2/tiger-topology-visualizer-4.4.2-standalone.jar</a></p>
+You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.3/tiger-topology-visualizer-4.4.3-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.3/tiger-topology-visualizer-4.4.3-standalone.jar</a></p>
 </div>
 <div class="paragraph">
 <p>and run it with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.2-standalone.jar</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.3-standalone.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -11371,7 +11290,7 @@ Then  TGR CANOPY contains proxied host api.example.com</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-08-26 11:23:44 +0200
+Last updated 2026-09-08 18:45:27 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
