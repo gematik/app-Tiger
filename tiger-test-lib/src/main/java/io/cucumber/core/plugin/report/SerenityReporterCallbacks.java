@@ -101,7 +101,6 @@ import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 
 @Slf4j
 public class SerenityReporterCallbacks extends AbstractStepListener {
@@ -502,7 +501,8 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
                             Serenity.recordReportData()
                                 .asEvidence()
                                 .withTitle(entry.getType() + " - " + entry.getTitle())
-                                .andContents(new JSONObject(entry.getDetails()).toString(2))));
+                                .andContents(
+                                    EvidenceReportJsonConverter.toJson(entry.getDetails()))));
   }
 
   private void informWorkflowUiAboutCurrentStep(

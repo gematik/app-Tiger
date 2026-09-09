@@ -1,5 +1,14 @@
 # Changelog Tiger Test platform
 
+# Unreleased
+
+## Bugfixes
+
+* Recording Serenity step evidence now uses the same type-aware conversion as the HTML evidence
+  report. Collection results from FHIRPath checks no longer cause a `StackOverflowError` through
+  reflective inspection of auto-creating model getters on Java 21. Text, arrays, and absent details
+  are also preserved correctly.
+
 # Release 4.4.3
 
 ## Bugfixes
