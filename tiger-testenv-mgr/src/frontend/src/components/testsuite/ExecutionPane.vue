@@ -365,6 +365,7 @@ h4.scenariotitle {
 .step_text {
   font-size: 80%;
   width: 99%;
+  color: var(--bs-body-color, #212529);
 }
 
 .rbelDetailsBadge {

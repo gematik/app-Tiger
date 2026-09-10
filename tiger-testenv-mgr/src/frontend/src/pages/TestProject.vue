@@ -997,6 +997,7 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 
 .steps-docstring {
   color: #0a8694;
+  background-color: var(--bs-body-bg, #fff);
   font-family: Courier, monospace;
   padding-left: 1rem;
   white-space: pre;
