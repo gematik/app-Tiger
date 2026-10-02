@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.4.3 - 2026-09-08</span>
+<span id="revdate">Version 4.4.4 - 2026-10-02</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -214,10 +214,11 @@ video {
 </li>
 <li><a href="#getting-started">2. Getting started</a>
 <ul class="sectlevel2">
-<li><a href="#requirements">2.1. Requirements</a></li>
-<li><a href="#maven-in-a-nutshell">2.2. Maven in a nutshell</a></li>
-<li><a href="#_example_project">2.3. Example project</a></li>
-<li><a href="#how-to-contact-the-tiger-team">2.4. How to contact the Tiger team</a></li>
+<li><a href="#requirements-for-using-tiger">2.1. Requirements for using Tiger</a></li>
+<li><a href="#requirements-for-building-tiger">2.2. Requirements for building Tiger</a></li>
+<li><a href="#maven-in-a-nutshell">2.3. Maven in a nutshell</a></li>
+<li><a href="#_example_project">2.4. Example project</a></li>
+<li><a href="#how-to-contact-the-tiger-team">2.5. How to contact the Tiger team</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_test_environment_manager">3. Tiger Test Environment Manager</a>
@@ -562,15 +563,15 @@ However, if you are using it in your projects, feel free to contact us and we mi
 <p>If you do not have time to read the entire documentation, you can jump directly to the <a href="#_example_project">Example project</a> section.</p>
 </div>
 <div class="sect2">
-<h3 id="requirements"><a class="anchor" href="#requirements"></a>2.1. Requirements</h3>
+<h3 id="requirements-for-using-tiger"><a class="anchor" href="#requirements-for-using-tiger"></a>2.1. Requirements for using Tiger</h3>
 <div class="ulist">
 <div class="title">System requirements</div>
 <ul>
 <li>
-<p>Open JDK &gt;= 17</p>
+<p>JDK 17 or newer</p>
 </li>
 <li>
-<p>Maven &gt;= 3.6</p>
+<p>Maven <code>3.9</code> or newer</p>
 </li>
 </ul>
 </div>
@@ -591,9 +592,30 @@ On Windows you can use Git Bash or Powershell
 </div>
 </div>
 <div class="sect2">
-<h3 id="maven-in-a-nutshell"><a class="anchor" href="#maven-in-a-nutshell"></a>2.2. Maven in a nutshell</h3>
+<h3 id="requirements-for-building-tiger"><a class="anchor" href="#requirements-for-building-tiger"></a>2.2. Requirements for building Tiger</h3>
+<div class="paragraph">
+<p>To build Tiger from source, use:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>JDK <code>17.0.3</code> or newer</p>
+</li>
+<li>
+<p>Maven <code>3.9</code> or newer</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Tiger is currently built with JDK <code>17</code> and targets Java <code>17</code> bytecode.<br>
+Newer JDKs may work, but they are not currently used to build Tiger.<br>
+Run <code>mvn --version</code> before building to verify both the Maven version and the JDK Maven uses.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="maven-in-a-nutshell"><a class="anchor" href="#maven-in-a-nutshell"></a>2.3. Maven in a nutshell</h3>
 <div class="sect3">
-<h4 id="using-the-tiger-starter-pom"><a class="anchor" href="#using-the-tiger-starter-pom"></a>2.2.1. Using the Tiger Starter Pom</h4>
+<h4 id="using-the-tiger-starter-pom"><a class="anchor" href="#using-the-tiger-starter-pom"></a>2.3.1. Using the Tiger Starter Pom</h4>
 <div class="paragraph">
 <p>We provide a start pom which makes it faster to bootstrap a new test suite project.<br>
 You need to extend the tiger-starter-parent pom in your project, and you get a project with all the tiger dependencies and plugins configured to run tests with maven.</p>
@@ -660,7 +682,7 @@ This means the tests will not be run automatically on start up and you can selec
 </div>
 </div>
 <div class="sect3">
-<h4 id="without-the-tiger-start-pom"><a class="anchor" href="#without-the-tiger-start-pom"></a>2.2.2. Without the Tiger Start Pom</h4>
+<h4 id="without-the-tiger-start-pom"><a class="anchor" href="#without-the-tiger-start-pom"></a>2.3.2. Without the Tiger Start Pom</h4>
 <div class="paragraph">
 <p>To use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger</p>
 </div>
@@ -899,7 +921,7 @@ servers: {}</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_example_project"><a class="anchor" href="#_example_project"></a>2.3. Example project</h3>
+<h3 id="_example_project"><a class="anchor" href="#_example_project"></a>2.4. Example project</h3>
 <div class="paragraph">
 <p>In the <code>/doc/examples/tigerOnly</code> folder of this project you will find an example for a minimum configured maven project that</p>
 </div>
@@ -941,7 +963,7 @@ This is currently "empty".</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="how-to-contact-the-tiger-team"><a class="anchor" href="#how-to-contact-the-tiger-team"></a>2.4. How to contact the Tiger team</h3>
+<h3 id="how-to-contact-the-tiger-team"><a class="anchor" href="#how-to-contact-the-tiger-team"></a>2.5. How to contact the Tiger team</h3>
 <div class="paragraph">
 <p>You can reach us via</p>
 </div>
@@ -1616,9 +1638,12 @@ The DNS address is automatically injected into sibling Docker containers for tra
 
   testApp:
     type: docker
-    docker:
-      image: my-app:latest
-      exposedPorts: [8080]
+    source:
+        - my-app
+    version: latest
+    dockerOptions:
+      ports:
+        - 8080:8080
     # DNS is automatically injected; app resolves api.example.com through Canopy</code></pre>
 </div>
 </div>
@@ -2885,7 +2910,9 @@ The individual attributes are described in detail in the subsections below.</p>
       rewriteLocationHeader: true
       honorHostHeaderRouting: false
       # ----Traffic download pagination-----------------------------
-      maximumTrafficDownloadPageSize: 100000    # Maximum number of messages per download (default: 100000)</code></pre>
+      maximumTrafficDownloadPageSize: 100000    # Page size used when a download-request does not ask for one, e.g. the WebUI traffic export (default: 100000)
+      trafficDownloadPageSize: 100              # Number of messages this proxy requests per page when catching up with an upstream proxy (default: 100)
+      maximumTrafficDownloadPages: 200          # Emergency brake: a catch-up is given up after this many pages, everything the upstream proxy still has stays missing (default: 200)</code></pre>
 </div>
 </div>
 </div>
@@ -3227,8 +3254,12 @@ Default is false.</p>
 <div class="sect3">
 <h4 id="alpnprotocols"><a class="anchor" href="#alpnprotocols"></a>4.3.11. alpnProtocols</h4>
 <div class="paragraph">
-<p>The Tiger Proxy automatically probes each HTTPS backend at route-add time to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.<br>
+<p>The Tiger Proxy automatically probes each HTTPS backend to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.<br>
 Based on the result, the proxy restricts the protocols it advertises to clients during the TLS handshake — ensuring transparent behavior (the client sees the same protocol it would with a direct connection).</p>
+</div>
+<div class="paragraph">
+<p>Probing happens in the background and never delays startup; each backend is probed once.<br>
+If a probe is still running when a client connects, only that handshake waits for it.</p>
 </div>
 <div class="paragraph">
 <p>In most cases this works automatically and requires no configuration.<br>
@@ -4352,6 +4383,23 @@ Default is 30.0 seconds.</p>
 Timeout detection only applies to connections that are newer than this threshold to avoid false positives in long-running connections.<br>
 Default is 5.0 minutes.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="parsingtimeoutinseconds"><a class="anchor" href="#parsingtimeoutinseconds"></a>4.9.5. parsingTimeoutInSeconds</h4>
+<div class="paragraph">
+<p>How long the proxy waits for messages to finish parsing before giving up on them.<br>
+This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log), for a single message to be parsed, and for a message to be parsed before the binary modifier plugins are applied to it.<br>
+Raise it if you routinely handle very large messages; there is no reason to lower it, as the wait ends as soon as parsing is done.<br>
+Default is 100 seconds.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="fileparsingtimeoutinseconds"><a class="anchor" href="#fileparsingtimeoutinseconds"></a>4.9.6. fileParsingTimeoutInSeconds</h4>
+<div class="paragraph">
+<p>How long the proxy waits, at startup, for a <code>.tgr</code> file given via <code>fileSaveInfo.sourceFile</code> to be fully read and parsed.<br>
+Raise it if you routinely load very large <code>.tgr</code> files.<br>
+Default is 600 seconds.</p>
+</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
@@ -4359,7 +4407,9 @@ Default is 5.0 minutes.</p>
     waitForPreviousMessageBeforeParsingInSeconds: 5.0
     previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
     previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
-    previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0</code></pre>
+    previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0
+    parsingTimeoutInSeconds: 100
+    fileParsingTimeoutInSeconds: 600</code></pre>
 </div>
 </div>
 </div>
@@ -4515,6 +4565,31 @@ Three sources feed into the RbelLogger:</p>
 For messages in a mesh setup and from a source file filter expressions can be defined to limit the messages that are actually stored.<br>
 These can be defined using the <code>tigerProxy.trafficEndpointFilterString</code> (for mesh setups) and <code>tigerProxy.fileSaveInfo.readFilter</code> (for tgr-files) respectively.</p>
 </div>
+<div class="sect4">
+<h5 id="add-messages-to-the-rbel-log-programmatically"><a class="anchor" href="#add-messages-to-the-rbel-log-programmatically"></a>Add messages to the RBel log programmatically</h5>
+<div class="paragraph">
+<p>To inspect data that did not pass through a proxy, parse it with the RBel converter of the local TigerProxy.<br>
+The parsed message is then available in the RBel log and can be used by the usual RBel validation steps.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.test.tiger.lib.TigerDirector;
+import java.nio.charset.StandardCharsets;
+
+var localTigerProxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+localTigerProxy
+    .getRbelLogger()
+    .getRbelConverter()
+    .parseMessage(
+        "{\"id\":\"example\", \"status\":\"received\"}".getBytes(StandardCharsets.UTF_8),
+        new RbelMessageMetadata());</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>RbelMessageMetadata</code> can optionally contain sender, receiver, and transmission-time information if this context should be displayed in the RBel log.<br>
+The local TigerProxy must be enabled for the test; <code>getLocalTigerProxyOrFail()</code> reports an error otherwise.</p>
+</div>
 <div class="paragraph">
 <p>When messages pass the filter, partner messages (request/response pairs) are kept intact.<br>
 So when you filter for messages that have a return code of 200 the corresponding requests do not match the filter expression.<br>
@@ -4522,6 +4597,7 @@ They are however kept in memory since the partner, the response in that case, do
 </div>
 <div class="paragraph">
 <p>Filter expressions are <a href="#_jexl_expressions">JEXL expressions</a>.</p>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -8855,6 +8931,60 @@ In order to increase/decrease the width of the Rbel Log Details view, the user c
 The Rbel Log Details can be minimized by clicking on the double arrow on the top left of the Rbel Log Details section.</p>
 </div>
 </div>
+<div class="sect5">
+<h6 id="_rbel_log_scenario_scoping"><a class="anchor" href="#_rbel_log_scenario_scoping"></a>Scoping the Views to a Scenario</h6>
+<div class="paragraph">
+<p>By default the Rbel Log Details view and the Traffic Visualization both show every message recorded during the whole test run, which can make it hard to find the messages belonging to one specific scenario once several scenarios have executed.<br>
+The crosshairs toggle beside the view selector narrows both down to the messages of a single scenario at once.<br>
+It only appears once a scenario has run - standalone, or before anything has executed, there is nothing to scope to yet.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/rbellog_scenario_only_toggle.png" alt="rbellog scenario only toggle">
+</div>
+<div class="title">Figure 46. The scenario scoping toggle</div>
+</div>
+<div class="paragraph">
+<p>With no scenario explicitly selected, the toggle scopes to the scenario that is currently running, or - once the run has finished - the last scenario that actually executed.</p>
+</div>
+<div class="paragraph">
+<p>To scope to a different scenario instead, click on that scenario&#8217;s title in the test execution list.<br>
+The selected scenario is highlighted.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/maincontent_scenario_selected.png" alt="maincontent scenario selected">
+</div>
+<div class="title">Figure 47. A selected scenario</div>
+</div>
+<div class="paragraph">
+<p>Clicking the same scenario title again clears the selection, returning to the default (running/last scenario) behavior.</p>
+</div>
+<div class="paragraph">
+<p>Once a scenario is selected (or resolved automatically) and the toggle is active, only the messages belonging to that scenario are shown - in the Rbel Log Details view as well as in the Traffic Visualization.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/rbellog_scenario_only_toggle_active.png" alt="rbellog scenario only toggle active">
+</div>
+<div class="title">Figure 48. Scoping active</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/rbellog_scenario_scoped.png" alt="rbellog scenario scoped">
+</div>
+<div class="title">Figure 49. Rbel Log Details scoped to a single scenario</div>
+</div>
+<div class="paragraph">
+<p>If the selected scenario recorded no Rbel messages at all (of any protocol the proxy captures, not just HTTP), the Rbel Log Details view shows a short message instead of an empty message list.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/rbellog_scenario_only_empty.png" alt="rbellog scenario only empty">
+</div>
+<div class="title">Figure 50. No Rbel messages for the selected scenario</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -8862,7 +8992,8 @@ The Rbel Log Details can be minimized by clicking on the double arrow on the top
 <div class="paragraph">
 <p>An additional feature of the Workflow UI is the traffic visualization.<br>
 This feature allows to visualize the traffic between the servers under test in a sequence diagram.<br>
-The feature needs to be explicitly enabled in the <code>tiger.yaml</code> configuration file.</p>
+The feature needs to be explicitly enabled in the <code>tiger.yaml</code> configuration file.<br>
+Like the Rbel Log Details view, it can be narrowed down to a single scenario using the scoping toggle described <a href="#_rbel_log_scenario_scoping">above</a>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8877,7 +9008,7 @@ The feature needs to be explicitly enabled in the <code>tiger.yaml</code> config
 <div class="content">
 <img src="screenshots/trafficVisualization.png" alt="trafficVisualization">
 </div>
-<div class="title">Figure 46. Traffic Visualization</div>
+<div class="title">Figure 51. Traffic Visualization</div>
 </div>
 <div class="paragraph">
 <p>The sequence diagram shows the messages that were exchanged between the servers under test.<br>
@@ -8928,7 +9059,7 @@ This can be done by clicking the play buttons in either the Test Execution pane 
 <div class="content">
 <img src="screenshots/play_button.png" alt="play button">
 </div>
-<div class="title">Figure 47. Play Buttons</div>
+<div class="title">Figure 52. Play Buttons</div>
 </div>
 </div>
 <div class="sect3">
@@ -8940,7 +9071,7 @@ This can be done by clicking the play buttons in either the Test Execution pane 
 <div class="content">
 <img src="screenshots/testselector_modal.png" alt="testselector modal">
 </div>
-<div class="title">Figure 48. Test Selector modal window opened in the Workflow UI</div>
+<div class="title">Figure 53. Test Selector modal window opened in the Workflow UI</div>
 </div>
 <div class="paragraph">
 <p>The Test Selector modal window presents the tests in a tree table, where tests are organized by the folder structure of the feature files, and by scenarios within the feature files.<br>
@@ -8954,7 +9085,7 @@ The tags are displayed on the right side of the modal window.</p>
 <div class="content">
 <img src="screenshots/testselector_tags.png" alt="testselector tags">
 </div>
-<div class="title">Figure 49. Select tests by tags</div>
+<div class="title">Figure 54. Select tests by tags</div>
 </div>
 <div class="paragraph">
 <p>By clicking on a tag, all tests with that tag will be selected.<br>
@@ -8964,7 +9095,7 @@ Additionally, one can remove a given tag from the selection or replace the full 
 <div class="content">
 <img src="screenshots/testselector_tags_dropdown.png" alt="testselector tags dropdown">
 </div>
-<div class="title">Figure 50. Submenu for tag selection with option for unselect and replace selection</div>
+<div class="title">Figure 55. Submenu for tag selection with option for unselect and replace selection</div>
 </div>
 <div class="paragraph">
 <p>A global search field as well as individual search fields for each column allow filtering the tests by name, tags or description.</p>
@@ -8973,7 +9104,7 @@ Additionally, one can remove a given tag from the selection or replace the full 
 <div class="content">
 <img src="screenshots/testselector_searchfields.png" alt="testselector searchfields">
 </div>
-<div class="title">Figure 51. Search fields in the Test Selector table</div>
+<div class="title">Figure 56. Search fields in the Test Selector table</div>
 </div>
 <div class="paragraph">
 <p>It is possible to save the current selection of tests in a file, which can be loaded later on.</p>
@@ -8982,7 +9113,7 @@ Additionally, one can remove a given tag from the selection or replace the full 
 <div class="content">
 <img src="screenshots/testselector_save_load.png" alt="testselector save load">
 </div>
-<div class="title">Figure 52. Save and load buttons for test selections</div>
+<div class="title">Figure 57. Save and load buttons for test selections</div>
 </div>
 <div class="paragraph">
 <p>This may be useful for collaboration with other team members or for reusing the same selection in future test runs.</p>
@@ -9010,7 +9141,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/testselector_run_button.png" alt="testselector run button">
 </div>
-<div class="title">Figure 53. Run selected tests button</div>
+<div class="title">Figure 58. Run selected tests button</div>
 </div>
 </div>
 <div class="sect3">
@@ -9025,13 +9156,13 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_visualizer_button.png" alt="topology visualizer button">
 </div>
-<div class="title">Figure 54. Topology Visualizer can be accessed directly from the Workflow UI</div>
+<div class="title">Figure 59. Topology Visualizer can be accessed directly from the Workflow UI</div>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="screenshots/topology_visualizer_example_diagram.png" alt="topology visualizer example diagram">
 </div>
-<div class="title">Figure 55. Example of a topology diagram</div>
+<div class="title">Figure 60. Example of a topology diagram</div>
 </div>
 <div class="sect4">
 <h5 id="server-types-represented-in-the-topology-visualizer"><a class="anchor" href="#server-types-represented-in-the-topology-visualizer"></a>Server Types represented in the Topology Visualizer</h5>
@@ -9063,7 +9194,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_tiger-proxy-with-connections.png" alt="topology tiger proxy with connections">
 </div>
-<div class="title">Figure 56. Local tiger proxy subscribes to traffic from two other proxies. One is configured as a reverse proxy. A route to an external URL is also configured.</div>
+<div class="title">Figure 61. Local tiger proxy subscribes to traffic from two other proxies. One is configured as a reverse proxy. A route to an external URL is also configured.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9075,7 +9206,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_tiger-external-url.png" alt="topology tiger external url">
 </div>
-<div class="title">Figure 57. External URL server type with implicit route from the local proxy.</div>
+<div class="title">Figure 62. External URL server type with implicit route from the local proxy.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9099,7 +9230,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_tiger-external-jar.png" alt="topology tiger external jar">
 </div>
-<div class="title">Figure 58. External JAR server type configured to proxy traffic via the local tiger proxy and with implicit route from the local proxy.</div>
+<div class="title">Figure 63. External JAR server type configured to proxy traffic via the local tiger proxy and with implicit route from the local proxy.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9111,7 +9242,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_tiger-httpbin.png" alt="topology tiger httpbin">
 </div>
-<div class="title">Figure 59. httpbin server type with implicit route from the local proxy.</div>
+<div class="title">Figure 64. httpbin server type with implicit route from the local proxy.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9123,7 +9254,7 @@ Otherwise, we cannot unambiguously identify the tests.
 <div class="content">
 <img src="screenshots/topology_tiger-zion.png" alt="topology tiger zion">
 </div>
-<div class="title">Figure 60. zion server type with implicit route from the local proxy.</div>
+<div class="title">Figure 65. zion server type with implicit route from the local proxy.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9136,7 +9267,7 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <div class="content">
 <img src="screenshots/topology_tiger-docker.png" alt="topology tiger docker">
 </div>
-<div class="title">Figure 61. docker server type with explicit route from the local proxy.</div>
+<div class="title">Figure 66. docker server type with explicit route from the local proxy.</div>
 </div>
 </div>
 <div class="sect5">
@@ -9148,7 +9279,7 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <div class="content">
 <img src="screenshots/topology_tiger-compose.png" alt="topology tiger compose">
 </div>
-<div class="title">Figure 62. compose server type with two services and explicit routes from the local proxy.</div>
+<div class="title">Figure 67. compose server type with two services and explicit routes from the local proxy.</div>
 </div>
 </div>
 </div>
@@ -9161,7 +9292,7 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <div class="content">
 <img src="screenshots/topology_live_edges.png" alt="topology live edges">
 </div>
-<div class="title">Figure 63. Topology diagram with additional edges between local client, mainServer and backendServer</div>
+<div class="title">Figure 68. Topology diagram with additional edges between local client, mainServer and backendServer</div>
 </div>
 <div class="paragraph">
 <p>It is possible to toggle between the display of all data, only static data and only live data.</p>
@@ -9170,21 +9301,21 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <div class="content">
 <img src="screenshots/topology_filter_buttons.png" alt="topology filter buttons">
 </div>
-<div class="title">Figure 64. Buttons to toggle between all, live and static edges</div>
+<div class="title">Figure 69. Buttons to toggle between all, live and static edges</div>
 </div>
 </div>
 <div class="sect4">
 <h5 id="standalone-mode"><a class="anchor" href="#standalone-mode"></a>Standalone mode</h5>
 <div class="paragraph">
 <p>As an alternative to the integration in the Workflow UI, the topology visualizer can be used in a standalone mode.<br>
-You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.3/tiger-topology-visualizer-4.4.3-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.3/tiger-topology-visualizer-4.4.3-standalone.jar</a></p>
+You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.4/tiger-topology-visualizer-4.4.4-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.4.4/tiger-topology-visualizer-4.4.4-standalone.jar</a></p>
 </div>
 <div class="paragraph">
 <p>and run it with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.3-standalone.jar</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.4.4-standalone.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -9223,7 +9354,7 @@ The user can see the request type and the error code of the response as well as 
 <div class="content">
 <img src="screenshots/webui.png" alt="webui">
 </div>
-<div class="title">Figure 65. Tiger Proxy Log</div>
+<div class="title">Figure 70. Tiger Proxy Log</div>
 </div>
 <div class="paragraph">
 <p>On the top right the tiger version and the build date are displayed.<br>
@@ -9239,7 +9370,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_filter_open.png" alt="webui filter open">
 </div>
-<div class="title">Figure 66. Filter Managment</div>
+<div class="title">Figure 71. Filter Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -9251,7 +9382,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_inspect_highlight.png" alt="webui inspect highlight">
 </div>
-<div class="title">Figure 67. Access RBel-Path/JEXL Debugging</div>
+<div class="title">Figure 72. Access RBel-Path/JEXL Debugging</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the RBel-Path tab.<br>
@@ -9261,7 +9392,7 @@ The user can execute the RBel-Path on the request or the response and the result
 <div class="content">
 <img src="screenshots/webui_inspect_rbelpath_highlight.png" alt="webui inspect rbelpath highlight">
 </div>
-<div class="title">Figure 68. RBel-Path</div>
+<div class="title">Figure 73. RBel-Path</div>
 </div>
 <div class="paragraph">
 <p>For more information in the Rbel-Path check out <a href="#_rbel_path_details">this</a> section.</p>
@@ -9275,7 +9406,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_inspect_jexl_highlight.png" alt="webui inspect jexl highlight">
 </div>
-<div class="title">Figure 69. JEXL Debugging</div>
+<div class="title">Figure 74. JEXL Debugging</div>
 </div>
 <div id="_jexl_filter" class="paragraph">
 <p>When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.</p>
@@ -9360,7 +9491,7 @@ For a single, standalone Tiger Proxy both views show the same sequence.</p>
 <div class="content">
 <img src="screenshots/webui_routing_open.png" alt="webui routing open">
 </div>
-<div class="title">Figure 70. Route Managment</div>
+<div class="title">Figure 75. Route Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -9372,7 +9503,7 @@ For a single, standalone Tiger Proxy both views show the same sequence.</p>
 <div class="content">
 <img src="screenshots/webui_btn_content_highlight.png" alt="webui btn content highlight">
 </div>
-<div class="title">Figure 71. Buttons to show message content</div>
+<div class="title">Figure 76. Buttons to show message content</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the content of the whole response.</p>
@@ -9381,7 +9512,7 @@ For a single, standalone Tiger Proxy both views show the same sequence.</p>
 <div class="content">
 <img src="screenshots/webui_btn_content.png" alt="webui btn content">
 </div>
-<div class="title">Figure 72. Example of the content of a response</div>
+<div class="title">Figure 77. Example of the content of a response</div>
 </div>
 <div class="paragraph">
 <p>In case that the message is too large to be rendered fully (displaying a "&lt;&#8230;&#8203;redacted due to size of" text), the message will have a "Full Message" button in the top right corner of the request or the response that is highlighted in the following screenshot.</p>
@@ -9390,7 +9521,7 @@ For a single, standalone Tiger Proxy both views show the same sequence.</p>
 <div class="content">
 <img src="screenshots/webui_full_message.png" alt="webui full message">
 </div>
-<div class="title">Figure 73. Button to show the full message</div>
+<div class="title">Figure 78. Button to show the full message</div>
 </div>
 <div class="paragraph">
 <p>By clicking on this button the full message will be displayed in a new tab/window.</p>
@@ -9399,7 +9530,7 @@ For a single, standalone Tiger Proxy both views show the same sequence.</p>
 <div class="content">
 <img src="screenshots/webui_single_message_page.png" alt="webui single message page">
 </div>
-<div class="title">Figure 74. Single message view to show the full message</div>
+<div class="title">Figure 79. Single message view to show the full message</div>
 </div>
 </div>
 <div class="sect4">
@@ -9412,7 +9543,7 @@ To make this easier the user can switch between the request and the response by 
 <div class="content">
 <img src="screenshots/webui_message_partner.png" alt="webui message partner">
 </div>
-<div class="title">Figure 75. Buttons to switch between request and response</div>
+<div class="title">Figure 80. Buttons to switch between request and response</div>
 </div>
 </div>
 </div>
@@ -9521,7 +9652,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
 </div>
-<div class="title">Figure 76. Rbel Path Expression</div>
+<div class="title">Figure 81. Rbel Path Expression</div>
 </div>
 </div>
 <div class="sect3">
@@ -9533,7 +9664,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/accessarray.png" alt="accessarray" width="50%">
 </div>
-<div class="title">Figure 77. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+<div class="title">Figure 82. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
 </div>
 </div>
 <div class="sect3">
@@ -9547,7 +9678,7 @@ For more details check the InlineJexlToolbox</p>
 <div class="content">
 <img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
 </div>
-<div class="title">Figure 78. Use single quotes when using JEXL contexts with a hyphen. </div>
+<div class="title">Figure 83. Use single quotes when using JEXL contexts with a hyphen. </div>
 </div>
 </div>
 <div class="sect3">
@@ -10876,7 +11007,7 @@ Depending on the version of IntelliJ these settings are located either on the to
 <div class="content">
 <img src="media/tiger-intellij-run-settings.png" alt="tiger intellij run settings">
 </div>
-<div class="title">Figure 79. Run/Debug settings for IntelliJ</div>
+<div class="title">Figure 84. Run/Debug settings for IntelliJ</div>
 </div>
 </div>
 <div class="sect3">
@@ -11122,37 +11253,6 @@ For purposes of the Gematik SW-factory, the following code snippet is recommende
 </div>
 </div>
 </div>
-<div class="sect3">
-<h4 id="fe03-can-i-run-a-docker-image-or-canopy-without-the-tiger-cloud-extension"><a class="anchor" href="#fe03-can-i-run-a-docker-image-or-canopy-without-the-tiger-cloud-extension"></a>12.2.3. FE03 Can I run a Docker image or CANOPY without the tiger-cloud-extension?</h4>
-<div class="paragraph">
-<p>Yes. Since Tiger 4.3, <code>tiger-testenv-mgr</code> ships built-in <code>docker</code> and <code>canopy</code> server types (Testcontainers-backed, single-container scope). For a docker-compose-style multi-service env or Kubernetes/Helm, keep using <code>tiger-cloud-extension</code>; for ad-hoc images and CANOPY DNS interception, the in-tree types are enough.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
-  myProxy:
-    type: tigerProxy
-    tigerProxyConfiguration:
-      adminPort: 9000
-      proxyPort: 9090
-  myCanopy:
-    type: canopy
-    canopy:
-      image: gematik1/tiger-canopy-image:latest
-      # tigerProxyUrl, controlMode and dependsUpon are auto-wired from myProxy
-  app:
-    type: docker
-    docker:
-      image: my-org/my-app:1.2.3
-      exposedPorts: [8080]
-      # dnsServers is auto-prepended with myCanopy's IP; opt out with injectDns: false
-      waitStrategy: { kind: HTTP, httpPath: /health, timeoutSeconds: 60 }</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>See the <code>tiger-testenv-mgr</code> user-manual section "Built-in container server types" for the full configuration schema and the placeholders these types publish.</p>
-</div>
-</div>
 </div>
 <div class="sect2">
 <h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>12.3. Workflow UI</h3>
@@ -11290,7 +11390,7 @@ Then  TGR CANOPY contains proxied host api.example.com</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-09-08 18:45:27 +0200
+Last updated 2026-10-02 10:06:53 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
