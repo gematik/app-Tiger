@@ -69,7 +69,27 @@
               v-for="(scenario, scenarioKey) in feature[1].scenarios"
               :key="scenarioKey"
             >
-              <h4 class="scenariotitle test-execution-pane-scenario-title">
+              <h4
+                class="scenariotitle test-execution-pane-scenario-title"
+                :class="{
+                  'scenario-selected': featuresStore.isScenarioSelected(
+                    scenario[1].uniqueId,
+                  ),
+                }"
+                :title="
+                  featuresStore.isScenarioSelected(scenario[1].uniqueId)
+                    ? 'Selected for Rbel log scoping - click to deselect'
+                    : 'Click to scope the Rbel log to this scenario'
+                "
+                role="button"
+                tabindex="0"
+                @click="
+                  featuresStore.toggleScenarioSelection(scenario[1].uniqueId)
+                "
+                @keydown.enter="
+                  featuresStore.toggleScenarioSelection(scenario[1].uniqueId)
+                "
+              >
                 <TestStatusBadge
                   :test-status="scenario[1].status"
                   :status-message="
@@ -84,10 +104,12 @@
                   :failure-link="'#' + scenario[1].getFailureId()"
                 >
                 </TestStatusBadge>
-                <large-play-button
-                  :scenario="scenario[1].getScenarioIdentifier()"
-                  :show-play-button="scenario[1].isDryRun"
-                ></large-play-button>
+                <span @click.stop>
+                  <large-play-button
+                    :scenario="scenario[1].getScenarioIdentifier()"
+                    :show-play-button="scenario[1].isDryRun"
+                  ></large-play-button>
+                </span>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
                 <div class="test-scenario-outline-example">
@@ -227,9 +249,12 @@ import type QuitReason from "@/types/QuitReason";
 import Step from "@/components/testsuite/Step.vue";
 import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
 import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
+import { useFeaturesStore } from "@/stores/features.ts";
 import { inject, ref, watch } from "vue";
 import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto.ts";
 import type { Emitter } from "mitt";
+
+const featuresStore = useFeaturesStore();
 
 const props = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -326,6 +351,12 @@ h4.scenariotitle {
   padding: 1rem 1rem 1rem 0.5rem;
   background: var(--gem-primary-100);
   color: var(--gem-primary-400);
+  cursor: pointer;
+}
+
+h4.scenariotitle.scenario-selected {
+  background: var(--gem-primary-200);
+  box-shadow: inset 3px 0 0 0 var(--gem-primary-400);
 }
 
 .test-scenario-outline-example {

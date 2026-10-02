@@ -159,6 +159,14 @@ public class ClientBootstrapFactory {
     channelMap.remove(outgoingChannel);
   }
 
+  /**
+   * Hands a channel out of the pool without closing it - see {@link ReusableChannelMap#forget}.
+   * Called when a connection is upgraded to a tunnel and stops being reusable.
+   */
+  public void detachFromPool(Channel outgoingChannel) {
+    channelMap.forget(outgoingChannel);
+  }
+
   /** Closes every backend channel this client connection opened, once the client is gone. */
   public void closeChannelsOpenedFor(Channel incomingChannel) {
     channelMap.removeAllFor(incomingChannel);

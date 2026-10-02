@@ -23,10 +23,21 @@
 <script setup lang="ts">
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
-import { inject } from "vue";
-import { faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { scenarioScopeSymbol } from "@/api/ScenarioScope.ts";
+import { computed, inject } from "vue";
+import {
+  faCircleInfo,
+  faCrosshairs,
+  faFilter,
+  faSearch,
+} from "@fortawesome/free-solid-svg-icons";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
+const scenarioScope = inject(scenarioScopeSymbol)!;
+
+const scenarioScopeTooltip = computed(
+  () => `Showing only messages of: ${scenarioScope.label.value}`,
+);
 
 function knownTigerVersion(tigerVersion: { version: string; buildDate: string }): boolean {
   return tigerVersion != null && !tigerVersion.version.includes("unknown");
@@ -43,6 +54,18 @@ defineProps<{
 
 <template>
   <div class="p-2 border-bottom d-flex gap-2 text-nowrap">
+    <!-- the switch itself lives in the Workflow UI, beside its view selector, so it applies to
+         every scopable view at once; this is only a read-only indicator that it is currently on -->
+    <span
+      v-if="scenarioScope.active.value"
+      id="test-rbel-scenario-scope-indicator"
+      role="status"
+      class="scenario-scope-indicator align-self-center"
+      :title="scenarioScopeTooltip"
+      :aria-label="scenarioScopeTooltip"
+    >
+      <FontAwesomeIcon :icon="faCrosshairs" />
+    </span>
     <div class="filter input-group" v-if="__IS_ONLINE_MODE__">
       <span class="input-group-text">
         <FontAwesomeIcon :icon="faFilter" />
@@ -76,6 +99,18 @@ defineProps<{
       data-bs-target="#searchModal"
     >
       <FontAwesomeIcon :icon="faSearch" />&nbsp;Search
+    </button>
+    <!-- Only in an exported log: live, the configuration is a click away in the proxy itself. -->
+    <button
+      v-if="!__IS_ONLINE_MODE__"
+      type="button"
+      class="btn btn-outline-primary test-report-metadata-button"
+      id="reportMetadataModalButton"
+      title="Tiger version, active parsers and configuration"
+      data-bs-toggle="modal"
+      data-bs-target="#reportMetadataModal"
+    >
+      <FontAwesomeIcon :icon="faCircleInfo" />&nbsp;Information
     </button>
     <div
       v-if="tigerVersion"
@@ -143,5 +178,18 @@ defineProps<{
   outline: none !important;
   box-shadow: none !important;
   border-color: inherit !important;
+}
+
+.scenario-scope-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--gem-primary-400);
+  border-radius: 0.375rem;
+  background: var(--gem-primary-400);
+  color: #fff;
 }
 </style>

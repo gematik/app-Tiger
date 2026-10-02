@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.bouncycastle.jcajce.provider.asymmetric.RSA;
 import org.bouncycastle.tls.*;
 
 @Slf4j
@@ -52,8 +51,8 @@ public enum KeyAlgorithmPreference {
       clientHelloByteBuf.getBytes(0, bb);
       return determineKeyAlgorithmPreference(bb);
     } catch (RuntimeException e) {
-      log.error("Error determining key algorithm preference: " + e.getMessage(), e);
-      return de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference.UNKNOWN;
+      log.error("Error determining key algorithm preference: {}", e.getMessage(), e);
+      return KeyAlgorithmPreference.UNKNOWN;
     } finally {
       clientHelloByteBuf.resetReaderIndex();
     }
@@ -71,8 +70,8 @@ public enum KeyAlgorithmPreference {
 
       return KeyAlgorithmPreference.determineEffectivePreference(fromSigAlgs, fromCipherSuites);
     } catch (IOException e) {
-      log.warn("Error parsing ClientHello: " + e.getMessage(), e);
-      return de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference.UNKNOWN;
+      log.warn("Error parsing ClientHello: {}", e.getMessage(), e);
+      return KeyAlgorithmPreference.UNKNOWN;
     }
   }
 

@@ -21,16 +21,25 @@
 package de.gematik.test.tiger.lifecycle
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration
-import org.reflections.Reflections
+import io.github.classgraph.ClassGraph
 
 
 class LifecycleManager : ILifecycleManager {
     private var callbacks: List<LifecycleCallbacks> = emptyList()
 
+
     fun collectLifecycleCallbacks() {
-        //find via reflection all classes implementing LifecycleCallbacks and instantiate them
-        val reflections = Reflections("de.gematik.test.tiger.lifecycle")
-        val callbackClasses = reflections.getSubTypesOf(LifecycleCallbacks::class.java).toSet()
+        // find via reflection all classes implementing LifecycleCallbacks and instantiate them
+        val callbackClasses = ClassGraph()
+            .acceptPackages("de.gematik.test.tiger.lifecycle")
+            .enableClassInfo()
+            .scan()
+            .use { scanResult ->
+                scanResult
+                    .getClassesImplementing(LifecycleCallbacks::class.java.name)
+                    .loadClasses(LifecycleCallbacks::class.java)
+                    .toSet()
+            }
 
         callbacks = callbackClasses.mapNotNull { clazz ->
             clazz.getDeclaredConstructor().newInstance()

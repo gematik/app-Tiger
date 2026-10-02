@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.4</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -40,7 +40,7 @@
         add-on — pull this artifact in only if your test suite needs CANOPY DNS interception.</description>
 
   <dependencies>
-    <!-- Core: AbstractTigerServer SPI, CfgServer, BeforeContainerStartEvent, DockerServer/Configuration,
+    <!-- Core: AbstractTigerServer SPI, CfgServer, BeforeContainerStartEvent,
              TigerProxyServer, TigerExtension/TigerTest. -->
     <dependency>
       <groupId>de.gematik.test</groupId>

@@ -31,6 +31,7 @@ import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler;
 import de.gematik.test.tiger.mockserver.httpclient.HttpClientHandler;
+import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
@@ -119,6 +120,7 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
 
     val incomingChannel =
         Optional.ofNullable(outgoingContext.channel().attr(INCOMING_CHANNEL).get()).orElseThrow();
+    detachFromConnectionPool(incomingChannel, outgoingContext.channel());
     incomingChannel.attr(OUTGOING_CHANNEL).set(outgoingContext.channel());
     outgoingContext.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
     outgoingContext.channel().eventLoop().execute(() -> upgradeOutgoingPipeline(outgoingPipeline));
@@ -131,6 +133,17 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
               clearBuffer(outgoingContext);
               outgoingPipeline.remove(this);
             });
+  }
+
+  /**
+   * A tunnel is no longer a reusable HTTP connection, so it leaves the pool (TESTHUB-261). See
+   * {@link de.gematik.test.tiger.mockserver.httpclient.ReusableChannelMap#forget} for why staying
+   * in it is harmful.
+   */
+  private static void detachFromConnectionPool(Channel incomingChannel, Channel outgoingChannel) {
+    Optional.ofNullable(incomingChannel.attr(HTTP_CLIENT).get())
+        .map(NettyHttpClient::getClientBootstrapFactory)
+        .ifPresent(factory -> factory.detachFromPool(outgoingChannel));
   }
 
   private void upgradeOutgoingPipeline(ChannelPipeline outgoingPipeline) {

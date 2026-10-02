@@ -33,12 +33,22 @@ import {
   type Ref,
   watch,
 } from "vue";
-import { computedWithControl, useDebounceFn, useIntervalFn } from "@vueuse/core";
+import { computedWithControl, useDebounceFn } from "@vueuse/core";
 import { useProxyController, type UseProxyControllerOptions } from "@/api/ProxyController.ts";
 import type { MessageSortOrder } from "@/Settings.ts";
+import { nextPaint, runSelfClockingLoop, whenIdle } from "@/api/scheduling.ts";
 
-type MessageBase = {
-  type: "loading" | "error" | "loaded";
+/**
+ * One row of the message list.
+ *
+ * It deliberately carries no rendered HTML. The rows are the virtual scroller's `items`,
+ * and the scroller walks that entire array - several times, one of them synchronously -
+ * whenever the array changes. Keeping the HTML out means a chunk of rendered messages
+ * arriving while the user scrolls is no longer "the list changed", so the walk happens
+ * only when the queue itself moves. The HTML is looked up per rendered row instead, via
+ * `internal.getRenderedHtml`.
+ */
+export type Message = {
   index: number;
   uuid: string;
   sequenceNumber: number;
@@ -50,21 +60,6 @@ export type MessageUiState = {
   body?: boolean;
   sections?: Record<string, boolean>;
 };
-
-export type Message = MessageBase &
-  (
-    | {
-        type: "loading";
-      }
-    | {
-        type: "error";
-        message: string;
-      }
-    | {
-        type: "loaded";
-        htmlContent: string;
-      }
-  );
 
 export interface UseMessageQueueReturn {
   /**
@@ -91,13 +86,13 @@ export interface UseMessageQueueReturn {
    * Internal properties to be set.
    */
   internal: {
-    update: (
-      startIndex: number,
-      endIndex: number,
-      visibleStartIndex: number,
-      visibleEndIndex: number,
-    ) => void;
-    messages: Ref<Message[]>;
+    update: (orderedStartIndex: number, orderedEndIndex: number) => Promise<void>;
+    messages: ComputedRef<Message[]>;
+    /**
+     * Rendered HTML of a message, if the currently loaded chunk holds it. Called per
+     * rendered row rather than being carried in the rows themselves.
+     */
+    getRenderedHtml: (uuid: string) => string | undefined;
     ref: Ref<any | null>;
     getUiState: (uuid: string) => MessageUiState;
     setUiState: (uuid: string, state: Partial<MessageUiState>) => void;
@@ -108,13 +103,36 @@ export interface UseMessageQueueOptions extends UseProxyControllerOptions {}
 
 export const messageQueueSymbol: InjectionKey<UseMessageQueueReturn> = Symbol("messageQueueSymbol");
 
+export interface TimestampRange {
+  /** ISO-8601 instant strings (inclusive), e.g. `date.toISOString()`. */
+  min?: string;
+  max?: string;
+}
+
+/**
+ * Lower bound between two polls. It is a floor rather than a period: a cycle that takes
+ * longer than this simply starts the next one late instead of queueing up behind it.
+ */
+const MIN_POLL_INTERVAL_MS = 1000;
+
+/**
+ * How long we are willing to wait for an idle main thread before polling anyway. Without
+ * the cap a permanently busy tab would stop updating altogether instead of just updating
+ * less often.
+ */
+const MAX_MAIN_THREAD_WAIT_MS = 2000;
+
 export function useMessageQueue(
   reversedMessageQueue: Ref<boolean>,
   rbelFilter: Ref<string>,
   messageSortOrder: Ref<MessageSortOrder>,
   options: UseMessageQueueOptions,
+  timestampRange?: Ref<TimestampRange | undefined>,
 ): UseMessageQueueReturn {
   const proxyController = useProxyController(options);
+
+  /** Aborted when the component goes away; ends the poll loop and any pending flush. */
+  const lifetime = new AbortController();
 
   const latestMessageOverview: Ref<GetAllMessagesDto | null> = ref(null);
   const latestMessage: Ref<GetMessagesDto | null> = ref(null);
@@ -131,10 +149,15 @@ export function useMessageQueue(
     return trimmed.length > 0 ? trimmed : undefined;
   });
 
+  const minTimestamp = computed(() => timestampRange?.value?.min);
+  const maxTimestamp = computed(() => timestampRange?.value?.max);
+
   async function loadMessageOverview() {
     const oldResult = latestMessageOverview.value;
     const newResult = await proxyController.getMetaMessages({
       filterRbelPath: filterRbelPath.value,
+      minTimestamp: minTimestamp.value,
+      maxTimestamp: maxTimestamp.value,
       sortOrder: messageSortOrder.value,
     });
     // by preventing from setting unnecessarily a new value we keep side effects small
@@ -153,6 +176,14 @@ export function useMessageQueue(
     }
   });
 
+  watch([minTimestamp, maxTimestamp], async ([newMin, newMax], [oldMin, oldMax]) => {
+    if (newMin !== oldMin || newMax !== oldMax) {
+      latestMessage.value = null;
+      latestMessageOverview.value = null;
+      await loadMessageOverview();
+    }
+  });
+
   // When the user toggles the sort key, drop cached chunks and force a refetch so
   // that the displayed order matches the new selection immediately.
   watch(messageSortOrder, async (newOrder, oldOrder) => {
@@ -163,20 +194,55 @@ export function useMessageQueue(
     }
   });
 
-  const { resume, pause } = useIntervalFn(
-    async () => {
+  /**
+   * Re-fetch the overview only once the backend tells us the queue actually moved.
+   *
+   * The overview carries one entry per message, so polling it outright costs bandwidth and
+   * main-thread time proportional to the size of the log - every second, for a log that is
+   * usually unchanged. The status call is constant-size instead, which is what keeps large
+   * logs usable while tracing is live. The status endpoint ignores the scoping/filter
+   * params by design (it short-circuits the backend stream before the filter is evaluated),
+   * so it only signals "the underlying queue moved" - loadMessageOverview() still applies
+   * the current filterRbelPath/min/maxTimestamp when it re-fetches.
+   */
+  async function refreshOverviewIfQueueMoved() {
+    const current = latestMessageOverview.value;
+    if (!current) {
       await loadMessageOverview();
-    },
-    1000,
-    { immediate: false, immediateCallback: true },
-  );
+      return;
+    }
+    const status = await proxyController.getMessageQueueStatus({});
+    if (!status) return;
+    if (status.hash !== current.hash || status.total !== current.total) {
+      await loadMessageOverview();
+    }
+  }
+
+  /**
+   * Wait until the refresh we just did is actually on screen and the browser has time to
+   * spare again: Vue applies the update, two frames bracket the paint that draws it, and
+   * the idle callback tells us the main thread is free. Polling behind this is what keeps
+   * the pointer responsive on a busy log - the rendering back-pressures the poll instead
+   * of the poll starving the rendering.
+   */
+  async function settleRendering(signal: AbortSignal) {
+    await nextTick();
+    await nextPaint(signal);
+    await nextPaint(signal);
+    await whenIdle(MAX_MAIN_THREAD_WAIT_MS, signal);
+  }
 
   onMounted(() => {
-    resume();
+    void runSelfClockingLoop({
+      signal: lifetime.signal,
+      poll: refreshOverviewIfQueueMoved,
+      minIntervalMs: MIN_POLL_INTERVAL_MS,
+      settle: settleRendering,
+    });
   });
 
   onUnmounted(() => {
-    pause();
+    lifetime.abort();
   });
 
   const total = computed(() => latestMessageOverview.value?.totalFiltered ?? 0);
@@ -196,41 +262,85 @@ export function useMessageQueue(
     Object.assign(s, newState);
   }
 
+  /**
+   * Rendered HTML of the currently loaded chunk, keyed by uuid.
+   *
+   * A lookup, not part of the rows: reading it per rendered row keeps a chunk arriving
+   * out of the scroller's `items`, and it replaces the linear scan that used to run for
+   * every one of the (up to tens of thousands of) entries of the overview.
+   */
+  const renderedHtmlByUuid = computed(() => {
+    const byUuid = new Map<string, string>();
+    for (const loaded of latestMessage.value?.messages ?? []) {
+      byUuid.set(loaded.uuid, loaded.content);
+    }
+    return byUuid;
+  });
+
+  function getRenderedHtml(uuid: string): string | undefined {
+    return renderedHtmlByUuid.value.get(uuid);
+  }
+
+  /**
+   * Rows are memoised twice over, because both identities matter to the virtual scroller.
+   *
+   * Per row: every rendered row lists its own item in `size-dependencies`, so a fresh
+   * object means "this row changed" and costs a re-measure and a layout.
+   *
+   * Per array: a fresh array means "the list changed" and costs the scroller a full walk
+   * of it - key extraction, a size accumulator and a synchronous watcher, all O(number of
+   * messages). That is worth avoiding, because the backend's history revision (which is
+   * what tells us to re-read the overview) bumps on every metadata change of every
+   * message - thousands of times more often than the message list actually grows.
+   */
+  let messageRowsByUuid: Map<string, Message> = new Map();
+  let messageRows: Message[] = [];
+  let reversedMessages: Message[] = [];
+  let reversedFrom: Message[] | null = null;
+
   const messages = computed(() => {
     const overview = latestMessageOverview.value;
-    if (!overview) return [];
-
-    const reversed = reversedMessageQueue.value ?? false;
-
-    const messages: Message[] = new Array(overview.totalFiltered);
-    for (let i = 0; i < overview.totalFiltered; i++) {
-      const msg = latestMessage.value?.messages?.find(
-        (msg) => msg.uuid === overview.messages[i].uuid,
-      );
-      if (msg) {
-        messages[i] = {
-          type: "loaded",
-          htmlContent: msg.content,
-          index: i,
-          uuid: overview.messages[i].uuid,
-          sequenceNumber: overview.messages[i].sequenceNumber,
-        };
-      } else {
-        messages[i] = {
-          type: "loading",
-          index: i,
-          uuid: overview.messages[i].uuid,
-          sequenceNumber: overview.messages[i].sequenceNumber,
-        };
-      }
+    if (!overview) {
+      messageRowsByUuid = new Map();
+      messageRows = [];
+      reversedFrom = null;
+      return messageRows;
     }
-    return reversed ? messages.toReversed() : messages;
+
+    const nextRowsByUuid = new Map<string, Message>();
+    const nextRows: Message[] = new Array(overview.totalFiltered);
+    let allRowsReused = messageRows.length === overview.totalFiltered;
+    for (let i = 0; i < overview.totalFiltered; i++) {
+      const meta = overview.messages[i];
+      const previous = messageRowsByUuid.get(meta.uuid);
+      const row =
+        previous !== undefined &&
+        previous.index === i &&
+        previous.sequenceNumber === meta.sequenceNumber
+          ? previous
+          : { index: i, uuid: meta.uuid, sequenceNumber: meta.sequenceNumber };
+      if (row !== previous) allRowsReused = false;
+      nextRowsByUuid.set(meta.uuid, row);
+      nextRows[i] = row;
+    }
+    // Rebuilt from scratch so that messages the proxy has dropped do not linger.
+    messageRowsByUuid = nextRowsByUuid;
+    if (!allRowsReused) messageRows = nextRows;
+
+    if (!(reversedMessageQueue.value ?? false)) return messageRows;
+    if (reversedFrom !== messageRows) {
+      reversedFrom = messageRows;
+      reversedMessages = messageRows.toReversed();
+    }
+    return reversedMessages;
   });
 
   let messageFetchParams: {
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
+    minTimestamp?: string;
+    maxTimestamp?: string;
     sortOrder?: MessageSortOrder;
     hash?: string;
   } = {
@@ -241,7 +351,7 @@ export function useMessageQueue(
     hash: "",
   };
   let messageFetchAbortController = new AbortController();
-  const update = async (orderedStartIndex: number, orderedEndIndex: number) => {
+  const fetchMessagesForRange = async (orderedStartIndex: number, orderedEndIndex: number) => {
     // prevent an endless loading loop if we're already inside the current view
 
     const reversed = reversedMessageQueue.value ?? false;
@@ -258,6 +368,8 @@ export function useMessageQueue(
       messageFetchParams?.fromOffset === startIndex &&
       messageFetchParams?.toOffsetExcluding === endIndex + 1 &&
       messageFetchParams?.filterRbelPath === filterRbelPath.value &&
+      messageFetchParams?.minTimestamp === minTimestamp.value &&
+      messageFetchParams?.maxTimestamp === maxTimestamp.value &&
       messageFetchParams?.sortOrder === messageSortOrder.value &&
       messageFetchParams?.hash === latestMessageOverview.value?.hash;
 
@@ -269,6 +381,8 @@ export function useMessageQueue(
           fromOffset: startIndex,
           toOffsetExcluding: endIndex + 1,
           filterRbelPath: filterRbelPath.value,
+          minTimestamp: minTimestamp.value,
+          maxTimestamp: maxTimestamp.value,
           sortOrder: messageSortOrder.value,
           hash: latestMessageOverview.value?.hash,
         };
@@ -283,6 +397,30 @@ export function useMessageQueue(
       } catch {
         // noop
       }
+    }
+  };
+
+  /**
+   * The virtual scroller emits `update` from inside its own scroll and layout handling, so
+   * all we do there is record the range it asks for. Reading the message list and starting
+   * a chunk fetch from that callback re-entered the scroller's own update pass - fetch,
+   * new items, re-measure, another update, another fetch - and it meant a fast scroll fired
+   * dozens of requests per second only to abort nearly all of them. The recorded range is
+   * picked up once the frame has been painted, coalesced into a single fetch.
+   */
+  let requestedRange: { orderedStartIndex: number; orderedEndIndex: number } | null = null;
+  let rangeFlushScheduled = false;
+
+  const update = async (orderedStartIndex: number, orderedEndIndex: number) => {
+    requestedRange = { orderedStartIndex, orderedEndIndex };
+    if (rangeFlushScheduled || lifetime.signal.aborted) return;
+    rangeFlushScheduled = true;
+    await nextPaint(lifetime.signal);
+    rangeFlushScheduled = false;
+    const range = requestedRange;
+    requestedRange = null;
+    if (range && !lifetime.signal.aborted) {
+      await fetchMessagesForRange(range.orderedStartIndex, range.orderedEndIndex);
     }
   };
 
@@ -339,6 +477,7 @@ export function useMessageQueue(
     internal: {
       update,
       messages,
+      getRenderedHtml,
       ref: dynamicScrollerRef,
       getUiState,
       setUiState,

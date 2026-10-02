@@ -31,6 +31,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -351,5 +352,29 @@ class TestAlpnProbing extends AbstractTigerProxyTest {
       assertThat(response.body()).contains("h1");
       assertThat(h1Backend.getRequestsReceived()).hasValue(1);
     }
+  }
+
+  /**
+   * Regression test: the backend ALPN probe used to run synchronously inside {@code addRoute}, so
+   * every unreachable HTTPS backend added its full 3s connect timeout to the proxy's startup time.
+   * Probing is now scheduled in the background.
+   */
+  @SneakyThrows
+  @Test
+  void unreachableBackend_addRouteShouldNotWaitForTheProbe() {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+
+    final long startNanos = System.nanoTime();
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            // TEST-NET-1 (RFC 5737) - guaranteed to never answer
+            .from("/")
+            .to("https://192.0.2.1:443")
+            .build());
+    final Duration elapsed = Duration.ofNanos(System.nanoTime() - startNanos);
+
+    assertThat(elapsed)
+        .as("addRoute must not block on the ALPN probe, whose own timeout is 3s")
+        .isLessThan(Duration.ofSeconds(1));
   }
 }

@@ -71,8 +71,8 @@ class TrafficVisualizationTest extends AbstractBase {
     // on the local tiger proxy and the sequence is not exactly the same as the time order.
     assertThat(
             page.frameLocator("#rbellog-details-iframe")
-                .locator(".test-message-number")
-                .getByText("2"))
+                .locator(".rbel-message:has(.test-message-number:text-is('2'))")
+                .first())
         .isVisible();
   }
 

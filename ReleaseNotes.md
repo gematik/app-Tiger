@@ -1,5 +1,114 @@
 # Changelog Tiger Test platform
 
+# Release 4.4.4
+
+## Features
+
+* TESTHUB-263: The RBel log HTML report now has an **Information** button in the header, opening an overlay with the Tiger version,
+  the active and known-but-inactive RBel parsers, and the Tiger Proxy configuration - plus a **Copy as YAML** button.
+
+  The same **Information** overlay is now part of the traffic you export as HTML from the Tiger Proxy WebUI, so an
+  exported log stays self-describing once it leaves the machine that recorded it: traffic that a parser would have
+  decrypted is no longer indistinguishable from traffic where that parser was simply never activated. Passwords are
+  hidden and the `tigerProxy.redactedConfigurationPaths` entries are applied, the same way the proxy's
+  `/configuration` endpoint does it. The live WebUI is unchanged - there the configuration is available anyway.
+
+  The metadata is also served as JSON at `GET /webui/reportMetadata`.
+* TGR-1487: Tiger Proxy now provides detailed diagnostics when a TLS handshake fails because no compatible
+  cipher suite can be selected. The log identifies which suites were offered by the client, allowed
+  by the server, or incompatible with the server certificate. If a client rejects the presented
+  certificate as unknown, the log identifies that certificate and suggests updating the client
+  truststore or configuring a different server certificate.
+* TGR-1921: The User Manual now explains how to add data that was not recorded by a proxy to the local TigerProxy's RBel log for inspection and validation.
+* TGR-2207: Tiger can capture network traffic in-process and generate `.pcapng` files to be added to the test report. Capture can be
+  controlled at runtime via BDD steps for fine-grained control over when packets are recorded.
+
+  Add to your `tiger.yaml`:
+
+  ```yaml
+  lib:
+    pcapCapture:
+      enabled: true                    # Master switch
+      startSuspended: false            # Start suspended, control via steps (default: false)
+      interfaceNames:                  # Network interfaces to capture on (optional)
+      # null/empty = loopback (default)
+      # ["eth0"] = specific interface
+      # ["*"] = first non-loopback (fallback to loopback)
+      # ["eth0", "docker0"] = reserved for v2 (multi-interface capture)
+      splitByTestcase: true            # One file per scenario (default: true)
+      snaplenKb: 64                    # Per-packet bytes (default: 64 KB)
+      bufferSizeKb: 16384              # Kernel buffer (default: 16 MB)
+      filename: ${scenarioId}.pcapng   # Per-testcase filename template (splitByTestcase: true only)
+  ```
+
+  Use these steps to control capture during test execution:
+
+  ```gherkin
+  Scenario: Selective packet capture
+  Given pcap capture is enabled
+  When I do some setup
+  And PCAP capture is suspended
+  And I send unimportant traffic
+  And PCAP capture resumes
+  Then important traffic will be captured
+  ```
+
+  **Behavior:**
+
+  - `PCAP capture is suspended` — pause recording (state resets at scenario end)
+  - `PCAP capture resumes` — resume recording with baseline configuration
+  - `.pcapng` files are created only if traffic is captured after resume
+  - Suspend/resume state is per-scenario (resets to baseline at scenario boundary)
+* TGR-2288: improve Tiger Test Environment startup time.
+* TGR-2300: Added scenario-scoped filtering of the Rbel log and the traffic visualization in Workflow UI.
+
+  The scoping toggle lives beside the view selector. When active, only the messages from either the selected scenario or
+  the last executed scenario are shown.
+
+  A scenario can be selected and de-selected by clicking on its header.
+* TGR-398: cURL command logging in test reports for REST-assured requests has been expanded to reliably support all HTTP methods and request configurations.
+
+  - Generates copy-pasteable cURL commands for all HTTP verbs (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`)
+  - Supports complex request bodies, URL-encoded form parameters, and multipart file uploads
+  - Correctly formats request cookies and custom multiline headers
+* TGR-656: Local and standalone Tiger Proxy instances now use the system or environment forward-proxy configuration by default.
+  This means that requests automatically respect the proxy settings of the host system. Other Tiger Proxy instances
+  continue to use these settings only when `forwardToProxy.hostname` is configured as `$SYSTEM`.
+
+## Bugfixes
+
+* TESTHUB-261: A WebSocket held open through a Tiger Proxy stopped working once the server closed it for being
+  idle: the client was never told, and its next message hung until it timed out. The close now
+  reaches the client, which reconnects and carries on.
+* TGR-1868: The user manual now distinguishes the requirements for using Tiger from the stricter requirements for building Tiger itself. The supported build environment is also checked automatically with the maven enforcer plugin.
+* TGR-1902: A Tiger proxy grew slower the longer it ran: every message dropped from the log walked one
+  callback per connection the proxy had ever seen.
+* TGR-2227: Fix conflicting class DockerServer between tiger and tiger-cloud-extension.
+* TGR-2237: A Tiger Proxy catching up with an upstream traffic endpoint no longer silently stops after 100 pages: it downloads the whole history, up to the configurable emergency brake `tigerProxy.maximumTrafficDownloadPages` (default: 200).
+* TGR-2269: Traffic from an earlier scenario reappeared as validatable after `TGR clear recorded messages`
+  when a proxy reconnected and downloaded it late. Validation steps then matched against messages
+  the scenario never sent.
+* TGR-2270: Messages from a remote Tiger proxy carried that machine's clock. The skew correction was measured
+  on connect and then never reached the messages, so timestamps in the log and the chronological
+  sort order were off by the difference between the two clocks.
+* TGR-2272: A message that could not be parsed made the Tiger proxy report a NullPointerException naming
+  neither the message nor the reason. The log entry now names both.
+* TGR-2275: Adding or removing a modification over the REST API while traffic was flowing could abort the
+  modification of a message that was being processed at that moment.
+* TGR-2277: Waiting for the Tiger proxy to finish parsing could hang for good if one message got stuck. It
+  now gives up after `tigerProxy.parsingTimeoutInSeconds` (100 by default) and names the message it
+  was waiting on. Reading a `.tgr` file now gives up after `tigerProxy.fileParsingTimeoutInSeconds`
+  (600 by default) instead of hanging.
+* TGR-2278: When a validation step found no matching message, the log said which messages were checked but not
+  how many there were to begin with. The failure now reports how much traffic the proxy held, how
+  much of it was validatable, and what was still being received or parsed.
+* TGR-2289: Fix issue in the serialization of serenity report data which caused a StackOverflowError when serializing collections in java 21.
+* TGR-2299: The RBel log WebUI no longer re-downloads the entire message list every second. It polls a constant-size status call instead and only re-fetches the overview when the message queue actually moved, which keeps large logs usable in the browser.
+
+  It also stays responsive while messages keep arriving. The refresh waits until the previous one has been rendered and the browser is idle before polling again, so the one-second interval is now a lower bound rather than a fixed period, and it pauses entirely in a background tab. A refresh re-renders only the messages that actually changed, a refresh that merely touched message metadata is recognised as such and skipped, and the rendered HTML of a message is no longer part of the message list itself, so scrolling a live log no longer counts as the list having changed. Scrolling also no longer fires a burst of requests that are immediately cancelled again. On a 20 000 message log fed at 50 messages per second, the browser's main thread went from being busy 92 % of the time to 57 %.
+* TGR-2308: The Tiger Proxy no longer waits for its backend ALPN probes while starting up.
+
+
 # Release 4.4.3
 
 ## Bugfixes

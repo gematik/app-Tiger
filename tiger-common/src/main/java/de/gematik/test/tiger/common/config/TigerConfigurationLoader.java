@@ -23,6 +23,7 @@ package de.gematik.test.tiger.common.config;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
@@ -35,6 +36,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.NonNull;
 import tools.jackson.core.TreeNode;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JavaType;
@@ -112,6 +114,35 @@ public class TigerConfigurationLoader {
   }
 
   public Optional<String> readStringOptional(TigerConfigurationKey key) {
+    Optional<String> value = findValueByKey(key);
+    if (value.isPresent()) {
+      return value;
+    }
+    if (isFreePortKey(key)) {
+      return Optional.of(allocateAndStoreFreePort(key));
+    }
+    return Optional.empty();
+  }
+
+  private boolean isFreePortKey(TigerConfigurationKey key) {
+    return key.size() == 3 && key.get(0).equals("free") && key.get(1).equals("port");
+  }
+
+  private synchronized String allocateAndStoreFreePort(TigerConfigurationKey key) {
+    Optional<String> existing = findValueByKey(key);
+    if (existing.isPresent()) {
+      return existing.get();
+    }
+    try (ServerSocket serverSocket = new ServerSocket(0)) {
+      String port = Integer.toString(serverSocket.getLocalPort());
+      putValue(key, port, ConfigurationValuePrecedence.RUNTIME_EXPORT);
+      return port;
+    } catch (IOException e) {
+      throw new TigerConfigurationException("Exception while allocating free port for " + key, e);
+    }
+  }
+
+  private @NonNull Optional<String> findValueByKey(TigerConfigurationKey key) {
     return sourcesManager
         .getSortedStream()
         .filter(source -> source.containsKey(key))

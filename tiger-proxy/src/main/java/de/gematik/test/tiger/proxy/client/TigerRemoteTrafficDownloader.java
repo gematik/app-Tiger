@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
@@ -58,14 +59,23 @@ public class TigerRemoteTrafficDownloader {
                 + tigerRemoteProxyClient.proxyName()
                 + ")");
 
-    downloadAllTrafficFromRemote();
+    final boolean complete = downloadAllTrafficFromRemote();
 
-    log.info(
-        "Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
-            + " in local history ({} actual messages)",
-        getRemoteProxyUrl(),
-        getRbelLogger().getMessages().size(),
-        getRbelLogger().getMessagesByOrder().size());
+    if (complete) {
+      log.info(
+          "Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
+              + " in local history ({} actual messages)",
+          getRemoteProxyUrl(),
+          getRbelLogger().getMessages().size(),
+          getRbelLogger().getMessagesByOrder().size());
+    } else {
+      log.warn(
+          "Incompletely downloaded missed traffic from '{}'. Now {} message(s)"
+              + " in local history ({} actual messages)",
+          getRemoteProxyUrl(),
+          getRbelLogger().getMessages().size(),
+          getRbelLogger().getMessagesByOrder().size());
+    }
   }
 
   @SneakyThrows
@@ -76,9 +86,15 @@ public class TigerRemoteTrafficDownloader {
             .convertRbelFileEntries(
                 new BufferedReader(new InputStreamReader(rawTraffic)).lines(),
                 Optional.empty(),
-                this::downloadMessageContent);
+                this::downloadMessageContent,
+                this::markAsDownloadedFromRemote);
 
     doMessageBatchPostProcessing(convertedMessages);
+  }
+
+  private void markAsDownloadedFromRemote(RbelElement element, RbelMessageMetadata metadata) {
+    element.addFacet(new TigerDownloadedMessageFacet());
+    ClockSkewEstimator.applyCompensation(metadata, tigerRemoteProxyClient.getRemoteClockOffset());
   }
 
   @SneakyThrows
@@ -111,12 +127,7 @@ public class TigerRemoteTrafficDownloader {
   }
 
   private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages) {
-    convertedMessages.forEach(
-        msg -> {
-          msg.addFacet(new TigerDownloadedMessageFacet());
-          addRemoteUrlToTcpIpFacet(msg);
-          applyClockSkewCompensation(msg);
-        });
+    convertedMessages.forEach(this::addRemoteUrlToTcpIpFacet);
     if (log.isTraceEnabled()) {
       log.trace(
           "Just parsed another traffic batch, got {} messages. Now standing at {} messages overall",
@@ -146,32 +157,55 @@ public class TigerRemoteTrafficDownloader {
         .ifPresent(element::addOrReplaceFacet);
   }
 
-  private void applyClockSkewCompensation(RbelElement element) {
-    ClockSkewEstimator.applyCompensation(element, tigerRemoteProxyClient.getRemoteClockOffset());
-  }
-
-  private void downloadAllTrafficFromRemote() {
+  /**
+   * Downloads the history of the upstream proxy, page by page.
+   *
+   * @return false if we gave up while the upstream still had messages left
+   */
+  private boolean downloadAllTrafficFromRemote() {
     PaginationInfo paginationInfo;
     int pageNumber = 0;
     // we make a copy of the last uuid because the traffic parsing will be commenced in parallel,
     // meaning the tigerRemoteProxyClient.getLastMessageUuid() can shift
     Optional<String> currentLastUuid =
         Optional.ofNullable(tigerRemoteProxyClient.getLastMessageUuid().get());
-    final int pageSize =
-        tigerRemoteProxyClient.getTigerProxyConfiguration().getTrafficDownloadPageSize();
+    final var configuration = tigerRemoteProxyClient.getTigerProxyConfiguration();
+    final int pageSize = configuration.getTrafficDownloadPageSize();
+    final int maximumPages = configuration.getMaximumTrafficDownloadPages();
     do {
       paginationInfo = downloadTrafficPageFromRemoteAndAddToQueue(pageSize, currentLastUuid);
       pageNumber++;
-      currentLastUuid =
-          Optional.ofNullable(paginationInfo.getLastUuid()).filter(StringUtils::isNotEmpty);
 
-      if (pageNumber > 100) {
-        log.warn(
-            "Interrupting traffic-download: Reached 100 downloads! (Maybe the influx of traffic on"
-                + " the upstream proxy is greater then our downstream-sped?)");
-        return;
+      final Optional<String> nextLastUuid =
+          Optional.ofNullable(paginationInfo.getLastUuid()).filter(StringUtils::isNotEmpty);
+      if (nextLastUuid.isEmpty() || nextLastUuid.equals(currentLastUuid)) {
+        // nothing new: paging on would re-request this page, or restart from the beginning
+        log.atDebug()
+            .addArgument(pageNumber)
+            .addArgument(this::getRemoteProxyUrl)
+            .log("Traffic-download finished after {} page(s), '{}' has no further messages");
+        return true;
+      }
+      currentLastUuid = nextLastUuid;
+
+      // available-messages counts the page we just took, so what is left is what the loop
+      // condition below asks about - and the brake must not fire on a page that completed the
+      // history just because it happened to be the last one we were allowed to fetch
+      final int stillPending = paginationInfo.getAvailableMessages() - pageSize;
+      if (stillPending > 0 && pageNumber >= maximumPages) {
+        log.error(
+            "Giving up on the traffic-download from '{}' after {} pages of {} message(s): the"
+                + " remote still reports {} pending message(s). Those messages are MISSING from the"
+                + " local history and will not be pushed later on. Consider raising"
+                + " tigerProxy.maximumTrafficDownloadPages.",
+            getRemoteProxyUrl(),
+            pageNumber,
+            pageSize,
+            stillPending);
+        return false;
       }
     } while (paginationInfo.getAvailableMessages() > pageSize);
+    return true;
   }
 
   private PaginationInfo downloadTrafficPageFromRemoteAndAddToQueue(

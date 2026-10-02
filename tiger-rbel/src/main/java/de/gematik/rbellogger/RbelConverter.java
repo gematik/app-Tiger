@@ -36,6 +36,7 @@ import de.gematik.rbellogger.util.RbelValueShader;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -70,9 +71,12 @@ public class RbelConverter implements RbelConverterInterface {
           new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
 
   @Builder.Default int rbelBufferSizeInMb = 1024;
+  @Builder.Default int parsingTimeoutInSeconds = 100;
   @Builder.Default boolean manageBuffer = false;
   @Builder.Default int skipParsingWhenMessageLargerThanKb = -1;
   @Builder.Default List<String> activateRbelParsingFor = List.of();
+
+  @Getter @Setter @Builder.Default Set<String> knownOptionalParsers = Set.of();
   @Builder.Default private volatile boolean shallInitializeConverters = true;
   @Builder.Default @Getter boolean isActivateRbelParsing = true;
   @Builder.Default @Setter @Getter String name = "<>";
@@ -109,7 +113,12 @@ public class RbelConverter implements RbelConverterInterface {
   public RbelElement convertElement(
       RbelElement rbelElement, List<RbelConversionPhase> conversionPhases) {
     return new RbelConversionExecutor(
-            this, rbelElement, skipParsingWhenMessageLargerThanKb, rbelKeyManager, conversionPhases)
+            this,
+            rbelElement,
+            skipParsingWhenMessageLargerThanKb,
+            rbelKeyManager,
+            conversionPhases,
+            Instant.now().plusSeconds(parsingTimeoutInSeconds))
         .execute();
   }
 
@@ -147,19 +156,22 @@ public class RbelConverter implements RbelConverterInterface {
   public RbelElement parseMessage(
       @NonNull final RbelElement message, @NonNull final RbelMessageMetadata conversionMetadata) {
     try {
-      return parseMessageAsync(message, conversionMetadata)
-          .exceptionally(
-              t -> {
-                log.error("Error while parsing message", t);
-                return null;
-              })
-          .get();
+      return parseMessageAsync(message, conversionMetadata).get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RbelConversionException(e);
     } catch (ExecutionException e) {
-      throw new RbelConversionException(e);
+      throw asConversionException(e.getCause() == null ? e : e.getCause());
+    } catch (RuntimeException e) {
+      throw asConversionException(e);
     }
+  }
+
+  private static RbelConversionException asConversionException(Throwable cause) {
+    if (cause instanceof RbelConversionException conversionException) {
+      return conversionException;
+    }
+    return new RbelConversionException("Error while parsing message", cause);
   }
 
   public CompletableFuture<RbelElement> parseMessageAsync(

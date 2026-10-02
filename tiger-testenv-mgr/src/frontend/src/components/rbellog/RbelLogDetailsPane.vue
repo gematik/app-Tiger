@@ -61,6 +61,7 @@
         id="test-rbel-webui-url"
         :href="`${localProxyWebUiUrl}`"
         target="_blank"
+        @click="onPopOutClick"
       >
         <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
       </a>
@@ -75,7 +76,7 @@
         allow="clipboard-write"
         class="h-100 w-100"
         :style="iframeStyle"
-        :src="`${localProxyWebUiUrl}?embedded`"
+        :src="iframeSrc"
         title="Rbel log view"
       />
     </div>
@@ -86,17 +87,29 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, type CSSProperties, inject, ref, watch } from "vue";
+import {
+  computed,
+  type CSSProperties,
+  inject,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from "vue";
 import { setupDragDetector } from "@/mouse/clickDragDetector.ts";
 import type { Emitter } from "mitt";
+import { useFeaturesStore } from "@/stores/features.ts";
 
-defineProps<{
+const props = defineProps<{
   localProxyWebUiUrl: string;
 }>();
+
+const featuresStore = useFeaturesStore();
 
 const detailsPane = ref<HTMLElement | null>(null);
 const detailsResizer = ref<HTMLElement | null>(null);
 const rbelLogIframe = ref<HTMLIFrameElement | null>(null);
+const popupWindow = ref<Window | null>(null);
 const iFramePointerEventsActive = ref(true);
 const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 
@@ -105,6 +118,73 @@ const paneWidth = ref(0);
 
 const tooltipExpandMinimize = computed(
   () => `${expanded.value ? "Minimize" : "Expand"} Tiger Proxy Log`,
+);
+
+const iframeSrc = computed(() =>
+  props.localProxyWebUiUrl ? `${props.localProxyWebUiUrl}?embedded` : "",
+);
+
+/**
+ * The scoping toggle itself lives beside the view selector (see featuresStore.scopingActive); we
+ * only hand over the resolved scenario window and whether it currently applies, and let the log
+ * decide what to show. This goes over postMessage rather than a URL because the resolved scenario
+ * changes every time one finishes, and re-navigating for that would throw away the scroll
+ * position, the filter and any expanded message several times per run - both for the embedded
+ * iframe and for a popped-out window.
+ *
+ * A scenario that recorded nothing is still sent (label only) so it can be scoped to an empty log
+ * rather than silently showing the whole run.
+ */
+function postScenarioScope() {
+  if (popupWindow.value?.closed) {
+    popupWindow.value = null;
+  }
+  const targets = [rbelLogIframe.value?.contentWindow, popupWindow.value].filter(
+    (w): w is Window => !!w,
+  );
+  if (targets.length === 0) {
+    return;
+  }
+  const scenario = featuresStore.scopedScenario;
+  const range = featuresStore.scopedScenarioTimeRange;
+  const message = {
+    type: "tiger:scenario-scope",
+    label: scenario?.description,
+    min: range?.min,
+    max: range?.max,
+    active: featuresStore.scopingActive,
+  };
+  targets.forEach((target) => target.postMessage(message, "*"));
+}
+
+function onPopOutClick(event: MouseEvent) {
+  if (!props.localProxyWebUiUrl) {
+    return;
+  }
+  event.preventDefault();
+  popupWindow.value = window.open(props.localProxyWebUiUrl, "_blank");
+}
+
+function onScopeReady(event: MessageEvent) {
+  if (
+    (event.source === rbelLogIframe.value?.contentWindow || event.source === popupWindow.value) &&
+    event.data?.type === "tiger:scenario-scope-ready"
+  ) {
+    postScenarioScope();
+  }
+}
+
+onMounted(() => window.addEventListener("message", onScopeReady));
+onUnmounted(() => window.removeEventListener("message", onScopeReady));
+
+watch(
+  () => [
+    featuresStore.scopedScenario?.uniqueId,
+    featuresStore.scopedScenarioTimeRange?.min,
+    featuresStore.scopedScenarioTimeRange?.max,
+    featuresStore.scopingActive,
+  ],
+  postScenarioScope,
 );
 
 const paneStyle = computed<CSSProperties>(() => ({

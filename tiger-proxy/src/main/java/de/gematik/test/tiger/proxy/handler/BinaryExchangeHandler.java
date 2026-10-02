@@ -97,4 +97,8 @@ public class BinaryExchangeHandler {
   public void waitForAllParsingTasksToBeFinished() {
     connectionParser.waitForAllParsingTasksToBeFinished();
   }
+
+  public void close() {
+    connectionParser.close();
+  }
 }

@@ -25,6 +25,7 @@ import Sidebar from "./components/Sidebar.vue";
 import { onBeforeUnmount, onMounted, provide, ref, type Ref, watchEffect } from "vue";
 import MessageList from "./components/MessageList.vue";
 import { messageQueueSymbol, useMessageQueue } from "@/api/MessageQueue.ts";
+import { scenarioScopeSymbol, useScenarioScope } from "@/api/ScenarioScope.ts";
 import { useProxyController } from "@/api/ProxyController.ts";
 import { toastSymbol, useToast } from "./Toast.ts";
 import RbelFilterModal from "./components/RbelFilterModal.vue";
@@ -39,6 +40,7 @@ import SettingsHeader from "@/components/SettingsHeader.vue";
 import RbelQueryModal from "@/components/RbelQueryModal.vue";
 import RouteModal from "@/components/RouteModal.vue";
 import ExportModal from "@/components/ExportModal.vue";
+import ReportMetadataModal from "@/components/ReportMetadataModal.vue";
 
 const settings = useSettings();
 provide(settingsSymbol, settings);
@@ -56,6 +58,14 @@ const toastElement: Ref<HTMLElement | null> = ref(null);
 const toast = useToast(toastElement);
 provide(toastSymbol, toast);
 
+const query = new URLSearchParams(window.location.search);
+const isEmbedded = query.has("embedded");
+
+// The embedding Workflow UI pushes the window of the scenario it resolved; the toggle in the
+// toolbar decides whether it is applied. Absent (standalone) the feature stays hidden entirely.
+const scenarioScope = useScenarioScope();
+provide(scenarioScopeSymbol, scenarioScope);
+
 const messageQueue = useMessageQueue(
   settings.reverseMessageQueue,
   rbelFilter.rbelPath,
@@ -67,6 +77,7 @@ const messageQueue = useMessageQueue(
       }
     },
   },
+  scenarioScope.range,
 );
 provide(messageQueueSymbol, messageQueue);
 
@@ -96,10 +107,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   delete (window as any).scrollToMessage;
 });
-
-// Handle Embedding
-const query = new URLSearchParams(window.location.search);
-const isEmbedded = query.has("embedded");
 
 const hash = ref(window.location.hash);
 
@@ -147,6 +154,8 @@ watchEffect(() => {
     <RouteModal v-if="__IS_ONLINE_MODE__" />
     <!-- Export Modal -->
     <ExportModal v-if="__IS_ONLINE_MODE__" />
+    <!-- Report Metadata Modal, only in an exported log - live the configuration is a click away anyway -->
+    <ReportMetadataModal v-if="!__IS_ONLINE_MODE__" />
     <div class="d-flex">
       <Sidebar
         v-if="!isEmbedded"

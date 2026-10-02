@@ -42,7 +42,8 @@ public class RbelModifier {
   private final RbelKeyManager rbelKeyManager;
   private final RbelConverter rbelConverter;
   private final List<RbelElementWriter> elementWriterList;
-  private final Map<String, RbelModificationDescription> modificationsMap = new LinkedHashMap<>();
+  private final Map<String, RbelModificationDescription> modificationsMap =
+      Collections.synchronizedMap(new LinkedHashMap<>());
   private static final Pattern HEADER_NAME_PATTERN = Pattern.compile("^\\['(.+)'\\]");
 
   @Builder
@@ -71,7 +72,7 @@ public class RbelModifier {
     rbelConverter.waitForMessageAndPartnersToBeFullyConverted(message);
     RbelElement modifiedMessage = message;
     final TigerJexlContext jexlContext = new TigerJexlContext().withRootElement(message);
-    for (RbelModificationDescription modification : modificationsMap.values()) {
+    for (RbelModificationDescription modification : currentModifications()) {
       if (shouldBeApplied(modification, message)) {
         final Optional<RbelElement> targetOptional =
             modifiedMessage.findElement(modification.getTargetElement());
@@ -149,17 +150,28 @@ public class RbelModifier {
     return modification.getTargetElement().startsWith("$.header");
   }
 
+  private List<RbelModificationDescription> currentModifications() {
+    synchronized (modificationsMap) {
+      return List.copyOf(modificationsMap.values());
+    }
+  }
+
   private void deleteOutdatedModifications() {
-    modificationsMap
-        .values()
-        .removeIf(
-            next ->
-                next.getDeleteAfterNExecutions() != null && next.getDeleteAfterNExecutions() <= 0);
+    synchronized (modificationsMap) {
+      modificationsMap
+          .values()
+          .removeIf(
+              next ->
+                  next.getDeleteAfterNExecutions() != null
+                      && next.getDeleteAfterNExecutions() <= 0);
+    }
   }
 
   private void reduceTtl(RbelModificationDescription modification) {
-    if (modification.getDeleteAfterNExecutions() != null) {
-      modification.setDeleteAfterNExecutions(modification.getDeleteAfterNExecutions() - 1);
+    synchronized (modification) {
+      if (modification.getDeleteAfterNExecutions() != null) {
+        modification.setDeleteAfterNExecutions(modification.getDeleteAfterNExecutions() - 1);
+      }
     }
   }
 
@@ -257,7 +269,7 @@ public class RbelModifier {
   }
 
   public List<RbelModificationDescription> getModifications() {
-    return modificationsMap.values().stream().toList();
+    return currentModifications();
   }
 
   public void deleteModification(String modificationsId) {

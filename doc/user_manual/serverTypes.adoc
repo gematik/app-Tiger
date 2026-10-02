@@ -461,9 +461,12 @@ servers:
 
   testApp:
     type: docker
-    docker:
-      image: my-app:latest
-      exposedPorts: [8080]
+    source:
+        - my-app
+    version: latest
+    dockerOptions:
+      ports:
+        - 8080:8080
     # DNS is automatically injected; app resolves api.example.com through Canopy
 ----
 

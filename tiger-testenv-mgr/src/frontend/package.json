@@ -36,8 +36,8 @@
   "dependencies": {
     "@js-joda/core": "6.1.0",
     "@primeuix/themes": "2.0.3",
-    "ag-grid-community": "36.1.0",
-    "ag-grid-vue3": "36.1.0",
+    "ag-grid-community": "36.2.0",
+    "ag-grid-vue3": "36.2.0",
     "bootstrap": "5.3.8",
     "common-path-prefix": "3.0.0",
     "highlight.js": "11.12.0",

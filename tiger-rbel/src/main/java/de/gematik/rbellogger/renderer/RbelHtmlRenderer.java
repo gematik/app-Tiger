@@ -56,6 +56,12 @@ public class RbelHtmlRenderer {
   @Setter private String subTitle = "";
   @Setter private String versionInfo = "";
 
+  /**
+   * Provenance shown behind the "Meta" button in the report header. Empty metadata hides the
+   * button.
+   */
+  @Setter private RbelReportMetadata reportMetadata = RbelReportMetadata.empty();
+
   public RbelHtmlRenderer(final RbelValueShader rbelValueShader) {
     this.rbelValueShader = rbelValueShader;
   }

@@ -19,11 +19,18 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import type { BaseMessagesDto, HtmlMessageDto, MetaMessageDto } from "@/api/MessageTypes.ts";
+import type {
+  BaseMessagesDto,
+  HtmlMessageDto,
+  MetaMessageDto,
+  ReportMetadataDto,
+} from "@/api/MessageTypes.ts";
 
 export type DetachedRbelLog = {
   messagesWithHtml: BaseMessagesDto<HtmlMessageDto>;
   messagesWithMeta: BaseMessagesDto<MetaMessageDto>;
+  /** Absent in logs exported by older Tiger versions. */
+  reportMetadata?: ReportMetadataDto;
 };
 
 export interface WindowExt extends Window {

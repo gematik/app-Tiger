@@ -24,9 +24,11 @@ import type {
   GetMessagesDto,
   JexlQueryResponseDto,
   RbelTreeResponseDto,
+  ReportMetadataDto,
   RouteDto,
   SearchMessagesDto,
   TestFilterMessagesDto,
+  MessageQueueStatusDto,
 } from "./MessageTypes.ts";
 import type { MessageSortOrder } from "@/Settings.ts";
 import type { DetachedRbelLog, WindowExt } from "@/WindowExt.ts";
@@ -48,6 +50,8 @@ export function getProxy(): ProxyRepository {
 export type ProxyRepository = {
   fetchMessagesWithMeta(props: {
     filterRbelPath?: string;
+    minTimestamp?: string;
+    maxTimestamp?: string;
     sortOrder?: MessageSortOrder;
   }): Promise<GetAllMessagesDto>;
 
@@ -55,9 +59,18 @@ export type ProxyRepository = {
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
+    minTimestamp?: string;
+    maxTimestamp?: string;
     sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<GetMessagesDto>;
+
+  /**
+   * Cheap poll telling us whether the message queue moved. Deliberately transfers no
+   * messages: it is called once a second, and `fetchMessagesWithMeta` grows with the
+   * size of the log.
+   */
+  fetchMessageQueueStatus(props: { signal?: AbortSignal }): Promise<MessageQueueStatusDto>;
 
   fetchFullyRenderedMessage(props: { uuid: string; signal?: AbortSignal }): Promise<{
     content: string;
@@ -99,6 +112,8 @@ export type ProxyRepository = {
   fetchDeleteProxyRoute(props: { id: string }): Promise<void>;
 
   fetchVersionInfo(): Promise<{ version: string; buildDate: string; proxyName: string }>;
+
+  fetchReportMetadata(): Promise<ReportMetadataDto | null>;
 };
 
 function throwNotImplemented(): never {
@@ -139,6 +154,16 @@ const ProxyRepositoryLocal: ProxyRepository = {
   async fetchMessagesWithMeta(): Promise<GetAllMessagesDto> {
     const messagesWithMeta = (await getDetachedTigerLog())!.messagesWithMeta;
     return Promise.resolve(messagesWithMeta);
+  },
+
+  async fetchMessageQueueStatus(): Promise<MessageQueueStatusDto> {
+    // An exported log never moves, so this always reports the state it was exported in.
+    const { total, hash } = (await getDetachedTigerLog())!.messagesWithMeta;
+    return Promise.resolve({ total, hash });
+  },
+
+  async fetchReportMetadata(): Promise<ReportMetadataDto | null> {
+    return (await getDetachedTigerLog())?.reportMetadata ?? null;
   },
 
   fetchQuitProxy(): Promise<void> {
@@ -196,13 +221,19 @@ async function createFetchRequest<T>(url: string, options: RequestInit = {}): Pr
 const ProxyRepositoryRemote: ProxyRepository = {
   fetchMessagesWithMeta: async ({
     filterRbelPath,
+    minTimestamp,
+    maxTimestamp,
     sortOrder,
   }: {
     filterRbelPath?: string;
+    minTimestamp?: string;
+    maxTimestamp?: string;
     sortOrder?: MessageSortOrder;
   }): Promise<GetAllMessagesDto> => {
     const params = new URLSearchParams();
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
+    if (minTimestamp !== undefined) params.set("minTimestamp", minTimestamp);
+    if (maxTimestamp !== undefined) params.set("maxTimestamp", maxTimestamp);
     if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<GetAllMessagesDto>(`/webui/getMessagesWithMeta?${params.toString()}`);
   },
@@ -211,12 +242,16 @@ const ProxyRepositoryRemote: ProxyRepository = {
     fromOffset,
     toOffsetExcluding,
     filterRbelPath,
+    minTimestamp,
+    maxTimestamp,
     sortOrder,
     signal,
   }: {
     fromOffset: number;
     toOffsetExcluding: number;
     filterRbelPath?: string;
+    minTimestamp?: string;
+    maxTimestamp?: string;
     sortOrder?: MessageSortOrder;
     signal: AbortSignal;
   }): Promise<GetMessagesDto> => {
@@ -224,10 +259,30 @@ const ProxyRepositoryRemote: ProxyRepository = {
     params.set("fromOffset", fromOffset.toString());
     params.set("toOffsetExcluding", toOffsetExcluding.toString());
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
+    if (minTimestamp !== undefined) params.set("minTimestamp", minTimestamp);
+    if (maxTimestamp !== undefined) params.set("maxTimestamp", maxTimestamp);
     if (sortOrder) params.set("sortOrder", sortOrder);
     return createFetchRequest<GetMessagesDto>(`/webui/getMessagesWithHtml?${params.toString()}`, {
       signal,
     });
+  },
+
+  fetchMessageQueueStatus: async ({
+    signal,
+  }: {
+    signal?: AbortSignal;
+  }): Promise<MessageQueueStatusDto> => {
+    // An empty offset range short-circuits the backend stream, so no message is rendered
+    // and the filter is never evaluated - the response is constant-size whatever the log
+    // holds. See ADR 011, "Polling for New Messages".
+    const params = new URLSearchParams();
+    params.set("fromOffset", "0");
+    params.set("toOffsetExcluding", "0");
+    const { total, hash } = await createFetchRequest<GetMessagesDto>(
+      `/webui/getMessagesWithHtml?${params.toString()}`,
+      { signal },
+    );
+    return { total, hash };
   },
 
   fetchResetMessages: async (): Promise<void> => {
@@ -366,5 +421,9 @@ const ProxyRepositoryRemote: ProxyRepository = {
     return createFetchRequest<{ version: string; buildDate: string; proxyName: string }>(
       "/webui/version",
     );
+  },
+
+  fetchReportMetadata: async (): Promise<ReportMetadataDto> => {
+    return createFetchRequest<ReportMetadataDto>("/webui/reportMetadata");
   },
 };

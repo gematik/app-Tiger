@@ -24,12 +24,16 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.proxy.controller.TracingpointsController;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import kong.unirest.core.Unirest;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /**
  * Estimates the clock offset between the local machine and a remote Tiger Proxy using an NTP-style
@@ -49,8 +53,9 @@ public final class ClockSkewEstimator {
    * @param remoteBaseUrl base URL of the remote Tiger Proxy (e.g. {@code http://host:port})
    * @param samples number of round-trips to perform; values &le; 0 disable measurement
    * @return the estimated offset ({@code remoteClock - localClock}), or {@link Optional#empty()} if
-   *     measurement was disabled or all samples failed. The caller decides how to handle the empty
-   *     case (e.g. fall back to {@link Duration#ZERO}, retry, or fail loudly).
+   *     measurement was disabled, all samples failed, or the offset came out smaller than the
+   *     round-trip can resolve. The caller decides how to handle the empty case (e.g. fall back to
+   *     {@link Duration#ZERO}, retry, or fail loudly).
    */
   public static Optional<Duration> estimateOffset(String remoteBaseUrl, int samples) {
     if (samples <= 0) {
@@ -62,11 +67,11 @@ public final class ClockSkewEstimator {
 
     for (int i = 0; i < samples; i++) {
       try {
-        ZonedDateTime localBefore = ZonedDateTime.now();
+        Instant localBefore = Instant.now();
         var response =
             Unirest.get(remoteBaseUrl + "/clock")
                 .asObject(TracingpointsController.ClockResponse.class);
-        ZonedDateTime localAfter = ZonedDateTime.now();
+        Instant localAfter = Instant.now();
 
         if (!response.isSuccess() || response.getBody() == null) {
           log.atWarn()
@@ -77,9 +82,9 @@ public final class ClockSkewEstimator {
           continue;
         }
 
-        ZonedDateTime remoteTime = response.getBody().getServerTime();
+        Instant remoteTime = response.getBody().getServerTime().toInstant();
         Duration rtt = Duration.between(localBefore, localAfter);
-        ZonedDateTime localMidpoint = localBefore.plus(rtt.dividedBy(2));
+        Instant localMidpoint = localBefore.plus(rtt.dividedBy(2));
         Duration offset = Duration.between(localMidpoint, remoteTime);
 
         if (bestRtt == null || rtt.compareTo(bestRtt) < 0) {
@@ -103,6 +108,17 @@ public final class ClockSkewEstimator {
       return Optional.empty();
     }
 
+    if (isWithinMeasurementError(bestOffset, bestRtt)) {
+      log.atInfo()
+          .addArgument(remoteBaseUrl)
+          .addArgument(bestOffset::toMillis)
+          .addArgument(bestRtt::toMillis)
+          .log(
+              "Clocks of {} and this machine agree to within the measurement error ({}ms offset at"
+                  + " {}ms round-trip), leaving timestamps alone");
+      return Optional.empty();
+    }
+
     log.atInfo()
         .addArgument(remoteBaseUrl)
         .addArgument(bestOffset::toMillis)
@@ -110,6 +126,15 @@ public final class ClockSkewEstimator {
         .addArgument(samples)
         .log("Estimated clock offset to {}: {}ms (best RTT: {}ms, {} samples)");
     return Optional.of(bestOffset);
+  }
+
+  /**
+   * An offset smaller than half the round-trip is indistinguishable from no offset at all: the
+   * remote timestamp could have been taken anywhere within that window. Reporting it would shift
+   * every message by whatever the network happened to do during the measurement.
+   */
+  static boolean isWithinMeasurementError(Duration offset, Duration roundTrip) {
+    return offset.abs().compareTo(roundTrip.dividedBy(2)) < 0;
   }
 
   /**
@@ -138,5 +163,22 @@ public final class ClockSkewEstimator {
     RbelMessageMetadata.MESSAGE_TRANSMISSION_TIME
         .getValue(metadata)
         .ifPresent(remoteTimestamp -> metadata.withTransmissionTime(remoteTimestamp.minus(offset)));
+  }
+
+  /**
+   * Returns the given metadata values with {@link RbelMessageMetadata#MESSAGE_TRANSMISSION_TIME}
+   * moved onto the local timeline, for callers that hold the values before an element exists.
+   * Returns the argument unchanged if the offset is zero or no transmission time is present.
+   */
+  public static Map<String, Object> withCompensatedTransmissionTime(
+      Map<String, Object> additionalInformation, Duration offset) {
+    val key = RbelMessageMetadata.MESSAGE_TRANSMISSION_TIME.getKey();
+    if (offset.isZero()
+        || !(additionalInformation.get(key) instanceof ZonedDateTime remoteTimestamp)) {
+      return additionalInformation;
+    }
+    val compensated = new HashMap<>(additionalInformation);
+    compensated.put(key, remoteTimestamp.minus(offset));
+    return compensated;
   }
 }

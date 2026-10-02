@@ -88,7 +88,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   private final Map<String, TigerProxyRoute> tigerRouteMap = new HashMap<>();
   private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
-  private final BackendAlpnRegistry alpnRegistry = new BackendAlpnRegistry();
+  private final BackendAlpnRegistry alpnRegistry;
+  private final Optional<ProxyConfiguration> resolvedForwardProxyConfiguration;
 
   /**
    * Tiger Proxy health endpoint performs http get requests towards the local server port of the
@@ -99,11 +100,16 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Getter private final UUID healthEndpointRequestUuid = UUID.randomUUID();
 
   @Getter @EqualsAndHashCode.Exclude private MockServer mockServer;
+  @EqualsAndHashCode.Exclude private BinaryExchangeHandler binaryExchangeHandler;
   private TigerPkiIdentity serverRootCa;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
 
+    resolvedForwardProxyConfiguration =
+        ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+            configuration);
+    alpnRegistry = new BackendAlpnRegistry(getExecutor());
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
 
@@ -201,11 +207,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.enableTlsTermination(
         getTigerProxyConfiguration().isActivateTlsTermination());
 
-    final Optional<ProxyConfiguration> proxyConfiguration =
-        ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
-            getTigerProxyConfiguration());
-    outputForwardProxyConfigLogs(proxyConfiguration);
-    proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
+    outputForwardProxyConfigLogs(resolvedForwardProxyConfiguration);
+    resolvedForwardProxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
     mockServerConfiguration.exceptionHandlingCallback(
         getMockServerToRbelConverter().exceptionCallback());
     if (getTigerProxyConfiguration().isLogConnectMessages()) {
@@ -220,13 +223,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                       Optional.of(ZonedDateTime.now()),
                       new AtomicReference<>(null)));
     }
-    mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
+    binaryExchangeHandler = new BinaryExchangeHandler(this);
+    mockServerConfiguration.binaryProxyListener(binaryExchangeHandler);
     mockServerConfiguration.http2FrameParsingActive(
         getTigerProxyConfiguration().getActivateRbelParsingFor() != null
             && getTigerProxyConfiguration().getActivateRbelParsingFor().contains("http2frames"));
 
     mockServerConfiguration.alpnProtocolsForSniHostname(
-        sni -> alpnRegistry.resolveAlpnForSniHostname(sni, tigerRouteMap.values()).orElse(null));
+        sni -> alpnRegistry.resolveAlpnForSniHostname(sni, tigerRouteMap.values()));
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -312,31 +316,23 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
           trafficEndpointUrls.size());
     }
 
-    Optional.of(trafficEndpointUrls).stream()
-        .flatMap(List::stream)
-        .parallel()
-        .map(
-            url ->
-                new TigerRemoteProxyClient(
-                    url,
-                    TigerProxyConfiguration.builder()
-                        .downloadInitialTrafficFromEndpoints(
-                            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
-                        .trafficEndpointFilterString(
-                            getTigerProxyConfiguration().getTrafficEndpointFilterString())
-                        .name(getTigerProxyConfiguration().getName())
-                        .failOnOfflineTrafficEndpoints(
-                            getTigerProxyConfiguration().isFailOnOfflineTrafficEndpoints())
-                        .connectionTimeoutInSeconds(
-                            getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
-                        .requireHealthyTrafficEndpoints(
-                            getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints())
-                        .enableLegacyTraffic(getTigerProxyConfiguration().isEnableLegacyTraffic())
-                        .build(),
-                    this))
-        .forEach(remoteProxyClients::add);
+    final var remoteClientConfiguration = buildRemoteProxyClientConfiguration();
+    remoteProxyClients.addAll(
+        Optional.of(trafficEndpointUrls).stream()
+            .flatMap(List::stream)
+            .parallel()
+            .map(url -> new TigerRemoteProxyClient(url, remoteClientConfiguration, this))
+            .toList());
 
     remoteProxyClients.parallelStream().forEach(TigerRemoteProxyClient::connect);
+  }
+
+  /** The configuration for our {@link TigerRemoteProxyClient}s: ours, minus what only we may do. */
+  private TigerProxyConfiguration buildRemoteProxyClientConfiguration() {
+    return getTigerProxyConfiguration().toBuilder()
+        .fileSaveInfo(null) // reading the source file is our job
+        .trafficEndpoints(null) // the clients are the subscription
+        .build();
   }
 
   public boolean isConnectedToAllRemoteEndpoints() {
@@ -392,11 +388,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     }
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
     if (tigerRoute.getAlpnProtocols() == null || tigerRoute.getAlpnProtocols().isEmpty()) {
-      var forwardProxy =
-          ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
-                  getTigerProxyConfiguration())
-              .orElse(null);
-      alpnRegistry.probeBackendAlpnIfHttps(tigerRoute.getTo(), forwardProxy);
+      alpnRegistry.probeBackendAlpnIfHttps(
+          tigerRoute.getTo(), resolvedForwardProxyConfiguration.orElse(null));
     } else {
       log.info(
           "Route has explicit ALPN declaration {}, skipping probe", tigerRoute.getAlpnProtocols());
@@ -633,7 +626,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     String tigerProxyName = getName();
     log.info("Shutting down Tiger-Proxy {}", tigerProxyName);
     remoteProxyClients.forEach(TigerRemoteProxyClient::close);
+    if (binaryExchangeHandler != null) {
+      binaryExchangeHandler.close();
+    }
     mockServer.stop();
+  }
+
+  public List<TigerRemoteProxyClient> getRemoteProxyClients() {
+    return List.copyOf(remoteProxyClients);
   }
 
   public Map<SocketAddress, TigerConnectionStatus> getOpenConnections() {

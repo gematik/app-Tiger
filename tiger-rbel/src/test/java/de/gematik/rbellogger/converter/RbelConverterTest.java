@@ -113,4 +113,19 @@ class RbelConverterTest {
     assertThat(pair1B.getFacetOrFail(TracingMessagePairFacet.class).getRequest()).isEqualTo(pair1A);
     assertThat(pair2B.getFacetOrFail(TracingMessagePairFacet.class).getRequest()).isEqualTo(pair2A);
   }
+
+  @Test
+  void parseMessage_conversionFails_doesNotReturnNull() {
+    var rbelConverter = RbelLogger.build().getRbelConverter();
+    var message = new RbelElement("foo".getBytes(), null);
+    rbelConverter.parseMessage(message, new RbelMessageMetadata());
+
+    assertThatThrownBy(() -> rbelConverter.parseMessage(message, new RbelMessageMetadata()))
+        .as(
+            "a message whose uuid is already known cannot be converted again - returning null here"
+                + " makes the caller fail with a NullPointerException that names neither the"
+                + " message nor the reason")
+        .isInstanceOf(RbelConversionException.class)
+        .hasMessage("UUID is already known");
+  }
 }

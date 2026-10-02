@@ -25,6 +25,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
@@ -54,6 +55,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
 @SpringBootTest(
+    classes = TigerTestEnvMgrApplication.class,
     webEnvironment = WebEnvironment.RANDOM_PORT,
     properties = "tiger.lib.activateWorkflowUi=true")
 @DirtiesContext

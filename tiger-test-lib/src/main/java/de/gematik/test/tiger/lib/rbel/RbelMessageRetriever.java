@@ -26,6 +26,7 @@ import static org.awaitility.Awaitility.await;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import de.gematik.rbellogger.MessageSortOrder;
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
@@ -59,6 +60,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.Pair;
@@ -73,6 +75,7 @@ public class RbelMessageRetriever {
   public static final String FOUND_IN_MESSAGES = "' found in messages";
 
   private static final List<String> EMPTY_PATH = List.of("", "/");
+  private static final int MAX_LOGGED_MESSAGES = 20;
   public static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class, 5);
 
@@ -346,19 +349,64 @@ public class RbelMessageRetriever {
         throw new AssertionError("User aborted test run");
       }
     } catch (final ConditionTimeoutException cte) {
-      log.error("Didn't find any matching messages!\n  {}", requestParameter);
-      printAllPathsOfMessages(checkedCandidates);
-      var uncheckedMessages =
-          getRbelElementsOptionallyFromGivenMessageInclusively(initialElement, checkedCandidates);
-      if (!uncheckedMessages.isEmpty()) {
-        log.debug(
-            "Found {} messages that were not tried as matching candidates:",
-            uncheckedMessages.size());
-        printAllPathsOfMessages(uncheckedMessages);
-      }
+      log.atError()
+          .addArgument(requestParameter)
+          .addArgument(() -> describeFailedSearch(checkedCandidates, initialElement))
+          .log("Didn't find any matching messages!\n  {}\n{}");
       reportMissingRequest(requestParameter, mismatchNotes);
     }
     return candidate.get();
+  }
+
+  private String describeFailedSearch(
+      Set<RbelElement> checkedCandidates, Optional<RbelElement> initialElement) {
+    val report = new StringBuilder(describeMessageSupply());
+    report
+        .append("\n  tried %d of them as candidates:\n".formatted(checkedCandidates.size()))
+        .append(describePathsOfMessages(checkedCandidates));
+    val untried =
+        getRbelElementsOptionallyFromGivenMessageInclusively(initialElement, checkedCandidates);
+    if (!untried.isEmpty()) {
+      report
+          .append("\n  never tried as candidates (%d):\n".formatted(untried.size()))
+          .append(describePathsOfMessages(untried.stream().limit(MAX_LOGGED_MESSAGES).toList()));
+      if (untried.size() > MAX_LOGGED_MESSAGES) {
+        report.append("\n  ...and %d more".formatted(untried.size() - MAX_LOGGED_MESSAGES));
+      }
+    }
+    return report.toString();
+  }
+
+  private String describeMessageSupply() {
+    val report = new StringBuilder("Where the messages went:");
+    Optional.ofNullable(tigerProxy.getRbelLogger())
+        .map(RbelLogger::getRbelConverter)
+        .ifPresentOrElse(
+            converter ->
+                report.append(
+                    "\n  %d in the log, %d validatable after the last clear, %d still parsing"
+                        .formatted(
+                            converter.getMessageHistory().getMessages().size(),
+                            validatableMessageCount(),
+                            converter.getUnfinishedMessageCount())),
+            () -> report.append("\n  (no rbel logger on this proxy)"));
+    Optional.ofNullable(tigerProxy.getRemoteProxyClients()).orElseGet(List::of).stream()
+        .forEach(
+            client ->
+                report.append(
+                    "\n  %s: %d partially received, %d parse task(s) awaiting a predecessor"
+                        .formatted(
+                            client.getRemoteProxyUrl(),
+                            client.getMessageAssembler().snapshot().size(),
+                            client.getParsingTasksWaitingForAPredecessor())));
+    return report.toString();
+  }
+
+  private int validatableMessageCount() {
+    return Optional.ofNullable(localProxyRbelMessageListener)
+        .map(LocalProxyRbelMessageListener::getValidatableMessages)
+        .map(messages -> messages.getMessages().size())
+        .orElse(-1);
   }
 
   private static void reportMissingRequest(
@@ -771,15 +819,17 @@ public class RbelMessageRetriever {
     log.atDebug()
         .addArgument(
             () -> msgs.stream().filter(msg -> msg.hasFacet(RbelHttpRequestFacet.class)).count())
-        .addArgument(
-            () ->
-                msgs.stream()
-                    .map(msg -> msg.getFacet(RbelHttpRequestFacet.class))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(req -> "=>\t" + req.getPathAsString() + " : " + req.getChildElements())
-                    .collect(Collectors.joining("\n")))
+        .addArgument(() -> describePathsOfMessages(msgs))
         .log("Found the following {} messages:\n{} ");
+  }
+
+  private String describePathsOfMessages(final Collection<RbelElement> msgs) {
+    return msgs.stream()
+        .map(msg -> msg.getFacet(RbelHttpRequestFacet.class))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(req -> "=>\t" + req.getPathAsString() + " : " + req.getChildElements())
+        .collect(Collectors.joining("\n"));
   }
 
   public RbelElement findElementInCurrentResponse(final String rbelPath) {

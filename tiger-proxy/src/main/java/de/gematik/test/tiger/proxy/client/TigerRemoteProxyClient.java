@@ -504,7 +504,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
               message.getSender(),
               message.getReceiver(),
               message.buildCompleteContent().toByteArray(),
-              message.getAdditionalInformation(),
+              ClockSkewEstimator.withCompensatedTransmissionTime(
+                  message.getAdditionalInformation(), getRemoteClockOffset()),
               message.getTracingDto().isRequest()
                   ? RbelMessageKind.REQUEST
                   : RbelMessageKind.RESPONSE,
@@ -621,6 +622,14 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   private void handleMessageRemovalFromHistory(RbelElement element) {
     if (!element.hasFacet(NextMessageParsedFacet.class)) {
       removedMessageUuids.add(element.getUuid());
+    }
+  }
+
+  public int getParsingTasksWaitingForAPredecessor() {
+    synchronized (parsingTasksWaitingForUuid) {
+      return parsingTasksWaitingForUuid.entries().stream()
+          .mapToInt(waitingTasks -> waitingTasks.getValue().size())
+          .sum();
     }
   }
 

@@ -34,6 +34,7 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -80,6 +81,20 @@ public class RbelFileReader {
       Stream<String> rbelFileLines,
       Optional<String> readFilter,
       Function<String, RbelContent> contentProvider) {
+    return convertRbelFileEntries(
+        rbelFileLines, readFilter, contentProvider, (element, metadata) -> {});
+  }
+
+  /**
+   * @param messagePreProcessor runs on every message before it is parsed, and therefore before it
+   *     reaches the history and becomes visible to listeners and validation. Metadata written here
+   *     is picked up by the conversion; metadata written afterwards is not.
+   */
+  public List<RbelElement> convertRbelFileEntries(
+      Stream<String> rbelFileLines,
+      Optional<String> readFilter,
+      Function<String, RbelContent> contentProvider,
+      BiConsumer<RbelElement, RbelMessageMetadata> messagePreProcessor) {
     log.info("Starting parsing...");
     AtomicInteger numberOfParsedMessages = new AtomicInteger(0);
     final List<RbelElement> list =
@@ -87,6 +102,7 @@ public class RbelFileReader {
                 rbelFileLines,
                 readFilter,
                 contentProvider,
+                messagePreProcessor,
                 element -> {
                   if (numberOfParsedMessages.get() > 0
                       && (numberOfParsedMessages.getAndIncrement() % 500) == 0) {
@@ -103,12 +119,28 @@ public class RbelFileReader {
       Optional<String> readFilter,
       Function<String, RbelContent> contentProvider,
       Consumer<? super Optional<RbelElement>> onEveryMessageParsed) {
+    return getRbelElementStream(
+        rbelFileLines,
+        readFilter,
+        contentProvider,
+        (element, metadata) -> {},
+        onEveryMessageParsed);
+  }
+
+  public @NotNull Stream<RbelElement> getRbelElementStream(
+      Stream<String> rbelFileLines,
+      Optional<String> readFilter,
+      Function<String, RbelContent> contentProvider,
+      BiConsumer<RbelElement, RbelMessageMetadata> messagePreProcessor,
+      Consumer<? super Optional<RbelElement>> onEveryMessageParsed) {
     return rbelFileLines
         .filter(StringUtils::isNotBlank)
         .map(JSONObject::new)
         .filter(RbelFileReader::isMessageObject)
         .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
-        .map(messageObject -> parseFileObject(messageObject, readFilter, contentProvider))
+        .map(
+            messageObject ->
+                parseFileObject(messageObject, readFilter, contentProvider, messagePreProcessor))
         .filter(Optional::isPresent)
         .peek(onEveryMessageParsed)
         .map(Optional::get)
@@ -124,7 +156,8 @@ public class RbelFileReader {
   private Optional<RbelElement> parseFileObject(
       JSONObject messageObject,
       Optional<String> readFilter,
-      Function<String, RbelContent> contentProvider) {
+      Function<String, RbelContent> contentProvider,
+      BiConsumer<RbelElement, RbelMessageMetadata> messagePreProcessor) {
     try {
       extractVersionIfPresent(messageObject);
 
@@ -132,7 +165,9 @@ public class RbelFileReader {
 
       if (rbelConverter.getKnownMessageUuids().add(msgUuid)) {
         return getContent(messageObject, msgUuid, contentProvider)
-            .map(content -> parseContent(content, messageObject, readFilter, msgUuid));
+            .map(
+                content ->
+                    parseContent(content, messageObject, readFilter, msgUuid, messagePreProcessor));
       } else {
         log.atDebug().log("Skipping conversion for already known message uuid: {}", msgUuid);
         return Optional.empty();
@@ -186,7 +221,11 @@ public class RbelFileReader {
   }
 
   private RbelElement parseContent(
-      RbelContent content, JSONObject messageObject, Optional<String> readFilter, String msgUuid) {
+      RbelContent content,
+      JSONObject messageObject,
+      Optional<String> readFilter,
+      String msgUuid,
+      BiConsumer<RbelElement, RbelMessageMetadata> messagePreProcessor) {
     final RbelElement rawMessageObject =
         RbelElement.builder().content(content).uuid(msgUuid).parentNode(null).build();
     rawMessageObject.addFacet(new IncompleteMessageReadFromFile());
@@ -198,6 +237,8 @@ public class RbelFileReader {
 
     val messageMetadata = new RbelMessageMetadata();
     enrichMetadataFromJson(messageMetadata, messageObject);
+
+    messagePreProcessor.accept(rawMessageObject, messageMetadata);
 
     final RbelElement parsedMessage = rbelConverter.parseMessage(rawMessageObject, messageMetadata);
 

@@ -230,7 +230,9 @@ servers:
       rewriteLocationHeader: true
       honorHostHeaderRouting: false
       # ----Traffic download pagination-----------------------------
-      maximumTrafficDownloadPageSize: 100000    # Maximum number of messages per download (default: 100000)
+      maximumTrafficDownloadPageSize: 100000    # Page size used when a download-request does not ask for one, e.g. the WebUI traffic export (default: 100000)
+      trafficDownloadPageSize: 100              # Number of messages this proxy requests per page when catching up with an upstream proxy (default: 100)
+      maximumTrafficDownloadPages: 200          # Emergency brake: a catch-up is given up after this many pages, everything the upstream proxy still has stays missing (default: 200)
 ----
 
 === Understanding routes
@@ -466,8 +468,11 @@ Default is false.
 
 ==== alpnProtocols
 
-The Tiger Proxy automatically probes each HTTPS backend at route-add time to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.
+The Tiger Proxy automatically probes each HTTPS backend to discover its ALPN (Application-Layer Protocol Negotiation) capabilities.
 Based on the result, the proxy restricts the protocols it advertises to clients during the TLS handshake — ensuring transparent behavior (the client sees the same protocol it would with a direct connection).
+
+Probing happens in the background and never delays startup; each backend is probed once.
+If a probe is still running when a client connects, only that handshake waits for it.
 
 In most cases this works automatically and requires no configuration.
 However, for ambiguous setups — such as two routes on the same hostname pointing to different backends with different protocol support — you can explicitly declare the ALPN protocols per route using the `alpnProtocols` property:
@@ -1243,6 +1248,19 @@ Time threshold in minutes (supports decimal values) for considering a mesh conne
 Timeout detection only applies to connections that are newer than this threshold to avoid false positives in long-running connections.
 Default is 5.0 minutes.
 
+==== parsingTimeoutInSeconds
+
+How long the proxy waits for messages to finish parsing before giving up on them.
+This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log), for a single message to be parsed, and for a message to be parsed before the binary modifier plugins are applied to it.
+Raise it if you routinely handle very large messages; there is no reason to lower it, as the wait ends as soon as parsing is done.
+Default is 100 seconds.
+
+==== fileParsingTimeoutInSeconds
+
+How long the proxy waits, at startup, for a `.tgr` file given via `fileSaveInfo.sourceFile` to be fully read and parsed.
+Raise it if you routinely load very large `.tgr` files.
+Default is 600 seconds.
+
 [source,yaml]
 ----
 tigerProxy:
@@ -1251,6 +1269,8 @@ tigerProxy:
     previousMessageTimeoutDetectionGracePeriodInSeconds: 10.0
     previousMessageTimeoutDetectionTimeGapThresholdInSeconds: 30.0
     previousMessageTimeoutDetectionRecentConnectionThresholdInMinutes: 5.0
+    parsingTimeoutInSeconds: 100
+    fileParsingTimeoutInSeconds: 600
 ----
 
 === Displaying Nested Messages
@@ -1352,6 +1372,29 @@ Three sources feed into the RbelLogger:
 Messages that are intercepted are automatically stored (the exception being the `tigerProxy.activateForwardAllLogging`-property, which can deactivate the logging of traffic not specifically forwarded via a route).
 For messages in a mesh setup and from a source file filter expressions can be defined to limit the messages that are actually stored.
 These can be defined using the `tigerProxy.trafficEndpointFilterString` (for mesh setups) and `tigerProxy.fileSaveInfo.readFilter` (for tgr-files) respectively.
+
+===== Add messages to the RBel log programmatically
+
+To inspect data that did not pass through a proxy, parse it with the RBel converter of the local TigerProxy.
+The parsed message is then available in the RBel log and can be used by the usual RBel validation steps.
+
+[source,java]
+----
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.test.tiger.lib.TigerDirector;
+import java.nio.charset.StandardCharsets;
+
+var localTigerProxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+localTigerProxy
+    .getRbelLogger()
+    .getRbelConverter()
+    .parseMessage(
+        "{\"id\":\"example\", \"status\":\"received\"}".getBytes(StandardCharsets.UTF_8),
+        new RbelMessageMetadata());
+----
+
+`RbelMessageMetadata` can optionally contain sender, receiver, and transmission-time information if this context should be displayed in the RBel log.
+The local TigerProxy must be enabled for the test; `getLocalTigerProxyOrFail()` reports an error otherwise.
 
 When messages pass the filter, partner messages (request/response pairs) are kept intact.
 So when you filter for messages that have a return code of 200 the corresponding requests do not match the filter expression.

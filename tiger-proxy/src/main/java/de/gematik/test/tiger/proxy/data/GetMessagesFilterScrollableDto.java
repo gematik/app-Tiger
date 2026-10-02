@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,4 +32,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GetMessagesFilterScrollableDto {
   private String rbelPath;
+  private Instant minTimestamp;
+  private Instant maxTimestamp;
 }

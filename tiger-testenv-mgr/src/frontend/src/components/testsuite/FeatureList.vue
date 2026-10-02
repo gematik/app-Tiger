@@ -84,8 +84,20 @@
             v-for="(scenario, index) in [getScenario(slotProps.node.key)]"
             :key="index"
             class="test-sidebar-scenario-name d-flex align-items-center w-100"
-            :title="slotProps.node.label"
-            @click="(event) => event.stopImmediatePropagation()"
+            :class="{
+              'scenario-selected':
+                scenario && featuresStore.isScenarioSelected(scenario.uniqueId),
+            }"
+            :title="scenarioSelectionTitle(scenario, slotProps.node.label)"
+            role="button"
+            tabindex="0"
+            @click="
+              (event) => {
+                event.stopImmediatePropagation();
+                onScenarioClick(scenario);
+              }
+            "
+            @keydown.enter="onScenarioClick(scenario)"
           >
             <a
               v-if="scenario?.status === 'FAILED'"
@@ -119,6 +131,7 @@
               v-if="scenario"
               :scenario="scenario.getScenarioIdentifier()"
               :show-play-button="scenario.isDryRun"
+              @click.stop
             />
           </div>
         </template>
@@ -140,7 +153,8 @@ import type ScenarioUpdate from "@/types/testsuite/ScenarioUpdate.ts";
 import { visitTreeNodes } from "@/components/testselector/TreeNodeVisitor.ts";
 import { storeToRefs } from "pinia";
 
-const { featureUpdateMap } = storeToRefs(useFeaturesStore());
+const featuresStore = useFeaturesStore();
+const { featureUpdateMap } = storeToRefs(featuresStore);
 const selectedTests = useSelectedTestsStore();
 const testsToSelectTreeNodes = computed(() =>
   convertToTreeNode(featureUpdateMap.value, true),
@@ -157,7 +171,25 @@ const expandAll = () => {
 };
 
 function getScenario(id: string): ScenarioUpdate | undefined {
-  return useFeaturesStore().getScenarioOrVariantById(id);
+  return featuresStore.getScenarioOrVariantById(id);
+}
+
+function onScenarioClick(scenario: ScenarioUpdate | undefined) {
+  if (scenario) {
+    featuresStore.toggleScenarioSelection(scenario.uniqueId);
+  }
+}
+
+function scenarioSelectionTitle(
+  scenario: ScenarioUpdate | undefined,
+  nodeLabel: string,
+): string {
+  if (!scenario) {
+    return nodeLabel;
+  }
+  return featuresStore.isScenarioSelected(scenario.uniqueId)
+    ? "Selected for Rbel log scoping - click to deselect"
+    : "Click to scope the Rbel log to this scenario";
 }
 
 //expanded at the begining.
@@ -203,6 +235,15 @@ function getIconClassForNode(treeNode: TreeNode): string {
 i.statusbadge {
   font-size: 1.25rem;
   padding-right: 5rem;
+}
+
+.test-sidebar-scenario-name {
+  cursor: pointer;
+}
+
+.test-sidebar-scenario-name.scenario-selected {
+  background: var(--gem-primary-200);
+  box-shadow: inset 3px 0 0 0 var(--gem-primary-400);
 }
 
 .scenarioLink {

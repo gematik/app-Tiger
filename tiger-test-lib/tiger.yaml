@@ -38,6 +38,11 @@ lib:
   trafficVisualization: true
   runTestsOnStart: true
   enableTestManagementRestApi: true
+  pcapCapture:
+    enabled: true
+    splitByTestcase: true
+    snaplenKb: 64
+    bufferSizeKb: 16384
 
 additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
@@ -62,4 +67,3 @@ tigerGlue:
   #features are executed, we use two test variables
   helloTestFeature1: "global value for helloTestFeature1"
   helloTestFeature2: "global value for helloTestFeature2"
-

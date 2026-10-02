@@ -32,6 +32,7 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -350,13 +351,15 @@ public class TigerTestEnvMgr
     log.info(
         "\n" + Banner.toBannerStr("STARTING LOCAL PROXY...", RbelAnsiColors.BLUE_BOLD.toString()));
 
-    final TigerProxy proxy;
     if (configuration.getTigerProxy() == null) {
       configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
     }
     TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
     if (StringUtils.isEmpty(proxyConfig.getName())) {
       proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
+    }
+    if (proxyConfig.getForwardToProxy() == null) {
+      proxyConfig.setForwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build());
     }
     proxyConfig.setSkipTrafficEndpointsSubscription(true);
     proxyConfig.setStandalone(false);
@@ -401,7 +404,7 @@ public class TigerTestEnvMgr
                 .properties(properties)
                 .run();
 
-    proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
+    var proxy = localTigerProxyApplicationContext.getBean(TigerProxy.class);
 
     LOCAL_PROXY_PROXY_PORT.putValue(proxy.getProxyPort());
     LOCAL_PROXY_ADMIN_PORT.putValue(proxy.getAdminPort());

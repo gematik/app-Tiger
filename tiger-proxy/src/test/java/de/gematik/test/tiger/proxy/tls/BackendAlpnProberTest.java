@@ -22,17 +22,24 @@ package de.gematik.test.tiger.proxy.tls;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
+import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.proxy.H1TlsServer;
 import de.gematik.test.tiger.proxy.H2TestServer;
 import de.gematik.test.tiger.proxy.MiniHttpConnectProxy;
+import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +51,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests for {@link BackendAlpnProber}. */
 class BackendAlpnProberTest {
+
+  private static final String PROXIED_BACKEND_HOST = "127.0.0.2";
+  private static final int UNREACHABLE_PROXY_PORT = 1;
 
   // --- direct probing ----------------------------------------------------------------------------
 
@@ -174,6 +184,63 @@ class BackendAlpnProberTest {
       assertThat(upstreamProxy.getConnectRequests()).hasValue(1);
       assertThat(upstreamProxy.getAcceptedTunnels()).hasValue(1);
     }
+  }
+
+  @SneakyThrows
+  @Test
+  void addRoute_shouldKeepUsingForwardProxyResolvedAtStartup() {
+    restoreSystemProperties(
+        () -> {
+          try (H2TestServer h2Backend = H2TestServer.h2Tls(0);
+              MiniHttpConnectProxy upstreamProxy = new MiniHttpConnectProxy()) {
+            h2Backend.start();
+            upstreamProxy.start();
+            configureSystemProxyProperties(upstreamProxy.getPort());
+
+            try (TigerProxy tigerProxy = createTigerProxyUsingSystemProxy()) {
+              configureSystemProxyProperties(UNREACHABLE_PROXY_PORT);
+
+              addHttpsRoute(tigerProxy, PROXIED_BACKEND_HOST, h2Backend.getPort());
+
+              assertSuccessfulAlpnProbeThrough(upstreamProxy);
+            }
+          }
+        });
+  }
+
+  private static TigerProxy createTigerProxyUsingSystemProxy() {
+    return new TigerProxy(
+        TigerProxyConfiguration.builder()
+            .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+            .build());
+  }
+
+  private static void configureSystemProxyProperties(int port) {
+    System.setProperty("http.proxyHost", "localhost");
+    System.setProperty("http.proxyPort", String.valueOf(port));
+    System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+  }
+
+  private static void addHttpsRoute(TigerProxy tigerProxy, String backendHost, int backendPort) {
+    tigerProxy.addRoute(
+        TigerProxyRoute.builder()
+            .from("https://backend.example")
+            .to("https://" + backendHost + ":" + backendPort)
+            .build());
+  }
+
+  /**
+   * The probe is scheduled in the background by {@code addRoute}, so wait for it instead of
+   * assuming it already ran - what matters here is which proxy it tunnelled through, not when.
+   */
+  private static void assertSuccessfulAlpnProbeThrough(MiniHttpConnectProxy upstreamProxy) {
+    await()
+        .atMost(Duration.ofSeconds(10))
+        .untilAsserted(
+            () -> {
+              assertThat(upstreamProxy.getConnectRequests()).hasValue(1);
+              assertThat(upstreamProxy.getAcceptedTunnels()).hasValue(1);
+            });
   }
 
   @SneakyThrows

@@ -20,20 +20,39 @@
  */
 package de.gematik.test.tiger.common.data.config.tigerproxy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum TigerProxyType {
-  HTTP("http"),
-  HTTPS("https");
+  HTTP("http", 80),
+  HTTPS("https", 443);
 
   private final String name;
+  private final int defaultPort;
 
-  TigerProxyType(String nm) {
+  TigerProxyType(String nm, int port) {
     this.name = nm;
+    this.defaultPort = port;
   }
 
   @JsonValue
   public String getName() {
     return name;
+  }
+
+  @JsonIgnore
+  public int getDefaultPort() {
+    return defaultPort;
+  }
+
+  public static TigerProxyType fromProxyProtocol(String proxyProtocol) {
+    if (proxyProtocol.equalsIgnoreCase("http")) {
+      return TigerProxyType.HTTP;
+    } else if (proxyProtocol.equalsIgnoreCase("https")) {
+      return TigerProxyType.HTTPS;
+    } else {
+      throw new IllegalArgumentException(
+          "Protocol of type " + proxyProtocol + " not specified for proxies");
+    }
   }
 }

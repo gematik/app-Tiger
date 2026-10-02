@@ -99,11 +99,28 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
     return RbelSocketAddress.create(outgoingChannel.remoteAddress());
   }
 
+  /**
+   * Closes the client connection when the backend connection goes away (TESTHUB-261).
+   *
+   * <p>The two legs the proxy holds are one connection as far as its peers are concerned, so a
+   * close on either side has to reach the other. Closing only this channel used to leave the client
+   * on an ESTABLISHED socket it believed was healthy, with no close and no error - it kept writing
+   * into a connection that no longer had a far side and only found out when its own request timed
+   * out. The client cannot detect that by itself; the proxy has to hand the close on.
+   */
   @Override
   public void channelInactive(ChannelHandlerContext ctx) {
     contextLogger.logStage(ctx, "Outgoing channel of binary proxy is being closed");
     // Skip close if event loop is shutting down to avoid RejectedExecutionException
     if (!ctx.channel().eventLoop().isShuttingDown()) {
+      Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
+          .filter(Channel::isActive)
+          .ifPresent(
+              incomingChannel -> {
+                contextLogger.logStage(
+                    ctx, "Propagating close of the outgoing channel to the incoming channel");
+                closeOnFlush(incomingChannel);
+              });
       ctx.close();
     }
   }

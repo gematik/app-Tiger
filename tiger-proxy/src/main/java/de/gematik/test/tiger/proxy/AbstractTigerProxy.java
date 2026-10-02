@@ -29,11 +29,14 @@ import de.gematik.rbellogger.file.RbelFileReader;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
+import de.gematik.rbellogger.renderer.RbelReportMetadata;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.proxy.data.ConfigurationRedactor;
+import de.gematik.test.tiger.proxy.data.PasswordHidingObjectMapper;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.name.NameGenerator;
@@ -48,6 +51,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyPair;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -62,7 +66,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 @EqualsAndHashCode
 public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
@@ -240,6 +246,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     }
     initializeFileSaver(configuration);
     rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());
+    rbelConfiguration.setParsingTimeoutInSeconds(configuration.getParsingTimeoutInSeconds());
     rbelConfiguration.setSkipParsingWhenMessageLargerThanKb(
         configuration.getSkipParsingWhenMessageLargerThanKb());
     rbelConfiguration.setManageBuffer(true);
@@ -441,13 +448,40 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     return getMessageHistory().getMessages();
   }
 
+  /**
+   * Describes this proxy the way a report needs it: the Tiger that ran it, which optional parsers
+   * were active while the traffic was converted, and the configuration behind it - passwords hidden
+   * and the configured redactions applied, the same treatment the {@code /configuration} endpoint
+   * gives it.
+   */
+  public RbelReportMetadata getReportMetadata() {
+    return RbelReportMetadata.fromConverter(getRbelLogger().getRbelConverter()).toBuilder()
+        .configuration(RbelReportMetadata.flatten(redactedConfiguration()))
+        .build();
+  }
+
+  private Map<String, Object> redactedConfiguration() {
+    val mapper = PasswordHidingObjectMapper.createObjectMapper();
+    val tree = (ObjectNode) mapper.valueToTree(getTigerProxyConfiguration());
+    ConfigurationRedactor.applyRedactions(
+        tree, getTigerProxyConfiguration().getRedactedConfigurationPaths());
+    return mapper.convertValue(tree, new TypeReference<Map<String, Object>>() {});
+  }
+
   /*
    * This method is used to ensure that the file is parsed before the proxy is started.
    * It is only called by the TigerTestEnvMgr.
    */
   public void ensureFileIsParsed() {
+    val fileParsingTimeout =
+        Duration.ofSeconds(tigerProxyConfiguration.getFileParsingTimeoutInSeconds());
     try {
-      fileParsingFuture.get();
+      fileParsingFuture.get(fileParsingTimeout.toSeconds(), TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      throw new TigerProxyStartupException(
+          "Gave up after %d seconds waiting for the tgr file to be parsed"
+              .formatted(fileParsingTimeout.toSeconds()),
+          e);
     } catch (CancellationException | ExecutionException e) {
       throw new TigerProxyStartupException("Error while parsing tgr file", e);
     } catch (InterruptedException e) {

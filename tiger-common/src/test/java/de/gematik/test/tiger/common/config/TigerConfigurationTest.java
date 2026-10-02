@@ -558,6 +558,37 @@ public class TigerConfigurationTest { // NOSONAR
   }
 
   @Test
+  void testFreePortOnDemandAllocationAndConsistency() {
+    TigerGlobalConfiguration.reset();
+    String port1 = TigerGlobalConfiguration.readString("free.port.1");
+    String port1Repeat = TigerGlobalConfiguration.readString("free.port.1");
+    String port2 = TigerGlobalConfiguration.readString("free.port.2");
+
+    assertThat(port1).isNotNull().isEqualTo(port1Repeat);
+    assertThat(Integer.parseInt(port1)).isPositive();
+    assertThat(port2).isNotNull().isNotEqualTo(port1);
+    assertThat(Integer.parseInt(port2)).isPositive();
+  }
+
+  @Test
+  void testFreePortPlaceholderResolution() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.putValue("server.port", "${free.port.10}");
+    String resolvedPort = TigerGlobalConfiguration.readString("server.port");
+    String directPort = TigerGlobalConfiguration.readString("free.port.10");
+
+    assertThat(resolvedPort).isEqualTo(directPort);
+  }
+
+  @Test
+  void testFreePortExplicitOverride() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.putValue(
+        "free.port.5", "9999", ConfigurationValuePrecedence.TEST_YAML);
+    assertThat(TigerGlobalConfiguration.readString("free.port.5")).isEqualTo("9999");
+  }
+
+  @Test
   void readValueWithPlaceholder() throws Exception {
     new EnvironmentVariables("give.me.foo", "foo")
         .and("foo.int", "1234")

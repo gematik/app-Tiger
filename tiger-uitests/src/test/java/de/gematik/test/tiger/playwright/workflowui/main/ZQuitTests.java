@@ -127,9 +127,6 @@ class ZQuitTests extends AbstractBase {
 
   @Test
   void testQuitMessageOnSidebarExists() {
-    // close the HTML banner from scenario of second feature file to end the test run in the other
-    // thread
-    page.locator("#workflow-messages").locator(".btn-success").click();
     openSidebar();
     // wait for up to 2 minutes for test run in other thread to finish
     await()

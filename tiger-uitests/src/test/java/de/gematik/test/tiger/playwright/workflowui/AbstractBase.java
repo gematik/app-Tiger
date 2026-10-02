@@ -119,7 +119,8 @@ public class AbstractBase implements AutoCloseable {
     {"Request a non existing url", "0"},
     {"Request for testing tooltips", "0"},
     {"A scenario with substeps", "0"},
-    {"Test zeige HTML", "0"}
+    {"Test zeige HTML", "0"},
+    {"Simple Get Request for scoped scenario test", "0"}
   };
 
   protected static final String[][] SCENARIO_DATA_NO_OUTLINE =
@@ -134,7 +135,7 @@ public class AbstractBase implements AutoCloseable {
   protected static final int NUMBER_OF_SCENARIOS_INCLUDING_OUTLINE_NODES =
       SCENARIO_DATA_WITH_OUTLINE_NODES.length;
   protected static final int NUMBER_OF_SCENARIOS = SCENARIO_DATA_NO_OUTLINE.length;
-  protected static final int TOTAL_MESSAGES = 60;
+  protected static final int TOTAL_MESSAGES = 62;
   protected static final int MESSAGES_PER_PAGE = 20;
   protected static final int TOTAL_PAGES =
       (int) Math.ceil(TOTAL_MESSAGES / (MESSAGES_PER_PAGE * 1.0));

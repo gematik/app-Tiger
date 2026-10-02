@@ -1,4 +1,8 @@
 :version: ${project.version}
+:tiger-build-java-minimum: ${tiger.build.java.minimum}
+:tiger-build-maven-minimum: ${tiger.build.maven.minimum}
+:tiger-java-source-version: ${maven.compiler.source}
+:tiger-java-target-version: ${maven.compiler.target}
 :toc: left
 :toc-title: Contents
 :toclevels: 2

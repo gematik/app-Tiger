@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.*;
@@ -111,7 +112,7 @@ public class MockServerConfiguration {
   private KeyAlgorithmPreference keyAlgorithmPreference = KeyAlgorithmPreference.MIXED;
   private List<AlpnProtocol> serverAlpnProtocols =
       new ArrayList<>(List.of(AlpnProtocol.H2, AlpnProtocol.HTTP_1_1));
-  private Function<String, List<AlpnProtocol>> alpnProtocolsForSniHostname = null;
+  private Function<String, CompletionStage<List<AlpnProtocol>>> alpnProtocolsForSniHostname = null;
 
   // inbound - dynamic private key & x509
   private String sslCertificateDomainName = "localhost";

@@ -27,12 +27,17 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.4</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-testenv-mgr</artifactId>
   <name>${project.artifactId}</name>
   <description>tiger-testenv-mgr modul of the tiger test platform.</description>
+  <properties>
+    <frontend.work.dir>${project.basedir}/src/frontend</frontend.work.dir>
+    <frontend.build.command>run build</frontend.build.command>
+    <frontend.staleness.excludes>node_modules/**,node/**,package-lock.json,dist/**,**/*.tsbuildinfo</frontend.staleness.excludes>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -235,62 +240,12 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>com.github.eirslett</groupId>
         <artifactId>frontend-maven-plugin</artifactId>
-        <version>${version.frontend-maven-plugin}</version>
-        <configuration>
-          <nodeVersion>${version.node}</nodeVersion>
-          <workingDirectory>${project.basedir}/src/frontend</workingDirectory>
-        </configuration>
-
-        <executions>
-          <execution>
-            <id>Install node and npm</id>
-            <goals>
-              <goal>install-node-and-npm</goal>
-            </goals>
-            <phase>generate-resources</phase>
-            <configuration>
-              <!-- https://github.com/eirslett/frontend-maven-plugin#proxy-settings -->
-              <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
-              <nodeVersion>${version.node}</nodeVersion>
-              <npmVersion>${version.npm}</npmVersion>
-            </configuration>
-          </execution>
-
-          <execution>
-            <id>npm install</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <phase>generate-resources</phase>
-            <configuration>
-              <arguments>${frontend.npm.install.command}</arguments>
-            </configuration>
-          </execution>
-
-          <execution>
-            <id>npm build</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <phase>generate-resources</phase>
-            <configuration>
-              <arguments>run build</arguments>
-            </configuration>
-          </execution>
-          <!-- Run Unit tests with Jest -->
-          <execution>
-            <id>npm-unit-test</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <phase>test</phase>
-            <configuration>
-              <arguments>run test</arguments>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -308,22 +263,6 @@
               <resources>
                 <resource>
                   <directory>src/frontend/dist</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>Copy Vue Proxy Web UI frontend into Spring Boot target static folder</id>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <phase>process-resources</phase>
-            <configuration>
-              <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist</directory>
                   <filtering>false</filtering>
                 </resource>
               </resources>
@@ -496,28 +435,4 @@
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>npm-install-with-lockfile</id>
-      <activation>
-        <file>
-          <exists>${project.basedir}/src/frontend/package-lock.json</exists>
-        </file>
-      </activation>
-      <properties>
-        <frontend.npm.install.command>ci</frontend.npm.install.command>
-      </properties>
-    </profile>
-    <profile>
-      <id>npm-install-without-lockfile</id>
-      <activation>
-        <file>
-          <missing>${project.basedir}/src/frontend/package-lock.json</missing>
-        </file>
-      </activation>
-      <properties>
-        <frontend.npm.install.command>install</frontend.npm.install.command>
-      </properties>
-    </profile>
-  </profiles>
 </project>

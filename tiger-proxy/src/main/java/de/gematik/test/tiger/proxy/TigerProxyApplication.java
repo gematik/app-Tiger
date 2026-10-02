@@ -26,23 +26,49 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.config.PasswordHidingObjectMapperConfig;
+import de.gematik.test.tiger.proxy.controller.RbelContentConverter;
+import de.gematik.test.tiger.proxy.controller.TigerConfigurationController;
+import de.gematik.test.tiger.proxy.controller.TigerModificationController;
+import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
+import de.gematik.test.tiger.proxy.controller.TracingpointsController;
+import de.gematik.test.tiger.proxy.controller.TrafficPushController;
+import de.gematik.test.tiger.proxy.tracing.TracingEndpointConfiguration;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.VisibleForTesting;
 import org.springframework.boot.Banner.Mode;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.module.SimpleModule;
 
-@SpringBootApplication(
-    scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerProxyApplication.class})
+@Configuration
+@EnableAutoConfiguration
+@Import({
+  TigerBuildPropertiesService.class,
+  ApplicationConfiguration.class,
+  PasswordHidingObjectMapperConfig.class,
+  RbelContentConverter.class,
+  TigerConfigurationController.class,
+  TigerModificationController.class,
+  TigerWebUiController.class,
+  TracingpointsController.class,
+  TrafficPushController.class,
+  ServerHeaderFilter.class,
+  TigerProxyConfigurator.class,
+  TigerProxyHealthIndicator.class,
+  TracingEndpointConfiguration.class
+})
 @RequiredArgsConstructor
 @Slf4j
 public class TigerProxyApplication implements ServletContextListener {
@@ -55,11 +81,16 @@ public class TigerProxyApplication implements ServletContextListener {
     // with spring boot!
     System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
 
-    new SpringApplicationBuilder()
+    applicationBuilder().run(args);
+  }
+
+  @VisibleForTesting
+  static SpringApplicationBuilder applicationBuilder() {
+    return new SpringApplicationBuilder()
         .main(TigerProxyApplication.class)
         .bannerMode(Mode.OFF)
         .sources(TigerProxyApplication.class)
-        .run(args);
+        .properties("tiger-proxy.forward-to-proxy.hostname=$SYSTEM");
   }
 
   @Bean

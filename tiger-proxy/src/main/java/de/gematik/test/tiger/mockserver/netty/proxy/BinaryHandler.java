@@ -36,11 +36,13 @@ import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -129,6 +131,28 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
         RbelSocketAddress.create(binaryRequestInfo.retrieveActualRemoteAddress()),
         RbelSocketAddress.create(binaryRequestInfo.getIncomingChannel().remoteAddress()),
         RbelMessageKind.REQUEST);
+  }
+
+  /**
+   * Closes the backend connection when the client goes away - the mirror image of {@link
+   * BinaryBridgeHandler#channelInactive} (TESTHUB-261).
+   *
+   * <p>{@code HttpRequestHandler.channelInactive} normally does this, but it is taken out of the
+   * pipeline when a connection switches to binary, so without this the backend socket would be left
+   * behind with nobody to talk to.
+   */
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) {
+    Optional.ofNullable(ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get())
+        .filter(Channel::isActive)
+        .ifPresent(
+            outgoingChannel -> {
+              log.atDebug()
+                  .addArgument(outgoingChannel::remoteAddress)
+                  .log("Client connection gone, closing the backend connection to {}");
+              closeOnFlush(outgoingChannel);
+            });
+    ctx.fireChannelInactive();
   }
 
   @Override

@@ -13,15 +13,26 @@ However, if you are using it in your projects, feel free to contact us and we mi
 
 If you do not have time to read the entire documentation, you can jump directly to the xref:_example_project[] section.
 
-=== Requirements
+=== Requirements for using Tiger
 
 .System requirements
-* Open JDK >= 17
-* Maven >= 3.6
+* JDK 17 or newer
+* Maven `{tiger-build-maven-minimum}` or newer
 
 When you are developing a testsuite (further), you should use an IDE (we recommend IntelliJ >= 2021.2.3 because of the IntelliJ Cucumber plugin, see xref:tiger_user_manual.adoc#_intellij[IntelliJ] section for more detail).
 
 TIP: On Windows you can use Git Bash or Powershell
+
+=== Requirements for building Tiger
+
+To build Tiger from source, use:
+
+* JDK `{tiger-build-java-minimum}` or newer
+* Maven `{tiger-build-maven-minimum}` or newer
+
+Tiger is currently built with JDK `{tiger-java-source-version}` and targets Java `{tiger-java-target-version}` bytecode.
+Newer JDKs may work, but they are not currently used to build Tiger.
+Run `mvn --version` before building to verify both the Maven version and the JDK Maven uses.
 
 === Maven in a nutshell
 

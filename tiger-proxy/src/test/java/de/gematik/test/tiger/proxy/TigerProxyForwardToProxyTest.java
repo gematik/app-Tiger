@@ -108,7 +108,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
                       .port(forwardProxy.getProxyPort())
                       .noProxyHosts(
                           List.of(
-                              "notresolvable",
+                              "notresolvable.invalid",
                               "www.example.com")) // we need both, because the NPE would only occur
                       // when
                       // comparing the notresolvable with a resolvable name. See
@@ -129,13 +129,13 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
           tapSystemErrAndOut(
               () ->
                   assertThatExceptionOfType(UnirestException.class)
-                      .isThrownBy(() -> proxyRest.get("http://notresolvable").asString())
+                      .isThrownBy(() -> proxyRest.get("http://notresolvable.invalid").asString())
                       .withMessageContaining(
                           "java.io.IOException: HTTP/1.1 header parser received no bytes"));
 
       Assertions.assertThat(output)
           .doesNotContain("NullPointerException")
-          .contains("Caused by: java.net.UnknownHostException: notresolvable");
+          .contains("Caused by: java.net.UnknownHostException: notresolvable.invalid");
     }
   }
 
@@ -195,7 +195,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
-                        .from("http://unresolvablehost")
+                        .from("http://unresolvablehost.invalid")
                         .to("http://example.com")
                         .build()))
             .build());
@@ -204,7 +204,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
         tapSystemErrAndOut(
             () -> {
               assertThatExceptionOfType(UnirestException.class)
-                  .isThrownBy(() -> proxyRest.get("http://unresolvablehost").asString());
+                  .isThrownBy(() -> proxyRest.get("http://unresolvablehost.invalid").asString());
             });
     assertThat(logs)
         .contains(

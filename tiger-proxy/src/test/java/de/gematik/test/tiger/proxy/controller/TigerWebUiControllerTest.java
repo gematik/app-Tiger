@@ -38,6 +38,7 @@ import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -64,6 +65,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 
 @Slf4j
 @SpringBootTest(
+    classes = TigerProxyApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration
@@ -317,6 +319,74 @@ class TigerWebUiControllerTest {
                 + "just like the detached HTML export produced by the WebUI's 'Export as HTML' button")
         .contains("id=\"__TGR_RBEL_LOG__\"")
         .contains("window.__TGR_RBEL_LOG__=\"data:application/octet-stream;base64,");
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void reportMetadata_shouldDescribeTheProxy() {
+    final var metadata =
+        requestSpec()
+            .get("/reportMetadata")
+            .then()
+            .statusCode(200)
+            .contentType("application/json")
+            .extract()
+            .response();
+
+    assertThat(metadata.jsonPath().getString("tigerVersion")).isNotBlank();
+    assertThat(metadata.jsonPath().getList("inactiveParsers", String.class))
+        .as("optional parsers this build knows about but that were not switched on")
+        .isNotEmpty();
+    assertThat(metadata.jsonPath().getMap("configuration", String.class, String.class))
+        .as("flattened proxy configuration, dotted keys the way the overlay renders it")
+        .isNotEmpty()
+        .containsKey("adminPort");
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  @SneakyThrows
+  void getMessagesAsHtmlPage_shouldEmbedReportMetadata() {
+    final var page =
+        requestSpec().get("/getMessagesAsHtmlPage").then().statusCode(200).extract().asString();
+
+    final var payload = new JSONObject(extractEmbeddedLog(page));
+
+    assertThat(payload.has("reportMetadata"))
+        .as(
+            "an exported log has to carry its own provenance - otherwise traffic a parser would"
+                + " have decrypted cannot be told apart from traffic where that parser was never"
+                + " activated")
+        .isTrue();
+    final var embedded = payload.getJSONObject("reportMetadata");
+    final var served =
+        requestSpec().get("/reportMetadata").then().statusCode(200).extract().asString();
+    assertThat(embedded.toString())
+        .as("the export must describe the very same proxy the endpoint reports on")
+        .isEqualTo(new JSONObject(served).toString());
+  }
+
+  /** Reverses what the WebUI's "Export as HTML" button embeds: base64 over a raw DEFLATE stream. */
+  @SneakyThrows
+  private String extractEmbeddedLog(String htmlPage) {
+    final var marker = "window.__TGR_RBEL_LOG__=\"data:application/octet-stream;base64,";
+    final var start = htmlPage.indexOf(marker) + marker.length();
+    assertThat(start)
+        .as("export page must embed the compressed log")
+        .isGreaterThan(marker.length());
+    final var base64 = htmlPage.substring(start, htmlPage.indexOf('"', start));
+
+    final var inflater = new java.util.zip.Inflater(true);
+    inflater.setInput(java.util.Base64.getDecoder().decode(base64));
+    try (var out = new java.io.ByteArrayOutputStream()) {
+      final byte[] buffer = new byte[8 * (int) KB];
+      while (!inflater.finished()) {
+        out.write(buffer, 0, inflater.inflate(buffer));
+      }
+      return out.toString(java.nio.charset.StandardCharsets.UTF_8);
+    } finally {
+      inflater.end();
+    }
   }
 
   @Test

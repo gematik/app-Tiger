@@ -34,9 +34,11 @@ public class WebSocketCloseHandler extends SimpleChannelInboundHandler<BinaryMes
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
-    log.info("Received BinaryRequestInfo: {}", Hex.toHexString(msg.getBytes()));
+    log.atTrace()
+        .addArgument(() -> Hex.toHexString(msg.getBytes()))
+        .log("Received BinaryRequestInfo: {}");
     if (isCloseFrame(msg)) {
-      log.info("WebSocket Close frame detected, closing channel.");
+      log.debug("WebSocket Close frame detected, closing channel.");
       ctx.channel().writeAndFlush(msg).addListener(ChannelFutureListener.CLOSE);
     }
     ctx.fireChannelRead(msg);

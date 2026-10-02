@@ -50,6 +50,7 @@ import lombok.Getter;
 @Getter
 public final class BeforeContainerStartEvent implements TigerLifecycleEvent {
 
+  private final boolean injectDns;
   private final AbstractTigerServer server;
   private final List<String> dnsServers;
   private final List<String> networks;
@@ -60,6 +61,15 @@ public final class BeforeContainerStartEvent implements TigerLifecycleEvent {
       List<String> initialDnsServers,
       List<String> initialNetworks,
       Map<String, String> initialExtraEnv) {
+    this(server, initialDnsServers, initialNetworks, initialExtraEnv, true);
+  }
+
+  public BeforeContainerStartEvent(
+      AbstractTigerServer server,
+      List<String> initialDnsServers,
+      List<String> initialNetworks,
+      Map<String, String> initialExtraEnv,
+      boolean injectDns) {
     this.server = Objects.requireNonNull(server, "server");
     // Defensive copies into mutable backing collections so subscribers can edit freely.
     this.dnsServers =
@@ -67,6 +77,7 @@ public final class BeforeContainerStartEvent implements TigerLifecycleEvent {
     this.networks =
         new CopyOnWriteArrayList<>(initialNetworks == null ? List.of() : initialNetworks);
     this.extraEnv = new LinkedHashMap<>(initialExtraEnv == null ? Map.of() : initialExtraEnv);
+    this.injectDns = injectDns;
   }
 
   /** Prepend a DNS server. No-op if {@code dnsServer} is already first in the list. */

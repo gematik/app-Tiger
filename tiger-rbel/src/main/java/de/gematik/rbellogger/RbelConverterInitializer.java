@@ -41,12 +41,13 @@ import de.gematik.rbellogger.facets.uri.RbelUriConverter;
 import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaKeyDeriver;
 import de.gematik.rbellogger.facets.xml.RbelMtomConverter;
 import de.gematik.rbellogger.facets.xml.RbelXmlConverter;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
 
 @Slf4j
 @AllArgsConstructor
@@ -60,6 +61,7 @@ public class RbelConverterInitializer {
 
   public void addConverters() {
     final List<Class<? extends RbelConverterPlugin>> subclasses = findAllAvailableConverters();
+    rbelConverter.setKnownOptionalParsers(collectParserIdentifiers(subclasses));
 
     // find the correct list in correct order
     for (Class<? extends RbelConverterPlugin> converterClass : subclasses) {
@@ -97,6 +99,17 @@ public class RbelConverterInitializer {
     for (Class<? extends RbelConverterPlugin> converterClass : converters) {
       buildConverterInstance(converterClass).ifPresent(rbelConverter::addConverter);
     }
+  }
+
+  /** Every parser id declared anywhere on the classpath, whether activated or not. */
+  private static Set<String> collectParserIdentifiers(
+      List<Class<? extends RbelConverterPlugin>> converterClasses) {
+    return converterClasses.stream()
+        .map(converterClass -> converterClass.getAnnotation(ConverterInfo.class))
+        .filter(Objects::nonNull)
+        .map(ConverterInfo::onlyActivateFor)
+        .flatMap(Arrays::stream)
+        .collect(Collectors.toCollection(() -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER)));
   }
 
   private Optional<RbelConverterPlugin> buildConverterInstance(
@@ -167,11 +180,16 @@ public class RbelConverterInitializer {
                 RbelCetpConverter.class,
                 RbelCborConverter.class,
                 RbelAsn1Converter.class));
-    Reflections reflections = new Reflections("de.gematik");
-    reflections.getSubTypesOf(RbelConverterPlugin.class).stream()
-        .filter(c -> !initialList.contains(c))
-        .filter(c -> !c.isAnonymousClass())
-        .forEach(initialList::add);
+    try (ScanResult scanResult =
+        new ClassGraph().acceptPackages("de.gematik").enableClassInfo().scan()) {
+      scanResult
+          .getSubclasses(RbelConverterPlugin.class.getName())
+          .loadClasses(RbelConverterPlugin.class)
+          .stream()
+          .filter(c -> !initialList.contains(c))
+          .filter(c -> !c.isAnonymousClass())
+          .forEach(initialList::add);
+    }
     return initialList;
   }
 

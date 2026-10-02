@@ -23,6 +23,7 @@ package de.gematik.test.tiger.proxy.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
@@ -36,7 +37,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = TigerProxyApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DirtiesContext
 @ResetTigerConfiguration
 class ClockEndpointTest {

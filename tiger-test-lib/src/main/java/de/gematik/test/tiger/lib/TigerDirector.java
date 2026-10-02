@@ -118,7 +118,6 @@ public class TigerDirector {
           "Unable to read/process configuration - " + rte.getMessage(), rte);
     }
     try {
-      // get free port
       startTestEnvMgr();
       startWorkflowUi();
       setupTestEnvironment();

@@ -19,4 +19,5 @@
 pipelineDockerHubPublish {
     INTERNAL_IMAGE_NAME = "tiger/tiger-testsuite-baseimage"
     EXTERNAL_IMAGE_NAME = "gematik1/tiger-testsuite-baseimage"
+    LATEST_TAG = "YES"
 }

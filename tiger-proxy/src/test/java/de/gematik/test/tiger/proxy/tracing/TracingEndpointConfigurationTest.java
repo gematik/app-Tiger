@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
@@ -46,7 +47,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -64,6 +65,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 /** Regression tests for {@link TracingEndpointConfiguration}. */
 @SpringBootTest(
+        classes = TigerProxyApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties =
         "tiger-proxy.stompHeartbeatInSeconds=" + TracingEndpointConfigurationTest.HEARTBEAT_SECONDS)
@@ -174,7 +176,7 @@ class TracingEndpointConfigurationTest {
     var session =
         openSession(
             wsClient,
-            new MappingJackson2MessageConverter(),
+            new JacksonJsonMessageConverter(),
             scheme + "://localhost:" + port + "/tracing",
             headers);
 

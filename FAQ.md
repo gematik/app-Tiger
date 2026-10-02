@@ -152,3 +152,30 @@ TigerProxy proxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail()
 proxy.addAlternativeName(host);
 proxy.restartMockserver();
 ```
+
+### FO04 Why do I see "WARN ... pcap capture disabled" in the logs?
+
+Pcap capture requires the native libpcap library to be installed and available. This error typically means:
+
+**Windows:**
+- Install [Npcap](https://npcap.com/) (modern Windows packet capture library, WinPcap-compatible).
+- Choose "Install Npcap in WinPcap API-compatible Mode" during installation.
+
+**Linux:**
+- For non-root execution, enable raw packet capture with:
+  ```bash
+  sudo setcap cap_net_raw,cap_net_admin=eip $(readlink -f $(which java))
+  ```
+- Alternatively, run the test suite with `sudo`.
+- Or install libpcap: `sudo apt-get install libpcap-dev` (Debian/Ubuntu) or equivalent for your distro.
+
+**macOS:**
+- Install [Wireshark](https://www.wireshark.org/download/), which bundles ChmodBPF for BPF device permissions.
+- Or manually add your user to the `access_bpf` group:
+  ```bash
+  sudo dseditgroup -o edit -a $(whoami) -t user access_bpf
+  ```
+
+Once installed, restart the test suite and pcap capture will activate automatically if `lib.pcapCapture.enabled: true` is set.
+
+Pcap capture is optional and graceful—if the native library is unavailable, the test suite continues normally without network packet recording.

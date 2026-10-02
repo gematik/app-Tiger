@@ -28,6 +28,9 @@ application.yaml
 releasenotes/scripts/target/
 .github
 
+# Shared Node/npm toolchain for frontend modules
+.frontend-node/
+
 /.idea/
 /.vscode/
 jenkinsfiles
