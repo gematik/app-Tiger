@@ -23,58 +23,54 @@ package de.gematik.test.tiger.lib.reports;
 import de.gematik.test.tiger.lib.TigerDirector;
 import io.restassured.filter.Filter;
 import io.restassured.filter.FilterContext;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@NoArgsConstructor
 public class TigerRestAssuredCurlLoggingFilter implements Filter {
 
-  private ByteArrayOutputStream outputStream;
-  private RequestLoggingFilter requestLoggingFilter;
-
-  public TigerRestAssuredCurlLoggingFilter() {
-    outputStream = new ByteArrayOutputStream();
-    requestLoggingFilter =
-        new RequestLoggingFilter(LogDetail.ALL, true, new PrintStream(outputStream), true);
-  }
+  @Getter
+  private final List<String> recordedCurlCommands = Collections.synchronizedList(new ArrayList<>());
 
   public synchronized void printToReport() {
-    String raLog = outputStream.toString(StandardCharsets.UTF_8);
-    outputStream.reset();
-
-    if (raLog.isEmpty()) {
+    if (recordedCurlCommands.isEmpty()) {
       return;
     }
     int callCounter = 0;
-    final List<String> listOfCurlCalls =
-        RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(raLog);
-    for (String callLog : listOfCurlCalls) {
-      String curlCommand =
-          RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
+    List<String> commandsToPublish = new ArrayList<>(recordedCurlCommands);
+    recordedCurlCommands.clear();
+
+    for (String curlCommand : commandsToPublish) {
       if (TigerDirector.isSerenityAvailable(true) && !curlCommand.isEmpty()) {
         String title = "cURL";
-        if (listOfCurlCalls.size() > 1) {
-          title += " " + String.format("%3d", callCounter++); // 3 digit zero padded counter string
+        if (commandsToPublish.size() > 1) {
+          title += " " + String.format("%3d", callCounter++); // 3 digit space padded counter string
         }
-        log.debug("RestAssured details for cURL command:\n{}", callLog);
+        log.debug("RestAssured details for cURL command:\n{}", curlCommand);
         SerenityReportUtils.addCustomData(title, curlCommand);
       }
     }
   }
 
   @Override
-  public synchronized Response filter(
+  public Response filter(
       FilterableRequestSpecification requestSpec,
       FilterableResponseSpecification responseSpec,
       FilterContext ctx) {
-    return requestLoggingFilter.filter(requestSpec, responseSpec, ctx);
+    try {
+      String curlCmd = RestAssuredToCurlConverter.toCurl(requestSpec);
+      recordedCurlCommands.add(curlCmd);
+    } catch (Exception e) {
+      log.warn("Failed to generate cURL command from RestAssured request", e);
+    }
+    return ctx.next(requestSpec, responseSpec);
   }
 }

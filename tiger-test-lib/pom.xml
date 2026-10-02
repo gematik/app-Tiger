@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.4</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-test-lib</artifactId>
@@ -166,6 +166,15 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <!-- hardcoded. excluded from serenity because of clash with system-stubs-core -->
+    </dependency>
+    <!-- pcap capture (v1, local loopback) -->
+    <dependency>
+      <groupId>org.pcap4j</groupId>
+      <artifactId>pcap4j-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.pcap4j</groupId>
+      <artifactId>pcap4j-packetfactory-static</artifactId>
     </dependency>
     <!-- JSON Checker -->
     <dependency>
@@ -385,7 +394,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.2.0</version>
         <executions>
           <execution>
             <id>detect os</id>

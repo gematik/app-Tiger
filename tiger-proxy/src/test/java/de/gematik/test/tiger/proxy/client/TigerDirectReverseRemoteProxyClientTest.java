@@ -97,6 +97,9 @@ class TigerDirectReverseRemoteProxyClientTest extends AbstractNonHttpTest {
         socket -> {
           writeSingleRequestMessage(socket, request);
           requestSent.countDown();
+          // stay on the socket until the response is in: hanging up first ends the connection, and
+          // the proxy closes the backend leg with it
+          readSingleResponseMessage(socket, response);
         },
         serverSocket -> {
           requestSent.await();

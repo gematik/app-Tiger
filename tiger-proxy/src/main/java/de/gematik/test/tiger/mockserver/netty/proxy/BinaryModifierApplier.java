@@ -32,9 +32,11 @@ import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.MultipleBinaryConnectionParser;
@@ -43,6 +45,7 @@ import de.gematik.test.tiger.proxy.handler.SingleConnectionParser;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import java.net.SocketAddress;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -58,14 +61,20 @@ import lombok.val;
  */
 @Slf4j
 public class BinaryModifierApplier {
-  private static final ExecutorService executor = Executors.newCachedThreadPool();
+  private static final ExecutorService SHARED_EXECUTOR = Executors.newCachedThreadPool();
   private final List<RbelBinaryModifierPlugin> binaryModifierPlugins;
   private final RbelConverter rbelConverter;
   private final MultipleBinaryConnectionParser multipleBinaryConnectionParser;
+  private final Duration parsingTimeout;
 
   public BinaryModifierApplier(MockServerConfiguration configuration) {
+    this(configuration, SHARED_EXECUTOR);
+  }
+
+  BinaryModifierApplier(MockServerConfiguration configuration, ExecutorService executor) {
     this.binaryModifierPlugins = configuration.binaryModifierPlugins();
     this.rbelConverter = configuration.rbelConverter();
+    this.parsingTimeout = parsingTimeoutOf(configuration);
     this.multipleBinaryConnectionParser =
         new MultipleBinaryConnectionParser(
             conId ->
@@ -73,7 +82,17 @@ public class BinaryModifierApplier {
                     conId,
                     executor,
                     configuration.rbelConverter(),
-                    configuration.binaryProxyListener()));
+                    configuration.binaryProxyListener()),
+            parsingTimeout);
+  }
+
+  private static Duration parsingTimeoutOf(MockServerConfiguration configuration) {
+    return Duration.ofSeconds(
+        Optional.ofNullable(configuration.binaryProxyListener())
+            .map(BinaryExchangeHandler::getTigerProxy)
+            .map(TigerProxy::getTigerProxyConfiguration)
+            .map(TigerProxyConfiguration::getParsingTimeoutInSeconds)
+            .orElse(TigerProxyConfiguration.DEFAULT_PARSING_TIMEOUT_IN_SECONDS));
   }
 
   /**
@@ -151,8 +170,13 @@ public class BinaryModifierApplier {
               message.getBytes(),
               ZonedDateTime.of(message.getTimestamp(), ZoneId.systemDefault()),
               messageKind)
-          .get(10, TimeUnit.MINUTES);
-    } catch (InterruptedException | TimeoutException e) {
+          .get(parsingTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+      throw new TigerProxyException(
+          "Gave up after %d seconds waiting for a message to be parsed before applying the binary modifiers!"
+              .formatted(parsingTimeout.toSeconds()),
+          e);
+    } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new TigerProxyException(
           "Could not complete waiting for message to be parsed before applying binary modifier!",

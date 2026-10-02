@@ -53,7 +53,7 @@ public class BackendAlpnProber {
   public static final String HTTP_1_1 = AlpnProtocol.HTTP_1_1.getValue();
   public static final String HTTP_2 = AlpnProtocol.H2.getValue();
   private static final String[] ALPN_PROBE_PROTOCOLS = {HTTP_2, HTTP_1_1};
-  private static final int PROBE_TIMEOUT_MS = 3_000;
+  static final int PROBE_TIMEOUT_MS = 3_000;
 
   private BackendAlpnProber() {
     // utility class

@@ -36,7 +36,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ScenarioUpdate {
 
-  @Builder.Default private Map<String, StepUpdate> steps = new LinkedHashMap<>();
+  @Builder.Default private Map<String, StepUpdate> steps = Map.of();
   private String description;
   private TestResult status;
   private String failureMessage;

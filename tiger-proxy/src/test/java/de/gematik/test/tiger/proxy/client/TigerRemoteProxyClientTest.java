@@ -46,6 +46,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.client.TigerTracingDto.TigerTracingDtoBuilder;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
@@ -92,7 +93,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(SpringExtension.class)
 @WireMockTest
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = TigerProxyApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = "tigerProxy.activateRbelParsing: false")
 @RequiredArgsConstructor
 @Slf4j
@@ -584,6 +587,118 @@ class TigerRemoteProxyClientTest {
 
       assertThat(newlyConnectedRemoteClient.getRbelMessagesList())
           .hasSize(numberOfGeneratedMessages * 2);
+    }
+  }
+
+  @Test
+  void initialTrafficDownloadWithMoreThanHundredPages_shouldStillDownloadEverything() {
+    final int numberOfGeneratedMessages = 153;
+    for (int i = 0; i < numberOfGeneratedMessages; i++) {
+      unirestInstance.get("http://myserv.er/foobarString").asString();
+    }
+
+    // 306 messages at 2 per page: 153 pages, past the 100 the download used to be limited to
+    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .downloadInitialTrafficFromEndpoints(true)
+                .trafficDownloadPageSize(2)
+                .build())) {
+      newlyConnectedRemoteClient.connect();
+
+      TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+          newlyConnectedRemoteClient, numberOfGeneratedMessages * 2, 20);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
+
+      assertThat(newlyConnectedRemoteClient.getRbelMessagesList())
+          .hasSize(numberOfGeneratedMessages * 2);
+    }
+  }
+
+  @Test
+  void historyEndingExactlyOnTheLastAllowedPage_shouldNotCountAsIncomplete() {
+    final int numberOfGeneratedMessages = 10;
+    for (int i = 0; i < numberOfGeneratedMessages; i++) {
+      unirestInstance.get("http://myserv.er/foobarString").asString();
+    }
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+
+    // 20 messages at 2 per page are exactly 10 pages, so the tenth one completes the history:
+    // reaching the page limit is only a failure if the remote still has something left
+    assertThat(downloadHistoryWithAtMostPages(numberOfGeneratedMessages)).isTrue();
+    assertThat(downloadHistoryWithAtMostPages(numberOfGeneratedMessages - 1)).isFalse();
+  }
+
+  private boolean downloadHistoryWithAtMostPages(int maximumPages) {
+    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .trafficDownloadPageSize(2)
+                .maximumTrafficDownloadPages(maximumPages)
+                .build())) {
+      return Boolean.TRUE.equals(
+          ReflectionTestUtils.invokeMethod(
+              new TigerRemoteTrafficDownloader(newlyConnectedRemoteClient),
+              "downloadAllTrafficFromRemote"));
+    }
+  }
+
+  @Test
+  void initialTrafficDownloadFromEmptyRemote_shouldTerminateWithoutMessages() {
+    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder().downloadInitialTrafficFromEndpoints(true).build())) {
+      newlyConnectedRemoteClient.connect();
+      await().atMost(5, TimeUnit.SECONDS).until(newlyConnectedRemoteClient::isConnected);
+
+      assertThat(newlyConnectedRemoteClient.getRbelMessagesList()).isEmpty();
+    }
+  }
+
+  @Test
+  void initialTrafficDownloadWithUnknownLastMsgUuid_shouldDownloadFullHistory() {
+    unirestInstance.get("http://myserv.er/foobarString").asString();
+    unirestInstance.get("http://myserv.er/foobarString").asString();
+
+    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder().downloadInitialTrafficFromEndpoints(true).build())) {
+      // the remote never saw this uuid, e.g. because it was restarted since we last talked to it
+      newlyConnectedRemoteClient.getLastMessageUuid().set("i-am-not-known-upstream");
+      newlyConnectedRemoteClient.connect();
+
+      TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+          newlyConnectedRemoteClient, 4, 20);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
+
+      assertThat(newlyConnectedRemoteClient.getRbelMessagesList()).hasSize(4);
+    }
+  }
+
+  @Test
+  void remoteProxyClientsOfATigerProxy_shouldInheritTheProxyConfiguration() {
+    try (TigerProxy masterTigerProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .trafficDownloadPageSize(4711)
+                .maximumTrafficDownloadPages(42)
+                .maximumPartialMessageAgeInSeconds(1234)
+                .trafficEndpoints(List.of("http://localhost:" + springServerPort))
+                .skipTrafficEndpointsSubscription(true)
+                .build())) {
+      final TigerProxyConfiguration clientConfiguration =
+          ReflectionTestUtils.invokeMethod(masterTigerProxy, "buildRemoteProxyClientConfiguration");
+
+      assertThat(clientConfiguration).isNotNull();
+      assertThat(clientConfiguration.getTrafficDownloadPageSize()).isEqualTo(4711);
+      assertThat(clientConfiguration.getMaximumTrafficDownloadPages()).isEqualTo(42);
+      assertThat(clientConfiguration.getMaximumPartialMessageAgeInSeconds()).isEqualTo(1234);
+      // ...except the endpoints, which the clients must not subscribe to a second time
+      assertThat(clientConfiguration.getTrafficEndpoints()).isNull();
     }
   }
 

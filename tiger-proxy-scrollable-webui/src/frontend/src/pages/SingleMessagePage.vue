@@ -21,7 +21,7 @@
 
 -->
 <script setup lang="ts">
-import { computed, onMounted, provide, readonly, ref, type Ref, watch } from "vue";
+import { computed, onMounted, provide, readonly, ref, type ComputedRef, type Ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { rawContentModalSymbol, useRawContentModal } from "@/RawContentModal.ts";
 import { settingsSymbol, useSettings } from "@/Settings.ts";
@@ -58,6 +58,7 @@ const proxyController = useProxyController({
 });
 
 const selectedMessage: Ref<MessageType | null> = ref(null);
+const selectedMessageHtml: Ref<string | undefined> = ref(undefined);
 const isLoading = ref(false);
 
 const isOnlineMode = __IS_ONLINE_MODE__;
@@ -94,8 +95,10 @@ function createMockMessageQueue(): UseMessageQueueReturn {
     reset: () => {},
     internal: {
       // match the expected signature from UseMessageQueueReturn
-      update: () => {},
-      messages: ref([]) as Ref<MessageType[]>,
+      update: async () => {},
+      messages: computed(() => []) as ComputedRef<MessageType[]>,
+      getRenderedHtml: (uuid: string) =>
+        uuid === selectedMessage.value?.uuid ? selectedMessageHtml.value : undefined,
       ref: ref(null),
       getUiState,
       setUiState,
@@ -108,17 +111,17 @@ provide(messageQueueSymbol, mockMessageQueue);
 
 async function fetchMessageByUuid(uuid: string) {
   isLoading.value = true;
+  selectedMessageHtml.value = undefined;
   try {
     const messageData = await proxyController.getFullyRenderedMessage({ uuid });
 
     if (messageData) {
       selectedMessage.value = {
-        type: "loaded",
-        htmlContent: messageData.content,
         index: 0, // Index is not relevant for single message view
         uuid: messageData.uuid,
         sequenceNumber: messageData.sequenceNumber,
       };
+      selectedMessageHtml.value = messageData.content;
     } else {
       toast.showToast("Failed to load message content");
     }
@@ -228,7 +231,11 @@ watch(
           </div>
 
           <div v-else-if="selectedMessage" class="message-container">
-            <Message :message="selectedMessage" :on-toggle-details-or-header="() => {}" />
+            <Message
+              :message="selectedMessage"
+              :html-content="selectedMessageHtml"
+              :on-toggle-details-or-header="() => {}"
+            />
           </div>
 
           <div v-else class="alert alert-warning">

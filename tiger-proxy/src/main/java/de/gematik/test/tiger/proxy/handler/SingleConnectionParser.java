@@ -28,6 +28,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.RbelMessageMetadata.RbelMetadataValue;
 import de.gematik.rbellogger.data.core.*;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.file.BundledServerNameWriterAndReader;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.rbellogger.util.RbelSocketAddress;
@@ -37,7 +38,9 @@ import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.util.AsyncByteQueue;
 import de.gematik.test.tiger.util.DeterministicUuidGenerator;
 import io.micrometer.common.util.StringUtils;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -61,6 +64,7 @@ public class SingleConnectionParser {
 
   private String lastMessageUuid = null;
   private java.time.ZonedDateTime lastMessageTimestamp = null;
+  private volatile Instant lastActivity = Instant.now();
 
   public SingleConnectionParser(
       TcpIpConnectionIdentifier connectionIdentifier,
@@ -72,30 +76,6 @@ public class SingleConnectionParser {
     this.executor = tigerProxy.getExecutor();
     this.proxyName = tigerProxy.proxyName();
     log = org.slf4j.LoggerFactory.getLogger(SingleConnectionParser.class);
-    // Reset linkage state when history is cleared so we don't propagate stale previous UUIDs
-    setMessageRemovalCallbacks(tigerProxy);
-  }
-
-  private void setMessageRemovalCallbacks(AbstractTigerProxy tigerProxy) {
-    this.rbelConverter.addClearHistoryCallback(
-        () -> {
-          lastMessageUuid = null;
-          lastMessageTimestamp = null;
-        });
-    this.rbelConverter.addMessageRemovedFromHistoryCallback(
-        element -> {
-          if (element.getUuid().equals(lastMessageUuid)) {
-            lastMessageUuid = null;
-            lastMessageTimestamp = null;
-          }
-        });
-    tigerProxy.addRemovedMessageUuidsHandler(
-        uuids -> {
-          if (lastMessageUuid != null && uuids.contains(lastMessageUuid)) {
-            lastMessageUuid = null;
-            lastMessageTimestamp = null;
-          }
-        });
   }
 
   public SingleConnectionParser(
@@ -109,7 +89,23 @@ public class SingleConnectionParser {
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
     this.proxyName = null;
     log = org.slf4j.LoggerFactory.getLogger(this.getClass());
-    setMessageRemovalCallbacks(binaryExchangeHandler.getTigerProxy());
+  }
+
+  void forgetLastMessage() {
+    lastMessageUuid = null;
+    lastMessageTimestamp = null;
+  }
+
+  void forgetLastMessageIfItIs(String removedUuid) {
+    if (lastMessageUuid != null && lastMessageUuid.equals(removedUuid)) {
+      forgetLastMessage();
+    }
+  }
+
+  void forgetLastMessageIfAmong(Collection<String> removedUuids) {
+    if (lastMessageUuid != null && removedUuids.contains(lastMessageUuid)) {
+      forgetLastMessage();
+    }
   }
 
   private List<RbelElement> handleException(
@@ -120,7 +116,12 @@ public class SingleConnectionParser {
     return List.of();
   }
 
+  boolean isDrainedAndIdleSince(Instant threshold) {
+    return lastActivity.isBefore(threshold) && bufferedParts.isEmpty();
+  }
+
   public CompletableFuture<List<RbelElement>> bufferNewPart(TcpConnectionEntry entry) {
+    lastActivity = Instant.now();
     val bufferedEntry = bufferedParts.write(entry);
     CompletableFuture.runAsync(() -> propagateNewChunk(bufferedEntry), executor)
         .exceptionally(
@@ -258,7 +259,18 @@ public class SingleConnectionParser {
         .addArgument(messageElement.getContent()::size)
         .addArgument(messageElement::getUuid)
         .log("Trying to parse message with {} bytes and uuid {}");
-    final var result = triggerActualMessageParsing(messageElement, messageMetadata);
+    final RbelElement result;
+    try {
+      result = triggerActualMessageParsing(messageElement, messageMetadata);
+    } catch (RbelConversionException e) {
+      log.atDebug()
+          .setCause(e)
+          .addArgument(messageElement::getUuid)
+          .addArgument(() -> bufferedContent.getData().size())
+          .log("Could not convert message {} of {} bytes, leaving it in the buffer");
+      messageElement.removeFacetsOfType(SingleConnectionParserMarkerFacet.class);
+      return Optional.empty();
+    }
     messageElement
         .getFacet(SingleConnectionParserMarkerFacet.class)
         .ifPresent(result::addOrReplaceFacet);

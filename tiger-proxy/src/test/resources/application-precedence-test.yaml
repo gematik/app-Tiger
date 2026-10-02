@@ -1,0 +1,5 @@
+tiger-proxy:
+  proxy-port: 0
+  forward-to-proxy:
+    hostname: proxy-from-application-yaml.example
+    port: 3128

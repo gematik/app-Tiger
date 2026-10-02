@@ -44,6 +44,9 @@ function loadTopology() {
   topologyStore.loadFromLiveEndpoint(baseURL + "topology");
 }
 
+// Not scoped like the Rbel log and the traffic visualization: the diagram model only ever adds
+// edges and never removes one it has already shown (see useDiagramModel.addAdditionalEdges), so
+// narrowing this down to fewer messages would not actually remove anything already drawn.
 const additionalEdges = computed(() => convertToSetOfEdges(rbelMetadata.value));
 
 watchEffect(() => topologyStore.addAdditionalEdges(additionalEdges.value));

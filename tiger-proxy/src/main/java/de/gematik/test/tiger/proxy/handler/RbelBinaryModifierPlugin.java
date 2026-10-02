@@ -24,13 +24,11 @@ import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import org.reflections.Reflections;
-import org.reflections.scanners.Scanners;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -66,12 +64,13 @@ public interface RbelBinaryModifierPlugin {
 
   static Class<? extends RbelBinaryModifierPlugin> findClass(String className) {
     if (pluginClassList.isEmpty()) {
-      Reflections reflections =
-          new Reflections(
-              new ConfigurationBuilder()
-                  .setUrls(ClasspathHelper.forJavaClassPath())
-                  .setScanners(Scanners.SubTypes.filterResultsBy(s -> true)));
-      pluginClassList.addAll(reflections.getSubTypesOf(RbelBinaryModifierPlugin.class));
+      try (ScanResult scanResult =
+          new ClassGraph().acceptPackages("de.gematik").enableClassInfo().scan()) {
+        pluginClassList.addAll(
+            scanResult
+                .getClassesImplementing(RbelBinaryModifierPlugin.class.getName())
+                .loadClasses(RbelBinaryModifierPlugin.class));
+      }
     }
     return pluginClassList.stream()
         .filter(

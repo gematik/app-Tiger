@@ -30,7 +30,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -252,13 +251,34 @@ public class ReusableChannelMap {
         });
   }
 
-  public Collection<Map.Entry<ChannelId, ReusableChannel>> getEntries() {
-    return new ArrayList<>(channelMap.entries());
+  public synchronized Collection<Map.Entry<ChannelId, ReusableChannel>> getEntries() {
+    return List.copyOf(channelMap.entries());
   }
 
   public synchronized void addChannel(ChannelId channelId, ChannelFuture channelFuture) {
     channelMap.put(channelId, new ReusableChannel(channelId, channelFuture));
     enforceMaxChannelsPerKey(channelId);
+  }
+
+  /**
+   * Drops the pool entry for this outgoing channel <em>without</em> closing it, handing ownership
+   * to whoever asked (TESTHUB-261).
+   *
+   * <p>Used when a connection is upgraded to a tunnel. A tunnel is not a reusable HTTP connection:
+   * it may never be handed to another request, and the pool's own reclamation must not reach it
+   * either. Both {@link #cleanupExpiredChannels} and {@link #enforceMaxChannelsPerKey} would
+   * happily take it - {@code lastUsedAt} only advances when the pool hands a channel out, and
+   * tunnelled traffic never does, so a busy tunnel looks permanently idle and ages out of the pool
+   * while carrying data. Leaving the pool is simpler and safer than teaching every eviction path
+   * about tunnels.
+   *
+   * <p>The channel is not orphaned by this: {@code BinaryHandler} and {@code BinaryBridgeHandler}
+   * close each half of a tunnel when the other goes away.
+   */
+  public synchronized void forget(Channel outgoingChannel) {
+    channelMap
+        .values()
+        .removeIf(channel -> channel.getFutureOutgoingChannel().channel().equals(outgoingChannel));
   }
 
   /**

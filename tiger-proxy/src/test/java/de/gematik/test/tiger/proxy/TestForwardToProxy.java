@@ -21,10 +21,12 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import java.util.List;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.JsonNode;
@@ -38,6 +40,22 @@ import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 class TestForwardToProxy extends AbstractTigerProxyTest {
 
   private final int freePort = TestSocketUtils.findAvailableTcpPort();
+
+  @SneakyThrows
+  @Test
+  void noForwardProxyConfigurationDoesNotUseSystemProxy() {
+    restoreSystemProperties(
+        () -> {
+          System.setProperty("http.proxyHost", "localhost");
+          System.setProperty("http.proxyPort", String.valueOf(freePort));
+
+          assertThat(
+                  ProxyConfigurationConverter
+                      .convertForwardProxyConfigurationToMockServerConfiguration(
+                          TigerProxyConfiguration.builder().build()))
+              .isEmpty();
+        });
+  }
 
   @SneakyThrows
   @Test

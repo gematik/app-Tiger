@@ -22,9 +22,7 @@
 package de.gematik.test.tiger.canopy.extension;
 
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import de.gematik.test.tiger.testenvmgr.config.DockerServerConfiguration;
 import de.gematik.test.tiger.testenvmgr.events.BeforeContainerStartEvent;
-import de.gematik.test.tiger.testenvmgr.servers.DockerServer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,10 +40,9 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>No-op when the canopy is not yet {@code RUNNING}. {@link CanopyServer} registers this
  *       injector during {@code prepareDependencies()} (before any server starts), so this branch
  *       only triggers if the target docker server is booting <em>before</em> the canopy — which
- *       {@link de.gematik.test.tiger.testenvmgr.servers.DockerServer} prevents by injecting an
- *       implicit {@code dependsUpon &lt;canopyId&gt;} during its own {@code prepareDependencies()}
- *       hook. The branch remains as a safety net for the edge case where a user explicitly clears
- *       that edge.
+ *       {@link DockerServer} prevents by injecting an implicit {@code dependsUpon &lt;canopyId&gt;}
+ *       during its own {@code prepareDependencies()} hook. The branch remains as a safety net for
+ *       the edge case where a user explicitly clears that edge.
  *   <li>No-op when the target server is itself a canopy (canopy resolving via canopy is a loop).
  *   <li>No-op when the carrier already has DNS entries — explicit user config wins.
  *   <li>For {@link DockerServer} targets: respects {@code docker.injectDns: false} opt-out.
@@ -75,21 +72,18 @@ public class CanopyDnsAutoInjector {
               + "Multi-canopy targeting will land in a follow-up.");
       return;
     }
+    if (!event.isInjectDns()) {
+      log.atDebug()
+          .addArgument(() -> event.getServer().getServerId())
+          .log("Auto-DNS injection skipped for '{}'.");
+      return;
+    }
     if (!event.getDnsServers().isEmpty()) {
       log.atDebug()
           .addArgument(() -> event.getServer().getServerId())
           .addArgument(event::getDnsServers)
           .log("Auto-DNS injection skipped for '{}': carrier already has explicit DNS entries {}.");
       return;
-    }
-    if (event.getServer() instanceof DockerServer ds) {
-      DockerServerConfiguration cfg = ds.getDockerConfig();
-      if (cfg != null && !cfg.isInjectDns()) {
-        log.atDebug()
-            .addArgument(ds::getServerId)
-            .log("Auto-DNS injection skipped for '{}': docker.injectDns=false.");
-        return;
-      }
     }
     String dns = ownCanopy.getContainerNetworkIp();
     if (dns == null) {

@@ -27,6 +27,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -44,6 +45,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 
 @Slf4j
 @SpringBootTest(
+    classes = TigerProxyApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration

@@ -22,7 +22,6 @@ package de.gematik.test.tiger.common.data.config.tigerproxy;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,38 +45,10 @@ public class ForwardProxyInfo {
   private String password;
   private List<String> noProxyHosts;
 
-  public TigerProxyType getProxyProtocol(String proxyProtocol) {
-    if (proxyProtocol.equalsIgnoreCase("http")) {
-      return TigerProxyType.HTTP;
-    } else if (proxyProtocol.equalsIgnoreCase("https")) {
-      return TigerProxyType.HTTPS;
-    } else {
-      throw new TigerUnknownProtocolException(
-          "Protocol of type " + proxyProtocol + " not specified for proxies");
-    }
-  }
-
   public int calculateProxyPort() {
     if (port == null || port == -1) {
-      if (type == TigerProxyType.HTTP) {
-        return 80;
-      } else if (type == TigerProxyType.HTTPS) {
-        return 443;
-      } else {
-        return -1;
-      }
+      return type.getDefaultPort();
     }
     return port;
-  }
-
-  public static String mapProxyPort(String proxyPort, TigerProxyType type) {
-    if (proxyPort == null || proxyPort.equals("null") || proxyPort.equals("-1")) {
-      if (type == TigerProxyType.HTTP) {
-        return "80";
-      } else if (type == TigerProxyType.HTTPS) {
-        return "443";
-      }
-    }
-    return proxyPort;
   }
 }

@@ -21,8 +21,10 @@
 package de.gematik.rbellogger;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.*;
@@ -41,6 +43,7 @@ public class RbelMessageHistory {
 
   private final boolean manageBuffer;
   private final int rbelBufferSizeInMb;
+  private final Duration parsingTimeout;
   private final NavigableMap<Long, RbelElement> messageHistory = new TreeMap<>();
   private final Map<String, RbelElement> messageByUuid = new HashMap<>();
   private final NavigableMap<Long, RbelElement> unfinishedMessages = new TreeMap<>();
@@ -70,6 +73,7 @@ public class RbelMessageHistory {
   public RbelMessageHistory(RbelConverter converter) {
     this.manageBuffer = converter.manageBuffer;
     this.rbelBufferSizeInMb = converter.rbelBufferSizeInMb;
+    this.parsingTimeout = Duration.ofSeconds(converter.parsingTimeoutInSeconds);
     this.knownMessageUuids = new KnownUuidsContainer(this);
   }
 
@@ -234,11 +238,42 @@ public class RbelMessageHistory {
 
   public void waitForGivenElementToBeParsed(RbelElement result) {
     if (!result.getConversionPhase().isFinished()) {
-      waitForGivenMessagesToBeParsed(List.of(result));
+      waitForGivenMessagesToBeParsed(List.of(result), parsingTimeout);
     }
   }
 
+  /**
+   * Waits, using the full configured {@code parsingTimeoutInSeconds}, for every message preceding
+   * {@code element} to finish parsing. Only for callers outside of a single message's own
+   * conversion (e.g. code reading the history); a plugin waiting on a predecessor while converting
+   * a message goes through {@link RbelConversionExecutor} instead, which shares one deadline across
+   * all such waits for that message.
+   */
   public void waitForAllElementsBeforeGivenToBeParsed(RbelElement element) {
+    waitForAllElementsBeforeGivenToBeParsed(element, parsingTimeout);
+  }
+
+  public void waitForAllElementsBeforeGivenToBeParsed(RbelElement element, Duration timeout) {
+    waitForGivenMessagesToBeParsed(precedingUnfinishedMessages(element), timeout);
+  }
+
+  /**
+   * Same as {@link #waitForAllElementsBeforeGivenToBeParsed(RbelElement, Duration)}, but only waits
+   * for preceding messages on the same TCP connection as {@code element}. A message on an unrelated
+   * connection can never be the answer to a same-connection lookup (e.g. {@code
+   * findPreviousMessageInSameConnectionAs}), whether or not it has finished parsing yet, so there
+   * is nothing to gain from waiting for it.
+   */
+  public void waitForAllElementsInSameConnectionBeforeGivenToBeParsed(
+      RbelElement element, Duration timeout) {
+    var sameConnection =
+        precedingUnfinishedMessages(element).stream()
+            .filter(msg -> RbelTcpIpMessageFacet.haveSameConnection(msg, element))
+            .toList();
+    waitForGivenMessagesToBeParsed(sameConnection, timeout);
+  }
+
+  private List<RbelElement> precedingUnfinishedMessages(RbelElement element) {
     var seqNumber =
         element
             .getSequenceNumber()
@@ -247,23 +282,26 @@ public class RbelMessageHistory {
                     Optional.ofNullable(element.getUuid())
                         .flatMap(this::findMessageByUuid)
                         .flatMap(RbelElement::getSequenceNumber));
-    List<RbelElement> messagesToWaitFor;
     synchronized (this) {
       SortedMap<Long, RbelElement> precedingMessages =
           seqNumber.map(unfinishedMessages::headMap).orElse(unfinishedMessages);
-      messagesToWaitFor = new ArrayList<>(precedingMessages.values());
+      return new ArrayList<>(precedingMessages.values());
     }
-    waitForGivenMessagesToBeParsed(messagesToWaitFor);
+  }
+
+  public synchronized int getUnfinishedMessageCount() {
+    return unfinishedMessages.size();
   }
 
   public void waitForAllCurrentMessagesToBeParsed() {
     log.atTrace()
         .addArgument(unfinishedMessages.values().stream().map(RbelElement::getUuid)::toList)
         .log("Waiting for all current messages: {}");
-    waitForGivenMessagesToBeParsed(new ArrayList<>(unfinishedMessages.values()));
+    waitForGivenMessagesToBeParsed(new ArrayList<>(unfinishedMessages.values()), parsingTimeout);
   }
 
-  private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessagesList) {
+  private void waitForGivenMessagesToBeParsed(
+      List<RbelElement> unfinishedMessagesList, Duration timeout) {
     if (unfinishedMessagesList.isEmpty()) {
       return;
     }
@@ -289,7 +327,7 @@ public class RbelMessageHistory {
     try {
       CompletableFuture.allOf(
               callbacks.stream().map(Pair::getKey).toArray(CompletableFuture[]::new))
-          .get(100, TimeUnit.SECONDS);
+          .get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
@@ -297,7 +335,8 @@ public class RbelMessageHistory {
       throw new RuntimeException(e);
     } catch (TimeoutException e) {
       throw new RuntimeException(
-          "Tripped the timeout of 100 seconds while waiting for message "
+          "Tripped the timeout of %d seconds while waiting for message "
+                  .formatted(timeout.toSeconds())
               + callbacks.stream()
                   .filter(pair -> !pair.getKey().isDone())
                   .findFirst()

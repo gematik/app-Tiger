@@ -29,9 +29,13 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
@@ -62,28 +66,37 @@ public class ProxyConfigurationConverter {
     if (StringUtils.isEmpty(forwardProxyInfo.getHostname())) {
       return Optional.empty();
     }
+    Optional<ProxyConfiguration> proxyConfiguration;
+    proxyConfiguration = convertForwardProxyInfoConfig(forwardProxyInfo);
+
+    return proxyConfiguration.map(
+        configuration -> {
+          if (forwardProxyInfo.getNoProxyHosts() != null) {
+            configuration.getNoProxyHosts().addAll(forwardProxyInfo.getNoProxyHosts());
+          }
+          return configuration;
+        });
+  }
+
+  private static Optional<ProxyConfiguration> convertForwardProxyInfoConfig(
+      ForwardProxyInfo forwardProxyInfo) {
     if (Strings.CS.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
-      return convertSystemProxyConfig(forwardProxyInfo);
+      return convertSystemProxyConfig();
     } else {
-      final ProxyConfiguration result =
+      return Optional.of(
           proxyConfiguration(
               Optional.ofNullable(forwardProxyInfo.getType())
                   .map(ProxyConfigurationConverter::toMockServerType)
                   .orElse(HTTP),
               forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
               forwardProxyInfo.getUsername(),
-              forwardProxyInfo.getPassword());
-      if (forwardProxyInfo.getNoProxyHosts() != null) {
-        result.getNoProxyHosts().addAll(forwardProxyInfo.getNoProxyHosts());
-      }
-      return Optional.of(result);
+              forwardProxyInfo.getPassword()));
     }
   }
 
-  public static Optional<ProxyConfiguration> useProxyWithSystemProperties(
-      String proxyProtocol, ForwardProxyInfo forwardProxyInfo) {
-    ProxyConfiguration.Type proxyType =
-        toMockServerType(forwardProxyInfo.getProxyProtocol(proxyProtocol));
+  public static Optional<ProxyConfiguration> useProxyWithSystemProperties(String proxyProtocol) {
+    TigerProxyType tigerProxyType = TigerProxyType.fromProxyProtocol(proxyProtocol);
+    ProxyConfiguration.Type proxyType = toMockServerType(tigerProxyType);
     String proxyHost = System.getProperty(proxyProtocol + ".proxyHost");
     String proxyPort = System.getProperty(proxyProtocol + ".proxyPort");
     String proxyUser = System.getProperty(proxyProtocol + ".proxyUser");
@@ -101,28 +114,23 @@ public class ProxyConfigurationConverter {
         throw new TigerProxyToForwardProxyException(
             "Could not convert proxy configuration: proxyUser != null, proxyPassword == null");
       }
-      return Optional.of(
-          proxyConfiguration(
-              proxyType,
-              proxyHost
-                  + ":"
-                  + ForwardProxyInfo.mapProxyPort(
-                      proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol)),
-              proxyUser,
-              proxyPassword));
-    } else {
-      return Optional.of(
-          proxyConfiguration(
-              proxyType,
-              proxyHost
-                  + ":"
-                  + ForwardProxyInfo.mapProxyPort(
-                      proxyPort, forwardProxyInfo.getProxyProtocol(proxyProtocol))));
     }
+
+    String proxyAddress = proxyHost + ":" + normalizeSystemPropertyPort(proxyPort, tigerProxyType);
+    return Optional.of(
+        proxyUser == null
+            ? proxyConfiguration(proxyType, proxyAddress)
+            : proxyConfiguration(proxyType, proxyAddress, proxyUser, proxyPassword));
   }
 
-  public static Optional<ProxyConfiguration> useProxyAsEnvVar(
-      ForwardProxyInfo forwardProxyInfo, String envProxyType) {
+  private static String normalizeSystemPropertyPort(String proxyPort, TigerProxyType type) {
+    if (proxyPort == null || proxyPort.equals("null") || proxyPort.equals("-1")) {
+      return String.valueOf(type.getDefaultPort());
+    }
+    return proxyPort;
+  }
+
+  public static Optional<ProxyConfiguration> useProxyAsEnvVar(String envProxyType) {
     String httpProxyHostFromEnv = System.getenv(envProxyType);
 
     if (StringUtils.isEmpty(httpProxyHostFromEnv)) {
@@ -135,45 +143,84 @@ public class ProxyConfigurationConverter {
       throw new TigerProxyToForwardProxyException("No proxy host specified.");
     }
 
-    ProxyConfiguration.Type proxyType =
-        toMockServerType(forwardProxyInfo.getProxyProtocol(proxyAsUri.getScheme()));
+    TigerProxyType tigerProxyType = TigerProxyType.fromProxyProtocol(proxyAsUri.getScheme());
+    ProxyConfiguration.Type proxyType = toMockServerType(tigerProxyType);
     String proxyUsernamePassword = proxyAsUri.getUserInfo();
     String proxyPort =
-        ForwardProxyInfo.mapProxyPort(
-            String.valueOf(proxyAsUri.getPort()),
-            forwardProxyInfo.getProxyProtocol(proxyAsUri.getScheme()));
+        normalizeSystemPropertyPort(String.valueOf(proxyAsUri.getPort()), tigerProxyType);
 
     if (proxyUsernamePassword == null) {
-      return Optional.of(proxyConfiguration(proxyType, proxyAsUri.getHost() + ":" + proxyPort))
-          .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
+      return Optional.of(proxyConfiguration(proxyType, proxyAsUri.getHost() + ":" + proxyPort));
     } else if (!proxyUsernamePassword.contains(":")) {
       throw new TigerProxyToForwardProxyException(
           "Could not convert proxy configuration: either username or password are not present in"
               + " the env variable");
     } else {
       return Optional.of(
-              proxyConfiguration(
-                  proxyType,
-                  proxyAsUri.getHost() + ":" + proxyPort,
-                  proxyUsernamePassword.split(":")[0],
-                  proxyUsernamePassword.split(":")[1]))
-          .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
+          proxyConfiguration(
+              proxyType,
+              proxyAsUri.getHost() + ":" + proxyPort,
+              proxyUsernamePassword.split(":")[0],
+              proxyUsernamePassword.split(":")[1]));
     }
   }
 
-  private static ProxyConfiguration addNoProxyHostsFromEnv(ProxyConfiguration proxyConfiguration) {
-    String noProxyHosts = System.getenv("no_proxy");
-    if (noProxyHosts != null) {
-      proxyConfiguration.getNoProxyHosts().addAll(List.of(noProxyHosts.split(",")));
+  private static Optional<ProxyConfiguration> useProxyWithProxySelector(String proxyProtocol) {
+    ProxySelector proxySelector = ProxySelector.getDefault();
+    if (proxySelector == null) {
+      return Optional.empty();
     }
+
+    return proxySelector.select(URI.create(proxyProtocol + "://example.com")).stream()
+        .filter(proxy -> proxy.type() == Proxy.Type.HTTP)
+        .map(Proxy::address)
+        .filter(InetSocketAddress.class::isInstance)
+        .map(InetSocketAddress.class::cast)
+        .findFirst()
+        .map(address -> proxyConfiguration(HTTP, address));
+  }
+
+  private static Optional<ProxyConfiguration> convertSystemProxyConfig() {
+    return useProxyWithSystemProperties("http")
+        .or(() -> useProxyWithSystemProperties("https"))
+        .or(() -> useProxyAsEnvVar("http_proxy"))
+        .or(() -> useProxyAsEnvVar("https_proxy"))
+        .or(() -> useProxyWithProxySelector("http"))
+        .or(() -> useProxyWithProxySelector("https"))
+        .map(ProxyConfigurationConverter::addSystemNoProxyHosts)
+        .map(ProxyConfigurationConverter::addEnvironmentNoProxyHosts)
+        .map(ProxyConfigurationConverter::addDefaultNoProxyHosts);
+  }
+
+  private static ProxyConfiguration addSystemNoProxyHosts(ProxyConfiguration proxyConfiguration) {
+    addNoProxyHosts(proxyConfiguration, System.getProperty("http.nonProxyHosts"), "\\|");
     return proxyConfiguration;
   }
 
-  public static Optional<ProxyConfiguration> convertSystemProxyConfig(
-      ForwardProxyInfo forwardProxyInfo) {
-    return useProxyWithSystemProperties("http", forwardProxyInfo)
-        .or(() -> useProxyWithSystemProperties("https", forwardProxyInfo))
-        .or(() -> useProxyAsEnvVar(forwardProxyInfo, "http_proxy"))
-        .or(() -> useProxyAsEnvVar(forwardProxyInfo, "https_proxy"));
+  private static ProxyConfiguration addEnvironmentNoProxyHosts(
+      ProxyConfiguration proxyConfiguration) {
+    addNoProxyHosts(proxyConfiguration, System.getenv("no_proxy"), ",");
+    addNoProxyHosts(proxyConfiguration, System.getenv("NO_PROXY"), ",");
+    return proxyConfiguration;
+  }
+
+  private static void addNoProxyHosts(
+      ProxyConfiguration proxyConfiguration, String noProxyHosts, String separator) {
+    if (StringUtils.isNotBlank(noProxyHosts)) {
+      proxyConfiguration
+          .getNoProxyHosts()
+          .addAll(
+              Stream.of(noProxyHosts.split(separator))
+                  .map(String::trim)
+                  .filter(StringUtils::isNotEmpty)
+                  .toList());
+    }
+  }
+
+  private static ProxyConfiguration addDefaultNoProxyHosts(ProxyConfiguration proxyConfiguration) {
+    proxyConfiguration
+        .getNoProxyHosts()
+        .addAll(List.of("localhost", "127.0.0.1", "::1", "0:0:0:0:0:0:0:1"));
+    return proxyConfiguration;
   }
 }

@@ -43,7 +43,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * useful for external traffic sources that are otherwise hard to integrate.
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = TigerProxyApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TigerProxyRemoteTrafficSourceTest {
 
   @Autowired private TigerProxy tigerProxy;

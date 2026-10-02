@@ -83,9 +83,13 @@ export function useHtmlExporter(
       sortOrder,
     });
     if (!htmlResult) return;
+    // Without this the export cannot be told apart from one where a parser was simply never
+    // activated, so a failure to read it must not cost us the export itself.
+    const reportMetadata = await proxyController.getReportMetadata({ suppressError: true });
     const log: DetachedRbelLog = {
       messagesWithHtml: htmlResult,
       messagesWithMeta: metaResult,
+      reportMetadata: reportMetadata ?? undefined,
     };
 
     const compressed = deflateSync(new TextEncoder().encode(JSON.stringify(log)));

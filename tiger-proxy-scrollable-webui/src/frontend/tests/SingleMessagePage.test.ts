@@ -29,8 +29,8 @@ import SingleMessagePage from "../src/pages/SingleMessagePage.vue";
 vi.mock("../src/components/Message.vue", () => ({
   default: {
     name: "Message",
-    template: '<div class="mocked-message">{{ message.htmlContent }}</div>',
-    props: ["message", "onToggleDetailsOrHeader"],
+    template: '<div class="mocked-message">{{ htmlContent }}</div>',
+    props: ["message", "htmlContent", "onToggleDetailsOrHeader"],
   },
 }));
 
@@ -150,14 +150,14 @@ describe("SingleMessagePage", () => {
     const messageComponent = wrapper.findComponent({ name: "Message" });
     expect(messageComponent.exists()).toBe(true);
 
-    // Verify the message prop is passed correctly
+    // Verify the message prop is passed correctly. The rendered HTML travels next to the
+    // row rather than inside it, so that a chunk arriving cannot invalidate the list.
     expect(messageComponent.props("message")).toEqual({
-      type: "loaded",
-      htmlContent: expect.stringContaining("GET /api/test"),
       index: 0,
       uuid: testUuid,
       sequenceNumber: 1,
     });
+    expect(messageComponent.props("htmlContent")).toEqual(expect.stringContaining("GET /api/test"));
   });
 
   it("should show loading state while fetching message", async () => {

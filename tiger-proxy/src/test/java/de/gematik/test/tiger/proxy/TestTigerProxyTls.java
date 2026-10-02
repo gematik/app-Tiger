@@ -27,6 +27,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
@@ -38,6 +42,7 @@ import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityInformation;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.proxy.AbstractNonHttpTest.ThrowingConsumer;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import io.restassured.RestAssured;
@@ -84,6 +89,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.LoggerFactory;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -478,6 +484,150 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                   .getSession(ctx.getClientSessionContext().getIds().nextElement())
                   .getCipherSuite())
           .isEqualTo(configuredSslSuite);
+    }
+  }
+
+  @Test
+  void incompatibleCipherSuites_shouldLogDetailedDiagnostics() throws Exception {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverSslSuites(List.of("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"))
+                    .build())
+            .build());
+
+    Logger logger = (Logger) LoggerFactory.getLogger(PortUnificationHandler.class);
+    Level previousLevel = logger.getLevel();
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    logger.setLevel(Level.INFO);
+    appender.start();
+    logger.addAppender(appender);
+    try (SSLSocket socket =
+        (SSLSocket)
+            tigerProxy
+                .buildSslContext()
+                .getSocketFactory()
+                .createSocket("localhost", tigerProxy.getProxyPort())) {
+      socket.setEnabledProtocols(new String[] {"TLSv1.2"});
+      socket.setEnabledCipherSuites(new String[] {"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"});
+
+      assertThatThrownBy(socket::startHandshake)
+          .isInstanceOf(TlsException.class)
+          .hasMessageContaining("handshake_failure");
+
+      await()
+          .atMost(2, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  assertThat(
+                          appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
+                      .anySatisfy(
+                          message ->
+                              assertThat(message)
+                                  .contains(
+                                      "no mutually usable cipher suite",
+                                      "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                                      "disallowed by server-suites",
+                                      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                                      "disallowed by client-hello")));
+    } finally {
+      logger.detachAppender(appender);
+      appender.stop();
+      logger.setLevel(previousLevel);
+    }
+  }
+
+  @Test
+  void cipherSuiteIncompatibleWithServerCertificate_shouldLogDetailedDiagnostics()
+      throws Exception {
+    String cipherSuite = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/eccServerCertificate.p12;00"))
+                    .serverSslSuites(List.of(cipherSuite))
+                    .build())
+            .build());
+
+    Logger logger = (Logger) LoggerFactory.getLogger(PortUnificationHandler.class);
+    Level previousLevel = logger.getLevel();
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    logger.setLevel(Level.INFO);
+    appender.start();
+    logger.addAppender(appender);
+    try (SSLSocket socket =
+        (SSLSocket)
+            tigerProxy
+                .buildSslContext()
+                .getSocketFactory()
+                .createSocket("localhost", tigerProxy.getProxyPort())) {
+      socket.setEnabledProtocols(new String[] {"TLSv1.2"});
+      socket.setEnabledCipherSuites(new String[] {cipherSuite});
+
+      assertThatThrownBy(socket::startHandshake)
+          .isInstanceOf(TlsException.class)
+          .hasMessageContaining("handshake_failure");
+
+      await()
+          .atMost(2, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  assertThat(
+                          appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
+                      .anySatisfy(
+                          message ->
+                              assertThat(message)
+                                  .contains(
+                                      cipherSuite,
+                                      "yes     | yes     | incompatible with server-certificate")));
+    } finally {
+      logger.detachAppender(appender);
+      appender.stop();
+      logger.setLevel(previousLevel);
+    }
+  }
+
+  @Test
+  void untrustedServerCertificate_shouldLogCertificateAndRemedies() throws Exception {
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
+
+    Logger logger = (Logger) LoggerFactory.getLogger(PortUnificationHandler.class);
+    Level previousLevel = logger.getLevel();
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    logger.setLevel(Level.INFO);
+    appender.start();
+    logger.addAppender(appender);
+    try (SSLSocket socket =
+        (SSLSocket)
+            SSLSocketFactory.getDefault().createSocket("localhost", tigerProxy.getProxyPort())) {
+      assertThatThrownBy(socket::startHandshake)
+          .isInstanceOf(TlsException.class)
+          .hasMessageContaining("certificate_unknown");
+
+      await()
+          .atMost(2, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  assertThat(
+                          appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
+                      .anySatisfy(
+                          message ->
+                              assertThat(message)
+                                  .contains(
+                                      "client rejected the server certificate as unknown",
+                                      "Subject:",
+                                      "Issuer:",
+                                      "SHA-256 fingerprint:",
+                                      "client's truststore",
+                                      "Configure the server to present a certificate trusted by the client")));
+    } finally {
+      logger.detachAppender(appender);
+      appender.stop();
+      logger.setLevel(previousLevel);
     }
   }
 

@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Ports;
+import com.google.common.annotations.VisibleForTesting;
 import de.gematik.test.tiger.canopy.client.CanopyAdminClient;
 import de.gematik.test.tiger.canopy.client.config.ControlMode;
 import de.gematik.test.tiger.canopy.client.config.HttpVersion;
@@ -506,8 +507,8 @@ public class CanopyServer extends AbstractTigerServer {
     return canopyConfig;
   }
 
-  /** Visible-for-test. */
-  GenericContainer<?> getContainer() {
+  @VisibleForTesting
+  public GenericContainer<?> getContainer() {
     return container;
   }
 

@@ -45,6 +45,7 @@ public class TigerLibConfig {
   @Builder.Default public int intermediateReportSearchDepth = 3;
   @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;
   @Builder.Default public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
+  @Builder.Default public TigerPcapCaptureConfig pcapCapture = new TigerPcapCaptureConfig();
   @Builder.Default private boolean trafficVisualization = false;
   @Builder.Default public boolean clearEnvironmentStartupTraffic = true;
   @Builder.Default public boolean runTestsOnStart = true;

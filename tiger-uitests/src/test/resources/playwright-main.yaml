@@ -27,6 +27,7 @@ lib:
   activateWorkflowUi: true
   startBrowser: false
   createIntermediateReports: true
+  trafficVisualization: true
 
 additionalConfigurationFiles:
   - filename: additionalYaml.yaml

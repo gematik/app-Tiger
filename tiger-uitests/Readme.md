@@ -26,7 +26,7 @@ mvn --no-transfer-progress \
   -DtgrTestPropCfgCheckMode=myProp \
   -DtgrTestPropCfgEditMode=editProp \
   -DtgrTestPropCfgDeleteMode=deleteProp \
-  -P start-tiger-dummy failsafe:integration-test
+  -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
 ```
 
 Wait until the dummy environment logs the Workflow UI URL, then run the Playwright tests in a

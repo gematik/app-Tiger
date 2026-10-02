@@ -50,6 +50,7 @@ public class RbelConfiguration {
   @Builder.Default private Map<String, RbelKey> keys = new HashMap<>();
   private RbelCapturer capturer;
   @Builder.Default private int rbelBufferSizeInMb = 1024;
+  @Builder.Default private int parsingTimeoutInSeconds = 100;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = 16_000;
   @Builder.Default private boolean manageBuffer = false;
   private Boolean lenientHttpParsing;

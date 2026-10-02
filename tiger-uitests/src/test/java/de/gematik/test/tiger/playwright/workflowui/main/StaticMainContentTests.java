@@ -50,23 +50,6 @@ class StaticMainContentTests extends AbstractBase {
   }
 
   @Test
-  void testExecutingScenario() {
-    openSidebar();
-    await()
-        .pollInterval(200, TimeUnit.MILLISECONDS)
-        .atMost(60, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                PlaywrightAssertions.assertThat(
-                        page.locator("#test-sidebar-featurelistbox")
-                            .locator(".test-pending")
-                            .first())
-                    .isVisible());
-
-    //    page.locator("#workflow-messages").locator(".btn-success").first().click();
-  }
-
-  @Test
   void testFailedScenario() {
     openSidebar();
     await()

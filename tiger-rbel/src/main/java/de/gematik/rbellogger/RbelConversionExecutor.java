@@ -28,6 +28,8 @@ import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -47,6 +49,16 @@ public class RbelConversionExecutor {
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private RbelConversionPhase conversionPhase;
   private final List<RbelConversionPhase> toBeConsideredPhases;
+
+  /**
+   * The point in time by which this message's whole conversion (across every phase and plugin) must
+   * be done waiting on other messages. Without a shared deadline, each plugin that waits for a
+   * predecessor (TLS, VAU, websocket, pairing, ...) would separately grant itself a fresh
+   * parsingTimeout, so a single message could consume it many times over before an outer caller's
+   * own parsingTimeout-bounded wait gives up on it.
+   */
+  private final Instant parsingDeadline;
+
   private boolean messageWasDeleted = false;
 
   public RbelElement execute() {
@@ -134,7 +146,17 @@ public class RbelConversionExecutor {
   }
 
   public void waitForAllElementsBeforeGivenToBeParsed(RbelElement rootElement) {
-    converter.waitForAllElementsBeforeGivenToBeParsed(rootElement);
+    converter.waitForAllElementsBeforeGivenToBeParsed(rootElement, remainingTimeUntilDeadline());
+  }
+
+  public void waitForAllElementsInSameConnectionBeforeGivenToBeParsed(RbelElement rootElement) {
+    converter.waitForAllElementsInSameConnectionBeforeGivenToBeParsed(
+        rootElement, remainingTimeUntilDeadline());
+  }
+
+  private Duration remainingTimeUntilDeadline() {
+    val remaining = Duration.between(Instant.now(), parsingDeadline);
+    return remaining.isNegative() ? Duration.ZERO : remaining;
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
@@ -164,7 +186,8 @@ public class RbelConversionExecutor {
 
   public Optional<RbelElement> findPreviousMessageInSameConnectionAs(
       @NonNull RbelElement targetElement, @NonNull Predicate<RbelElement> additionalFilter) {
-    return findPreviousMessage(
+    waitForAllElementsInSameConnectionBeforeGivenToBeParsed(targetElement.findRootElement());
+    return converter.findPreviousMessage(
         targetElement,
         msg ->
             RbelTcpIpMessageFacet.haveSameConnection(msg, targetElement)

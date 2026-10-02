@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.4</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -232,45 +232,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>${version.maven-resources-plugin}</version>
-        <executions>
-          <execution>
-            <id>Copy Vue frontend into Spring Boot target static folder</id>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <phase>process-resources</phase>
-            <configuration>
-              <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>Copy detached Vue frontend template for HTML export</id>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <phase>process-resources</phase>
-            <configuration>
-              <outputDirectory>${project.build.directory}/classes/detached-webui</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist-detached</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok-maven-plugin</artifactId>

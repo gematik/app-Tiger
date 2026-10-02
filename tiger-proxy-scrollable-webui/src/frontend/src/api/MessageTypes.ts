@@ -34,6 +34,15 @@ export type GetMessagesDto = BaseMessagesDto<HtmlMessageDto> & {
 
 export type GetAllMessagesDto = BaseMessagesDto<MetaMessageDto>;
 
+/**
+ * Constant-size view of the message queue, used to detect that it moved without
+ * transferring the queue itself. `hash` mirrors the backend's history revision.
+ */
+export type MessageQueueStatusDto = {
+  total: number;
+  hash: string;
+};
+
 export type GetMessagesFilterDto = {
   rbelPath: string | null;
 };
@@ -89,4 +98,11 @@ export type RouteDto = {
   id: string | null;
   from: string;
   to: string;
+};
+
+export type ReportMetadataDto = {
+  tigerVersion: string | null;
+  activeParsers: string[];
+  inactiveParsers: string[];
+  configuration: Record<string, string>;
 };

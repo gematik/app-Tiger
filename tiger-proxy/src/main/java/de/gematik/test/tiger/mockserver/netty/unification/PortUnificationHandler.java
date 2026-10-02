@@ -45,6 +45,7 @@ import de.gematik.test.tiger.mockserver.netty.MockServerInfiniteLoopChecker;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
+import de.gematik.test.tiger.mockserver.socket.tls.TlsHandshakeDiagnostics;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
@@ -491,18 +492,46 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
           ctx.channel(),
           throwable);
     } else if (sslHandshakeException(throwable)) {
-      if (throwable.getMessage().contains("certificate_unknown")) {
-        log.warn(
-            "TLS handshake failure: Client does not trust the presented certificate for '{}'!",
-            ctx.channel());
-      } else if (!throwable.getMessage().contains("close_notify during handshake")) {
-        log.error(
-            "TLS handshake failure while a client attempted to connect to {}",
-            ctx.channel(),
-            throwable);
-      }
+      logTlsHandshakeFailure(ctx, throwable);
     }
     closeOnFlush(ctx.channel());
+  }
+
+  private void logTlsHandshakeFailure(ChannelHandlerContext ctx, Throwable throwable) {
+    if (!log.isWarnEnabled() && !log.isErrorEnabled()) {
+      return;
+    }
+
+    boolean certificateUnknown =
+        TlsHandshakeDiagnostics.causeMessageContains(throwable, "certificate_unknown");
+    if (certificateUnknown) {
+      log.atWarn()
+          .addArgument(
+              () ->
+                  TlsHandshakeDiagnostics.certificateUnknown(
+                      ctx.channel().attr(SniHandler.SERVER_IDENTITY).get()))
+          .addArgument(ctx.channel())
+          .log("{}\nConnection: {}");
+      return;
+    }
+
+    if (!log.isErrorEnabled()
+        || TlsHandshakeDiagnostics.causeMessageContains(
+            throwable, "close_notify during handshake")) {
+      return;
+    }
+
+    log.atError()
+        .setCause(throwable)
+        .addArgument(
+            () ->
+                TlsHandshakeDiagnostics.cipherSuiteMismatch(
+                        ctx.channel().attr(SniHandler.CLIENT_CIPHER_SUITES).get(),
+                        ctx.channel().attr(SniHandler.SERVER_CIPHER_SUITES).get(),
+                        ctx.channel().attr(SniHandler.SERVER_IDENTITY).get())
+                    .orElse("TLS handshake failure while a client attempted to connect"))
+        .addArgument(ctx.channel())
+        .log("{}\nConnection: {}");
   }
 
   private Optional<TigerProxyRoutingException> getTigerRoutingException(Throwable throwable) {

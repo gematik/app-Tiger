@@ -62,7 +62,6 @@ public class TigerGlobalConfiguration {
   public static final String TIGER_BASEKEY = "tiger";
   private static final TigerConfigurationLoader globalConfigurationLoader =
       new TigerConfigurationLoader();
-  private static final int NUMBER_OF_FREE_PORTS = 256;
   public static final String ADDITIONAL_CONFIGURATION_FILES = "additionalConfigurationFiles";
   private static final List<String> TIGER_YAML_CANDIDATES = List.of("tiger.yaml", "tiger.yml");
   private static final List<String> STOP_MARKERS = List.of(".git", ".hg", ".svn");
@@ -102,13 +101,12 @@ public class TigerGlobalConfiguration {
               TigerGlobalConfiguration.putValue(key, value, ConfigurationValuePrecedence.CLI));
     }
 
-    var fixedPorts = addFreePortVariables();
     addHostnameVariable();
     readMainYamlFile();
     readHostYamlFile();
     readProfileYamlFile();
     readAdditionalConfigurationFiles();
-    addFixedPortVariables(fixedPorts);
+    addFixedPortVariables();
   }
 
   private static void readProfileYamlFile() {
@@ -160,14 +158,18 @@ public class TigerGlobalConfiguration {
         .orElse(Path.of("."));
   }
 
-  private static void addFixedPortVariables(List<Integer> fixedPorts) {
-    Iterator<Integer> iterator = fixedPorts.iterator();
+  private static void addFixedPortVariables() {
     for (TigerTypedConfigurationKey<Integer> key :
         List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
       if (key.getValue().filter(v -> v > 0).isPresent()) {
         continue;
       }
-      key.putValue(iterator.next());
+      try (ServerSocket serverSocket = new ServerSocket(0)) {
+        key.putValue(serverSocket.getLocalPort());
+      } catch (IOException e) {
+        throw new TigerConfigurationException(
+            "Exception while reserving fixed port for " + key.getKey(), e);
+      }
     }
   }
 
@@ -180,35 +182,6 @@ public class TigerGlobalConfiguration {
         ConfigurationValuePrecedence.DEFAULTS);
     globalConfigurationLoader.putValue(
         "fullHostname", getHostname().getHostName(), ConfigurationValuePrecedence.DEFAULTS);
-  }
-
-  private static List<Integer> addFreePortVariables() {
-    List<ServerSocket> sockets = new ArrayList<>();
-    for (int i = 0; i < NUMBER_OF_FREE_PORTS + 2; i++) {
-      try {
-        final ServerSocket serverSocket = new ServerSocket(0);
-        globalConfigurationLoader.putValue(
-            "free.port." + i,
-            Integer.toString(serverSocket.getLocalPort()),
-            ConfigurationValuePrecedence.RUNTIME_EXPORT);
-        sockets.add(serverSocket);
-      } catch (IOException e) {
-        throw new TigerConfigurationException(
-            "Exception while trying to add free port variables", e);
-      }
-    }
-    var result =
-        sockets.stream().skip(NUMBER_OF_FREE_PORTS).map(ServerSocket::getLocalPort).toList();
-    sockets.forEach(
-        serverSocket -> {
-          try {
-            serverSocket.close();
-          } catch (IOException e) {
-            throw new TigerConfigurationException(
-                "Exception while closing temporary sockets for free port variables", e);
-          }
-        });
-    return result;
   }
 
   public static synchronized String readString(String key) {

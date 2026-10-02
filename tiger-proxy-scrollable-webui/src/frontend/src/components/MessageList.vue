@@ -31,12 +31,14 @@ import { toastSymbol } from "../Toast.ts";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { settingsSymbol } from "../Settings.ts";
+import { scenarioScopeSymbol } from "@/api/ScenarioScope.ts";
 import { faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 
 defineProps<{ isEmbedded: boolean }>();
 
 const messageQueue = inject(messageQueueSymbol)!;
 const settings = inject(settingsSymbol)!;
+const scenarioScope = inject(scenarioScopeSymbol)!;
 
 const dynamicScrollerRef = ref<typeof DynamicScroller | null>(null);
 
@@ -106,6 +108,7 @@ watch(files, async (newFiles) => {
         :index="index"
         :size-dependencies="[
           item,
+          messageQueue.internal.getRenderedHtml(item.uuid),
           messageItemSizeRef,
           settings.hideMessageHeaders,
           settings.hideMessageDetails,
@@ -114,6 +117,7 @@ watch(files, async (newFiles) => {
       >
         <Message
           :message="item"
+          :html-content="messageQueue.internal.getRenderedHtml(item.uuid)"
           :key="item.uuid"
           :on-toggle-details-or-header="triggerMessageItemSize"
         />
@@ -121,6 +125,13 @@ watch(files, async (newFiles) => {
     </template>
   </DynamicScroller>
   <div v-else class="h-auto">
+    <div
+      v-if="scenarioScope.active.value"
+      id="test-rbel-scenario-only-empty"
+      class="scenario-scope-empty"
+    >
+      No Rbel messages recorded for {{ scenarioScope.label.value }}.
+    </div>
     <div
       v-if="!isEmbedded"
       :class="['container', 'mt-5', isUploadInProgress ? 'disabled' : '']"
@@ -151,6 +162,12 @@ watch(files, async (newFiles) => {
 </template>
 
 <style scoped lang="scss">
+.scenario-scope-empty {
+  padding: 4rem 1rem;
+  text-align: center;
+  color: var(--gem-primary-400);
+}
+
 .container {
   height: 100%;
 }

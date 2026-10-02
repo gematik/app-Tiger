@@ -168,11 +168,40 @@ The Rbel Log Details view is described in the xref:tigerWebUI.adoc#_web_ui[WebUI
 In order to increase/decrease the width of the Rbel Log Details view, the user can drag the border between the main window and the Rbel Log Details view.
 The Rbel Log Details can be minimized by clicking on the double arrow on the top left of the Rbel Log Details section.
 
+[#_rbel_log_scenario_scoping]
+====== Scoping the Views to a Scenario
+
+By default the Rbel Log Details view and the Traffic Visualization both show every message recorded during the whole test run, which can make it hard to find the messages belonging to one specific scenario once several scenarios have executed.
+The crosshairs toggle beside the view selector narrows both down to the messages of a single scenario at once.
+It only appears once a scenario has run - standalone, or before anything has executed, there is nothing to scope to yet.
+
+image::screenshots/rbellog_scenario_only_toggle.png[title="The scenario scoping toggle"]
+
+With no scenario explicitly selected, the toggle scopes to the scenario that is currently running, or - once the run has finished - the last scenario that actually executed.
+
+To scope to a different scenario instead, click on that scenario's title in the test execution list.
+The selected scenario is highlighted.
+
+image::screenshots/maincontent_scenario_selected.png[title="A selected scenario"]
+
+Clicking the same scenario title again clears the selection, returning to the default (running/last scenario) behavior.
+
+Once a scenario is selected (or resolved automatically) and the toggle is active, only the messages belonging to that scenario are shown - in the Rbel Log Details view as well as in the Traffic Visualization.
+
+image::screenshots/rbellog_scenario_only_toggle_active.png[title="Scoping active"]
+
+image::screenshots/rbellog_scenario_scoped.png[title="Rbel Log Details scoped to a single scenario"]
+
+If the selected scenario recorded no Rbel messages at all (of any protocol the proxy captures, not just HTTP), the Rbel Log Details view shows a short message instead of an empty message list.
+
+image::screenshots/rbellog_scenario_only_empty.png[title="No Rbel messages for the selected scenario"]
+
 ==== Traffic Visualization
 
 An additional feature of the Workflow UI is the traffic visualization.
 This feature allows to visualize the traffic between the servers under test in a sequence diagram.
 The feature needs to be explicitly enabled in the `tiger.yaml` configuration file.
+Like the Rbel Log Details view, it can be narrowed down to a single scenario using the scoping toggle described xref:_rbel_log_scenario_scoping[above].
 
 [source,yaml]
 ----

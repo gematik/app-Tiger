@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: tiger-proxy-default-test

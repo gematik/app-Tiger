@@ -29,6 +29,7 @@ import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.renderer.RbelReportMetadata;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -38,6 +39,7 @@ import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerInitializer;
 import de.gematik.test.tiger.lib.exception.ValidatorAssertionError;
+import de.gematik.test.tiger.lib.pcap.TigerPcapCaptureLifecycle;
 import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
@@ -101,7 +103,6 @@ import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 
 @Slf4j
 public class SerenityReporterCallbacks extends AbstractStepListener {
@@ -133,6 +134,8 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
       new FeatureExecutionMonitor();
   private static final IntermediateReportGenerator intermediateReportGenerator =
       new IntermediateReportGenerator();
+  private static final TigerPcapCaptureLifecycle pcapCaptureLifecycle =
+      new TigerPcapCaptureLifecycle();
 
   private static final ThreadLocal<TigerStatusUpdate> currentStatusUpdate = new ThreadLocal<>();
   private static final ThreadLocal<Stack<StepUpdate>> currentSteps = new ThreadLocal<>();
@@ -167,6 +170,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
         () -> {
           shouldAbortTestExecution();
           featureExecutionMonitor.startTestRun();
+          pcapCaptureLifecycle.onTestRunStarted();
           if (TigerDirector.getLibConfig().createIntermediateReports) {
             featureExecutionMonitor.setOnFeatureCompleted(
                 intermediateReportGenerator::onFeatureCompleted);
@@ -182,6 +186,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
   public void handleTestRunFinished(TestRunFinished ignoredEvent) {
     scenarioAlreadyFailed.remove();
     featureExecutionMonitor.stopTestRun();
+    pcapCaptureLifecycle.onTestRunFinished();
   }
 
   private String getTigerVersionString() {
@@ -216,6 +221,12 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
 
     evidenceRecorder.reset();
     featureExecutionMonitor.startTestCase(testCaseStartedEvent);
+
+    // Pcap: rotate dumper at testcase boundary if splitByTestcase is enabled
+    if (!isDryRun) {
+      int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
+      pcapCaptureLifecycle.onTestCaseStarted(testCase, scenarioIdFrom(testCase), dataVariantIndex);
+    }
   }
 
   public int extractScenarioDataVariantIndex(IScenarioContext context, TestCase testCase) {
@@ -374,9 +385,8 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     return parsedLine;
   }
 
-  private LinkedHashMap<String, StepUpdate> stepUpdates(List<StepDescription> testSteps) {
-    var map = new LinkedHashMap<String, StepUpdate>();
-    Streams.mapWithIndex(
+  private Map<String, StepUpdate> stepUpdates(List<StepDescription> testSteps) {
+    return Streams.mapWithIndex(
             testSteps.stream(),
             (step, stepIndex) ->
                 StepUpdate.builder()
@@ -385,8 +395,10 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
                     .status(TestResult.PENDING)
                     .stepIndex(Math.toIntExact(stepIndex))
                     .build())
-        .forEach(stepUpdate -> map.put(Integer.toString(stepUpdate.getStepIndex()), stepUpdate));
-    return map;
+        .collect(
+            Collectors.toMap(
+                stepUpdate -> Integer.toString(stepUpdate.getStepIndex()),
+                stepUpdate -> stepUpdate));
   }
 
   public enum StepState {
@@ -502,7 +514,8 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
                             Serenity.recordReportData()
                                 .asEvidence()
                                 .withTitle(entry.getType() + " - " + entry.getTitle())
-                                .andContents(new JSONObject(entry.getDetails()).toString(2))));
+                                .andContents(
+                                    EvidenceReportJsonConverter.toJson(entry.getDetails()))));
   }
 
   private void informWorkflowUiAboutCurrentStep(
@@ -816,6 +829,10 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     }
 
     createEvidenceFile(event, context, scenarioIdFrom(testCase));
+
+    // Pcap: register evidence file at testcase finish
+    pcapCaptureLifecycle.onTestCaseFinished(testCase, scenarioIdFrom(testCase), dataVariantIndex);
+
     TigerGlobalConfiguration.clearLocalTestVariables();
   }
 
@@ -924,7 +941,25 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
             + scenarioUri
             + "</i></p>");
     rbelRenderer.setVersionInfo(getTigerVersionString());
+    rbelRenderer.setReportMetadata(buildReportMetadata());
     return rbelRenderer;
+  }
+
+  /**
+   * Makes the report self-describing: which Tiger wrote it, which parsers were active while the
+   * traffic was converted and with which proxy configuration.
+   */
+  private RbelReportMetadata buildReportMetadata() {
+    try {
+      return TigerDirector.getTigerTestEnvMgr()
+          .getLocalTigerProxyOptional()
+          .map(TigerProxy::getReportMetadata)
+          .orElseGet(
+              () -> RbelReportMetadata.builder().tigerVersion(getTigerVersionString()).build());
+    } catch (RuntimeException e) {
+      log.warn("Could not collect report metadata: {}", e.getMessage());
+      return RbelReportMetadata.builder().tigerVersion(getTigerVersionString()).build();
+    }
   }
 
   public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {

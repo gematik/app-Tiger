@@ -33,7 +33,6 @@ import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import kong.unirest.core.UnirestInstance;
 import lombok.Getter;
@@ -71,13 +70,11 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
   @ParameterizedTest
   @ValueSource(strings = {"testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
-  void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
+  void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) {
     log.info("Starting testSetUpEnvironmentNShutDownMinimumConfigPasses_OK for {}", cfgFileName);
     TigerGlobalConfiguration.reset();
     createTestEnvMgrSafelyAndExecute(
-        envMgr -> {
-          envMgr.setUpEnvironment();
-        },
+        TigerTestEnvMgr::setUpEnvironment,
         "src/test/resources/de/gematik/test/tiger/testenvmgr/" + cfgFileName + ".yaml");
   }
 
@@ -165,14 +162,13 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   void healthcheckEndpointGives404AndExpecting200_environmentShouldNotStartUp(
       TigerTestEnvMgr envMgr) {
     executeWithSecureShutdown(
-        () -> {
-          assertThatThrownBy(envMgr::setUpEnvironment)
-              .isInstanceOf(TigerEnvironmentStartupException.class)
-              .cause()
-              .isInstanceOf(TigerTestEnvException.class)
-              .hasMessageContaining("/foo/bar/wrong/url")
-              .hasMessageContaining("Timeout");
-        },
+        () ->
+            assertThatThrownBy(envMgr::setUpEnvironment)
+                .isInstanceOf(TigerEnvironmentStartupException.class)
+                .cause()
+                .isInstanceOf(TigerTestEnvException.class)
+                .hasMessageContaining("/foo/bar/wrong/url")
+                .hasMessageContaining("Timeout"),
         envMgr);
   }
 
@@ -199,8 +195,10 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
       skipEnvironmentSetup = true)
   void startLocalTigerProxyAndCheckPropertiesSet(TigerTestEnvMgr envMgr) {
     envMgr.startLocalTigerProxyIfActivated();
-    assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault()).isBetween(0, 655536);
-    assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault()).isBetween(0, 655536);
+    assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault()).isStrictlyBetween(0, 65_536);
+    assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault()).isStrictlyBetween(0, 65_536);
+    assertThat(envMgr.getConfiguration().getTigerProxy().getForwardToProxy().getHostname())
+        .isEqualTo("$SYSTEM");
   }
 
   @Test

@@ -85,6 +85,16 @@
           >
             <i class="fa-lg fa-solid fa-gears fa-fw"></i>
           </button>
+          <button
+            id="test-sidebar-scenario-scope-toggle"
+            type="button"
+            title="Toggle scenario scoping"
+            :class="`btn btn-sm m-1 ${featuresStore.scopingActive ? 'btn-primary' : 'btn-outline-primary'}`"
+            :aria-pressed="featuresStore.scopingActive"
+            @click="featuresStore.toggleScoping()"
+          >
+            <i class="fa-lg fa-solid fa-crosshairs fa-fw"></i>
+          </button>
           <div v-if="hasTestRunFinished">
             <div
               id="test-sidebar-stop-message"
@@ -197,8 +207,6 @@
         <Tabs v-model:value="selectedTab">
           <nav class="navbar navbar-expand-lg">
             <div class="container-fluid">
-              <div class="navbar-nav justify-content-start"></div>
-
               <TabList
                 unstyled
                 class="navbar-nav execution-pane-nav justify-content-between"
@@ -1040,5 +1048,29 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 
 .topology-tab-panel {
   height: calc(100vh - 80px);
+}
+
+.scenario-scope-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--gem-primary-400);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--gem-primary-400);
+  cursor: pointer;
+}
+
+.scenario-scope-toggle:hover {
+  background: var(--gem-primary-100);
+}
+
+.scenario-scope-toggle.active {
+  background: var(--gem-primary-400);
+  color: #fff;
 }
 </style>

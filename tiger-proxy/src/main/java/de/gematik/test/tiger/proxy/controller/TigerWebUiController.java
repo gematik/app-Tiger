@@ -29,9 +29,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.exceptions.RbelPathException;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.renderer.RbelReportMetadata;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.util.RbelStringUtils;
@@ -47,6 +49,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.ObjLongConsumer;
@@ -146,6 +150,18 @@ public class TigerWebUiController implements ApplicationContextAware {
       throw new ResponseStatusException(
           HttpStatus.INTERNAL_SERVER_ERROR, "Failed to serialize configuration", e);
     }
+  }
+
+  @Operation(summary = "Read the report metadata (version, active parsers, configuration)")
+  @ApiResponse(
+      responseCode = "200",
+      content =
+          @Content(
+              mediaType = "application/json",
+              schema = @Schema(implementation = RbelReportMetadata.class)))
+  @GetMapping(value = "/reportMetadata", produces = MediaType.APPLICATION_JSON_VALUE)
+  public RbelReportMetadata getReportMetadata() {
+    return getTigerProxy().getReportMetadata();
   }
 
   @Operation(summary = "Serve the Web UI index page")
@@ -327,6 +343,8 @@ public class TigerWebUiController implements ApplicationContextAware {
       @RequestParam(name = "fromOffset") int fromOffset,
       @RequestParam(name = "toOffsetExcluding") int toOffsetExcluding,
       @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      @RequestParam(name = "minTimestamp", required = false) Instant minTimestamp,
+      @RequestParam(name = "maxTimestamp", required = false) Instant maxTimestamp,
       @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
           MessageSortOrder sortOrder) {
 
@@ -340,14 +358,19 @@ public class TigerWebUiController implements ApplicationContextAware {
     var result = new GetMessagesWithHtmlScrollableDto();
     result.setFromOffset(fromOffset);
     result.setToOffsetExcluding(toOffsetExcluding);
-    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+    result.setFilter(
+        GetMessagesFilterScrollableDto.builder()
+            .rbelPath(filterRbelPath)
+            .minTimestamp(minTimestamp)
+            .maxTimestamp(maxTimestamp)
+            .build());
 
     result.setTotal(total);
 
     result.setHash(messageHash());
 
     var messageStream = parsedMessages.stream();
-    messageStream = filterMessages(messageStream, filterRbelPath);
+    messageStream = filterMessages(messageStream, filterRbelPath, minTimestamp, maxTimestamp);
 
     val renderingToolkit = new RbelHtmlRenderingToolkit(renderer);
     result.setMessages(
@@ -415,9 +438,9 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   /**
-   * Renders the same self-contained HTML page that the "Export as HTML" button in the Tiger
-   * Proxy WebUI produces: the detached Vue frontend bundle with the filtered messages embedded as
-   * a compressed, base64-encoded payload (mirrors HtmlExporter.ts in the frontend).
+   * Renders the same self-contained HTML page that the "Export as HTML" button in the Tiger Proxy
+   * WebUI produces: the detached Vue frontend bundle with the filtered messages embedded as a
+   * compressed, base64-encoded payload (mirrors HtmlExporter.ts in the frontend).
    */
   private String renderDetachedHtmlPage(
       GetMessagesWithHtmlScrollableDto messagesWithHtml,
@@ -426,6 +449,7 @@ public class TigerWebUiController implements ApplicationContextAware {
       final var payload = new LinkedHashMap<String, Object>();
       payload.put("messagesWithHtml", messagesWithHtml);
       payload.put("messagesWithMeta", messagesWithMeta);
+      payload.put("reportMetadata", getTigerProxy().getReportMetadata());
       final String json = passwordHidingMapper.writeValueAsString(payload);
       final String dataUrl =
           "data:application/octet-stream;base64,"
@@ -476,7 +500,8 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   private byte[] deflate(byte[] input) throws IOException {
-    final var deflater = new java.util.zip.Deflater(java.util.zip.Deflater.DEFAULT_COMPRESSION, true);
+    final var deflater =
+        new java.util.zip.Deflater(java.util.zip.Deflater.DEFAULT_COMPRESSION, true);
     deflater.setInput(input);
     deflater.finish();
     try (var out = new java.io.ByteArrayOutputStream(input.length)) {
@@ -494,6 +519,8 @@ public class TigerWebUiController implements ApplicationContextAware {
   @GetMapping(value = "/getMessagesWithMeta", produces = MediaType.APPLICATION_JSON_VALUE)
   public GetMessagesWithMetaScrollableDto getMessagesWithMeta(
       @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      @RequestParam(name = "minTimestamp", required = false) Instant minTimestamp,
+      @RequestParam(name = "maxTimestamp", required = false) Instant maxTimestamp,
       @RequestParam(name = "sortOrder", required = false, defaultValue = "TIMESTAMP")
           MessageSortOrder sortOrder) {
     final var parsedMessages = resolveMessages(sortOrder);
@@ -503,10 +530,15 @@ public class TigerWebUiController implements ApplicationContextAware {
 
     result.setTotal(total);
     result.setHash(messageHash());
-    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+    result.setFilter(
+        GetMessagesFilterScrollableDto.builder()
+            .rbelPath(filterRbelPath)
+            .minTimestamp(minTimestamp)
+            .maxTimestamp(maxTimestamp)
+            .build());
 
     var messageStream = parsedMessages.stream();
-    messageStream = filterMessages(messageStream, filterRbelPath);
+    messageStream = filterMessages(messageStream, filterRbelPath, minTimestamp, maxTimestamp);
 
     result.setMessages(messageStream.map(MetaMessageScrollableDto::createFrom).toList());
 
@@ -596,12 +628,37 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   private Stream<RbelElement> filterMessages(Stream<RbelElement> stream, String filterRbelPath) {
+    return filterMessages(stream, filterRbelPath, null, null);
+  }
+
+  private Stream<RbelElement> filterMessages(
+      Stream<RbelElement> stream,
+      String filterRbelPath,
+      Instant minTimestamp,
+      Instant maxTimestamp) {
     var actualFilterRbelPath =
         filterRbelPath != null && filterRbelPath.isBlank() ? null : filterRbelPath;
 
+    var filtered = stream;
+    if (minTimestamp != null) {
+      filtered =
+          filtered.filter(
+              msg -> transmissionTimeOf(msg).map(t -> !t.isBefore(minTimestamp)).orElse(true));
+    }
+    if (maxTimestamp != null) {
+      filtered =
+          filtered.filter(
+              msg -> transmissionTimeOf(msg).map(t -> !t.isAfter(maxTimestamp)).orElse(true));
+    }
     return actualFilterRbelPath != null
-        ? stream.filter(matchesFilter(actualFilterRbelPath))
-        : stream;
+        ? filtered.filter(matchesFilter(actualFilterRbelPath))
+        : filtered;
+  }
+
+  private static Optional<Instant> transmissionTimeOf(RbelElement msg) {
+    return msg.getFacet(RbelMessageTimingFacet.class)
+        .map(RbelMessageTimingFacet::getTransmissionTime)
+        .map(ZonedDateTime::toInstant);
   }
 
   private static List<RbelElement> findAllPartners(RbelElement msg) {

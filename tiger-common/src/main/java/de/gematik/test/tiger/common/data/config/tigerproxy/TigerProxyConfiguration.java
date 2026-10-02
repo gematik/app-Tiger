@@ -36,7 +36,7 @@ import lombok.experimental.Accessors;
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @JsonInclude(Include.NON_NULL)
 @Accessors(chain = true)
 public class TigerProxyConfiguration {
@@ -61,6 +61,9 @@ public class TigerProxyConfiguration {
   @Builder.Default private String trafficEndpointFilterString = "";
   @Builder.Default private int maximumPartialMessageAgeInSeconds = 30;
   @Builder.Default private int connectionTimeoutInSeconds = 10;
+  public static final int DEFAULT_PARSING_TIMEOUT_IN_SECONDS = 100;
+  @Builder.Default private int parsingTimeoutInSeconds = DEFAULT_PARSING_TIMEOUT_IN_SECONDS;
+  @Builder.Default private int fileParsingTimeoutInSeconds = 600;
   @Builder.Default private float waitForPreviousMessageBeforeParsingInSeconds = 5;
   @Builder.Default private float previousMessageTimeoutDetectionGracePeriodInSeconds = 10;
   @Builder.Default private float previousMessageTimeoutDetectionTimeGapThresholdInSeconds = 30;
@@ -110,7 +113,8 @@ public class TigerProxyConfiguration {
   @Builder.Default private List<RbelModificationDescription> modifications = new ArrayList<>();
   @Builder.Default private boolean localResources = true;
   @Builder.Default private int maximumTrafficDownloadPageSize = 100_000;
-  @Builder.Default private int trafficDownloadPageSize = 50;
+  @Builder.Default private int trafficDownloadPageSize = 100;
+  @Builder.Default private int maximumTrafficDownloadPages = 200;
   private String name;
 
   @Builder.Default private boolean isStandalone = true;

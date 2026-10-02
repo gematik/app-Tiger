@@ -64,10 +64,61 @@ class XDynamicSidebarTests extends AbstractBase {
   @Test
   void testFeatureBoxClickOnLastScenario() {
     openSidebar();
-    page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
-    String sidebarTitle = page.locator(".test-sidebar-scenario-name").last().getAttribute("title");
-    String featureTitle = page.locator(".test-execution-pane-scenario-title").last().textContent();
-    assertAll(() -> Assertions.assertThat(featureTitle.trim()).startsWith(sidebarTitle));
+    Locator lastSidebarScenario = page.locator(".test-sidebar-scenario-name").last();
+    Locator lastExecutionPaneScenario = page.locator(".test-execution-pane-scenario-title").last();
+
+    String scenarioTitleBeforeClick = lastExecutionPaneScenario.textContent().trim();
+    lastSidebarScenario.locator(".scenarioLink").click();
+
+    assertAll(
+        () ->
+            Assertions.assertThat(lastExecutionPaneScenario.textContent().trim())
+                .startsWith(scenarioTitleBeforeClick),
+        () ->
+            Assertions.assertThat(lastSidebarScenario.getAttribute("title"))
+                .isEqualTo("Selected for Rbel log scoping - click to deselect"),
+        () ->
+            Assertions.assertThat(lastExecutionPaneScenario.getAttribute("title"))
+                .isEqualTo("Selected for Rbel log scoping - click to deselect"));
+  }
+
+  @Test
+  void testFeatureBoxScenarioSelectionTogglesScopingInSyncWithExecutionPane() {
+    openSidebar();
+    Locator sidebarScenarioName = page.locator(".test-sidebar-scenario-name").first();
+    Locator executionPaneScenarioTitle =
+        page.locator(".test-execution-pane-scenario-title").first();
+
+    assertAll(
+        () ->
+            assertThat(sidebarScenarioName)
+                .not()
+                .hasClass(Pattern.compile(".*scenario-selected.*")),
+        () ->
+            assertThat(executionPaneScenarioTitle)
+                .not()
+                .hasClass(Pattern.compile(".*scenario-selected.*")));
+
+    sidebarScenarioName.click();
+
+    assertAll(
+        () -> assertThat(sidebarScenarioName).hasClass(Pattern.compile(".*scenario-selected.*")),
+        () ->
+            assertThat(executionPaneScenarioTitle)
+                .hasClass(Pattern.compile(".*scenario-selected.*")));
+
+    // selecting via the execution pane title must also be reflected back in the sidebar
+    executionPaneScenarioTitle.click();
+
+    assertAll(
+        () ->
+            assertThat(sidebarScenarioName)
+                .not()
+                .hasClass(Pattern.compile(".*scenario-selected.*")),
+        () ->
+            assertThat(executionPaneScenarioTitle)
+                .not()
+                .hasClass(Pattern.compile(".*scenario-selected.*")));
   }
 
   @Test

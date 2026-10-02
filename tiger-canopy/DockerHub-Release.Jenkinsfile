@@ -19,4 +19,5 @@ pipelineDockerHubPublish {
     DOCKER_INTERNAL_REGISTRY = dockerGetGematikRegistry('EUWEST3')
     INTERNAL_IMAGE_NAME = "tiger/tiger-canopy"
     EXTERNAL_IMAGE_NAME = "gematik1/tiger-canopy-image"
+    LATEST_TAG = "YES"
 }

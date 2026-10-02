@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import type { Message, MessageUiState } from "@/api/MessageQueue.ts";
 import { messageQueueSymbol } from "@/api/MessageQueue.ts";
+import { nextPaint } from "@/api/scheduling.ts";
 import { h, inject, nextTick, onBeforeUnmount, type Ref, ref, render, watch } from "vue";
 import InspectButton from "@/components/InspectButton.vue";
 import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
@@ -34,6 +35,12 @@ import { extractJsonNotes, restoreJsonNotes } from "./messageNoteDom.ts";
 
 const props = defineProps<{
   message: Message;
+  /**
+   * Rendered HTML of this message, or `undefined` while it is still being fetched. Passed
+   * in per rendered row instead of living on `message`, so that a chunk arriving does not
+   * replace the virtual scroller's whole `items` array.
+   */
+  htmlContent?: string;
   onToggleDetailsOrHeader: () => void;
 }>();
 
@@ -503,12 +510,6 @@ function setupCodeHighlighting() {
   });
 }
 
-function waitForPaint(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve());
-  });
-}
-
 async function setupInteractiveMessageContent(msgUuid: any) {
   const messageHeader = messageElement.value?.querySelector(".card-header");
 
@@ -590,7 +591,7 @@ async function setHtmlContentForRecycledElement(htmlContent: string, msgUuid: an
   if (messageElement.value) {
     messageElement.value.innerHTML = htmlContent;
     await nextTick();
-    await waitForPaint();
+    await nextPaint();
     setupCodeHighlighting();
   }
 
@@ -649,13 +650,13 @@ async function handleUninitializedElement(msgUuid: any, htmlContent: string) {
   }
   // Wait for the inner html to be rendered
   await nextTick();
-  await waitForPaint();
+  await nextPaint();
 
   await setupInteractiveMessageContent(msgUuid);
 }
 
 watch(
-  () => (props.message.type === "loaded" ? props.message.htmlContent : null),
+  () => props.htmlContent ?? null,
   async (newHtml, oldHtml) => {
     if (newHtml && newHtml !== oldHtml && isMessageInitialized(props.message.uuid)) {
       await setHtmlContentForRecycledElement(newHtml, props.message.uuid);
@@ -664,8 +665,8 @@ watch(
 );
 
 watch([messageElement, () => props.message.uuid], async () => {
-  if (messageElement.value && props.message.type === "loaded") {
-    const msgUuid = (props.message as any).uuid;
+  if (messageElement.value && props.htmlContent !== undefined) {
+    const msgUuid = props.message.uuid;
 
     // If the underlying element instance changed (due to virtualization),
     // detach listeners/observers from the previously attached element
@@ -675,17 +676,17 @@ watch([messageElement, () => props.message.uuid], async () => {
     // (even if a new DOM element instance was assigned due to virtual scroller recycling)
     // BUT: we still need to restore the visual state (d-none classes) and reattach the handler
     if (isMessageInitialized(msgUuid)) {
-      await setHtmlContentForRecycledElement(props.message.htmlContent, msgUuid);
+      await setHtmlContentForRecycledElement(props.htmlContent, msgUuid);
       return;
     }
-    await handleUninitializedElement(msgUuid, props.message.htmlContent);
+    await handleUninitializedElement(msgUuid, props.htmlContent);
   }
 });
 </script>
 
 <template>
   <div class="rbel-message pb-3" id="test-rbel-section">
-    <div v-if="props.message.type === 'loaded'" ref="messageElement" />
+    <div v-if="props.htmlContent !== undefined" ref="messageElement" />
     <div v-else class="loading">
       <div>Loading...</div>
     </div>

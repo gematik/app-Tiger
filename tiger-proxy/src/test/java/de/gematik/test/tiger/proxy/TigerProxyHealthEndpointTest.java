@@ -67,6 +67,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  */
 @TestMethodOrder(OrderAnnotation.class)
 @SpringBootTest(
+    classes = TigerProxyApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
       "management.endpoint.health.access=read_only",

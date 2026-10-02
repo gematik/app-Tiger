@@ -45,10 +45,10 @@ const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 
 const diagramSteps: Ref<string[]> = ref([]);
 
-const { rbelMetadata } = storeToRefs(useFeaturesStore());
+const { rbelMetadata, scopedRbelMetadata } = storeToRefs(useFeaturesStore());
 
 watchEffect(() => {
-  diagramSteps.value = rbelMetadata.value.map(convertToDiagramStepString);
+  diagramSteps.value = scopedRbelMetadata.value.map(convertToDiagramStepString);
 });
 
 function convertToDiagramStepString(metadata: MessageMetaDataDto) {

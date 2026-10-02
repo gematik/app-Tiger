@@ -19,7 +19,7 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import type { RouteDto } from "./MessageTypes.ts";
+import type { ReportMetadataDto, RouteDto } from "./MessageTypes.ts";
 import { getProxy, ProxyError, type ProxyRepository } from "./ProxyRepository.ts";
 
 export type ControllerCall<Fn extends (...args: any) => any> = (
@@ -30,6 +30,7 @@ export type ControllerCall<Fn extends (...args: any) => any> = (
 export interface UseProxyControllerReturn {
   getMetaMessages: ControllerCall<ProxyRepository["fetchMessagesWithMeta"]>;
   getMessages: ControllerCall<ProxyRepository["fetchMessagesWithHtml"]>;
+  getMessageQueueStatus: ControllerCall<ProxyRepository["fetchMessageQueueStatus"]>;
   getFullyRenderedMessage: ControllerCall<ProxyRepository["fetchFullyRenderedMessage"]>;
   resetMessageQueue: (options?: ControllerCallOptions) => Promise<void>;
   quitProxy: (options?: ControllerCallOptions) => Promise<void>;
@@ -45,6 +46,7 @@ export interface UseProxyControllerReturn {
   tigerVersion: (
     options?: ControllerCallOptions,
   ) => Promise<{ version: string; buildDate: string; proxyName: string } | void>;
+  getReportMetadata: (options?: ControllerCallOptions) => Promise<ReportMetadataDto | null | void>;
 }
 
 export interface UseProxyControllerOptions {
@@ -96,6 +98,8 @@ export function useProxyController(props: UseProxyControllerOptions): UseProxyCo
       makeCall(() => proxyRepo.fetchMessagesWithMeta(props), options),
     getMessages: (props, options) =>
       makeCall(() => proxyRepo.fetchMessagesWithHtml(props), options),
+    getMessageQueueStatus: (props, options) =>
+      makeCall(() => proxyRepo.fetchMessageQueueStatus(props), options),
     getFullyRenderedMessage: (props, options) =>
       makeCall(() => proxyRepo.fetchFullyRenderedMessage(props), options),
     resetMessageQueue: (options) => makeCall(() => proxyRepo.fetchResetMessages(), options),
@@ -115,5 +119,6 @@ export function useProxyController(props: UseProxyControllerOptions): UseProxyCo
       makeCall(() => proxyRepo.fetchDeleteProxyRoute(props), options),
     addProxyRoute: (props, options) => makeCall(() => proxyRepo.fetchAddProxyRoute(props), options),
     tigerVersion: (options) => makeCall(() => proxyRepo.fetchVersionInfo(), options),
+    getReportMetadata: (options) => makeCall(() => proxyRepo.fetchReportMetadata(), options),
   };
 }

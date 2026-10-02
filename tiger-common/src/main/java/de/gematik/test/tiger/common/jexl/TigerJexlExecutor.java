@@ -21,6 +21,8 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import java.util.*;
 import java.util.function.BiFunction;
 import lombok.AccessLevel;
@@ -30,7 +32,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
-import org.reflections.Reflections;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -58,14 +59,20 @@ public class TigerJexlExecutor {
   }
 
   private static void registerAdditionalInlineMethods() {
-    var annotatedTypes =
-        new Reflections("de.gematik.test.tiger.common.jexl")
-            .getTypesAnnotatedWith(InlineJexlMethods.class);
-    annotatedTypes.forEach(
-        type -> {
-          var namespacePrefix = type.getAnnotation(InlineJexlMethods.class).namespacePrefix();
-          NAMESPACE_MAP.put(namespacePrefix, type);
-        });
+    try (ScanResult scanResult =
+        new ClassGraph()
+            .acceptPackages("de.gematik.test.tiger.common.jexl")
+            .enableAnnotationInfo()
+            .scan()) {
+      scanResult
+          .getClassesWithAnnotation(InlineJexlMethods.class.getName())
+          .loadClasses()
+          .forEach(
+              type -> {
+                var namespacePrefix = type.getAnnotation(InlineJexlMethods.class).namespacePrefix();
+                NAMESPACE_MAP.put(namespacePrefix, type);
+              });
+    }
   }
 
   public static boolean matchesAsJexlExpression(Object element, String jexlExpression) {

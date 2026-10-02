@@ -56,6 +56,7 @@ public class RbelLogger {
             .rbelKeyManager(new RbelKeyManager())
             .manageBuffer(configuration.isManageBuffer())
             .rbelBufferSizeInMb(configuration.getRbelBufferSizeInMb())
+            .parsingTimeoutInSeconds(configuration.getParsingTimeoutInSeconds())
             .skipParsingWhenMessageLargerThanKb(
                 configuration.getSkipParsingWhenMessageLargerThanKb())
             .activateRbelParsingFor(configuration.getActivateRbelParsingFor())

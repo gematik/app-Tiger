@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.4.3</version>
+    <version>4.4.4</version>
     <relativePath>./tiger-bom/pom.xml</relativePath>
   </parent>
   <artifactId>tiger</artifactId>
@@ -101,6 +101,9 @@
     <maven.compiler.target>17</maven.compiler.target>
     <mycila.license-maven-plugin.version>5.1.2</mycila.license-maven-plugin.version>
     <skipSurefire>false</skipSurefire>
+    <skipFrontendUnitTests>false</skipFrontendUnitTests>
+    <skipFrontend>false</skipFrontend>
+    <frontend.node.install.dir>${maven.multiModuleProjectDirectory}/.frontend-node</frontend.node.install.dir>
     <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <excludedTestGroups/>
     <includedTestGroups/>
@@ -218,6 +221,105 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.maven.surefire}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.2.0</version>
+          <executions>
+            <execution>
+              <id>frontend-build-staleness-check</id>
+              <goals>
+                <goal>run</goal>
+              </goals>
+              <phase>initialize</phase>
+              <configuration>
+                <exportAntProperties>true</exportAntProperties>
+                <target>
+                  <condition else="install" property="frontend.npm.install.command" value="ci">
+                    <available file="${frontend.work.dir}/package-lock.json"/>
+                  </condition>
+                  <uptodate property="frontend.build.uptodate" targetfile="${frontend.work.dir}/dist/index.html">
+                    <srcfiles dir="${frontend.work.dir}" excludes="${frontend.staleness.excludes}" includes="**/*"/>
+                  </uptodate>
+                  <condition else="${skipFrontend}" property="frontend.build.skip" value="true">
+                    <or>
+                      <istrue value="${skipFrontend}"/>
+                      <isset property="frontend.build.uptodate"/>
+                    </or>
+                  </condition>
+                  <uptodate property="frontend.install.uptodate" targetfile="${frontend.work.dir}/node_modules/.package-lock.json">
+                    <srcfiles dir="${frontend.work.dir}" includes="package.json,package-lock.json"/>
+                  </uptodate>
+                  <condition else="${skipFrontend}" property="frontend.install.skip" value="true">
+                    <or>
+                      <istrue value="${skipFrontend}"/>
+                      <isset property="frontend.install.uptodate"/>
+                    </or>
+                  </condition>
+                </target>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <version>${version.frontend-maven-plugin}</version>
+          <configuration>
+            <nodeVersion>${version.node}</nodeVersion>
+            <installDirectory>${frontend.node.install.dir}</installDirectory>
+            <workingDirectory>${frontend.work.dir}</workingDirectory>
+            <skip>${skipFrontend}</skip>
+          </configuration>
+          <executions>
+            <execution>
+              <id>Install node and npm</id>
+              <goals>
+                <goal>install-node-and-npm</goal>
+              </goals>
+              <phase>generate-resources</phase>
+              <configuration>
+                <!-- https://github.com/eirslett/frontend-maven-plugin#proxy-settings -->
+                <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
+                <nodeVersion>${version.node}</nodeVersion>
+                <npmVersion>${version.npm}</npmVersion>
+              </configuration>
+            </execution>
+            <execution>
+              <id>npm install</id>
+              <goals>
+                <goal>npm</goal>
+              </goals>
+              <phase>generate-resources</phase>
+              <configuration>
+                <skip>${frontend.install.skip}</skip>
+                <arguments>${frontend.npm.install.command} --no-audit --no-fund --prefer-offline</arguments>
+              </configuration>
+            </execution>
+            <execution>
+              <id>npm build</id>
+              <goals>
+                <goal>npm</goal>
+              </goals>
+              <phase>generate-resources</phase>
+              <configuration>
+                <skip>${frontend.build.skip}</skip>
+                <arguments>${frontend.build.command}</arguments>
+              </configuration>
+            </execution>
+            <execution>
+              <id>npm-unit-test</id>
+              <goals>
+                <goal>npm</goal>
+              </goals>
+              <phase>test</phase>
+              <configuration>
+                <skip>${skipFrontendUnitTests}</skip>
+                <arguments>run test</arguments>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -410,6 +512,7 @@
                 <exclude>**/dist/assets/*</exclude>
                 <exclude>**/bootstrap.min.css</exclude>
                 <exclude>**/bootstrap.bundle.min.js</exclude>
+                <exclude>**/.claude/**</exclude>
               </excludes>
               <useDefaultExcludes>true</useDefaultExcludes>
             </licenseSet>
@@ -456,6 +559,14 @@
             </goals>
             <configuration>
               <rules>
+                <requireJavaVersion>
+                  <version>[${tiger.build.java.minimum},)</version>
+                  <message>Tiger must be built with JDK ${tiger.build.java.minimum} or newer.</message>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[${tiger.build.maven.minimum},)</version>
+                  <message>Tiger must be built with Maven ${tiger.build.maven.minimum} or newer.</message>
+                </requireMavenVersion>
                 <dependencyConvergence/>
                 <banDuplicatePomDependencyVersions/>
               </rules>
@@ -491,6 +602,18 @@
   </reporting>
 
   <profiles>
+    <profile>
+      <id>skipAllFrontend</id>
+      <activation>
+        <property>
+          <name>skipFrontend</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <skipFrontendUnitTests>true</skipFrontendUnitTests>
+      </properties>
+    </profile>
     <profile>
       <id>Kotlin</id>
       <activation>
@@ -597,6 +720,7 @@
         <cucumber.filter.tags>@Smoke</cucumber.filter.tags>
         <excludedTestGroups/>
         <includedTestGroups>de.gematik.test.tiger.common.SmokeTest</includedTestGroups>
+        <skipFrontendUnitTests>true</skipFrontendUnitTests>
       </properties>
     </profile>
     <profile>

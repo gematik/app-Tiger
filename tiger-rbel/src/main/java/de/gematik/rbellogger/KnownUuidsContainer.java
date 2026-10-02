@@ -21,9 +21,9 @@
 package de.gematik.rbellogger;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +32,8 @@ import org.apache.commons.lang3.StringUtils;
 public class KnownUuidsContainer {
   private final Object monitor;
   private final Map<String, MessageUuidState> knownMessageUuids = new HashMap<>();
-  private final List<Consumer<List<String>>> removedMessageUuidsHandlers = new LinkedList<>();
+  private final List<Consumer<List<String>>> removedMessageUuidsHandlers =
+      new CopyOnWriteArrayList<>();
 
   public KnownUuidsContainer(Object monitor) {
     this.monitor = monitor;
@@ -88,7 +89,9 @@ public class KnownUuidsContainer {
   }
 
   public String toString() {
-    return knownMessageUuids.toString();
+    synchronized (monitor) {
+      return knownMessageUuids.toString();
+    }
   }
 
   public void addRemovedMessageUuidsHandler(Consumer<List<String>> handleRemovedMessageUuids) {
@@ -100,7 +103,9 @@ public class KnownUuidsContainer {
   }
 
   public boolean contains(String previousMessageUuid) {
-    return knownMessageUuids.containsKey(previousMessageUuid);
+    synchronized (monitor) {
+      return knownMessageUuids.containsKey(previousMessageUuid);
+    }
   }
 
   private enum MessageUuidState {

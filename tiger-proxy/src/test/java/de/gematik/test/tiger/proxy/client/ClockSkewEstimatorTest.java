@@ -78,14 +78,13 @@ class ClockSkewEstimatorTest {
   }
 
   @Test
-  @DisplayName("Estimator returns near-zero offset when clocks are the same (localhost)")
-  void sameHost_returnsSmallOffset() {
+  @DisplayName("Estimator returns empty when clocks agree within the measurement error (localhost)")
+  void sameHost_returnsEmpty() {
     stubDynamicClock(Duration.ZERO);
 
     Optional<Duration> offset = ClockSkewEstimator.estimateOffset(wm.baseUrl(), 3);
 
-    assertThat(offset).isPresent();
-    assertThat(offset.get().abs()).isLessThan(Duration.ofSeconds(2));
+    assertThat(offset).isEmpty();
   }
 
   @Test
@@ -122,24 +121,32 @@ class ClockSkewEstimatorTest {
   @Test
   @DisplayName("Single sample works correctly")
   void singleSample_works() {
-    stubDynamicClock(Duration.ZERO);
+    Duration simulatedSkew = Duration.ofSeconds(5);
+    stubDynamicClock(simulatedSkew);
 
     Optional<Duration> offset = ClockSkewEstimator.estimateOffset(wm.baseUrl(), 1);
 
     assertThat(offset).isPresent();
-    assertThat(offset.get().abs()).isLessThan(Duration.ofSeconds(1));
+    assertThat(offset.get().toMillis())
+        .isBetween(
+            simulatedSkew.minus(Duration.ofSeconds(2)).toMillis(),
+            simulatedSkew.plus(Duration.ofSeconds(2)).toMillis());
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 3, 5, 10})
   @DisplayName("Configurable number of samples all produce a reasonable result")
   void configurableSampleCount_producesResult(int samples) {
-    stubDynamicClock(Duration.ZERO);
+    Duration simulatedSkew = Duration.ofSeconds(5);
+    stubDynamicClock(simulatedSkew);
 
     Optional<Duration> offset = ClockSkewEstimator.estimateOffset(wm.baseUrl(), samples);
 
     assertThat(offset).isPresent();
-    assertThat(offset.get().abs()).isLessThan(Duration.ofSeconds(2));
+    assertThat(offset.get().toMillis())
+        .isBetween(
+            simulatedSkew.minus(Duration.ofSeconds(2)).toMillis(),
+            simulatedSkew.plus(Duration.ofSeconds(2)).toMillis());
   }
 
   /**

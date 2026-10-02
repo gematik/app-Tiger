@@ -24,10 +24,13 @@ import com.google.common.annotations.VisibleForTesting;
 import de.gematik.rbellogger.MessageSortOrder;
 import de.gematik.rbellogger.RbelMessageHistory;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.rbel.MockHistoryFacade;
+import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +59,7 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
 
   private final RbelMessagesSupplier messagesSupplier;
   private RbelElement lastDeletedElement = null;
+  private Instant clearBoundary = null;
 
   /**
    * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and
@@ -156,6 +160,7 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
     } else {
       lastDeletedElement = messageHistory.getLast();
     }
+    clearBoundary = Instant.now();
   }
 
   /**
@@ -171,9 +176,35 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
             element -> {
               var sourceHistory = messagesSupplier.getMessageHistory();
               return shapeMessageHistory(
-                  sourceHistory.getMessagesAfter(element, false, MessageSortOrder.SEQUENCE));
+                  withoutTrafficTransmittedBeforeTheClear(
+                      sourceHistory.getMessagesAfter(element, false, MessageSortOrder.SEQUENCE)));
             })
         .map(RbelMessageHistory.MessageHistory.class::cast)
         .orElseGet(messagesSupplier::getMessageHistory);
+  }
+
+  /**
+   * A downloaded message is recorded when the catch-up download reaches it, not when it was
+   * transmitted, so traffic from before the clear can land behind the boundary and become
+   * validatable again. Only downloaded messages are considered here: a live message recorded after
+   * the clear was, by construction, transmitted after it.
+   */
+  private Collection<RbelElement> withoutTrafficTransmittedBeforeTheClear(
+      Collection<RbelElement> messages) {
+    if (clearBoundary == null) {
+      return messages;
+    }
+    return messages.stream().filter(this::wasNotTransmittedBeforeTheClear).toList();
+  }
+
+  private boolean wasNotTransmittedBeforeTheClear(RbelElement message) {
+    if (!message.hasFacet(TigerDownloadedMessageFacet.class)) {
+      return true;
+    }
+    return message
+        .getFacet(RbelMessageTimingFacet.class)
+        .map(RbelMessageTimingFacet::getTransmissionTime)
+        .map(transmissionTime -> !transmissionTime.toInstant().isBefore(clearBoundary))
+        .orElse(true);
   }
 }

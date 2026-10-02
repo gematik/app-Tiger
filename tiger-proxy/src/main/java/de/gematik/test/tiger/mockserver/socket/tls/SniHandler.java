@@ -33,15 +33,20 @@ import io.netty.handler.ssl.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.PlatformDependent;
+import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bouncycastle.tls.ClientHello;
 
 /*
  * @author jamesdbloom
@@ -60,6 +65,10 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
   public static final AttributeKey<TigerPkiIdentity> SERVER_IDENTITY =
       AttributeKey.valueOf("SERVER_IDENTITY");
+  public static final AttributeKey<int[]> CLIENT_CIPHER_SUITES =
+      AttributeKey.valueOf("CLIENT_CIPHER_SUITES");
+  public static final AttributeKey<List<String>> SERVER_CIPHER_SUITES =
+      AttributeKey.valueOf("SERVER_CIPHER_SUITES");
   public static final AttributeKey<KeyAlgorithmPreference> PREFERRED_UPSTREAM_KEY_ALGORITHM =
       AttributeKey.valueOf("PREFERRED_UPSTREAM_KEY_ALGORITHM");
 
@@ -75,6 +84,12 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   @Override
   protected Future<SslContext> lookup(ChannelHandlerContext ctx, ByteBuf clientHello)
       throws Exception {
+    byte[] clientHelloBytes = new byte[clientHello.readableBytes()];
+    clientHello.getBytes(clientHello.readerIndex(), clientHelloBytes);
+    ClientHello parsedClientHello =
+        ClientHello.parse(new ByteArrayInputStream(clientHelloBytes), null);
+    ctx.channel().attr(CLIENT_CIPHER_SUITES).set(parsedClientHello.getCipherSuites().clone());
+
     val preference = KeyAlgorithmPreference.determineKeyAlgorithmPreference(clientHello);
     ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).set(preference);
 
@@ -90,30 +105,97 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     // Resolve per-connection ALPN protocols based on the SNI hostname.
     // This allows the proxy to advertise only the protocols the target backend supports,
     // making the TLS handshake transparent to the client.
-    List<AlpnProtocol> alpnProtocols = resolveAlpnProtocols(hostname);
+    var alpnStage = resolveAlpnProtocols(hostname);
+    if (alpnStage.isEmpty()) {
+      return succeededContext(ctx, hostname, configuration.serverAlpnProtocols());
+    }
 
+    val alpnFuture = alpnStage.get().toCompletableFuture();
+    if (alpnFuture.isDone()) {
+      return succeededContext(
+          ctx, hostname, alpnOrDefaults(hostname, resultOf(hostname, alpnFuture)));
+    }
+
+    // AbstractSniHandler suppresses reads until this promise completes, so returning an
+    // incomplete one defers the handshake without blocking the event loop.
+    log.debug("Deferring TLS handshake for SNI hostname '{}' until ALPN is known", hostname);
+    val promise = ctx.executor().<SslContext>newPromise();
+    alpnFuture.whenComplete(
+        (resolved, throwable) ->
+            ctx.executor()
+                .execute(
+                    () -> {
+                      if (throwable != null) {
+                        log.debug(
+                            "ALPN resolution failed for '{}', using defaults: {}",
+                            hostname,
+                            throwable.getMessage());
+                      }
+                      completeWithContext(
+                          ctx, hostname, promise, alpnOrDefaults(hostname, resolved));
+                    }));
+    return promise;
+  }
+
+  private Optional<CompletionStage<List<AlpnProtocol>>> resolveAlpnProtocols(String hostname) {
+    var resolver = configuration.alpnProtocolsForSniHostname();
+    if (resolver == null || !isNotBlank(hostname)) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.ofNullable(resolver.apply(hostname));
+    } catch (RuntimeException e) {
+      log.debug("ALPN resolution failed for '{}', using defaults: {}", hostname, e.getMessage());
+      return Optional.empty();
+    }
+  }
+
+  /** Reads an already completed resolution without rethrowing if it completed exceptionally. */
+  private List<AlpnProtocol> resultOf(
+      String hostname, CompletableFuture<List<AlpnProtocol>> alpnFuture) {
+    try {
+      return alpnFuture.getNow(List.of());
+    } catch (RuntimeException e) {
+      log.debug("ALPN resolution failed for '{}', using defaults: {}", hostname, e.getMessage());
+      return List.of();
+    }
+  }
+
+  private List<AlpnProtocol> alpnOrDefaults(String hostname, List<AlpnProtocol> resolved) {
+    if (resolved != null && !resolved.isEmpty()) {
+      log.trace("ALPN for SNI hostname '{}': {}", hostname, resolved);
+      return resolved;
+    }
+    return configuration.serverAlpnProtocols();
+  }
+
+  private Future<SslContext> succeededContext(
+      ChannelHandlerContext ctx, String hostname, List<AlpnProtocol> alpnProtocols) {
+    return ctx.executor().newSucceededFuture(createServerSslContext(ctx, hostname, alpnProtocols));
+  }
+
+  private void completeWithContext(
+      ChannelHandlerContext ctx,
+      String hostname,
+      Promise<SslContext> promise,
+      List<AlpnProtocol> alpnProtocols) {
+    try {
+      promise.trySuccess(createServerSslContext(ctx, hostname, alpnProtocols));
+    } catch (RuntimeException e) {
+      promise.tryFailure(e);
+    }
+  }
+
+  private SslContext createServerSslContext(
+      ChannelHandlerContext ctx, String hostname, List<AlpnProtocol> alpnProtocols) {
     val serverContextAndIdentity =
         nettySslContextFactory.createServerSslContext(
             hostname, ctx.channel().attr(PREFERRED_UPSTREAM_KEY_ALGORITHM).get(), alpnProtocols);
     ctx.channel().attr(SERVER_IDENTITY).set(serverContextAndIdentity.getValue());
-    return ctx.executor().newSucceededFuture(serverContextAndIdentity.getKey());
-  }
-
-  private List<AlpnProtocol> resolveAlpnProtocols(String hostname) {
-    var resolver = configuration.alpnProtocolsForSniHostname();
-    if (resolver != null && isNotBlank(hostname)) {
-      try {
-        var resolved = resolver.apply(hostname);
-        if (resolved != null && !resolved.isEmpty()) {
-          log.trace("ALPN for SNI hostname '{}': {}", hostname, resolved);
-          return resolved;
-        }
-      } catch (RuntimeException e) {
-        log.debug(
-            "ALPN resolution failed for '{}', using defaults: {}", hostname, e.getMessage(), e);
-      }
-    }
-    return configuration.serverAlpnProtocols();
+    ctx.channel()
+        .attr(SERVER_CIPHER_SUITES)
+        .set(List.copyOf(serverContextAndIdentity.getKey().cipherSuites()));
+    return serverContextAndIdentity.getKey();
   }
 
   @Override

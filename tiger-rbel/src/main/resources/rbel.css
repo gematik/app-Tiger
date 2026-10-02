@@ -717,3 +717,25 @@ a {
 .has-text-info {
     color: #0fc5d9 !important;
 }
+
+.test-report-metadata-button {
+    white-space: nowrap;
+    color: rgb(2, 154, 207);
+    border: 1px solid rgb(2, 154, 207);
+    line-height: 1.2rem;
+}
+
+.test-report-metadata-button:hover {
+    background: rgb(2, 154, 207);
+    color: #fff;
+}
+
+.rbel-metadata-table .rbel-metadata-key {
+    width: 40%;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.rbel-metadata-table td {
+    word-break: break-all;
+}

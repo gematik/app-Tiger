@@ -34,6 +34,7 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -41,12 +42,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @Slf4j
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = TigerProxyApplication.class,
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 class TestConnectionPooling extends AbstractTigerProxyTest {
 
   @Autowired private TigerProxy tigerProxy;
+
+  @BeforeEach
+  public void clearOldRoutes() {
+    tigerProxy.clearAllRoutes();
+  }
 
   @Test
   void concurrentClientsToSameBackend_shouldNotMixChannels() throws Exception {

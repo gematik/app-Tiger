@@ -116,34 +116,6 @@ stage('Test') {
 }
 ----
 
-=== FE03 Can I run a Docker image or CANOPY without the tiger-cloud-extension?
-
-Yes. Since Tiger 4.3, `tiger-testenv-mgr` ships built-in `docker` and `canopy` server types (Testcontainers-backed, single-container scope). For a docker-compose-style multi-service env or Kubernetes/Helm, keep using `tiger-cloud-extension`; for ad-hoc images and CANOPY DNS interception, the in-tree types are enough.
-
-[source,yaml]
-----
-servers:
-  myProxy:
-    type: tigerProxy
-    tigerProxyConfiguration:
-      adminPort: 9000
-      proxyPort: 9090
-  myCanopy:
-    type: canopy
-    canopy:
-      image: gematik1/tiger-canopy-image:latest
-      # tigerProxyUrl, controlMode and dependsUpon are auto-wired from myProxy
-  app:
-    type: docker
-    docker:
-      image: my-org/my-app:1.2.3
-      exposedPorts: [8080]
-      # dnsServers is auto-prepended with myCanopy's IP; opt out with injectDns: false
-      waitStrategy: { kind: HTTP, httpPath: /health, timeoutSeconds: 60 }
-----
-
-See the `tiger-testenv-mgr` user-manual section "Built-in container server types" for the full configuration schema and the placeholders these types publish.
-
 == Workflow UI
 
 === FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)
