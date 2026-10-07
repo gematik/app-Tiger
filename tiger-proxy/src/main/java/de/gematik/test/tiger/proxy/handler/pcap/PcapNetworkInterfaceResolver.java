@@ -18,8 +18,9 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.lib.pcap;
+package de.gematik.test.tiger.proxy.handler.pcap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -27,17 +28,6 @@ import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.Pcaps;
 
-/**
- * Resolves pcap network interfaces by name, with configurable fallback strategies.
- *
- * <p>Supports (v1 uses first interface only; multi-interface capture reserved for v2):
- * <ul>
- *   <li>Null/empty (default): loopback interface.
- *   <li>Single interface name (e.g. ["eth0"]): find that interface by name.
- *   <li>["*"]: first available non-loopback, fallback to loopback.
- *   <li>Multiple names: logs WARN (not implemented in v1); uses first interface.
- * </ul>
- */
 @Slf4j
 public final class PcapNetworkInterfaceResolver {
 
@@ -49,13 +39,6 @@ public final class PcapNetworkInterfaceResolver {
 
   private static final InterfaceEnumerator DEFAULT_ENUMERATOR = Pcaps::findAllDevs;
 
-  /**
-   * Resolve interface based on config.
-   *
-   * @param interfaceNames null/empty -> loopback, ["*"] -> any, specific names -> that interface.
-   *     Multiple names log a WARN (reserved for v2).
-   * @throws PcapNativeException if interface enumeration fails.
-   */
   public static Optional<PcapNetworkInterface> resolve(List<String> interfaceNames)
       throws PcapNativeException {
     return resolve(interfaceNames, DEFAULT_ENUMERATOR);
@@ -88,13 +71,44 @@ public final class PcapNetworkInterfaceResolver {
     return findByName(devs, primaryInterface);
   }
 
-  private static Optional<PcapNetworkInterface> findLoopback(
-      List<PcapNetworkInterface> devs) {
+  public static List<PcapNetworkInterface> resolveAll(List<String> interfaceNames)
+      throws PcapNativeException {
+    return resolveAll(interfaceNames, DEFAULT_ENUMERATOR);
+  }
+
+  public static List<PcapNetworkInterface> resolveAll(
+      List<String> interfaceNames, InterfaceEnumerator enumerator) throws PcapNativeException {
+    List<PcapNetworkInterface> devs = enumerator.findAllDevs();
+    if (devs == null || devs.isEmpty()) {
+      log.warn("No pcap interfaces found");
+      return List.of();
+    }
+
+    if (interfaceNames == null || interfaceNames.isEmpty()) {
+      return findLoopback(devs).map(List::of).orElse(List.of());
+    }
+
+    if (interfaceNames.size() == 1 && "*".equals(interfaceNames.get(0))) {
+      return findAnyInterface(devs).map(List::of).orElse(List.of());
+    }
+
+    List<PcapNetworkInterface> resolved = new ArrayList<>();
+    for (String name : interfaceNames) {
+      if (name == null || name.isBlank()) {
+        continue;
+      }
+      Optional<PcapNetworkInterface> found =
+          "*".equals(name) ? findAnyInterface(devs) : findByName(devs, name);
+      found.ifPresent(resolved::add);
+    }
+    return resolved;
+  }
+
+  private static Optional<PcapNetworkInterface> findLoopback(List<PcapNetworkInterface> devs) {
     return devs.stream().filter(PcapNetworkInterface::isLoopBack).findFirst();
   }
 
-  private static Optional<PcapNetworkInterface> findAnyInterface(
-      List<PcapNetworkInterface> devs) {
+  private static Optional<PcapNetworkInterface> findAnyInterface(List<PcapNetworkInterface> devs) {
     Optional<PcapNetworkInterface> nonLoopback =
         devs.stream().filter(d -> !d.isLoopBack()).findFirst();
     if (nonLoopback.isPresent()) {

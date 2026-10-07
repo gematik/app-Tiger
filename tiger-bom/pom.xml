@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.4.4</version>
+  <version>4.4.5</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -352,78 +352,78 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-client</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-extension</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.4.4</version>
+        <version>4.4.5</version>
       </dependency>
       <dependency>
         <groupId>dnsjava</groupId>

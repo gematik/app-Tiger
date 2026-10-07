@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -54,6 +56,7 @@ import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -875,6 +878,61 @@ class TigerRemoteProxyClientTest {
           .isLessThan(100);
 
       firstAttempt.join(TimeUnit.SECONDS.toMillis(10));
+    }
+  }
+
+  @Test
+  void reconnectThatFindsTheRemoteStillOffline_shouldKeepRetryingUntilItIsBack()
+      throws IOException {
+    final int remotePort;
+    try (var socket = new ServerSocket(0)) {
+      remotePort = socket.getLocalPort();
+    }
+    try (var client =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + remotePort,
+            TigerProxyConfiguration.builder().connectionTimeoutInSeconds(1).build())) {
+      client.setInitialReconnectBackoff(Duration.ofMillis(100));
+      client.scheduleReconnect(client.getTigerStompSessionHandler());
+      // the first attempt gives up without a remote - it must not be the last one
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(() -> client.getConsecutiveConnectFailures().get() > 0);
+
+      final var remote = new WireMockServer(WireMockConfiguration.options().port(remotePort));
+      remote.start();
+      try {
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(
+                () ->
+                    assertThat(remote.findAll(getRequestedFor(urlPathMatching("/tracing.*"))))
+                        .isNotEmpty());
+      } finally {
+        remote.stop();
+      }
+    }
+  }
+
+  @Test
+  void reconnectWhoseStompConnectFails_shouldBeRescheduled(WireMockRuntimeInfo runtimeInfo) {
+    // WireMock answers /clock, so the remote counts as online, but it has no tracing endpoint
+    try (var client =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + runtimeInfo.getHttpPort(),
+            TigerProxyConfiguration.builder().connectionTimeoutInSeconds(1).build())) {
+      client.setInitialReconnectBackoff(Duration.ofMillis(100));
+      client.scheduleReconnect(client.getTigerStompSessionHandler());
+
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  assertThat(
+                          runtimeInfo
+                              .getWireMock()
+                              .find(getRequestedFor(urlPathMatching("/tracing.*"))))
+                      .hasSizeGreaterThanOrEqualTo(2));
     }
   }
 

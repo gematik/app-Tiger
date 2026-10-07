@@ -38,7 +38,10 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +112,22 @@ class XmlConverterTest {
       assertThat(render).doesNotContain("encoding=&quot;UTF-8&quot;");
     }
     FileUtils.writeStringToFile(new File("target/cleanHtml.html"), render);
+  }
+
+  @Test
+  void nestedXmlWithOtherEncodingThanParent_shouldUseCorrectCharset() {
+    val parent = new RbelElement(new byte[] {}, null, Optional.of(StandardCharsets.UTF_8));
+    val xml =
+        """
+        <?xml version="1.0" encoding="ISO-8859-15"?>
+        <Adresse Ort="München"><Strasse>Lübecker Str.</Strasse></Adresse>"""
+            .getBytes(Charset.forName("ISO-8859-15"));
+
+    val convertedXml = RbelLogger.build().getRbelConverter().convertElement(xml, parent);
+
+    assertThat(convertedXml)
+        .hasStringContentEqualToAtPosition("$.Adresse.Strasse.text", "Lübecker Str.")
+        .hasStringContentEqualToAtPosition("$.Adresse.Ort", "München");
   }
 
   private byte[] wrapInHttpRequestWithContentType(String contentType, String content) {

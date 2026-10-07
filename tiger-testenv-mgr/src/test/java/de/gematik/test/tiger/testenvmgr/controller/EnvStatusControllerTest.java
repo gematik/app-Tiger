@@ -25,17 +25,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
+import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -410,5 +417,409 @@ class EnvStatusControllerTest {
 
     assertThatThrownBy(() -> updateFuture.get(500, TimeUnit.MILLISECONDS))
         .isInstanceOf(TimeoutException.class);
+  }
+
+  @Test
+  void receiveTestEnvUpdate_mergesNewStepsIntoStoredImmutableMap() {
+    EnvStatusController controller =
+        controllerWithScenario(
+            scenarioWithSteps(
+                Map.of("existing", StepUpdate.builder().description("old description").build())));
+
+    ScenarioUpdate update =
+        ScenarioUpdate.builder()
+            .steps(
+                Map.of(
+                    "existing", StepUpdate.builder().tooltip("new tooltip").build(),
+                    "new", StepUpdate.builder().description("new step").build()))
+            .build();
+    controller.receiveTestEnvUpdate(statusUpdate(update));
+
+    Map<String, StepUpdate> steps = scenarioFrom(controller).getSteps();
+    assertThat(steps).containsKeys("existing", "new");
+    assertThat(steps.get("existing").getDescription()).isEqualTo("old description");
+    assertThat(steps.get("existing").getTooltip()).isEqualTo("new tooltip");
+    assertThat(steps.get("new").getDescription()).isEqualTo("new step");
+  }
+
+  @Test
+  void receiveTestEnvUpdate_keepsExistingScenarioValuesWhenUpdateOmitsThem() {
+    ScenarioUpdate existing =
+        ScenarioUpdate.builder()
+            .description("description")
+            .failureMessage("failure")
+            .status(TestResult.FAILED)
+            .exampleKeys(List.of("key"))
+            .exampleList(Map.of("column", "value"))
+            .tags(List.of("tag"))
+            .build();
+    EnvStatusController controller = controllerWithScenario(existing);
+
+    controller.receiveTestEnvUpdate(
+        statusUpdate(
+            ScenarioUpdate.builder()
+                .description("")
+                .failureMessage("")
+                .status(TestResult.UNUSED)
+                .exampleKeys(null)
+                .exampleList(null)
+                .tags(null)
+                .variantIndex(3)
+                .isDryRun(true)
+                .build()));
+
+    ScenarioUpdate actual = scenarioFrom(controller);
+    assertThat(actual.getDescription()).isEqualTo("description");
+    assertThat(actual.getFailureMessage()).isEqualTo("failure");
+    assertThat(actual.getStatus()).isEqualTo(TestResult.FAILED);
+    assertThat(actual.getExampleKeys()).containsExactly("key");
+    assertThat(actual.getExampleList()).containsEntry("column", "value");
+    assertThat(actual.getTags()).containsExactly("tag");
+    assertThat(actual.getVariantIndex()).isEqualTo(3);
+    assertThat(actual.isDryRun()).isTrue();
+  }
+
+  @Test
+  void receiveTestEnvUpdate_updatesScenarioStatusAndFailureMessage() {
+    EnvStatusController controller =
+        controllerWithScenario(ScenarioUpdate.builder().status(TestResult.EXECUTING).build());
+
+    controller.receiveTestEnvUpdate(
+        statusUpdate(
+            ScenarioUpdate.builder()
+                .status(TestResult.FAILED)
+                .failureMessage("scenario failed")
+                .build()));
+
+    ScenarioUpdate actual = scenarioFrom(controller);
+    assertThat(actual.getStatus()).isEqualTo(TestResult.FAILED);
+    assertThat(actual.getFailureMessage()).isEqualTo("scenario failed");
+  }
+
+  @Test
+  void receiveTestEnvUpdate_mergesFailureMetadataAndNestedSteps() {
+    StepUpdate failedStep =
+        StepUpdate.builder()
+            .status(TestResult.FAILED)
+            .failureMessage("old failure")
+            .failureStacktrace("old stack")
+            .rbelMetaData(null)
+            .subSteps(
+                new ArrayList<>(
+                    List.of(
+                        StepUpdate.builder()
+                            .status(TestResult.FAILED)
+                            .description("old child")
+                            .build())))
+            .build();
+    EnvStatusController controller =
+        controllerWithScenario(scenarioWithSteps(Map.of("step", failedStep)));
+
+    StepUpdate update =
+        StepUpdate.builder()
+            .status(TestResult.FAILED)
+            .failureMessage("new failure")
+            .failureStacktrace("new stack")
+            .rbelMetaData(List.of(MessageMetaDataDto.builder().uuid("message").build()))
+            .subSteps(
+                List.of(
+                    StepUpdate.builder()
+                        .status(TestResult.PASSED)
+                        .description("updated child")
+                        .build(),
+                    StepUpdate.builder().description("new child").build()))
+            .build();
+    controller.receiveTestEnvUpdate(statusUpdate(scenarioWithSteps(Map.of("step", update))));
+
+    StepUpdate actual = scenarioFrom(controller).getSteps().get("step");
+    assertThat(actual.getFailureMessage()).isEqualTo("new failure");
+    assertThat(actual.getFailureStacktrace()).isEqualTo("new stack");
+    assertThat(actual.getRbelMetaData())
+        .extracting(MessageMetaDataDto::getUuid)
+        .containsExactly("message");
+    assertThat(actual.getSubSteps())
+        .extracting(StepUpdate::getDescription)
+        .containsExactly("updated child", "new child");
+    assertThat(actual.getSubSteps().get(0).getStatus()).isEqualTo(TestResult.PASSED);
+  }
+
+  @Test
+  void receiveTestEnvUpdate_addsScenarioToExistingFeature() {
+    EnvStatusController controller =
+        controllerWithScenario(ScenarioUpdate.builder().description("existing").build());
+    FeatureUpdate featureUpdate =
+        FeatureUpdate.builder()
+            .scenarios(
+                linkedMap("new-scenario", ScenarioUpdate.builder().description("new").build()))
+            .build();
+
+    controller.receiveTestEnvUpdate(
+        TigerStatusUpdate.builder().featureMap(linkedMap("feature", featureUpdate)).build());
+
+    Map<String, ScenarioUpdate> scenarios =
+        controller.getStatus().getFeatureMap().get("feature").getScenarios();
+    assertThat(scenarios).containsKeys("scenario", "new-scenario");
+    assertThat(scenarios.get("new-scenario").getDescription()).isEqualTo("new");
+  }
+
+  @Test
+  void receiveTestEnvUpdate_keepsFailureDetailsWhenIncomingFailureFieldsAreBlank() {
+    StepUpdate failedStep =
+        StepUpdate.builder()
+            .status(TestResult.FAILED)
+            .failureMessage("failure")
+            .failureStacktrace("stack")
+            .mismatchNotes(java.util.Set.of())
+            .build();
+    EnvStatusController controller =
+        controllerWithScenario(scenarioWithSteps(Map.of("step", failedStep)));
+    StepUpdate blankFailureUpdate =
+        StepUpdate.builder()
+            .status(TestResult.FAILED)
+            .failureMessage("")
+            .failureStacktrace(" ")
+            .mismatchNotes(null)
+            .rbelMetaData(null)
+            .build();
+
+    controller.receiveTestEnvUpdate(
+        statusUpdate(scenarioWithSteps(Map.of("step", blankFailureUpdate))));
+
+    StepUpdate actual = scenarioFrom(controller).getSteps().get("step");
+    assertThat(actual.getFailureMessage()).isEqualTo("failure");
+    assertThat(actual.getFailureStacktrace()).isEqualTo("stack");
+    assertThat(actual.getMismatchNotes()).isEmpty();
+  }
+
+  @Test
+  void receiveTestEnvUpdate_updatesStepDescriptionWhenIncomingStatusIsNull() {
+    StepUpdate existing =
+        StepUpdate.builder().status(TestResult.PASSED).description("before").build();
+    EnvStatusController controller =
+        controllerWithScenario(scenarioWithSteps(Map.of("step", existing)));
+    StepUpdate descriptionOnlyUpdate =
+        StepUpdate.builder().description("after").status(null).rbelMetaData(null).build();
+
+    controller.receiveTestEnvUpdate(
+        statusUpdate(scenarioWithSteps(Map.of("step", descriptionOnlyUpdate))));
+
+    StepUpdate actual = scenarioFrom(controller).getSteps().get("step");
+    assertThat(actual.getDescription()).isEqualTo("after");
+    assertThat(actual.getStatus()).isEqualTo(TestResult.PASSED);
+  }
+
+  @Test
+  void receiveTestEnvUpdate_clearsFailureAndSubstepsForPassingAndPendingUpdates() {
+    StepUpdate passingStep =
+        StepUpdate.builder()
+            .status(TestResult.FAILED)
+            .failureMessage("failure")
+            .failureStacktrace("stack")
+            .subSteps(new ArrayList<>(List.of(StepUpdate.builder().description("remove").build())))
+            .build();
+    StepUpdate pendingStep =
+        StepUpdate.builder()
+            .status(TestResult.EXECUTING)
+            .subSteps(new ArrayList<>(List.of(StepUpdate.builder().description("remove").build())))
+            .build();
+    EnvStatusController controller =
+        controllerWithScenario(
+            scenarioWithSteps(Map.of("passing", passingStep, "pending", pendingStep)));
+
+    controller.receiveTestEnvUpdate(
+        statusUpdate(
+            scenarioWithSteps(
+                Map.of(
+                    "passing", StepUpdate.builder().status(TestResult.PASSED).build(),
+                    "pending", StepUpdate.builder().status(TestResult.PENDING).build()))));
+
+    ScenarioUpdate actual = scenarioFrom(controller);
+    assertThat(actual.getSteps().get("passing").getFailureMessage()).isNull();
+    assertThat(actual.getSteps().get("passing").getFailureStacktrace()).isNull();
+    assertThat(actual.getSteps().get("pending").getSubSteps()).isEmpty();
+  }
+
+  @Test
+  void receiveTestEnvUpdate_updatesServerBannerLifecycleAndOnlyAdvancesIndex() {
+    EnvStatusController controller =
+        new EnvStatusController(
+            mock(TigerTestEnvMgr.class), mock(TigerBuildPropertiesService.class));
+    TigerServerStatusUpdate starting =
+        TigerServerStatusUpdate.builder()
+            .status(TigerServerStatus.RUNNING)
+            .type("docker")
+            .baseUrl("http://localhost")
+            .statusMessage("started")
+            .build();
+    TigerStatusUpdate first =
+        TigerStatusUpdate.builder()
+            .serverUpdate(linkedMap("server", starting))
+            .bannerMessage("ready")
+            .bannerColor("green")
+            .bannerType(BannerType.MESSAGE)
+            .bannerDetails(new TigerStatusUpdate.BannerDetails("details"))
+            .bannerIsHtml(true)
+            .testSuiteLifecycle(TestSuiteLifecycle.EXECUTING_TESTS)
+            .build();
+    first.setIndex(10);
+    controller.receiveTestEnvUpdate(first);
+
+    TigerStatusUpdate refresh =
+        TigerStatusUpdate.builder()
+            .serverUpdate(
+                linkedMap(
+                    "server", TigerServerStatusUpdate.builder().statusMessage("healthy").build()))
+            .build();
+    refresh.setIndex(9);
+    controller.receiveTestEnvUpdate(refresh);
+
+    var status = controller.getStatus();
+    assertThat(status.getCurrentIndex()).isEqualTo(10);
+    assertThat(status.getTestSuiteLifecycle()).isEqualTo(TestSuiteLifecycle.EXECUTING_TESTS);
+    assertThat(status.getBannerMessage()).isEqualTo("ready");
+    assertThat(status.getBannerColor()).isEqualTo("green");
+    assertThat(status.getBannerDetails().getDetailedMessage()).isEqualTo("details");
+    assertThat(status.isBannerIsHtml()).isTrue();
+    assertThat(status.getServers().get("server"))
+        .hasFieldOrPropertyWithValue("status", TigerServerStatus.RUNNING)
+        .hasFieldOrPropertyWithValue("type", "docker")
+        .hasFieldOrPropertyWithValue("baseUrl", "http://localhost")
+        .hasFieldOrPropertyWithValue("statusMessage", "healthy")
+        .hasFieldOrPropertyWithValue("statusUpdates", List.of("started", "healthy"));
+  }
+
+  @Test
+  void receiveTestEnvUpdate_marksMatchingMessageMetadataAsRemoved() {
+    StepUpdate step =
+        StepUpdate.builder()
+            .rbelMetaData(
+                List.of(
+                    MessageMetaDataDto.builder().uuid("remove-me").build(),
+                    MessageMetaDataDto.builder().uuid("keep-me").build()))
+            .build();
+    EnvStatusController controller =
+        controllerWithScenario(scenarioWithSteps(Map.of("step", step)));
+
+    controller.receiveTestEnvUpdate(
+        TigerStatusUpdate.builder().removedMessageUuids(List.of("remove-me")).build());
+
+    List<MessageMetaDataDto> metadata =
+        scenarioFrom(controller).getSteps().get("step").getRbelMetaData();
+    assertThat(metadata).extracting(MessageMetaDataDto::isRemoved).containsExactly(true, false);
+  }
+
+  @Test
+  void receiveTestEnvUpdate_skipsInvalidFeatureAndContinuesWithNext() {
+    TigerTestEnvMgr envMgr = mock(TigerTestEnvMgr.class);
+    EnvStatusController controller =
+        new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
+    FeatureUpdate validFeature =
+        FeatureUpdate.builder()
+            .scenarios(linkedMap("scenario", ScenarioUpdate.builder().build()))
+            .build();
+    controller.receiveTestEnvUpdate(
+        TigerStatusUpdate.builder().featureMap(linkedMap("feature", validFeature)).build());
+
+    FeatureUpdate invalidFeature = FeatureUpdate.builder().status(TestResult.PASSED).build();
+    FeatureUpdate additionalFeature = FeatureUpdate.builder().build();
+    LinkedHashMap<String, FeatureUpdate> featureUpdates = linkedMap("feature", invalidFeature);
+    featureUpdates.put("additional", additionalFeature);
+    TigerStatusUpdate partialUpdate =
+        TigerStatusUpdate.builder()
+            .featureMap(featureUpdates)
+            .removedMessageUuids(List.of())
+            .build();
+    controller.receiveTestEnvUpdate(partialUpdate);
+
+    assertThat(controller.getStatus().getFeatureMap()).containsKey("additional");
+    assertThat(controller.getStatus().getFeatureMap().get("feature").getStatus())
+        .isEqualTo(TestResult.PASSED);
+    assertThat(controller.getStatus().getCurrentIndex()).isEqualTo(partialUpdate.getIndex());
+  }
+
+  @Test
+  void receiveTestEnvUpdate_ignoresUpdateWithNullFeatureMap() {
+    EnvStatusController controller =
+        new EnvStatusController(
+            mock(TigerTestEnvMgr.class), mock(TigerBuildPropertiesService.class));
+    TigerStatusUpdate update = mock(TigerStatusUpdate.class);
+    when(update.getFeatureMap()).thenReturn(null);
+
+    controller.receiveTestEnvUpdate(update);
+    assertThat(controller.getStatus().getFeatureMap()).isEmpty();
+  }
+
+  @Test
+  void getStatus_marksThatWorkflowUiFetchedStatus() {
+    TigerTestEnvMgr envMgr = mock(TigerTestEnvMgr.class);
+    EnvStatusController controller =
+        new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
+
+    assertThat(controller.getStatus()).isNotNull();
+    verify(envMgr).setWorkflowUiSentFetch(true);
+  }
+
+  @Test
+  void confirmationEndpointsDelegateToEnvironmentManager() {
+    TigerTestEnvMgr envMgr = mock(TigerTestEnvMgr.class);
+    EnvStatusController controller =
+        new EnvStatusController(envMgr, mock(TigerBuildPropertiesService.class));
+
+    controller.getConfirmShutdown();
+    controller.getConfirmContinueExecution();
+    controller.getConfirmToFailExecution();
+
+    verify(envMgr).receivedQuitConfirmationFromWorkflowUi();
+    verify(envMgr).receivedConfirmationFromWorkflowUi(false);
+    verify(envMgr).receivedConfirmationFromWorkflowUi(true);
+    verifyFailBannerWasSent(envMgr);
+  }
+
+  @Test
+  void buildEndpointsReturnBuildProperties() {
+    TigerTestEnvMgr envMgr = mock(TigerTestEnvMgr.class);
+    TigerBuildPropertiesService buildProperties = mock(TigerBuildPropertiesService.class);
+    when(buildProperties.tigerVersionAsString()).thenReturn("version");
+    when(buildProperties.tigerBuildDateAsString()).thenReturn("build-date");
+    EnvStatusController controller = new EnvStatusController(envMgr, buildProperties);
+
+    assertThat(controller.getTigerVersion()).isEqualTo("version");
+    assertThat(controller.getBuildDate()).isEqualTo("build-date");
+  }
+
+  private static EnvStatusController controllerWithScenario(ScenarioUpdate scenario) {
+    EnvStatusController controller =
+        new EnvStatusController(
+            mock(TigerTestEnvMgr.class), mock(TigerBuildPropertiesService.class));
+    controller.receiveTestEnvUpdate(statusUpdate(scenario));
+    return controller;
+  }
+
+  private static ScenarioUpdate scenarioWithSteps(Map<String, StepUpdate> steps) {
+    return ScenarioUpdate.builder().steps(steps).build();
+  }
+
+  private static ScenarioUpdate scenarioFrom(EnvStatusController controller) {
+    return controller.getStatus().getFeatureMap().get("feature").getScenarios().get("scenario");
+  }
+
+  private static TigerStatusUpdate statusUpdate(ScenarioUpdate scenario) {
+    FeatureUpdate feature =
+        FeatureUpdate.builder().scenarios(linkedMap("scenario", scenario)).build();
+    return TigerStatusUpdate.builder().featureMap(linkedMap("feature", feature)).build();
+  }
+
+  private static void verifyFailBannerWasSent(TigerTestEnvMgr envMgr) {
+    ArgumentCaptor<TigerStatusUpdate> updateCaptor =
+        ArgumentCaptor.forClass(TigerStatusUpdate.class);
+    verify(envMgr).receiveTestEnvUpdate(updateCaptor.capture());
+    assertThat(updateCaptor.getValue().getBannerMessage()).isEqualTo("Failing test run");
+    assertThat(updateCaptor.getValue().getBannerColor()).isEqualTo("red");
+  }
+
+  private static <T> LinkedHashMap<String, T> linkedMap(String key, T value) {
+    LinkedHashMap<String, T> result = new LinkedHashMap<>();
+    result.put(key, value);
+    return result;
   }
 }

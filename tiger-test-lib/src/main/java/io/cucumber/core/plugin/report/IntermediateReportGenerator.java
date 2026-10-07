@@ -24,6 +24,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.pcap.PcapMergeQueue;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -167,6 +168,7 @@ public class IntermediateReportGenerator {
         // Just small delay for stabilization - rely on copy retry logic for file locking
         Thread.sleep(200);
 
+        PcapMergeQueue.getInstance().awaitAll();
         generateReportWithTimeout();
       } else {
         log.debug(

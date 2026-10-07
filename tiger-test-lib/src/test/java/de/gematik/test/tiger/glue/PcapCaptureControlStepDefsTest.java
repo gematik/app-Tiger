@@ -22,7 +22,8 @@ package de.gematik.test.tiger.glue;
 
 import static org.mockito.Mockito.*;
 
-import de.gematik.test.tiger.lib.pcap.TigerPcapCaptureService;
+import de.gematik.test.tiger.lib.pcap.RemotePcapCoordinator;
+import de.gematik.test.tiger.lib.pcap.ScenarioPcapCaptureService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,18 +33,19 @@ import org.junit.jupiter.api.Test;
 class PcapCaptureControlStepDefsTest {
 
   private PcapCaptureControlStepDefs stepDefs;
-  private TigerPcapCaptureService mockService;
+  private ScenarioPcapCaptureService mockService;
 
   @BeforeEach
   void setUp() {
     stepDefs = new PcapCaptureControlStepDefs();
-    mockService = mock(TigerPcapCaptureService.class);
-    TigerPcapCaptureService.setInstance(mockService);
+    mockService = mock(ScenarioPcapCaptureService.class);
+    ScenarioPcapCaptureService.setInstance(mockService);
   }
 
   @AfterEach
   void tearDown() {
-    TigerPcapCaptureService.setInstance(null);
+    ScenarioPcapCaptureService.setInstance(null);
+    RemotePcapCoordinator.setInstance(null);
   }
 
   @Test
@@ -63,14 +65,38 @@ class PcapCaptureControlStepDefsTest {
   @Test
   @DisplayName("Suspend handles null service gracefully")
   void suspendHandlesNullService() {
-    TigerPcapCaptureService.setInstance(null);
+    ScenarioPcapCaptureService.setInstance(null);
     stepDefs.suspendPcapCapture(); // Should not throw
   }
 
   @Test
   @DisplayName("Resume handles null service gracefully")
   void resumeHandlesNullService() {
-    TigerPcapCaptureService.setInstance(null);
+    ScenarioPcapCaptureService.setInstance(null);
     stepDefs.resumePcapCapture(); // Should not throw
+  }
+
+  @Test
+  @DisplayName("Suspend step also calls coordinator.suspend() when remote capture is configured")
+  void suspendAlsoCallsRemoteCoordinator() {
+    RemotePcapCoordinator mockCoordinator = mock(RemotePcapCoordinator.class);
+    RemotePcapCoordinator.setInstance(mockCoordinator);
+
+    stepDefs.suspendPcapCapture();
+
+    verify(mockService).suspend();
+    verify(mockCoordinator).suspend();
+  }
+
+  @Test
+  @DisplayName("Resume step also calls coordinator.resume() when remote capture is configured")
+  void resumeAlsoCallsRemoteCoordinator() {
+    RemotePcapCoordinator mockCoordinator = mock(RemotePcapCoordinator.class);
+    RemotePcapCoordinator.setInstance(mockCoordinator);
+
+    stepDefs.resumePcapCapture();
+
+    verify(mockService).resume();
+    verify(mockCoordinator).resume();
   }
 }

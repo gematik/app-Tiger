@@ -207,6 +207,8 @@
         <Tabs v-model:value="selectedTab">
           <nav class="navbar navbar-expand-lg">
             <div class="container-fluid">
+              <div class="navbar-nav justify-content-start"></div>
+
               <TabList
                 unstyled
                 class="navbar-nav execution-pane-nav justify-content-between"

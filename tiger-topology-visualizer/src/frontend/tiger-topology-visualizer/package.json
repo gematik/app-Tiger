@@ -41,7 +41,7 @@
     "elkjs": "0.12.0",
     "pinia": "4.0.3",
     "primevue": "4.5.5",
-    "vue": "3.5.41",
+    "vue": "3.5.43",
     "yaml": "2.9.0"
   },
   "devDependencies": {
@@ -50,7 +50,7 @@
     "@vue/eslint-config-prettier": "10.2.0",
     "@vue/eslint-config-typescript": "14.9.0",
     "@vue/tsconfig": "0.9.1",
-    "eslint": "10.9.1",
+    "eslint": "10.11.0",
     "eslint-plugin-vue": "10.10.0",
     "jiti": "2.7.0",
     "prettier": "3.9.6",

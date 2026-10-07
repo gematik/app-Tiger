@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.lib.pcap;
+package de.gematik.test.tiger.proxy.handler.pcap;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -176,5 +176,80 @@ class PcapNetworkInterfaceResolverTest {
         PcapNetworkInterfaceResolver.resolve(List.of("eth0"), mockEnumerator);
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  @DisplayName("resolveAll with multiple names resolves every one of them")
+  void resolveAllMultipleNamesResolvesEveryOne() throws PcapNativeException {
+    when(mockEth0.getName()).thenReturn("eth0");
+    when(mockEth1.getName()).thenReturn("eth1");
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of(mockEth0, mockEth1, mockLoopback));
+
+    List<PcapNetworkInterface> result =
+        PcapNetworkInterfaceResolver.resolveAll(List.of("eth0", "eth1"), mockEnumerator);
+
+    assertThat(result).containsExactly(mockEth0, mockEth1);
+  }
+
+  @Test
+  @DisplayName("resolveAll skips a name that doesn't resolve, keeping the rest")
+  void resolveAllSkipsUnresolvableNameGracefully() throws PcapNativeException {
+    when(mockEth0.getName()).thenReturn("eth0");
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of(mockEth0));
+
+    List<PcapNetworkInterface> result =
+        PcapNetworkInterfaceResolver.resolveAll(List.of("eth0", "does-not-exist"), mockEnumerator);
+
+    assertThat(result).containsExactly(mockEth0);
+  }
+
+  @Test
+  @DisplayName("resolveAll with three interfaces (arbitrary N) resolves all three")
+  void resolveAllArbitraryCountResolvesAll() throws PcapNativeException {
+    PcapNetworkInterface mockEth2 = mock(PcapNetworkInterface.class);
+    when(mockEth0.getName()).thenReturn("eth0");
+    when(mockEth1.getName()).thenReturn("eth1");
+    when(mockEth2.getName()).thenReturn("eth2");
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of(mockEth0, mockEth1, mockEth2));
+
+    List<PcapNetworkInterface> result =
+        PcapNetworkInterfaceResolver.resolveAll(List.of("eth0", "eth1", "eth2"), mockEnumerator);
+
+    assertThat(result).containsExactly(mockEth0, mockEth1, mockEth2);
+  }
+
+  @Test
+  @DisplayName("resolveAll with null/empty names resolves to just the loopback")
+  void resolveAllDefaultsToLoopback() throws PcapNativeException {
+    when(mockLoopback.isLoopBack()).thenReturn(true);
+    when(mockEth0.isLoopBack()).thenReturn(false);
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of(mockEth0, mockLoopback));
+
+    assertThat(PcapNetworkInterfaceResolver.resolveAll(null, mockEnumerator))
+        .containsExactly(mockLoopback);
+    assertThat(PcapNetworkInterfaceResolver.resolveAll(List.of(), mockEnumerator))
+        .containsExactly(mockLoopback);
+  }
+
+  @Test
+  @DisplayName("resolveAll with no devices returns an empty list")
+  void resolveAllNoDevicesReturnsEmptyList() throws PcapNativeException {
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of());
+
+    assertThat(PcapNetworkInterfaceResolver.resolveAll(List.of("eth0", "eth1"), mockEnumerator))
+        .isEmpty();
+  }
+
+  @Test
+  @DisplayName("resolveAll with wildcard '*' resolves to a single interface")
+  void resolveAllWildcardResolvesToSingleInterface() throws PcapNativeException {
+    when(mockEth0.isLoopBack()).thenReturn(false);
+    when(mockLoopback.isLoopBack()).thenReturn(true);
+    when(mockEnumerator.findAllDevs()).thenReturn(List.of(mockEth0, mockLoopback));
+
+    List<PcapNetworkInterface> result =
+        PcapNetworkInterfaceResolver.resolveAll(List.of("*"), mockEnumerator);
+
+    assertThat(result).containsExactly(mockEth0);
   }
 }

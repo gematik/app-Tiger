@@ -134,6 +134,14 @@ public class TigerProxyConfiguration {
    */
   @Builder.Default private String proxiedServerProtocol = null;
 
+  /**
+   * In-process pcap capture on this proxy, controlled through the {@code /pcap/admin/*} API. The
+   * block's presence opts the proxy in to remote capture (without it, {@code /start} answers 403);
+   * an empty block ({@code pcapCapture: {}}) is enough. It also limits what callers may ask for,
+   * and is the fallback for callers that send no settings.
+   */
+  private PcapCaptureConfiguration pcapCapture;
+
   @JsonIgnore
   public Integer[] getPortAsArray() {
     if (additionalProxyPorts.isEmpty()) {

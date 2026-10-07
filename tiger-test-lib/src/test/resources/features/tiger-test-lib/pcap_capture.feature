@@ -12,18 +12,19 @@ Feature: PCAP Capture per Testcase
   Scenario: Generate pcap file per testcase with splitByTestcase enabled
     And a Tiger proxy is running
     When I send a request through the proxy to local httpbin
+    And this scenario's capture is finished
     Then a pcapng file should exist in "target/evidences" for this scenario
     And the pcapng file should contain at least one TCP packet
     And the pcapng file should be valid pcapng format
 
   @FullTests
   @PcapCapture
-  Scenario: Capture preserves testcase boundaries
+  Scenario: Traffic after a testcase's capture is finished does not end up in its file
     And a Tiger proxy is running
     When I send a first request through the proxy to local httpbin
-    And I wait for the first testcase to finish
-    Then the first pcapng file should exist in "target/evidences"
-    And the first pcapng file should contain only the first testcase's traffic
+    And this scenario's capture is finished
+    And I send a second request through the proxy to local httpbin
+    Then the finished capture file should not have grown
 
   @PcapCapture
   Scenario: Gracefully disable capture when native lib is unavailable

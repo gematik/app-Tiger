@@ -20,33 +20,50 @@
  */
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.lib.pcap.TigerPcapCaptureService;
+import de.gematik.test.tiger.lib.pcap.RemotePcapCoordinator;
+import de.gematik.test.tiger.lib.pcap.ScenarioPcapCaptureService;
 import io.cucumber.java.en.When;
 import lombok.extern.slf4j.Slf4j;
 
-/** Cucumber step definitions for controlling pcap capture during test execution. */
+/** Steps to suspend and resume the local capture and this scenario's remote proxy captures. */
 @Slf4j
 public class PcapCaptureControlStepDefs {
 
   @When("PCAP capture is suspended")
   public void suspendPcapCapture() {
-    TigerPcapCaptureService service = TigerPcapCaptureService.getInstance();
-    if (service == null) {
-      log.warn("Pcap capture service not initialized; skipping suspend");
-      return;
+    ScenarioPcapCaptureService service = ScenarioPcapCaptureService.getInstance();
+    if (service != null) {
+      service.suspend();
+      log.info("Pcap capture suspended (local)");
     }
-    service.suspend();
-    log.info("Pcap capture suspended");
+
+    RemotePcapCoordinator coordinator = RemotePcapCoordinator.getInstance();
+    if (coordinator != null) {
+      coordinator.suspend();
+      log.info("Pcap capture suspended (remote)");
+    }
+
+    if (service == null && coordinator == null) {
+      log.warn("Pcap capture not initialized; skipping suspend");
+    }
   }
 
   @When("PCAP capture resumes")
   public void resumePcapCapture() {
-    TigerPcapCaptureService service = TigerPcapCaptureService.getInstance();
-    if (service == null) {
-      log.warn("Pcap capture service not initialized; skipping resume");
-      return;
+    ScenarioPcapCaptureService service = ScenarioPcapCaptureService.getInstance();
+    if (service != null) {
+      service.resume();
+      log.info("Pcap capture resumed (local)");
     }
-    service.resume();
-    log.info("Pcap capture resumed");
+
+    RemotePcapCoordinator coordinator = RemotePcapCoordinator.getInstance();
+    if (coordinator != null) {
+      coordinator.resume();
+      log.info("Pcap capture resumed (remote)");
+    }
+
+    if (service == null && coordinator == null) {
+      log.warn("Pcap capture not initialized; skipping resume");
+    }
   }
 }
