@@ -27,12 +27,14 @@ import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.config.PasswordHidingObjectMapperConfig;
+import de.gematik.test.tiger.proxy.controller.PcapAdminController;
 import de.gematik.test.tiger.proxy.controller.RbelContentConverter;
 import de.gematik.test.tiger.proxy.controller.TigerConfigurationController;
 import de.gematik.test.tiger.proxy.controller.TigerModificationController;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.controller.TracingpointsController;
 import de.gematik.test.tiger.proxy.controller.TrafficPushController;
+import de.gematik.test.tiger.proxy.handler.pcap.PcapCaptureHandlerImpl;
 import de.gematik.test.tiger.proxy.tracing.TracingEndpointConfiguration;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
@@ -64,6 +66,8 @@ import tools.jackson.databind.module.SimpleModule;
   TigerWebUiController.class,
   TracingpointsController.class,
   TrafficPushController.class,
+  PcapAdminController.class,
+  PcapCaptureHandlerImpl.class,
   ServerHeaderFilter.class,
   TigerProxyConfigurator.class,
   TigerProxyHealthIndicator.class,

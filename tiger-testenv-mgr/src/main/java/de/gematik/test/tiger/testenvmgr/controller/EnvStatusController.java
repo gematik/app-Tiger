@@ -29,6 +29,7 @@ import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -160,6 +161,8 @@ public class EnvStatusController implements TigerUpdateListener {
   }
 
   private static void fillInStepData(ScenarioUpdate scenarioUpdate, ScenarioUpdate scenario) {
+    Map<String, StepUpdate> steps = new HashMap<>(scenario.getSteps());
+    scenario.setSteps(steps);
     scenarioUpdate
         .getSteps()
         .forEach(
@@ -268,28 +271,26 @@ public class EnvStatusController implements TigerUpdateListener {
       tigerEnvStatus.getFeatureMap().values().stream()
           .takeWhile(moreToBeFound)
           .forEach(
-              feature -> {
-                feature.getScenarios().values().stream()
-                    .takeWhile(moreToBeFound)
-                    .forEach(
-                        scenario -> {
-                          scenario.getSteps().values().stream()
-                              .takeWhile(moreToBeFound)
-                              .forEach(
-                                  step -> {
-                                    step.getRbelMetaData().stream()
-                                        .takeWhile(moreToBeFound)
-                                        .filter(
-                                            metaData ->
-                                                removedMessageUuids.contains(metaData.getUuid()))
-                                        .forEach(
-                                            metaData -> {
-                                              metaData.setRemoved(true);
-                                              toBeMarked.addAndGet(-1);
-                                            });
-                                  });
-                        });
-              });
+              feature ->
+                  feature.getScenarios().values().stream()
+                      .takeWhile(moreToBeFound)
+                      .forEach(
+                          scenario ->
+                              scenario.getSteps().values().stream()
+                                  .takeWhile(moreToBeFound)
+                                  .forEach(
+                                      step ->
+                                          step.getRbelMetaData().stream()
+                                              .takeWhile(moreToBeFound)
+                                              .filter(
+                                                  metaData ->
+                                                      removedMessageUuids.contains(
+                                                          metaData.getUuid()))
+                                              .forEach(
+                                                  metaData -> {
+                                                    metaData.setRemoved(true);
+                                                    toBeMarked.addAndGet(-1);
+                                                  }))));
     }
   }
 

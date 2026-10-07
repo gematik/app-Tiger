@@ -21,52 +21,63 @@
 package de.gematik.test.tiger.lib.pcap;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.*;
 
+import de.gematik.test.tiger.proxy.handler.pcap.PcapPacketDumper;
+import de.gematik.test.tiger.testutils.pcap.FakePcapNetwork;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.pcap4j.core.NotOpenException;
-import org.pcap4j.packet.Packet;
 
-/**
- * Unit tests for {@code TigerPcapCaptureService}. Primarily focused on error handling and graceful
- * degradation when native pcap library is unavailable (which is the common case on CI without
- * libpcap installed).
- *
- * <p>Functional tests that actually capture packets are gated behind system properties and
- * integration test tags.
- */
-@DisplayName("TigerPcapCaptureService")
-class TigerPcapCaptureServiceTest {
+@DisplayName("ScenarioPcapCaptureService")
+class ScenarioPcapCaptureServiceTest {
+
+  private static final byte[] RAW_PACKET = {1, 2, 3};
+  private static final Timestamp CAPTURED_AT = new Timestamp(1_700_000_000_000L);
 
   @TempDir private Path tempDir;
-  private TigerPcapCaptureService service;
+  private final FakePcapNetwork network = new FakePcapNetwork("fake-eth0");
+  private ScenarioPcapCaptureService service;
 
   @BeforeEach
   void setUp() {
-    service = new TigerPcapCaptureService(64, 16 * 1024);
+    service = new FakeNetworkScenarioService(network);
+  }
+
+  @AfterEach
+  void stopTheService() {
+    service.stop();
   }
 
   @Test
   @DisplayName("Service gracefully disables when native lib is unavailable")
-  @EnabledIfSystemProperty(named = "pcap.skip-if-unavailable", matches = "true")
   void serviceDisablesWhenNativeLibUnavailable() {
-    // This test only runs if the native lib is expected to be unavailable.
-    service.start(Set.of(8080, 9090));
-    // Service should remain disabled (enabled=false), not throw.
-    assertThat(service.isEnabled()).isFalse();
+    ScenarioPcapCaptureService withoutLibrary =
+        new FakeNetworkScenarioService(network) {
+          @Override
+          protected java.util.List<org.pcap4j.core.PcapNetworkInterface> resolveInterfaces(
+              java.util.List<String> names) {
+            throw new NoClassDefFoundError("Could not initialize class org.pcap4j.core.Pcaps");
+          }
+        };
+
+    assertThatCode(() -> withoutLibrary.start(Set.of(8080, 9090))).doesNotThrowAnyException();
+
+    assertThat(withoutLibrary.isEnabled()).isFalse();
   }
 
   @Test
@@ -169,10 +180,29 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("Suspend sets enabled to false")
   void suspendDisablesCapture() {
     service.start(Set.of(8080, 9090));
-    if (service.isEnabled()) {
-      service.suspend();
-      assertThat(service.isEnabled()).isFalse();
-    }
+    assertThat(service.isEnabled()).isTrue();
+
+    service.suspend();
+
+    assertThat(service.isEnabled()).isFalse();
+  }
+
+  @Test
+  @DisplayName("start() opens N interfaces simultaneously; capture doesn't special-case the count")
+  void start_multipleInterfaces_capturesOnAllOfThem() {
+    // Two interfaces: two CaptureSources and two reader threads, both fanning into one dumper
+    // group.
+    service.setInterfaceNames(java.util.List.of(FakePcapNetwork.LOOPBACK, "fake-eth0"));
+
+    service.start(Set.of(8080));
+
+    assertThat(service.isEnabled()).isTrue();
+    assertThat(network.opened())
+        .extracting(FakePcapNetwork.OpenedHandle::interfaceName)
+        .containsExactly(FakePcapNetwork.LOOPBACK, "fake-eth0");
+    assertThatCode(() -> service.rotate(tempDir.resolve("multi.pcapng")))
+        .doesNotThrowAnyException();
+    assertThat(service.isEnabled()).isTrue();
   }
 
   @Test
@@ -180,11 +210,8 @@ class TigerPcapCaptureServiceTest {
   void rotate_stillClosesPreviousDumperWhenReplacementFailsToOpen() throws Exception {
     Path firstFile = tempDir.resolve("first.pcapng");
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return; // native lib unavailable on this machine; nothing to verify
-    }
+    assertThat(service.isEnabled()).isTrue();
     service.rotate(firstFile);
-    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> Files.exists(firstFile));
 
     // Parent path is a plain file, not a directory, so open() fails deterministically.
     Path unwritableParent = tempDir.resolve("not-a-directory");
@@ -193,6 +220,8 @@ class TigerPcapCaptureServiceTest {
 
     service.rotate(secondFile);
 
+    // firstFile only materializes once its group is closed — which the second rotate() call
+    // above does as a side effect, before it fails to open the replacement.
     assertThat(service.isEnabled()).as("a failed rotate() disables capture").isFalse();
     assertThat(service.getCurrentDumperPacketCount())
         .as("the failed rotate() must not leave currentDumper pointing at the old dumper")
@@ -203,19 +232,16 @@ class TigerPcapCaptureServiceTest {
   }
 
   @Test
-  @DisplayName("dumpPacket does not signal a break when the dumper was closed concurrently")
-  void dumpPacket_dumperClosedConcurrently_doesNotBreakCaptureLoop() {
+  @DisplayName("dumpPacket swallows a dumper closed concurrently and reports nothing written")
+  void dumpPacket_dumperClosedConcurrently_isSwallowed() {
     PcapPacketDumper dumper = mock(PcapPacketDumper.class);
     doThrow(new RuntimeException(new NotOpenException("closed by concurrent rotate()")))
         .when(dumper)
-        .dump(any(Packet.class));
+        .dumpRaw(any(byte[].class), any(Timestamp.class));
 
-    TigerPcapCaptureService.ProcessResult result = service.dumpPacket(dumper, mock(Packet.class));
-
-    assertThat(result.shouldBreak)
+    assertThat(service.dumpPacket(dumper, RAW_PACKET, CAPTURED_AT))
         .as("a dumper closed by a rotation race must not permanently kill the capture loop")
         .isFalse();
-    assertThat(result.packetProcessed).isFalse();
   }
 
   @Test
@@ -223,10 +249,7 @@ class TigerPcapCaptureServiceTest {
   void dumpPacket_normalWrite_reportsProcessed() {
     PcapPacketDumper dumper = mock(PcapPacketDumper.class);
 
-    TigerPcapCaptureService.ProcessResult result = service.dumpPacket(dumper, mock(Packet.class));
-
-    assertThat(result.shouldBreak).isFalse();
-    assertThat(result.packetProcessed).isTrue();
+    assertThat(service.dumpPacket(dumper, RAW_PACKET, CAPTURED_AT)).isTrue();
   }
 
   @Test
@@ -258,9 +281,7 @@ class TigerPcapCaptureServiceTest {
   void alsoCapturePorts_neverTouchesManualFilter() {
     service.setManualBpfFilter("tcp port 4444");
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return; // native lib unavailable on this machine; nothing to verify
-    }
+    assertThat(service.isEnabled()).isTrue();
 
     assertThatCode(() -> service.alsoCapturePorts(Set.of(9999))).doesNotThrowAnyException();
     // Effective filter stays the manual one - resolveBpfFilter proves it independently of ports.
@@ -271,9 +292,7 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("alsoCapturePorts does not narrow a capture that started unrestricted")
   void alsoCapturePorts_doesNotNarrowAnUnrestrictedCapture() {
     service.start(Set.of()); // empty set = unrestricted, no filter applied
-    if (!service.isEnabled()) {
-      return; // native lib unavailable on this machine; nothing to verify
-    }
+    assertThat(service.isEnabled()).isTrue();
 
     service.alsoCapturePorts(Set.of(7000));
 
@@ -285,9 +304,7 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("alsoCapturePorts widens the tracked ports on a restricted capture")
   void alsoCapturePorts_widensTrackedPortsOnRestrictedCapture() {
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return; // native lib unavailable on this machine; nothing to verify
-    }
+    assertThat(service.isEnabled()).isTrue();
 
     service.alsoCapturePorts(Set.of(7000));
 
@@ -297,27 +314,28 @@ class TigerPcapCaptureServiceTest {
   @Test
   @DisplayName("computeWidenedPorts merges new ports into the current set")
   void computeWidenedPorts_merges() {
-    assertThat(TigerPcapCaptureService.computeWidenedPorts(Set.of(8080, 9090), Set.of(7000)))
+    assertThat(ScenarioPcapCaptureService.computeWidenedPorts(Set.of(8080, 9090), Set.of(7000)))
         .contains(Set.of(7000, 8080, 9090));
   }
 
   @Test
   @DisplayName("computeWidenedPorts is empty when nothing new is added")
   void computeWidenedPorts_emptyWhenAlreadyCovered() {
-    assertThat(TigerPcapCaptureService.computeWidenedPorts(Set.of(8080), Set.of(8080))).isEmpty();
+    assertThat(ScenarioPcapCaptureService.computeWidenedPorts(Set.of(8080), Set.of(8080)))
+        .isEmpty();
   }
 
   @Test
   @DisplayName("computeWidenedPorts is empty for a null or empty addition")
   void computeWidenedPorts_emptyForNullOrEmptyAddition() {
-    assertThat(TigerPcapCaptureService.computeWidenedPorts(Set.of(8080), null)).isEmpty();
-    assertThat(TigerPcapCaptureService.computeWidenedPorts(Set.of(8080), Set.of())).isEmpty();
+    assertThat(ScenarioPcapCaptureService.computeWidenedPorts(Set.of(8080), null)).isEmpty();
+    assertThat(ScenarioPcapCaptureService.computeWidenedPorts(Set.of(8080), Set.of())).isEmpty();
   }
 
   @Test
   @DisplayName("computeWidenedPorts treats a null current set as empty")
   void computeWidenedPorts_nullCurrentSetTreatedAsEmpty() {
-    assertThat(TigerPcapCaptureService.computeWidenedPorts(null, Set.of(7000)))
+    assertThat(ScenarioPcapCaptureService.computeWidenedPorts(null, Set.of(7000)))
         .contains(Set.of(7000));
   }
 
@@ -332,55 +350,48 @@ class TigerPcapCaptureServiceTest {
   void getCurrentDumperPacketCount_countsSuccessfulDumps() {
     Path file = tempDir.resolve("counted.pcapng");
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return; // native lib unavailable on this machine; nothing to verify
-    }
-    try {
-      service.rotate(file);
+    assertThat(service.isEnabled()).isTrue();
+    service.rotate(file);
 
-      assertThat(service.getCurrentDumperPacketCount())
-          .as("a freshly rotated dumper has written no packets yet")
-          .isZero();
-    } finally {
-      service.stop(); // close the file handle before @TempDir cleanup runs
-    }
+    assertThat(service.getCurrentDumperPacketCount())
+        .as("a freshly rotated dumper has written no packets yet")
+        .isZero();
   }
 
   @Test
   @DisplayName("Resume restores enabled state after suspend")
   void resumeRestoresEnabledStateAfterSuspend() {
     service.start(Set.of(8080, 9090));
-    boolean startedEnabled = service.isEnabled();
-    if (startedEnabled) {
-      service.suspend();
-      assertThat(service.isEnabled()).isFalse();
-      service.resume();
-      assertThat(service.isEnabled()).isTrue();
-    }
-    // If native lib unavailable, service never enabled; skip test
+    assertThat(service.isEnabled()).isTrue();
+
+    service.suspend();
+    assertThat(service.isEnabled()).isFalse();
+    service.resume();
+
+    assertThat(service.isEnabled()).isTrue();
   }
 
   @Test
   @DisplayName("Resume multiple times stays enabled")
   void resumeMultipleTimes() {
     service.start(Set.of(8080));
-    boolean wasEnabled = service.isEnabled();
-    if (wasEnabled) {
-      service.resume();
-      assertThat(service.isEnabled()).isTrue();
-      service.resume();
-      assertThat(service.isEnabled()).isTrue();
-    }
+    assertThat(service.isEnabled()).isTrue();
+
+    service.resume();
+    assertThat(service.isEnabled()).isTrue();
+    service.resume();
+
+    assertThat(service.isEnabled()).isTrue();
   }
 
   @Test
   @DisplayName("Stop clears the dumper")
   void stopClearsDumper() {
     service.start(Set.of(8080));
-    if (service.isEnabled()) {
-      service.rotate(tempDir.resolve("test.pcapng"));
-      assertThat(service.getCurrentDumperPacketCount()).isZero();
-    }
+    assertThat(service.isEnabled()).isTrue();
+    service.rotate(tempDir.resolve("test.pcapng"));
+    assertThat(service.getCurrentDumperPacketCount()).isZero();
+
     service.stop();
     assertThat(service.getCurrentDumperPacketCount()).isZero();
   }
@@ -389,9 +400,7 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("Multiple suspend/resume cycles work correctly")
   void multipleSuspendResumeCycles() {
     service.start(Set.of(8080, 9090));
-    if (!service.isEnabled()) {
-      return;
-    }
+    assertThat(service.isEnabled()).isTrue();
     for (int i = 0; i < 3; i++) {
       service.suspend();
       assertThat(service.isEnabled()).isFalse();
@@ -404,18 +413,16 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("dumpPacket with RuntimeException continues capture")
   void dumpPacket_runtimeException_continuesC() {
     PcapPacketDumper dumper = mock(PcapPacketDumper.class);
-    doThrow(new RuntimeException("unexpected error")).when(dumper).dump(any(Packet.class));
-    TigerPcapCaptureService.ProcessResult result = service.dumpPacket(dumper, mock(Packet.class));
-    assertThat(result.shouldBreak).isFalse();
-    assertThat(result.packetProcessed).isFalse();
+    doThrow(new RuntimeException("unexpected error"))
+        .when(dumper)
+        .dumpRaw(any(byte[].class), any(Timestamp.class));
+    assertThat(service.dumpPacket(dumper, RAW_PACKET, CAPTURED_AT)).isFalse();
   }
 
   @Test
   @DisplayName("dumpPacket with null dumper returns false")
   void dumpPacket_nullDumper_returnsNotProcessed() {
-    TigerPcapCaptureService.ProcessResult result = service.dumpPacket(null, mock(Packet.class));
-    assertThat(result.shouldBreak).isFalse();
-    assertThat(result.packetProcessed).isFalse();
+    assertThat(service.dumpPacket(null, RAW_PACKET, CAPTURED_AT)).isFalse();
   }
 
   @Test
@@ -469,10 +476,11 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("alsoCapturePorts with empty service ports")
   void alsoCapturePorts_withEmptyServicePorts() {
     service.start(Set.of());
-    if (service.isEnabled()) {
-      service.alsoCapturePorts(Set.of(8080));
-      assertThat(service.getLastStartPortsForTesting()).isEmpty();
-    }
+    assertThat(service.isEnabled()).isTrue();
+
+    service.alsoCapturePorts(Set.of(8080));
+
+    assertThat(service.getLastStartPortsForTesting()).isEmpty();
   }
 
   @Test
@@ -480,28 +488,27 @@ class TigerPcapCaptureServiceTest {
   void alsoCapturePorts_manualFilterHasPriority() {
     service.setManualBpfFilter("tcp port 5555");
     service.start(Set.of(8080));
-    if (service.isEnabled()) {
-      service.alsoCapturePorts(Set.of(9090));
-      assertThat(service.resolveBpfFilter(Set.of())).isEqualTo("tcp port 5555");
-    }
+    assertThat(service.isEnabled()).isTrue();
+
+    service.alsoCapturePorts(Set.of(9090));
+
+    assertThat(service.resolveBpfFilter(Set.of())).isEqualTo("tcp port 5555");
+    assertThat(network.kernelFilters(FakePcapNetwork.LOOPBACK)).containsExactly("tcp port 5555");
   }
 
   @Test
   @DisplayName("Rotate multiple times")
   void rotateMultipleTimes() {
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return;
-    }
+    assertThat(service.isEnabled()).isTrue();
     Path file1 = tempDir.resolve("first.pcapng");
     Path file2 = tempDir.resolve("second.pcapng");
     Path file3 = tempDir.resolve("third.pcapng");
+    // Each file only materializes once its own group is closed by the *next* rotate()/stop()
+    // call, so there's nothing to await mid-sequence — just check all three exist at the end.
     service.rotate(file1);
-    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> Files.exists(file1));
     service.rotate(file2);
-    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> Files.exists(file2));
     service.rotate(file3);
-    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> Files.exists(file3));
     service.stop();
     assertThat(file1).exists();
     assertThat(file2).exists();
@@ -512,15 +519,14 @@ class TigerPcapCaptureServiceTest {
   @DisplayName("getCurrentDumperPacketCount after rotate")
   void getCurrentDumperPacketCount_afterRotate() {
     service.start(Set.of(8080));
-    if (!service.isEnabled()) {
-      return;
-    }
+    assertThat(service.isEnabled()).isTrue();
     Path file = tempDir.resolve("packet_count.pcapng");
     service.rotate(file);
-    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> Files.exists(file));
     long count = service.getCurrentDumperPacketCount();
     assertThat(count).isGreaterThanOrEqualTo(0);
     service.stop();
+    // file only materializes once its group is closed, i.e. at the stop() above.
+    assertThat(file).exists();
   }
 
   @Test
@@ -539,5 +545,95 @@ class TigerPcapCaptureServiceTest {
     service.setManualBpfFilter(filterIn == null ? "" : filterIn);
     String filter = service.resolveBpfFilter(Set.of(8080));
     assertThat(filter).isEqualTo(expected);
+  }
+
+  @Test
+  @DisplayName("openDumper(target, startSuspended=true) opens nothing until resume()")
+  void openDumper_startSuspendedTrue_isLazy() {
+    service.start(Set.of(8080));
+    assertThat(service.isEnabled()).isTrue();
+    Path target = tempDir.resolve("lazy.pcapng");
+
+    service.openDumper(target, true);
+
+    assertThat(service.isEnabled())
+        .as("a suspended scenario dumper must report disabled on its own thread")
+        .isFalse();
+
+    long closed = service.closeDumper(target);
+
+    assertThat(closed).isZero();
+    assertThat(target)
+        .as("a scenario that suspends immediately and never resumes must create no file at all")
+        .doesNotExist();
+  }
+
+  @Test
+  @DisplayName("resume() lazily opens a startSuspended scenario dumper on first resume")
+  void resume_opensLazyScenarioDumperOnFirstResume() {
+    service.start(Set.of(8080));
+    assertThat(service.isEnabled()).isTrue();
+    Path target = tempDir.resolve("resumed.pcapng");
+    service.openDumper(target, true);
+
+    service.resume();
+
+    assertThat(service.isEnabled()).isTrue();
+    service.closeDumper(target);
+    assertThat(target).exists();
+  }
+
+  @Test
+  @DisplayName("suspend()/resume() on one thread's scenario dumper doesn't affect another thread's")
+  void suspendResume_isolatedPerScenarioThread() throws InterruptedException {
+    service.start(Set.of(8080));
+    assertThat(service.isEnabled()).isTrue();
+    Path targetA = tempDir.resolve("scenario-a.pcapng");
+    Path targetB = tempDir.resolve("scenario-b.pcapng");
+
+    AtomicBoolean aEnabledAfterSuspend = new AtomicBoolean();
+    AtomicBoolean bEnabledWhileASuspended = new AtomicBoolean();
+    CountDownLatch aSuspended = new CountDownLatch(1);
+    CountDownLatch bChecked = new CountDownLatch(1);
+
+    Thread threadA =
+        new Thread(
+            () -> {
+              service.openDumper(targetA, false);
+              service.suspend();
+              aEnabledAfterSuspend.set(service.isEnabled());
+              aSuspended.countDown();
+              awaitQuietly(bChecked);
+              service.closeDumper(targetA);
+            });
+    Thread threadB =
+        new Thread(
+            () -> {
+              service.openDumper(targetB, false);
+              awaitQuietly(aSuspended);
+              bEnabledWhileASuspended.set(service.isEnabled());
+              bChecked.countDown();
+              service.closeDumper(targetB);
+            });
+
+    threadA.start();
+    threadB.start();
+    threadA.join(10_000);
+    threadB.join(10_000);
+
+    assertThat(aEnabledAfterSuspend.get())
+        .as("thread A's own scenario dumper must be suspended")
+        .isFalse();
+    assertThat(bEnabledWhileASuspended.get())
+        .as("thread B's scenario dumper must be unaffected by thread A's suspend()")
+        .isTrue();
+  }
+
+  private static void awaitQuietly(CountDownLatch latch) {
+    try {
+      latch.await(5, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 }

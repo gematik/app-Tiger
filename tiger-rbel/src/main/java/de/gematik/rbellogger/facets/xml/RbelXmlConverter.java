@@ -66,6 +66,7 @@ public class RbelXmlConverter extends RbelConverterPlugin {
 
       InputSource source = buildInputSource(rbel);
       final Document parsedXml = parseXml(source);
+      setCharset(parsedXml, rbel);
       buildXmlElementForNode(parsedXml, rbel, context);
 
       if (rbel.getContent().startsTrimmedWith("<?".getBytes())
@@ -76,7 +77,6 @@ public class RbelXmlConverter extends RbelConverterPlugin {
             new RbelXmlRootAttributeFacet(xmlVersion, encoding);
         rbel.addFacet(rootAttributeFacet);
       }
-      setCharset(parsedXml, rbel);
       rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
     } catch (DocumentException e) {
       log.trace(

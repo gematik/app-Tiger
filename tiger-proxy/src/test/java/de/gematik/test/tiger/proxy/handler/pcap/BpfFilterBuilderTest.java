@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.lib.pcap;
+package de.gematik.test.tiger.proxy.handler.pcap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

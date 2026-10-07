@@ -24,7 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import de.gematik.test.tiger.lib.TigerPcapCaptureConfig;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import io.cucumber.plugin.event.TestCase;
@@ -34,12 +33,11 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 
 /**
  * Unit tests for {@code TigerPcapCaptureLifecycle}, driving it through a subclass that stubs out
  * the static {@code TigerDirector}/Serenity dependencies and injects a mocked {@code
- * TigerPcapCaptureService}.
+ * ScenarioPcapCaptureService}.
  */
 @DisplayName("TigerPcapCaptureLifecycle")
 class TigerPcapCaptureLifecycleTest {
@@ -56,7 +54,7 @@ class TigerPcapCaptureLifecycleTest {
   /** Test double giving full control over the seams the real lifecycle pulls from statics. */
   private static class TestableLifecycle extends TigerPcapCaptureLifecycle {
     final TigerPcapCaptureConfig config;
-    final TigerPcapCaptureService serviceMock = mock(TigerPcapCaptureService.class);
+    final ScenarioPcapCaptureService serviceMock = mock(ScenarioPcapCaptureService.class);
     boolean discoverProxyPortsCalled = false;
     Set<Integer> discoveredPorts = Set.of();
     boolean envUpdateListenerRegistered = false;
@@ -72,7 +70,7 @@ class TigerPcapCaptureLifecycleTest {
     }
 
     @Override
-    protected TigerPcapCaptureService createCaptureService(TigerPcapCaptureConfig pcapConfig) {
+    protected ScenarioPcapCaptureService createCaptureService(TigerPcapCaptureConfig pcapConfig) {
       return serviceMock;
     }
 
@@ -116,10 +114,25 @@ class TigerPcapCaptureLifecycleTest {
     when(testCase.getName()).thenReturn("My Scenario");
     lifecycle.onTestCaseStarted(testCase, "scenario-1", -1);
 
-    // First rotate() is the pre-first-scenario file; second is this scenario's own.
+    // rotate() is only the suite-wide gap file, opened once at run start; the scenario's own
+    // file is a fan-out dumper (openDumper), independent of it — see ScenarioPcapCaptureService.
+    verify(lifecycle.serviceMock, times(1)).rotate(any());
     ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
-    verify(lifecycle.serviceMock, times(2)).rotate(captor.capture());
+    verify(lifecycle.serviceMock).openDumper(captor.capture(), eq(false));
     assertThat(captor.getValue().getFileName().toString()).isEqualTo("scenario-1.pcapng");
+  }
+
+  @Test
+  @DisplayName("startSuspended=true opens every scenario's own dumper already suspended")
+  void startSuspended_opensScenarioDumperSuspended() {
+    TigerPcapCaptureConfig cfg = configWith(true);
+    cfg.setStartSuspended(true);
+    TestableLifecycle lifecycle = new TestableLifecycle(cfg);
+    lifecycle.onTestRunStarted();
+
+    lifecycle.onTestCaseStarted(mock(TestCase.class), "scenario-1", -1);
+
+    verify(lifecycle.serviceMock).openDumper(any(), eq(true));
   }
 
   @Test
@@ -128,57 +141,51 @@ class TigerPcapCaptureLifecycleTest {
     TestableLifecycle lifecycle = new TestableLifecycle(configWith(true));
     lifecycle.onTestRunStarted();
 
-    ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
-
     lifecycle.onTestCaseStarted(mock(TestCase.class), "scenario-1", -1);
     lifecycle.onTestCaseStarted(mock(TestCase.class), "scenario-2", -1);
 
-    // Pre-first-scenario suite file + scenario-1's file + scenario-2's file.
-    verify(lifecycle.serviceMock, times(3)).rotate(captor.capture());
+    // Each scenario opens its own fan-out dumper, independent of the suite file and of each
+    // other — this is what makes concurrent (parallel) scenarios safe.
+    ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
+    verify(lifecycle.serviceMock, times(2)).openDumper(captor.capture(), eq(false));
     assertThat(captor.getAllValues()).extracting(Object::toString).doesNotHaveDuplicates();
   }
 
   @Test
-  @DisplayName("splitByTestcase=true reads the packet count before rotate() replaces the dumper")
-  void perTestcaseCapture_readsPacketCountBeforeRotate() {
+  @DisplayName("splitByTestcase=true closes this scenario's own fan-out dumper at testcase finish")
+  void perTestcaseCapture_closesOwnDumperAtFinish() {
     TestableLifecycle lifecycle = new TestableLifecycle(configWith(true));
     lifecycle.onTestRunStarted();
     TestCase testCase = mock(TestCase.class);
     when(testCase.getName()).thenReturn("My Scenario");
     lifecycle.onTestCaseStarted(testCase, "scenario-1", -1);
-    clearInvocations(lifecycle.serviceMock); // isolate onTestCaseFinished's own call order
+    clearInvocations(lifecycle.serviceMock); // isolate onTestCaseFinished's own calls
 
     lifecycle.onTestCaseFinished(testCase, "scenario-1", -1);
 
-    InOrder inOrder = inOrder(lifecycle.serviceMock);
-    inOrder.verify(lifecycle.serviceMock).getCurrentDumperPacketCount();
-    inOrder.verify(lifecycle.serviceMock).rotate(any());
+    ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
+    verify(lifecycle.serviceMock).closeDumper(captor.capture());
+    assertThat(captor.getValue().getFileName().toString()).isEqualTo("scenario-1.pcapng");
+    // The suite-wide gap file is untouched at scenario finish — it stays open for the whole run.
+    verify(lifecycle.serviceMock, never()).rotate(any());
   }
 
   @Test
-  @DisplayName("splitByTestcase=true opens a fresh between-scenario suite file at testcase finish")
-  void perTestcaseCapture_opensFreshSuiteFileBetweenScenarios() {
+  @DisplayName("splitByTestcase=true never reopens the suite file across scenario boundaries")
+  void perTestcaseCapture_suiteFileStaysOpenAcrossScenarios() {
     TestableLifecycle lifecycle = new TestableLifecycle(configWith(true));
     lifecycle.onTestRunStarted();
     TestCase testCase = mock(TestCase.class);
     when(testCase.getName()).thenReturn("My Scenario");
     lifecycle.onTestCaseStarted(testCase, "scenario-1", -1);
-
     lifecycle.onTestCaseFinished(testCase, "scenario-1", -1);
-
-    // Suite-wide pre-first-scenario file (onTestRunStarted) + scenario-1's file
-    // (onTestCaseStarted) + this between-scenario file (onTestCaseFinished) = 3 so far.
-    ArgumentCaptor<Path> betweenScenarioFile = ArgumentCaptor.forClass(Path.class);
-    verify(lifecycle.serviceMock, times(3)).rotate(betweenScenarioFile.capture());
-    assertThat(betweenScenarioFile.getValue().getFileName().toString())
-        .as("the between-scenario file must not collide with scenario-1's own file")
-        .isNotEqualTo("scenario-1.pcapng");
-
-    // The next scenario's own rotate() closes and replaces that between-scenario file.
     lifecycle.onTestCaseStarted(mock(TestCase.class), "scenario-2", -1);
-    ArgumentCaptor<Path> allRotations = ArgumentCaptor.forClass(Path.class);
-    verify(lifecycle.serviceMock, times(4)).rotate(allRotations.capture());
-    assertThat(allRotations.getAllValues()).extracting(Object::toString).doesNotHaveDuplicates();
+
+    // rotate() only ever happened once, for the suite file at run start — under parallel
+    // execution there is no reliable "gap between scenarios" to reopen it for.
+    verify(lifecycle.serviceMock, times(1)).rotate(any());
+    verify(lifecycle.serviceMock, times(2)).openDumper(any(), eq(false));
+    verify(lifecycle.serviceMock, times(1)).closeDumper(any());
   }
 
   @Test
@@ -191,7 +198,7 @@ class TigerPcapCaptureLifecycleTest {
     lifecycle.onTestCaseStarted(mock(TestCase.class), longScenarioId, -1);
 
     ArgumentCaptor<Path> captor = ArgumentCaptor.forClass(Path.class);
-    verify(lifecycle.serviceMock, times(2)).rotate(captor.capture());
+    verify(lifecycle.serviceMock).openDumper(captor.capture(), eq(false));
     String fileName = captor.getValue().getFileName().toString();
     assertThat(fileName).startsWith(longScenarioId.substring(0, 30));
     // 30-char prefix + 8-char UUID-hash suffix + ".pcapng"

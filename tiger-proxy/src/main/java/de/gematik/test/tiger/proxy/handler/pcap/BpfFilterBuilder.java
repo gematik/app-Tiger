@@ -18,19 +18,12 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.lib.pcap;
+package de.gematik.test.tiger.proxy.handler.pcap;
 
 import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Builds a BPF filter expression restricting capture to a given set of TCP ports.
- *
- * <p>Empty input yields the empty filter (accepts everything) — callers should only pass this to
- * pcap4j when they intentionally want unrestricted capture; otherwise the port set must be
- * non-empty.
- */
 public final class BpfFilterBuilder {
 
   private BpfFilterBuilder() {}

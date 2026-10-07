@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.glue;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static org.assertj.core.api.Assertions.*;
 
 import ch.qos.logback.classic.Level;
@@ -27,11 +28,14 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.pcap.TigerPcapCaptureService;
+import de.gematik.test.tiger.lib.pcap.ScenarioPcapCaptureService;
+import de.gematik.test.tiger.proxy.handler.pcap.PcapCaptureEngine;
+import de.gematik.test.tiger.proxy.handler.pcap.PcapNgFileReader;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -40,43 +44,34 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.Pcaps;
+import org.pcap4j.packet.namednumber.DataLinkType;
 import org.slf4j.LoggerFactory;
 
 /**
- * Cucumber step definitions for PCAP capture integration tests.
- *
- * <p>These tests verify that:
- *
- * <ul>
- *   <li>Files are generated in target/evidences/
- *   <li>Files are valid pcapng format (readable by pcap4j)
- *   <li>Files contain at least one packet
- *   <li>Testcase boundaries are isolated (no packet leakage between scenarios)
- *   <li>Graceful fallback when native lib is missing
- * </ul>
+ * Steps for the pcap capture integration tests. Every scenario finishes its own capture ({@link
+ * #thisScenariosCaptureIsFinished()}) and looks at exactly that file, since the file only exists
+ * once the capture is closed.
  */
 @Slf4j
 public class PcapCaptureStepDefs {
 
-  private Path lastGeneratedPcapFile;
-  private List<Path> pcapFilesBeforeTest;
+  private static final int PCAPNG_SECTION_HEADER_MAGIC = 0x0A0D0D0A;
+  private static final int TCP = 6;
+
   private HttpClient httpClient;
   private boolean testExecutedSuccessfully = false;
   private int proxyPort = 50506; // Default proxy port from config; will be overridden by step
 
-  // Cucumber creates a fresh step-defs instance per scenario, so cross-scenario boundary checks
-  // need state that survives that - hence static.
-  private static Path previousScenarioFile;
-  private static long previousScenarioFinalSize;
+  // Set by "this scenario's capture is finished"; null if capture is not available on this system.
+  private Path finishedCaptureFile;
+  private int finishedCapturePackets;
+  private long finishedCaptureBytes;
 
-  private TigerPcapCaptureService unavailableLibTestService;
+  private ScenarioPcapCaptureService unavailableLibTestService;
   private ListAppender<ILoggingEvent> unavailableLibLogAppender;
 
   @Given("pcap capture is enabled")
@@ -96,7 +91,7 @@ public class PcapCaptureStepDefs {
         log.warn("No local Tiger proxy server found; using default port");
         this.proxyPort = 50506; // fallback
       }
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.warn(
           "Could not discover proxy port from TigerDirector: {}; using default", e.getMessage());
       this.proxyPort = 50506; // fallback
@@ -106,267 +101,168 @@ public class PcapCaptureStepDefs {
   @When("I send a request through the proxy to local httpbin")
   public void iSendARequestThroughTheProxy() {
     log.info("Sending test request through proxy to local httpbin");
-    // Record what pcap files exist before the request
-    Path evidenceDir = Paths.get("target", "evidences");
-    try (var stream = Files.list(evidenceDir)) {
-      pcapFilesBeforeTest = stream.filter(p -> p.toString().endsWith(".pcapng")).toList();
-      log.debug("Pcap files before request: {} file(s)", pcapFilesBeforeTest.size());
-    } catch (Exception e) {
-      log.debug("Could not list pcap files", e);
-      pcapFilesBeforeTest = List.of();
-    }
-
-    // Send an HTTP request to generate traffic
     sendHttpRequest();
-  }
-
-  @Then("a pcapng file should exist in {string} for this scenario")
-  public void aPcapngFileShouldExist(String path) {
-    var captureService = TigerPcapCaptureService.getInstance();
-    if (captureService == null || !captureService.isEnabled()) {
-      log.warn(
-          "Pcap capture is not enabled (native lib unavailable or permission denied); "
-              + "skipping file assertions");
-      // On CI without pcap permissions, skip the file checks silently
-      return;
-    }
-
-    Path evidenceDir = Path.of(path);
-    assertThat(evidenceDir)
-        .withFailMessage(path + " does not exist; check pcap capture initialization")
-        .exists()
-        .isDirectory();
-
-    // Look for a pcap_* file matching this scenario
-    List<Path> pcapFiles;
-    try (var stream = Files.list(evidenceDir)) {
-      pcapFiles = stream.filter(p -> p.getFileName().toString().endsWith(".pcapng")).toList();
-    } catch (Exception e) {
-      throw new AssertionError("Could not list pcap files in evidence directory", e);
-    }
-
-    assertThat(pcapFiles)
-        .withFailMessage("No .pcapng files found in target/evidences/; expected at least one")
-        .isNotEmpty();
-
-    // Get the most recent one (newest file)
-    lastGeneratedPcapFile =
-        pcapFiles.stream()
-            .max(
-                (a, b) -> {
-                  try {
-                    return Long.compare(
-                        Files.getLastModifiedTime(a).toMillis(),
-                        Files.getLastModifiedTime(b).toMillis());
-                  } catch (Exception e) {
-                    return 0;
-                  }
-                })
-            .orElseThrow(() -> new AssertionError("No pcapng files found"));
-
-    log.info("Found pcap file: {}", lastGeneratedPcapFile.getFileName());
-  }
-
-  @And("the pcapng file should contain at least one TCP packet")
-  public void thePcapngFileShouldContainPackets() {
-    if (lastGeneratedPcapFile == null) {
-      log.warn("No pcapng file found; pcap capture likely not enabled on this system");
-      return;
-    }
-
-    assertThat(lastGeneratedPcapFile)
-        .withFailMessage("No pcapng file was generated")
-        .isNotNull()
-        .exists();
-
-    try {
-      long fileSize = Files.size(lastGeneratedPcapFile);
-
-      // pcapng files have a minimal structure:
-      // - Section header block (minimum ~28 bytes)
-      // - Interface description block (~20 bytes)
-      // - At least one enhanced packet block (~40+ bytes)
-      // Total minimum for a valid file with packets: ~100 bytes
-      assertThat(fileSize)
-          .withFailMessage(
-              "Pcapng file %s is too small (%d bytes); likely no packets captured",
-              lastGeneratedPcapFile, fileSize)
-          .isGreaterThan(100L);
-
-      // Try to open with pcap4j to verify it's valid pcapng format
-      // and actually contains packets
-      int packetCount = 0;
-      try (PcapHandle handle = Pcaps.openOffline(lastGeneratedPcapFile.toString())) {
-        var packet = handle.getNextPacket();
-        while (packet != null && packetCount < 1000) {
-          packetCount++;
-          packet = handle.getNextPacket();
-        }
-      } catch (Exception e) {
-        log.debug(
-            "Could not read pcapng file with pcap4j (may not be available on this system)", e);
-        // This is okay — we verified the file size at least
-      }
-
-      if (packetCount > 0) {
-        log.info(
-            "Pcapng file {} contains {} packets", lastGeneratedPcapFile.getFileName(), packetCount);
-        assertThat(packetCount)
-            .withFailMessage("Pcapng file should contain at least one packet")
-            .isGreaterThan(0);
-      } else {
-        // File exists and is large enough — likely contains packets even if we can't read them
-        log.info(
-            "Pcapng file {} exists with {} bytes", lastGeneratedPcapFile.getFileName(), fileSize);
-      }
-    } catch (Exception e) {
-      throw new AssertionError("Could not verify pcapng file content", e);
-    }
-  }
-
-  @And("the pcapng file should be valid pcapng format")
-  public void thePcapngFileShouldBeValid() {
-    if (lastGeneratedPcapFile == null) {
-      log.warn("No pcapng file found; pcap capture likely not enabled on this system");
-      return;
-    }
-
-    assertThat(lastGeneratedPcapFile).isNotNull().exists();
-    try {
-      byte[] header = new byte[4];
-      try (var input = Files.newInputStream(lastGeneratedPcapFile)) {
-        int bytesRead = input.read(header);
-        assertThat(bytesRead)
-            .withFailMessage("Pcapng file is too small to contain header")
-            .isGreaterThanOrEqualTo(4);
-      }
-
-      // pcapng magic bytes: 0x0A0D0D0A (section header block type)
-      // or pcap magic: 0xA1B2C3D4 (legacy pcap)
-      int magic =
-          ((header[0] & 0xFF) << 24)
-              | ((header[1] & 0xFF) << 16)
-              | ((header[2] & 0xFF) << 8)
-              | (header[3] & 0xFF);
-
-      boolean isPcapng = (magic == 0x0A0D0D0A);
-      boolean isLegacyPcap = (magic == 0xA1B2C3D4 || magic == 0xD4C3B2A1);
-
-      assertThat(isPcapng || isLegacyPcap)
-          .withFailMessage(
-              "Pcapng file has invalid magic bytes: 0x%08X (expected 0x0A0D0D0A for pcapng)", magic)
-          .isTrue();
-
-      log.info("Pcapng file {} has valid format", lastGeneratedPcapFile.getFileName());
-
-      // Record which file was this scenario's; the size snapshot is taken once this scenario
-      // has actually finished (see iSendAFirstRequest) - the dumper is still open here, so a
-      // straggling packet (e.g. connection teardown) landing before the real close would look
-      // like leaked cross-scenario traffic even though it's still this scenario's own.
-      previousScenarioFile = lastGeneratedPcapFile;
-    } catch (Exception e) {
-      throw new AssertionError("Could not read or validate pcapng file", e);
-    }
   }
 
   @When("I send a first request through the proxy to local httpbin")
   public void iSendAFirstRequest() {
     log.info("Sending first test request through proxy to local httpbin");
-    pcapFilesBeforeTest = listPcapFiles();
-    log.debug("Pcap files before first request: {} file(s)", pcapFilesBeforeTest.size());
-
-    // The previous scenario's onTestCaseFinished has already run by now (Cucumber guarantees
-    // this before this scenario's first step), so its dumper is truly closed - this is the
-    // earliest point its size snapshot is authoritative.
-    if (previousScenarioFile != null) {
-      try {
-        previousScenarioFinalSize = Files.size(previousScenarioFile);
-      } catch (Exception e) {
-        log.debug("Could not snapshot previous scenario's file size", e);
-      }
-    }
-
     sendHttpRequest();
   }
 
-  @And("I wait for the first testcase to finish")
-  public void iWaitForFirstTestcaseToFinish() {
-    log.info("Waiting for testcase boundary (next scenario)");
-    // In real Cucumber execution, this happens automatically between scenarios.
-    // Give the dumper a moment to flush any pending packets.
-    try {
-      Thread.sleep(200);
-    } catch (InterruptedException ie) {
-      Thread.currentThread().interrupt();
-      log.debug("Interrupted while waiting for testcase boundary");
-    }
+  @And("I send a second request through the proxy to local httpbin")
+  public void iSendASecondRequest() {
+    log.info("Sending second test request through proxy to local httpbin");
+    sendHttpRequest();
   }
 
-  @Then("the first pcapng file should exist in {string}")
-  public void theFirstPcapngFileShouldExist(String path) {
-    aPcapngFileShouldExist(path);
-  }
-
-  @And("the first pcapng file should contain only the first testcase's traffic")
-  public void theFirstPcapngFileShouldContainOnlyFirstTestcaseTraffic() {
-    if (lastGeneratedPcapFile == null) {
-      log.warn("No pcapng file found; pcap capture likely not enabled on this system");
+  /**
+   * Finishes this scenario's capture right now: closes the file it is being written to, so that it
+   * is complete and in place. (At the end of a scenario Tiger does the same; a scenario's steps
+   * cannot wait for that.)
+   */
+  @And("this scenario's capture is finished")
+  public void thisScenariosCaptureIsFinished() throws IOException {
+    var captureService = ScenarioPcapCaptureService.getInstance();
+    if (captureService == null || !captureService.isEnabled()) {
+      log.warn(
+          "Pcap capture is not enabled (native lib unavailable or permission denied); "
+              + "skipping file assertions");
+      // On CI without pcap permissions, skip the file checks silently
+      finishedCaptureFile = null;
       return;
     }
 
-    log.info("Verifying testcase boundary isolation");
-    assertThat(lastGeneratedPcapFile).isNotNull().exists();
-    assertThat(previousScenarioFile)
-        .withFailMessage("Previous scenario's pcap file was not recorded; check scenario order")
-        .isNotNull();
+    Path scenarioFile =
+        captureService
+            .currentScenarioFile()
+            .orElseThrow(
+                () ->
+                    new AssertionError(
+                        "This scenario is not being captured into a file of its own; is"
+                            + " splitByTestcase enabled?"));
+    captureService.closeDumper(scenarioFile);
 
-    try {
-      long fileSize = Files.size(lastGeneratedPcapFile);
-      assertThat(fileSize)
-          .withFailMessage(
-              "First pcapng file should contain at least some traffic from the first testcase")
-          .isGreaterThan(100L);
+    finishedCaptureFile = scenarioFile;
+    finishedCapturePackets = readFrames(scenarioFile).size();
+    finishedCaptureBytes = Files.size(scenarioFile);
+    log.info(
+        "Finished capture {}: {} packets, {} bytes",
+        scenarioFile.getFileName(),
+        finishedCapturePackets,
+        finishedCaptureBytes);
+  }
 
-      assertThat(lastGeneratedPcapFile)
-          .withFailMessage(
-              "This scenario's traffic went into the previous scenario's file (%s); rotation did"
-                  + " not open a fresh dumper at the testcase boundary",
-              previousScenarioFile)
-          .isNotEqualTo(previousScenarioFile);
-
-      long previousFileSizeNow = Files.size(previousScenarioFile);
-      assertThat(previousFileSizeNow)
-          .withFailMessage(
-              "Previous scenario's file %s grew from %d to %d bytes after this scenario's"
-                  + " traffic; capture leaked across the testcase boundary",
-              previousScenarioFile, previousScenarioFinalSize, previousFileSizeNow)
-          .isEqualTo(previousScenarioFinalSize);
-
-      log.info(
-          "First pcapng file {} has {} bytes; previous scenario's file unchanged at {} bytes",
-          lastGeneratedPcapFile.getFileName(),
-          fileSize,
-          previousFileSizeNow);
-    } catch (Exception e) {
-      throw new AssertionError("Could not verify first testcase isolation", e);
+  @Then("a pcapng file should exist in {string} for this scenario")
+  public void aPcapngFileShouldExist(String path) {
+    if (finishedCaptureFile == null) {
+      log.warn("No finished capture file; pcap capture likely not enabled on this system");
+      return;
     }
+
+    Path evidenceDir = Path.of(path).toAbsolutePath().normalize();
+    assertThat(evidenceDir)
+        .withFailMessage(path + " does not exist; check pcap capture initialization")
+        .exists()
+        .isDirectory();
+    assertThat(finishedCaptureFile.toAbsolutePath().normalize().getParent())
+        .withFailMessage("This scenario's capture file is not in %s", evidenceDir)
+        .isEqualTo(evidenceDir);
+    assertThat(finishedCaptureFile)
+        .withFailMessage("This scenario's capture file does not exist after its capture finished")
+        .exists()
+        .hasFileName(finishedCaptureFile.getFileName().toString());
+    assertThat(finishedCaptureFile.getFileName().toString()).endsWith(".pcapng");
+    log.info("Found this scenario's pcap file: {}", finishedCaptureFile.getFileName());
+  }
+
+  @And("the pcapng file should contain at least one TCP packet")
+  public void thePcapngFileShouldContainPackets() throws IOException {
+    if (finishedCaptureFile == null) {
+      log.warn("No finished capture file; pcap capture likely not enabled on this system");
+      return;
+    }
+
+    long tcpPackets =
+        readFrames(finishedCaptureFile).stream().filter(PcapCaptureStepDefs::isTcp).count();
+
+    assertThat(tcpPackets)
+        .withFailMessage(
+            "Capture file %s has no TCP packet, although this scenario sent a request through the"
+                + " proxy (%d packets in all)",
+            finishedCaptureFile, finishedCapturePackets)
+        .isPositive();
+    log.info(
+        "Pcapng file {} contains {} TCP packets", finishedCaptureFile.getFileName(), tcpPackets);
+  }
+
+  @And("the pcapng file should be valid pcapng format")
+  public void thePcapngFileShouldBeValid() throws IOException {
+    if (finishedCaptureFile == null) {
+      log.warn("No finished capture file; pcap capture likely not enabled on this system");
+      return;
+    }
+
+    byte[] fileStart = new byte[4];
+    try (var input = Files.newInputStream(finishedCaptureFile)) {
+      assertThat(input.read(fileStart))
+          .withFailMessage("Pcapng file is too small to contain a header")
+          .isEqualTo(4);
+    }
+    // pcapng's section header block type, which every pcapng file starts with
+    int magic =
+        ((fileStart[3] & 0xFF) << 24)
+            | ((fileStart[2] & 0xFF) << 16)
+            | ((fileStart[1] & 0xFF) << 8)
+            | (fileStart[0] & 0xFF);
+    assertThat(magic)
+        .withFailMessage(
+            "Capture file has invalid magic bytes: 0x%08X (expected 0x0A0D0D0A for pcapng)", magic)
+        .isEqualTo(PCAPNG_SECTION_HEADER_MAGIC);
+
+    // ... and it is well-formed all the way through, not just at its start.
+    assertThat(readFrames(finishedCaptureFile)).hasSize(finishedCapturePackets);
+    log.info("Pcapng file {} has valid format", finishedCaptureFile.getFileName());
+  }
+
+  @Then("the finished capture file should not have grown")
+  public void theFinishedCaptureFileShouldNotHaveGrown() throws IOException {
+    if (finishedCaptureFile == null) {
+      log.warn("No finished capture file; pcap capture likely not enabled on this system");
+      return;
+    }
+
+    assertThat(finishedCapturePackets)
+        .withFailMessage(
+            "The capture file %s had no packets when it was finished, so that nothing was added"
+                + " to it afterwards proves nothing",
+            finishedCaptureFile)
+        .isPositive();
+    assertThat(Files.size(finishedCaptureFile))
+        .withFailMessage(
+            "Capture file %s grew from %d to %d bytes after its capture was finished; later"
+                + " traffic leaked into it",
+            finishedCaptureFile, finishedCaptureBytes, Files.size(finishedCaptureFile))
+        .isEqualTo(finishedCaptureBytes);
+    assertThat(readFrames(finishedCaptureFile)).hasSize(finishedCapturePackets);
   }
 
   @Given("pcap capture is enabled but native pcap library is not available")
   public void pcapCaptureEnabledButLibUnavailable() {
     // Simulate "no native lib" without touching the shared suite-wide capture service: a fresh
-    // TigerPcapCaptureService whose interface resolution always fails, exercising the exact same
+    // ScenarioPcapCaptureService whose interface resolution always fails, exercising the exact same
     // startup-failure path (start() -> resolveCaptureInterface() -> PcapNativeException ->
     // handleStartupFailure()) that a real missing-Npcap/libpcap environment would hit.
     unavailableLibTestService =
-        new TigerPcapCaptureService(64, 16 * 1024) {
+        new ScenarioPcapCaptureService(64, 16 * KB) {
           @Override
-          protected Optional<org.pcap4j.core.PcapNetworkInterface> resolveCaptureInterface() {
-            return Optional.empty();
+          protected java.util.List<org.pcap4j.core.PcapNetworkInterface>
+              resolveCaptureInterfaces() {
+            return java.util.List.of();
           }
         };
 
-    Logger serviceLogger = (Logger) LoggerFactory.getLogger(TigerPcapCaptureService.class);
+    Logger serviceLogger = (Logger) LoggerFactory.getLogger(PcapCaptureEngine.class);
     unavailableLibLogAppender = new ListAppender<>();
     unavailableLibLogAppender.start();
     serviceLogger.addAppender(unavailableLibLogAppender);
@@ -392,7 +288,7 @@ public class PcapCaptureStepDefs {
 
   @And("a WARN should be logged about pcap capture being unavailable")
   public void warnShouldBeLogged() {
-    Logger serviceLogger = (Logger) LoggerFactory.getLogger(TigerPcapCaptureService.class);
+    Logger serviceLogger = (Logger) LoggerFactory.getLogger(PcapCaptureEngine.class);
     try {
       boolean warnLogged =
           unavailableLibLogAppender.list.stream()
@@ -454,28 +350,60 @@ public class PcapCaptureStepDefs {
           proxyPort,
           e);
       // Don't fail — test might be running in isolation without the mock service
-    } catch (Exception e) {
+    } catch (IOException e) {
       log.warn(
           "Could not send HTTP request through proxy on port {}: {}; continuing anyway",
           proxyPort,
           e.getMessage());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
 
     // Give the capture thread a moment to write any generated packets
     try {
-      Thread.sleep(100);
+      Thread.sleep(300);
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();
     }
   }
 
-  private List<Path> listPcapFiles() {
-    Path evidenceDir = Paths.get("target", "evidences");
-    try (var stream = Files.list(evidenceDir)) {
-      return stream.filter(p -> p.getFileName().toString().endsWith(".pcapng")).toList();
-    } catch (Exception e) {
-      log.debug("Could not list pcap files", e);
-      return List.of();
+  /** A captured frame and the link type of the interface it came from. */
+  private record Frame(int linkType, byte[] data) {}
+
+  /** All frames of the pcapng file, in file order — read in pure Java, no native library. */
+  private static List<Frame> readFrames(Path file) throws IOException {
+    List<Frame> frames = new ArrayList<>();
+    try (PcapNgFileReader reader = new PcapNgFileReader(file)) {
+      for (PcapNgFileReader.Packet packet = reader.next(); packet != null; packet = reader.next()) {
+        frames.add(new Frame(reader.interfaceOf(packet.interfaceId()).linkType(), packet.data()));
+      }
     }
+    return frames;
+  }
+
+  /**
+   * Whether the frame holds an IPv4 or IPv6 TCP segment, whatever the link type of the interface it
+   * was captured on: Ethernet on Linux, BSD loopback on Windows and macOS.
+   */
+  private static boolean isTcp(Frame frame) {
+    int ipOffset;
+    if (frame.linkType() == DataLinkType.EN10MB.value()) {
+      ipOffset = 14;
+    } else if (frame.linkType() == DataLinkType.NULL.value()) {
+      ipOffset = 4;
+    } else if (frame.linkType() == DataLinkType.RAW.value()) {
+      ipOffset = 0;
+    } else {
+      return false;
+    }
+    byte[] data = frame.data();
+    if (data.length <= ipOffset + 9) {
+      return false;
+    }
+    int ipVersion = (data[ipOffset] & 0xF0) >> 4;
+    if (ipVersion == 4) {
+      return (data[ipOffset + 9] & 0xFF) == TCP; // IPv4 protocol field
+    }
+    return ipVersion == 6 && (data[ipOffset + 6] & 0xFF) == TCP; // IPv6 next header
   }
 }

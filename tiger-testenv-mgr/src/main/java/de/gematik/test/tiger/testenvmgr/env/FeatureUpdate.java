@@ -36,7 +36,7 @@ import org.junit.platform.engine.support.descriptor.UriSource;
 @NoArgsConstructor
 public class FeatureUpdate {
 
-  private LinkedHashMap<String, ScenarioUpdate> scenarios;
+  @Builder.Default private LinkedHashMap<String, ScenarioUpdate> scenarios = new LinkedHashMap<>();
   private String description;
   private TestResult status;
   private String sourcePath;

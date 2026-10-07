@@ -1,5 +1,47 @@
 # Changelog Tiger Test platform
 
+# Release 4.4.5
+
+## Features
+
+* TGR-2304: Tiger's PCAP capture now covers several network interfaces and remote Tiger proxies. List as many
+  interfaces as you need in `interfaceNames`; everything captured for a scenario, locally and on remote
+  proxies, ends up in one `.pcapng` file, with each interface or proxy shown by name in Wireshark.
+
+  Capture is safe under parallel test execution: every scenario gets its own file, and the `PCAP
+  capture is suspended`/`resumes` steps affect only that scenario. Traffic outside any scenario goes
+  into a separate suite file.
+
+  Each remote proxy can capture something different. Set its interfaces, filter, snaplen and buffer
+  size under `pcapCapture` in its `servers:` entry:
+
+  ```yaml
+  servers:
+    remoteProxy1:
+      type: tigerProxy
+      tigerProxyConfiguration:
+        adminPort: 9011
+        pcapCapture:
+          interfaceNames: ["eth0", "docker0"]
+  ```
+
+  A remote proxy only accepts capture requests if its configuration has a `pcapCapture` block (an empty
+  one is enough), and only for the interfaces it names (`allowedInterfaces`, else `interfaceNames`;
+  loopback by default). A filter of the suite's own needs `allowCustomFilter: true`. Anything else is
+  refused with HTTP 403.
+
+  If two sources captured the same packet, for example a local capture and a Tiger proxy on the same
+  machine, Tiger warns about it and keeps both copies; `dropDuplicatePackets: true` keeps one.
+
+## Bugfixes
+
+* TGR-2305: Tiger-Proxy: a proxy that lost its connection to a remote proxy and found it still unreachable on the first
+  reconnect attempt gave up for good, silently, and stopped recording that remote's traffic for the rest of the run. It
+  now logs the failed attempt and keeps retrying with an increasing pause, up to 30 seconds.
+* TGR-2311: Fix a bug where an UnsupportedOperationException was thrown when trying to update a Map<String, StepUpdate> when the map was immutable.
+* TGR-2313: Corrected Charset encoding for XML-Elements that defined specific encodings
+
+
 # Release 4.4.4
 
 ## Features

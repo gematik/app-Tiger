@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.4</version>
+    <version>4.4.5</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>tiger-testenv-mgr</artifactId>
@@ -302,6 +302,8 @@
         <configuration>
           <!-- very pessimistic value for slow environment. Default is 30. Rare errors observed. -->
           <forkedProcessExitTimeoutInSeconds>1000</forkedProcessExitTimeoutInSeconds>
+          <!-- A hung test must not hold the nightly for hours: surefire kills the fork and writes a thread dump. -->
+          <forkedProcessTimeoutInSeconds>5400</forkedProcessTimeoutInSeconds>
           <forkCount>3</forkCount>
           <threadCount>1</threadCount>
           <reuseForks>true</reuseForks>

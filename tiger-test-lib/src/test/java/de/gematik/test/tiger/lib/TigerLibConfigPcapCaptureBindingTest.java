@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.lib;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -54,8 +55,9 @@ class TigerLibConfigPcapCaptureBindingTest {
       assertThat(libConfig.pcapCapture.getFilename()).isEqualTo("${scenarioId}.pcapng");
       assertThat(libConfig.pcapCapture.isSplitByTestcase()).isTrue();
       assertThat(libConfig.pcapCapture.getSnaplenKb()).isEqualTo(64);
-      assertThat(libConfig.pcapCapture.getBufferSizeKb()).isEqualTo(16 * 1024);
+      assertThat(libConfig.pcapCapture.getBufferSizeKb()).isEqualTo(16 * KB);
       assertThat(libConfig.pcapCapture.isRemoteProxies()).isFalse();
+      assertThat(libConfig.pcapCapture.isDropDuplicatePackets()).isFalse();
     } finally {
       System.clearProperty("TIGER_TESTENV_CFGFILE");
     }

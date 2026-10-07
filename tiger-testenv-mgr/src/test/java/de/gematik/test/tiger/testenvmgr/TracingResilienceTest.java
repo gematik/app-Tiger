@@ -74,6 +74,7 @@ import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Pushes traffic through a Sending -&gt; Aggregating -&gt; Receiving proxy mesh under two kinds of
@@ -120,8 +121,13 @@ import org.junit.jupiter.api.Tag;
  * payloadBytes         body size of a large request, 0 disables them   (default 20480)
  * largeMessagePercent  share of requests carrying that body            (default 25)
  * barrier              wait for the mesh to converge after every round (default false)
- * timeBudgetSeconds    stop the round loop after N seconds, 0 = no cap (default 0)
+ * timeBudgetSeconds    stop the round loop after N seconds, 0 = no cap (default 300)
  * convergenceTimeoutSeconds  how long the receiving proxy may lag behind (default 60)
+ * receivingConnectionTimeoutSeconds  how long the receiving proxy waits   (default 3)
+ *                      for a remote to come back before the attempt
+ *                      fails and has to be rescheduled
+ * minDowntimeMillis    a killed aggregating proxy stays down at least     (default 6000)
+ *                      this long, so it outlasts that wait
  * seed                 RNG seed, fixes the crash schedule              (default random)
  * </pre>
  *
@@ -131,6 +137,7 @@ import org.junit.jupiter.api.Tag;
  */
 @Slf4j
 @Tag("de.gematik.test.tiger.common.LongRunnerTest")
+@Timeout(value = 20, unit = TimeUnit.MINUTES)
 class TracingResilienceTest {
 
   private static final String PREFIX = "tracing.resilience.";
@@ -155,9 +162,12 @@ class TracingResilienceTest {
   private static final int GRACEFUL_KILL_PERCENT = intProperty("gracefulKillPercent", 20);
   private static final int PAYLOAD_BYTES = intProperty("payloadBytes", 20 * 1024);
   private static final int LARGE_MESSAGE_PERCENT = intProperty("largeMessagePercent", 25);
-  private static final int TIME_BUDGET_SECONDS = intProperty("timeBudgetSeconds", 0);
+  private static final int TIME_BUDGET_SECONDS = intProperty("timeBudgetSeconds", 300);
   private static final int CONVERGENCE_TIMEOUT_SECONDS =
       intProperty("convergenceTimeoutSeconds", 60);
+  private static final int RECEIVING_CONNECTION_TIMEOUT_SECONDS =
+      intProperty("receivingConnectionTimeoutSeconds", 3);
+  private static final int MIN_DOWNTIME_MILLIS = intProperty("minDowntimeMillis", 6000);
   private static final boolean CONVERGENCE_BARRIER = booleanProperty("barrier");
   private static final long SEED = longProperty("seed", System.nanoTime());
 
@@ -193,6 +203,7 @@ class TracingResilienceTest {
   private MeshLink meshLink;
   private long meshLinkRestoreAtNanos;
   private long meshLinkResumeAtNanos;
+  private long aggregatingProxyMayRebootAtNanos;
   private int aggregatingAdminPort;
 
   private static int intProperty(String name, int defaultValue) {
@@ -873,7 +884,7 @@ class TracingResilienceTest {
                 .proxyPort(readIntegerOptional("free.port.20").orElseThrow())
                 .trafficEndpoints(List.of("http://localhost:" + meshPort))
                 .downloadInitialTrafficFromEndpoints(true)
-                .connectionTimeoutInSeconds(100)
+                .connectionTimeoutInSeconds(RECEIVING_CONNECTION_TIMEOUT_SECONDS)
                 .skipTrafficEndpointsSubscription(false)
                 .name("Receiving proxy")
                 .build());
@@ -1215,7 +1226,9 @@ class TracingResilienceTest {
   }
 
   private void randomlyRebootAggregatingProxy() {
-    if (aggregatingProxyProcess == null && random.nextInt(REBOOT_ONE_IN) == 0) {
+    if (aggregatingProxyProcess == null
+        && System.nanoTime() > aggregatingProxyMayRebootAtNanos
+        && random.nextInt(REBOOT_ONE_IN) == 0) {
       bootAggregatingProxy();
     }
   }
@@ -1241,6 +1254,8 @@ class TracingResilienceTest {
       aggregatingProxyProcess.destroyForcibly();
     }
     awaitAggregatingProxyExit();
+    aggregatingProxyMayRebootAtNanos =
+        System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(MIN_DOWNTIME_MILLIS);
   }
 
   private void awaitAggregatingProxyExit() {

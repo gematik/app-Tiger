@@ -21,71 +21,55 @@
 package de.gematik.test.tiger.lib.pcap;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.PcapCaptureConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.TigerPcapCaptureConfig;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
+import de.gematik.test.tiger.proxy.handler.pcap.PcapMerger;
+import de.gematik.test.tiger.proxy.handler.pcap.ProxyPortDiscovery;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import io.cucumber.plugin.event.TestCase;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import kong.unirest.core.Unirest;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import net.serenitybdd.core.Serenity;
+import net.serenitybdd.model.environment.ConfiguredEnvironment;
+import org.jspecify.annotations.NonNull;
 
-/**
- * Lifecycle manager that wires {@code TigerPcapCaptureService} into Cucumber/Serenity test
- * execution events.
- *
- * <p>Responsible for:
- *
- * <ul>
- *   <li>Reading {@code lib.pcapCapture.*} config from {@code TigerLibConfig}.
- *   <li>Discovering proxy ports from running {@code TigerProxyServer} instances.
- *   <li>Starting/stopping the capture service at suite boundaries.
- *   <li>Rotating per-testcase dumpers at scenario boundaries (if {@code splitByTestcase=true}).
- *   <li>Registering captured files as Serenity evidence artifacts.
- * </ul>
- *
- * <p>Designed to be a passive observer (no throwing exceptions out of callbacks) — capture failures
- * must never fail a testcase.
- *
- * <p>The BPF filter is compiled once when capture starts (first scenario). A {@code
- * TigerProxyServer} started later in the run — e.g. via {@code TGR start server} — would otherwise
- * stay outside the filter for the rest of the suite. This class widens the filter (never narrows)
- * in two places: on every {@link #receiveTestEnvUpdate} that mentions a server, and again at every
- * scenario boundary as a catch-all for routes added without a status update. Manual filters ({@code
- * lib.pcapCapture.bpfFilter}) are never touched by this widening.
- */
 @Slf4j
 public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
 
-  private TigerPcapCaptureService captureService;
+  private static final String PCAPNG_SUFFIX = ".pcapng";
+  private static final int MAX_BASE_FILENAME_LENGTH = 30;
+
+  private ScenarioPcapCaptureService captureService;
   private Path evidenceDir;
   private boolean splitByTestcase;
   private boolean initialized = false;
-  private Path currentSuiteFile;
+  private Path suitePcapFile;
   private boolean startSuspended = false;
   private String filenameTemplate;
   private boolean manualFilterConfigured = false;
-  // Tiebreaker for suite-wide filenames: currentTimeMillis() alone can collide when two such
-  // files are opened within the same millisecond (e.g. a zero-latency scenario boundary).
-  private final AtomicLong suiteFileSequence = new AtomicLong();
 
-  /**
-   * Called at test suite start. Initializes the capture service and starts capturing immediately,
-   * into a suite-wide file — the environment (including all auto-starting {@code TigerProxyServer}
-   * instances) is already up by this point, so ports are discoverable now, and traffic between this
-   * point and the first scenario's first step would otherwise never be captured in either mode.
-   */
+  private RemotePcapCoordinator remotePcapCoordinator;
+  private boolean remoteProxiesEnabled = false;
+  private int remoteRequestTimeoutMs = (int) Duration.ofSeconds(30).toMillis();
+
   public void onTestRunStarted() {
     try {
       TigerPcapCaptureConfig pcapConfig = loadPcapConfig();
@@ -102,33 +86,36 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
       log.debug("splitByTestcase: {}, startSuspended: {}", splitByTestcase, startSuspended);
 
       captureService = createCaptureService(pcapConfig);
+      captureService.setDropDuplicatePackets(pcapConfig.isDropDuplicatePackets());
       captureService.setInterfaceNames(pcapConfig.getInterfaceNames());
       captureService.setManualBpfFilter(pcapConfig.getBpfFilter());
       manualFilterConfigured =
           pcapConfig.getBpfFilter() != null && !pcapConfig.getBpfFilter().isBlank();
-      TigerPcapCaptureService.setInstance(captureService);
+      ScenarioPcapCaptureService.setInstance(captureService);
 
-      currentSuiteFile = resolveFilePath(null, -1);
+      suitePcapFile = newSuitePcapFilePath();
+
+      if (pcapConfig.isRemoteProxies()) {
+        remoteProxiesEnabled = true;
+        remotePcapCoordinator = new RemotePcapCoordinator();
+        remotePcapCoordinator.setCaptureConfigResolver(this::resolveRemoteCaptureConfig);
+        Duration remoteTimeout = Duration.ofSeconds(pcapConfig.getRemoteDownloadTimeoutSeconds());
+        remotePcapCoordinator.setRequestTimeout(remoteTimeout);
+        remoteRequestTimeoutMs = (int) Math.min(remoteTimeout.toMillis(), Integer.MAX_VALUE);
+        RemotePcapCoordinator.setInstance(remotePcapCoordinator);
+        log.info("Remote pcap capture enabled; coordinator initialized");
+        startRemoteSuiteCapture();
+      }
 
       discoverAndConfigurePorts();
       initialized = true;
       log.info("*** Pcap capture service initialized ***");
-    } catch (Exception e) {
+    } catch (IOException | RuntimeException e) {
       log.warn("Failed to initialize pcap capture: {}", e.getMessage());
       log.debug("Initialization error:", e);
     }
   }
 
-  /**
-   * Called at testcase start. Widens the filter for any server that appeared since the last check.
-   * If {@code splitByTestcase=true}, registers whichever between-scenario file was open (the
-   * pre-first-scenario file, on the first call; the previous scenario's between-scenario file on
-   * every later call — see {@link #onTestCaseFinished}) and opens a new dumper for this scenario.
-   *
-   * @param testCase the cucumber test case.
-   * @param scenarioId the Tiger scenario ID.
-   * @param dataVariantIndex the data variant index (-1 if not a data-driven scenario).
-   */
   public void onTestCaseStarted(TestCase testCase, String scenarioId, int dataVariantIndex) {
     try {
       if (!initialized || captureService == null) {
@@ -144,26 +131,24 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
       }
 
       if (splitByTestcase) {
-        long capturedInSuiteFile = captureService.getCurrentDumperPacketCount();
-        Path testcaseFile = resolveFilePath(scenarioId, dataVariantIndex);
-        captureService.rotate(testcaseFile);
-        registerEvidenceIfCaptured(currentSuiteFile, capturedInSuiteFile);
-        log.debug("Rotated pcap capture to testcase file: {}", testcaseFile);
+        Path testcaseFile = testcaseFilePath(scenarioId, dataVariantIndex);
+        captureService.openDumper(testcaseFile, startSuspended);
+        log.debug("Opened pcap capture file for testcase: {}", testcaseFile);
       }
-    } catch (Exception e) {
+
+      startRemoteProxiesCaptures(scenarioId);
+    } catch (RuntimeException e) {
       log.warn("Failed to handle testcase start for pcap capture: {}", e.getMessage());
       log.debug("Testcase start error:", e);
     }
   }
 
-  /** Loads the pcap capture config. Extracted for testability. */
   protected TigerPcapCaptureConfig loadPcapConfig() {
     return TigerDirector.getLibConfig().getPcapCapture();
   }
 
-  /** Creates the capture service. Extracted for testability. */
-  protected TigerPcapCaptureService createCaptureService(TigerPcapCaptureConfig pcapConfig) {
-    return new TigerPcapCaptureService(pcapConfig.getSnaplenKb(), pcapConfig.getBufferSizeKb());
+  protected ScenarioPcapCaptureService createCaptureService(TigerPcapCaptureConfig pcapConfig) {
+    return new ScenarioPcapCaptureService(pcapConfig.getSnaplenKb(), pcapConfig.getBufferSizeKb());
   }
 
   private void discoverAndConfigurePorts() {
@@ -185,33 +170,22 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
     registerForLateServerUpdates();
   }
 
-  /**
-   * Subscribes to the test environment so a {@code TigerProxyServer} started after capture began
-   * still widens the BPF filter. A no-op if capture never actually started (native lib missing,
-   * suspended, or manual filter).
-   */
   private void registerForLateServerUpdates() {
     if (manualFilterConfigured || !captureService.isEnabled()) {
       return;
     }
     try {
       registerEnvUpdateListener();
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.warn("Could not subscribe to test environment updates: {}", e.getMessage());
       log.debug("Listener registration error:", e);
     }
   }
 
-  /** Subscribes this instance to test environment updates. Extracted for testability. */
   protected void registerEnvUpdateListener() {
     TigerDirector.getTigerTestEnvMgr().registerNewListener(this);
   }
 
-  /**
-   * Widens the capture filter on any news about a server, re-derived from scratch rather than taken
-   * from the update, because a proxy's interesting ports (admin port, route targets) are not all in
-   * its status message.
-   */
   @Override
   public void receiveTestEnvUpdate(TigerStatusUpdate update) {
     try {
@@ -225,13 +199,12 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
         return;
       }
       captureService.alsoCapturePorts(discoverProxyPorts());
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.warn("Failed to widen the pcap filter after a server update: {}", e.getMessage());
       log.debug("Server update error:", e);
     }
   }
 
-  /** Catch-all widen at every scenario boundary, for routes added without a status update. */
   private void widenFilterForLateServers() {
     if (manualFilterConfigured || captureService == null || !captureService.isEnabled()) {
       return;
@@ -240,114 +213,235 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
   }
 
   private void startCaptureWithPorts(Set<Integer> ports) {
-    if (startSuspended) {
-      log.info("Pcap capture initialized but suspended; call resume() to start capturing");
-      captureService.setLastStartPorts(ports);
+    captureService.start(ports);
+    if (!captureService.isEnabled()) {
+      return;
+    }
+    if (startSuspended && splitByTestcase) {
+      log.info("Pcap capture started; each scenario starts suspended until resumed");
+    } else if (startSuspended) {
+      captureService.suspend();
+      log.info("Pcap capture started but suspended; call resume() to start capturing");
     } else {
-      captureService.start(ports);
-      if (captureService.isEnabled()) {
-        // In splitByTestcase=true mode, the first scenario's rotate() closes this and takes over.
-        captureService.rotate(currentSuiteFile);
-        log.debug("Opened pcap file: {}", currentSuiteFile);
-      }
+      captureService.rotate(suitePcapFile);
+      log.debug("Opened pcap file: {}", suitePcapFile);
     }
   }
 
-  /**
-   * Called at testcase finish. If {@code splitByTestcase=true}, registers the pcap file as a
-   * Serenity evidence artifact, then opens a fresh suite file to catch any traffic between this
-   * scenario and the next (or the suite's end, if this was the last one) — see {@link
-   * #onTestCaseStarted} and {@link #onTestRunFinished} for where that file gets registered.
-   *
-   * @param testCase the cucumber test case.
-   * @param scenarioId the Tiger scenario ID.
-   * @param dataVariantIndex the data variant index (-1 if not a data-driven scenario).
-   */
   public void onTestCaseFinished(TestCase testCase, String scenarioId, int dataVariantIndex) {
     try {
       if (!initialized || captureService == null) {
         return;
       }
 
-      if (splitByTestcase && captureService.isEnabled()) {
-        Path testcaseFile = resolveFilePath(scenarioId, dataVariantIndex);
-        long capturedInTestcaseFile = captureService.getCurrentDumperPacketCount();
-        currentSuiteFile = resolveFilePath(null, -1);
-        captureService.rotate(currentSuiteFile);
-        registerEvidenceIfCaptured(testcaseFile, capturedInTestcaseFile);
-        log.debug("Opened between-scenario pcap file: {}", currentSuiteFile);
+      boolean mergeRemote = remoteProxiesEnabled && remotePcapCoordinator != null;
+
+      Path testcaseFile = null;
+      long capturedInTestcaseFile = 0;
+      List<File> localTempFiles = List.of();
+      if (splitByTestcase) {
+        testcaseFile = testcaseFilePath(scenarioId, dataVariantIndex);
+        if (mergeRemote) {
+          localTempFiles = captureService.closeDumperRawFiles(testcaseFile);
+        } else {
+          capturedInTestcaseFile = captureService.closeDumper(testcaseFile);
+        }
+        log.debug("Closed pcap capture file for testcase: {}", testcaseFile);
       }
 
-      restoreBaselineState();
-    } catch (Exception e) {
+      if (mergeRemote) {
+        mergeInBackground(scenarioId, dataVariantIndex, testcaseFile, localTempFiles);
+        return;
+      }
+
+      if (testcaseFile != null) {
+        registerEvidenceIfCaptured(testcaseFile, capturedInTestcaseFile);
+      }
+    } catch (RuntimeException e) {
       log.warn("Failed to register pcap evidence at testcase finish: {}", e.getMessage());
       log.debug("Evidence registration error:", e);
     }
   }
 
-  private void restoreBaselineState() {
-    if (!initialized || captureService == null) {
-      return;
-    }
-
+  private void startRemoteSuiteCapture() {
     try {
-      if (startSuspended) {
-        if (captureService.isEnabled()) {
-          captureService.suspend();
-          log.debug("Restored baseline: pcap capture suspended at scenario boundary");
-        }
-      } else {
-        if (!captureService.isEnabled()) {
-          captureService.resume();
-          log.debug("Restored baseline: pcap capture resumed at scenario boundary");
-        }
+      Map<String, Duration> remoteProxiesWithOffsets = discoverRemoteProxiesWithClockOffsets();
+      if (!remoteProxiesWithOffsets.isEmpty()) {
+        remotePcapCoordinator.startRemoteSuiteCapture(
+            remoteProxiesWithOffsets, suitePcapFile.getFileName().toString());
+        log.info("Remote pcap gap capture started on {} proxies", remoteProxiesWithOffsets.size());
       }
-    } catch (Exception e) {
-      log.warn("Failed to restore baseline pcap state: {}", e.getMessage());
-      log.debug("Baseline restore error:", e);
+    } catch (RuntimeException e) {
+      log.warn("Failed to start remote pcap gap capture: {}", e.getMessage());
+      log.debug("Remote gap capture start error:", e);
     }
   }
 
-  /**
-   * Called at test suite finish. Stops the capture service and registers whatever suite file was
-   * still open.
-   *
-   * <p>In {@code splitByTestcase=false} mode this is the whole run's traffic. In {@code
-   * splitByTestcase=true} mode it is the trailing between-scenario file opened by the last {@link
-   * #onTestCaseFinished} (or the pre-first-scenario file, if no scenario ever ran).
-   */
+  private void startRemoteProxiesCaptures(String scenarioId) {
+    if (remoteProxiesEnabled && remotePcapCoordinator != null) {
+      try {
+        Map<String, Duration> remoteProxiesWithOffsets = discoverRemoteProxiesWithClockOffsets();
+        if (!remoteProxiesWithOffsets.isEmpty()) {
+          remotePcapCoordinator.startRemoteCapture(remoteProxiesWithOffsets, scenarioId);
+          log.info(
+              "Remote pcap capture started for scenario {} on {} proxies",
+              scenarioId,
+              remoteProxiesWithOffsets.size());
+        }
+      } catch (RuntimeException e) {
+        log.warn("Failed to start remote pcap capture: {}", e.getMessage());
+        log.debug("Remote capture start error:", e);
+      }
+    }
+  }
+
+  private void mergeInBackground(
+      String scenarioId, int dataVariantIndex, Path testcaseFile, List<File> localTempFiles) {
+    boolean anythingCaptured =
+        remotePcapCoordinator.hasActiveCaptures()
+            || localTempFiles.stream().anyMatch(file -> file.length() > 0);
+    Map<String, RemotePcapMetadata> remotePcapMetadata = stopRemoteCapture();
+    Path evidenceCopy =
+        testcaseFile != null && anythingCaptured ? registerPlaceholderEvidence(testcaseFile) : null;
+
+    PcapMergeQueue.getInstance()
+        .submit(
+            () -> {
+              long merged =
+                  mergeAllSources(
+                      remotePcapMetadata,
+                      scenarioId,
+                      dataVariantIndex,
+                      testcaseFile,
+                      localTempFiles);
+              if (merged < 0 && !remotePcapMetadata.isEmpty()) {
+                log.warn("Merging with the remote captures failed; merging the local ones only");
+                merged =
+                    mergeAllSources(
+                        Map.of(), scenarioId, dataVariantIndex, testcaseFile, localTempFiles);
+              }
+              if (evidenceCopy != null && merged > 0) {
+                replaceEvidenceCopy(evidenceCopy, testcaseFile);
+              }
+            });
+  }
+
+  private Path registerPlaceholderEvidence(Path pcapFile) {
+    if (!isSerenityAvailable()) {
+      return null;
+    }
+    try {
+      Files.write(pcapFile, new byte[0]);
+      Path downloads = serenityOutputDirectory().resolve("downloadable");
+      Set<Path> before = filesIn(downloads);
+      registerEvidence(pcapFile);
+      Set<Path> added = filesIn(downloads);
+      added.removeAll(before);
+      return added.stream()
+          .filter(copy -> copy.getFileName().toString().endsWith("-" + pcapFile.getFileName()))
+          .findFirst()
+          .orElse(null);
+    } catch (IOException | RuntimeException e) {
+      log.warn("Could not register pcap placeholder as evidence: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private static Set<Path> filesIn(Path directory) throws IOException {
+    if (!Files.isDirectory(directory)) {
+      return new HashSet<>();
+    }
+    try (var files = Files.list(directory)) {
+      return files.collect(Collectors.toSet());
+    }
+  }
+
+  private void replaceEvidenceCopy(Path evidenceCopy, Path mergedFile) {
+    try {
+      Files.copy(mergedFile, evidenceCopy, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      log.warn("Could not update the pcap evidence {}: {}", evidenceCopy, e.getMessage());
+    }
+  }
+
+  protected Path serenityOutputDirectory() {
+    return ConfiguredEnvironment.getConfiguration().getOutputDirectory().toPath();
+  }
+
+  private Map<String, RemotePcapMetadata> stopRemoteCapture() {
+    try {
+      return remotePcapCoordinator.stopRemoteCapture();
+    } catch (RuntimeException e) {
+      log.warn("Failed to stop remote pcap capture: {}", e.getMessage());
+      log.debug("Remote capture stop error:", e);
+      return Map.of();
+    }
+  }
+
   public void onTestRunFinished() {
     try {
       if (!initialized || captureService == null) {
         return;
       }
 
+      PcapMergeQueue.getInstance().awaitAll();
       long capturedInSuiteFile = captureService.getCurrentDumperPacketCount();
       captureService.stop();
-      TigerPcapCaptureService.setInstance(null);
-      registerEvidenceIfCaptured(currentSuiteFile, capturedInSuiteFile);
+
+      if (remotePcapCoordinator != null) {
+        capturedInSuiteFile = stopAndMergeRemoteSuiteCapture(capturedInSuiteFile);
+        remotePcapCoordinator.clear();
+      }
+
+      ScenarioPcapCaptureService.setInstance(null);
+      RemotePcapCoordinator.setInstance(null);
+      registerEvidenceIfCaptured(suitePcapFile, capturedInSuiteFile);
 
       log.debug("Pcap capture service stopped");
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.warn("Failed to stop pcap capture: {}", e.getMessage());
       log.debug("Stop error:", e);
     }
   }
 
-  /**
-   * Registers {@code pcapFile} as Serenity evidence if it exists and actually captured at least one
-   * packet — {@code packetCount} must be read from {@link
-   * TigerPcapCaptureService#getCurrentDumperPacketCount()} before the dumper for this file was
-   * closed/rotated/stopped, since a pcapng file's non-zero section-header block means {@code
-   * Files.size() > 0} is true even with zero packets.
-   */
-  private void registerEvidenceIfCaptured(Path pcapFile, long packetCount) throws IOException {
+  private long stopAndMergeRemoteSuiteCapture(long capturedLocally) {
+    Map<String, RemotePcapMetadata> remoteGapMetadata;
+    try {
+      remoteGapMetadata = remotePcapCoordinator.stopRemoteSuiteCapture();
+    } catch (RuntimeException e) {
+      log.warn("Failed to stop remote pcap gap capture: {}", e.getMessage());
+      log.debug("Remote gap capture stop error:", e);
+      return capturedLocally;
+    }
+    if (remoteGapMetadata.isEmpty()) {
+      return capturedLocally;
+    }
+
+    try {
+      List<File> localTempFiles = List.of();
+      if (Files.exists(suitePcapFile) && Files.size(suitePcapFile) > 0) {
+        Path localTemp =
+            suitePcapFile.resolveSibling("." + suitePcapFile.getFileName() + ".gap.tmp");
+        Files.move(suitePcapFile, localTemp, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        localTempFiles = List.of(localTemp.toFile());
+      }
+      long merged =
+          mergeAllSources(remoteGapMetadata, "suite_gap", -1, suitePcapFile, localTempFiles);
+      log.info("Remote pcap gap capture stopped and merged into suite file");
+      return merged >= 0 ? merged : capturedLocally;
+    } catch (IOException | RuntimeException e) {
+      log.warn("Failed to merge remote pcap gap capture into suite file: {}", e.getMessage());
+      log.debug("Remote gap capture merge error:", e);
+      return capturedLocally;
+    }
+  }
+
+  private void registerEvidenceIfCaptured(Path pcapFile, long packetCount) {
     if (pcapFile != null && packetCount > 0 && Files.exists(pcapFile)) {
       registerEvidence(pcapFile);
     }
   }
 
-  /** Discovers proxy ports to filter on. Extracted for testability. */
   protected Set<Integer> discoverProxyPorts() {
     Set<Integer> ports = new HashSet<>();
     try {
@@ -357,7 +451,7 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
       }
 
       discoverLocalProxyPorts(ports);
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.warn("Failed to discover proxy ports: {}", e.getMessage());
       log.debug("Discovery error:", e);
     }
@@ -369,16 +463,11 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
       TigerDirector.getTigerTestEnvMgr()
           .getLocalTigerProxyOptional()
           .ifPresent(proxy -> addPortsOfRunningProxy(proxy, ports));
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.debug("Could not get proxy from TigerDirector: {}", e.getMessage());
     }
   }
 
-  /**
-   * Ports of a proxy that is actually running, including any route added since it started (e.g. via
-   * {@code TigerProxy.addRoute} or a PUT on the admin API) — those targets exist nowhere in the
-   * server's startup configuration, so the running proxy has to be asked directly.
-   */
   private static void addPortsOfRunningProxy(TigerProxy proxy, Set<Integer> ports) {
     try {
       int proxyPort = proxy.getProxyPort();
@@ -395,19 +484,19 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
           .map(TigerProxyRoute::getTo)
           .filter(Objects::nonNull)
           .forEach(targetUri -> addPortOf(targetUri, ports));
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.debug("Could not read the ports of a running Tiger proxy: {}", e.getMessage());
     }
   }
 
   private static void addPortOf(String targetUri, Set<Integer> ports) {
     try {
-      String resolvedUri = TigerGlobalConfiguration.resolvePlaceholders(targetUri);
-      int targetPort = new URI(resolvedUri).getPort();
+      int targetPort =
+          ProxyPortDiscovery.portOf(TigerGlobalConfiguration.resolvePlaceholders(targetUri));
       if (targetPort > 0) {
         ports.add(targetPort);
       }
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       log.debug("Could not parse route target URI: {}", targetUri, e);
     }
   }
@@ -428,53 +517,25 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
             .forEach(targetUri -> addPortOf(targetUri, ports));
       }
 
-      // Static config misses routes added at runtime; ask the running proxy too.
       Optional.ofNullable(server.getTigerProxyBean())
           .ifPresent(proxy -> addPortsOfRunningProxy(proxy, ports));
-    } catch (Exception e) {
-      log.warn(
-          "Failed to discover ports for server {}: {}", server.getServerId(), e.getMessage(), e);
+    } catch (RuntimeException e) {
+      log.warn("Failed to discover ports for server {}", server.getServerId(), e);
     }
   }
 
-  /**
-   * Resolves the target file path for a pcap file.
-   *
-   * <p>For testcase files ({@code scenarioId != null}): resolves {@code lib.pcapCapture.filename}
-   * with {@code ${scenarioId}} substituted by the real scenario id, via {@link
-   * #resolveTestcaseFileName}.
-   *
-   * <p>For the suite-wide file ({@code scenarioId == null}): no per-scenario context exists yet at
-   * suite start, so a generic, run-unique name is used instead of the template.
-   *
-   * @param scenarioId the Tiger scenario ID; {@code null} selects the suite-wide file.
-   * @param dataVariantIndex the data variant index (-1 if none).
-   * @return the resolved file path in {@code target/evidences/}.
-   */
-  private Path resolveFilePath(String scenarioId, int dataVariantIndex) {
-    String fileName =
-        scenarioId == null
-            ? "suite_"
-                + System.currentTimeMillis()
-                + "_"
-                + suiteFileSequence.getAndIncrement()
-                + ".pcapng"
-            : resolveTestcaseFileName(scenarioId, dataVariantIndex);
-    return evidenceDir.resolve(fileName);
+  private Path newSuitePcapFilePath() {
+    return evidenceDir.resolve("suite_" + System.currentTimeMillis() + PCAPNG_SUFFIX);
   }
 
-  private static final int MAX_BASE_FILENAME_LENGTH = 30;
+  private Path testcaseFilePath(String scenarioId, int dataVariantIndex) {
+    return evidenceDir.resolve(resolveTestcaseFileName(scenarioId, dataVariantIndex));
+  }
 
-  /**
-   * Resolves the {@code lib.pcapCapture.filename} template for one testcase's file: {@code
-   * ${scenarioId}} is substituted with the real scenario id, long names are truncated with a
-   * UUID-hash suffix to stay within {@link #MAX_BASE_FILENAME_LENGTH} characters, and a
-   * data-variant suffix is appended for parametrized scenarios.
-   */
   private String resolveTestcaseFileName(String scenarioId, int dataVariantIndex) {
     String base = filenameTemplate.replace("${scenarioId}", scenarioId);
-    if (base.endsWith(".pcapng")) {
-      base = base.substring(0, base.length() - ".pcapng".length());
+    if (base.endsWith(PCAPNG_SUFFIX)) {
+      base = base.substring(0, base.length() - PCAPNG_SUFFIX.length());
     }
     base = replaceSpecialCharacters(base);
     if (base.length() > MAX_BASE_FILENAME_LENGTH) {
@@ -485,10 +546,9 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
     if (dataVariantIndex >= 0) {
       base += "_" + (dataVariantIndex + 1);
     }
-    return base + ".pcapng";
+    return base + PCAPNG_SUFFIX;
   }
 
-  /** Replaces umlauts and special characters, matching Serenity's convention. */
   private String replaceSpecialCharacters(String name) {
     return name.replaceAll("[äÄöÖüÜß]+", "_")
         .replaceAll("[^\\w.-]+", "_")
@@ -496,8 +556,7 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
         .replaceAll("(^_)|(_$)", "");
   }
 
-  /** Registers a pcap file as a Serenity evidence artifact. */
-  private void registerEvidence(Path pcapFile) {
+  protected void registerEvidence(Path pcapFile) {
     try {
       if (isSerenityAvailable()) {
         (Serenity.recordReportData().asEvidence().withTitle("Network Traffic (PCAP)"))
@@ -505,22 +564,198 @@ public class TigerPcapCaptureLifecycle implements TigerUpdateListener {
             .fromFile(pcapFile);
         log.debug("Registered pcap file as Serenity evidence: {}", pcapFile);
       }
-    } catch (Exception e) {
+    } catch (IOException | RuntimeException e) {
       log.debug("Could not register pcap file as Serenity evidence: {}", e.getMessage());
     }
   }
 
-  /** Whether Serenity evidence registration is available. Extracted for testability. */
   protected boolean isSerenityAvailable() {
     return TigerDirector.isSerenityAvailable();
   }
 
-  /** Returns or creates the evidence directory. */
   private static Path computeEvidenceDir() throws IOException {
     Path parentDir = Paths.get("target", "evidences");
     if (Files.notExists(parentDir)) {
       Files.createDirectories(parentDir);
     }
     return parentDir;
+  }
+
+  protected Map<String, Duration> discoverRemoteProxiesWithClockOffsets() {
+    try {
+      return TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOptional().stream()
+          .map(TigerProxy::getRemoteProxyClients)
+          .flatMap(List::stream)
+          .collect(
+              Collectors.toMap(
+                  TigerRemoteProxyClient::getRemoteProxyUrl,
+                  TigerRemoteProxyClient::getRemoteClockOffset));
+    } catch (RuntimeException e) {
+      log.debug("Could not discover remote proxies: {}", e.getMessage());
+      return Collections.emptyMap();
+    }
+  }
+
+  protected PcapCaptureConfiguration resolveRemoteCaptureConfig(String proxyUrl) {
+    int port = ProxyPortDiscovery.portOf(proxyUrl);
+    PcapCaptureConfiguration config =
+        TigerDirector.getTigerTestEnvMgr().getServersOfType(TigerProxyServer.class).stream()
+            .map(server -> server.getConfiguration().getTigerProxyConfiguration())
+            .filter(cfg -> cfg != null && cfg.getAdminPort() == port)
+            .map(TigerProxyConfiguration::getPcapCapture)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
+    if (config == null) {
+      log.info(
+          "No 'pcapCapture' block found for the server with admin port {} behind {}: its own"
+              + " settings apply there",
+          port,
+          proxyUrl);
+    } else {
+      log.debug("Sending the 'pcapCapture' settings of admin port {} to {}", port, proxyUrl);
+    }
+    return config;
+  }
+
+  protected long mergeAllSources(
+      Map<String, RemotePcapMetadata> remotePcapMetadata,
+      String scenarioId,
+      int dataVariantIndex,
+      Path localFile,
+      List<File> localTempFiles) {
+    Path finalTarget =
+        localFile != null
+            ? localFile
+            : evidenceDir.resolve("merged_" + replaceSpecialCharacters(scenarioId) + PCAPNG_SUFFIX);
+    try {
+      val merger = new PcapMerger();
+      merger.setDropDuplicates(loadPcapConfig().isDropDuplicatePackets());
+
+      for (File localTemp : localTempFiles) {
+        if (localTemp.exists() && localTemp.length() > 0) {
+          merger.addRemotePcap(localTemp.getName(), localTemp, 0L);
+        }
+      }
+
+      TigerPcapCaptureConfig pcapConfig = loadPcapConfig();
+      if (pcapConfig.isMergeRemotePcaps()) {
+        for (val metaDataPerProxyUrl : remotePcapMetadata.entrySet()) {
+          String proxyUrl = metaDataPerProxyUrl.getKey();
+          RemotePcapMetadata metadata = metaDataPerProxyUrl.getValue();
+          downloadAndAddToMerger(metadata, merger, proxyUrl, scenarioId, dataVariantIndex);
+        }
+      } else if (!remotePcapMetadata.isEmpty()) {
+        log.debug(
+            "Remote pcap merge disabled; {} remote capture(s) will not be included",
+            remotePcapMetadata.size());
+      }
+
+      Path mergedTemp = finalTarget.resolveSibling("." + finalTarget.getFileName() + ".merge.tmp");
+      long packetsWritten = merger.mergeToFile(mergedTemp.toFile());
+      Files.move(mergedTemp, finalTarget, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+      for (File localTemp : localTempFiles) {
+        Files.deleteIfExists(localTemp.toPath());
+      }
+
+      log.debug(
+          "Merged {} packets from {} local interface(s) + {} remote source(s) into {}",
+          packetsWritten,
+          localTempFiles.size(),
+          remotePcapMetadata.size(),
+          finalTarget);
+      return packetsWritten;
+    } catch (IOException | RuntimeException e) {
+      log.warn(
+          "Failed to merge pcap sources for scenario {} into {}: {} ({} local temp file(s) left in"
+              + " place for recovery)",
+          scenarioId,
+          finalTarget,
+          e.getMessage(),
+          localTempFiles.size());
+      log.debug("Merge error:", e);
+      return -1;
+    }
+  }
+
+  private void downloadAndAddToMerger(
+      RemotePcapMetadata metadata,
+      PcapMerger merger,
+      String proxyUrl,
+      String scenarioId,
+      int dataVariantIndex) {
+    try {
+      File downloadedPcap = computeTargetFilename(proxyUrl, scenarioId, dataVariantIndex);
+      downloadRemotePcap(proxyUrl + metadata.getDownloadUrl(), downloadedPcap);
+      if (downloadedPcap.exists() && downloadedPcap.length() > 0) {
+        merger.addRemotePcap(proxyUrl, downloadedPcap, metadata.getClockOffset());
+      }
+    } catch (RuntimeException e) {
+      log.warn("Failed to download pcap from {}: {}", proxyUrl, e.getMessage());
+      metadata.setError(e.getMessage());
+    }
+  }
+
+  private @NonNull File computeTargetFilename(
+      String proxyUrl, String scenarioId, int dataVariantIndex) {
+    String proxyId = extractProxyId(proxyUrl);
+    String sanitizedScenario = replaceSpecialCharacters(scenarioId);
+    if (dataVariantIndex >= 0) {
+      sanitizedScenario += "_" + (dataVariantIndex + 1);
+    }
+
+    String filename = "pcap_" + sanitizedScenario + "_" + proxyId + PCAPNG_SUFFIX;
+    return evidenceDir.resolve(filename).toFile();
+  }
+
+  private void downloadRemotePcap(String fullUrl, File targetFile) {
+    try {
+      log.debug("Downloading remote pcap from: {}", fullUrl);
+
+      downloadToFile(fullUrl, targetFile);
+
+      if (targetFile.exists() && targetFile.length() > 0) {
+        log.debug(
+            "Successfully downloaded remote pcap from {}: {} bytes to {}",
+            fullUrl,
+            targetFile.length(),
+            targetFile.getAbsolutePath());
+      } else {
+        log.warn("Downloaded pcap file is empty or missing: {}", targetFile.getAbsolutePath());
+        Files.deleteIfExists(targetFile.toPath());
+      }
+    } catch (IOException | RuntimeException e) {
+      log.warn("Failed to download remote pcap from {}: {}", fullUrl, e.getMessage());
+      log.debug("Download error details:", e);
+    }
+  }
+
+  private static String extractProxyId(String proxyUrl) {
+    String proxyId;
+    try {
+      proxyId = new URI(proxyUrl).getHost();
+      if (proxyId == null || proxyId.isEmpty()) {
+        proxyId = "remote-proxy";
+      }
+    } catch (URISyntaxException e) {
+      proxyId = "remote-proxy";
+    }
+    return proxyId;
+  }
+
+  private void downloadToFile(String fullUrl, File targetFile) throws IOException {
+    // Unirest only writes to a file that does not exist yet.
+    Files.deleteIfExists(targetFile.toPath());
+    var response =
+        Unirest.get(fullUrl)
+            .requestTimeout(remoteRequestTimeoutMs)
+            .asFile(targetFile.getAbsolutePath());
+    if (!response.isSuccess()) {
+      String error = Files.exists(targetFile.toPath()) ? Files.readString(targetFile.toPath()) : "";
+      Files.deleteIfExists(targetFile.toPath());
+      log.warn(
+          "Download of {} failed with HTTP status {}: {}", fullUrl, response.getStatus(), error);
+    }
   }
 }

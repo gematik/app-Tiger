@@ -62,7 +62,9 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import kong.unirest.core.GenericType;
 import kong.unirest.core.Unirest;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -107,7 +109,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Getter private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
   private final ThreadPoolTaskScheduler heartbeatScheduler;
   private final AtomicBoolean reconnectInFlight = new AtomicBoolean(false);
+
+  @Getter(AccessLevel.PACKAGE)
   private final AtomicInteger consecutiveConnectFailures = new AtomicInteger(0);
+
+  @Setter(AccessLevel.PACKAGE)
+  private Duration initialReconnectBackoff = INITIAL_RECONNECT_BACKOFF;
+
   private final SockJsClient webSocketClient;
   private final int connectionTimeoutInSeconds;
 
@@ -301,10 +309,29 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             throwable -> {
               reconnectInFlight.set(false);
               consecutiveConnectFailures.incrementAndGet();
-              throw new TigerRemoteProxyClientException(
-                  "Exception while opening tracing-connection to " + tracingWebSocketUrl,
+              log.warn(
+                  "Exception while opening tracing-connection to {}",
+                  tracingWebSocketUrl,
                   throwable);
+              if (!isShuttingDown()) {
+                scheduleReconnect(tigerStompSessionHandler);
+              }
+              return null;
             });
+  }
+
+  private void reconnect(TigerStompSessionHandler tigerStompSessionHandler) {
+    try {
+      connectToRemoteUrl(
+          tigerStompSessionHandler,
+          getTigerProxyConfiguration().getConnectionTimeoutInSeconds(),
+          true);
+    } catch (RuntimeException e) {
+      log.warn("Reconnecting to {} failed", remoteProxyUrl, e);
+      if (!isShuttingDown()) {
+        scheduleReconnect(tigerStompSessionHandler);
+      }
+    }
   }
 
   /**
@@ -315,18 +342,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     final var delay = computeReconnectBackoff(consecutiveConnectFailures.get());
     log.info("Reconnecting to {} in {}", remoteProxyUrl, delay);
     meshHandlerPool.schedule(
-        () ->
-            connectToRemoteUrl(
-                tigerStompSessionHandler,
-                getTigerProxyConfiguration().getConnectionTimeoutInSeconds(),
-                true),
-        delay.toMillis(),
-        TimeUnit.MILLISECONDS);
+        () -> reconnect(tigerStompSessionHandler), delay.toMillis(), TimeUnit.MILLISECONDS);
   }
 
-  private static Duration computeReconnectBackoff(int consecutiveFailures) {
-    final var delay =
-        INITIAL_RECONNECT_BACKOFF.multipliedBy(1L << Math.min(consecutiveFailures, 5));
+  private Duration computeReconnectBackoff(int consecutiveFailures) {
+    final var delay = initialReconnectBackoff.multipliedBy(1L << Math.min(consecutiveFailures, 5));
     return delay.compareTo(MAX_RECONNECT_BACKOFF) > 0 ? MAX_RECONNECT_BACKOFF : delay;
   }
 

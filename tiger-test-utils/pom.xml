@@ -27,7 +27,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>4.4.4</version>
+    <version>4.4.5</version>
   </parent>
   <artifactId>tiger-test-utils</artifactId>
   <name>${project.artifactId}</name>
@@ -59,6 +59,17 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!-- for FakePcapNetwork: consumers that use it have both already -->
+    <dependency>
+      <groupId>org.pcap4j</groupId>
+      <artifactId>pcap4j-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>provided</scope>
     </dependency>
   </dependencies>
