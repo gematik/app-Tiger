@@ -197,8 +197,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     envMgr.startLocalTigerProxyIfActivated();
     assertThat(LOCAL_PROXY_ADMIN_PORT.getValueOrDefault()).isStrictlyBetween(0, 65_536);
     assertThat(LOCAL_PROXY_PROXY_PORT.getValueOrDefault()).isStrictlyBetween(0, 65_536);
-    assertThat(envMgr.getConfiguration().getTigerProxy().getForwardToProxy().getHostname())
-        .isEqualTo("$SYSTEM");
+    assertThat(envMgr.getConfiguration().getTigerProxy().getForwardToProxy()).isNull();
   }
 
   @Test

@@ -989,13 +989,51 @@ tigerProxy:
               - "127.0.0.1"
 ----
 
-`noProxyHosts` is checked per target host (via DNS resolution of the actual destination), so entries can be hostnames or IP addresses that should bypass the forward proxy.
+`noProxyHosts` lists targets that bypass the forward proxy. The same rules apply to `noProxyHosts`, `no_proxy`/`NO_PROXY`, and `http.nonProxyHosts`:
+
+[cols="1,2,3"]
+|===
+| Entry | Matches | Example
+
+| `host.corp.de`
+| this host and its subdomains
+| `ti-konnektor.corp.de`, `a.ti-konnektor.corp.de`
+
+| `.corp.de` or `*.corp.de`
+| `corp.de` and all its subdomains
+| `ti-dienste.corp.de`
+
+| `10.0.0.0/8` or `fd00::/8`
+| the resolved address is inside the range (IPv4 or IPv6)
+| `10.11.240.47`
+
+| `10.11.240.47` or `::1`
+| exactly this IP address
+| `10.11.240.47`
+
+| `10.*`, `*corp.de` or `a.*.b`
+| the host name, with `*` standing for any characters (as in `http.nonProxyHosts`). A numeric wildcard such as `10.*` also matches a target whose resolved address is in that range.
+| `10.1.2.3`, `a.corp.de`
+
+| `*`
+| every target (the proxy is never used)
+|
+|===
+
+No reverse DNS lookup is done. An entry in none of these formats is ignored, and Tiger logs a `WARN` with the entry and where it came from.
+
+Tiger logs the effective forward proxy and its no-proxy list at startup. For each target, the debug log shows whether it goes `direct` or `via proxy`, and which entry caused a bypass.
+
+Two behaviors to know about:
+
+* A target that the forward proxy answers with `403`, `502`, `503` or `504` is treated as unreachable when Tiger selects among several route targets. The proxy's error page is not a valid answer.
+* An empty `hostname: ""` is rejected at startup with an error. To use no forward proxy, leave out the `forwardToProxy` block.
 
 NOTE: If a forward proxy is configured, its target address (and, if set, username/password) are logged at startup (`Forward proxy is set to ...`). Keep in mind that this log line includes the password in plain text if `username`/`password` are set.
 
 ===== Using the system/environment proxy configuration
 
-Instead of specifying `hostname`/`port` explicitly, you can set `hostname` to the special value `$SYSTEM`:
+Without a `forwardToProxy` block, no forward proxy is used. A `forwardToProxy` block without a `hostname` uses the system proxy, so it can be combined with `noProxyHosts` alone. You can also set `hostname` to the special value `$SYSTEM` explicitly. Instead of specifying `hostname`/`port` explicitly, you can set `hostname` to the special value `$SYSTEM`:
 
 [source,yaml]
 ----
@@ -1012,7 +1050,22 @@ With this setting, Tiger determines the forward proxy to use from the environmen
 . Environment variable `http_proxy` (a full URL, optionally including credentials, e.g. `http://user:pass@proxyhost:3128`)
 . Environment variable `https_proxy` (same format as `http_proxy`)
 
-When the proxy is resolved from `http_proxy`/`https_proxy`, the environment variable `no_proxy` (a comma-separated list of hosts) is automatically merged into `noProxyHosts`.
+In every case, the environment variables `no_proxy` and `NO_PROXY` (comma-separated) and the system property `http.nonProxyHosts` (pipe-separated) are merged into `noProxyHosts`. Tiger also adds `localhost`, `127.0.0.1` and `::1` by default.
+
+Example for a machine whose system proxy is only meant for internet access:
+
+[source,yaml]
+----
+tigerProxy:
+    tigerProxyConfiguration:
+        forwardToProxy:
+            hostname: "$SYSTEM"
+            noProxyHosts:
+              - ".ti-dienste.de"
+              - "10.0.0.0/8"
+----
+
+Targets matching the entries above go direct, all others use the system proxy.
 
 ==== directReverseProxy
 
@@ -1158,12 +1211,12 @@ The following formats are **optional** and must be explicitly activated:
 | `pop3` | RbelPop3CommandConverter, RbelPop3ResponseConverter | POP3 mail protocol commands and responses
 | `smtp` | RbelSmtpCommandConverter, RbelSmtpResponseConverter | SMTP mail protocol commands and responses
 | `mime` | RbelMimeConverter, RbelEncryptedMailConverter | MIME-encoded messages and encrypted mails
-| `asn1` | RbelAsn1Converter | ASN.1 binary structures (e.g., in certificates or smart card communication)
+| `asn1` | RbelAsn1Converter, RbelAsn1DataObjectsConverter | ASN.1 binary structures (e.g., in certificates or smart card communication)
 | `epa-vau` | RbelVauEpaConverter, RbelVauEpaKeyDeriver | ePA VAU encrypted traffic decryption
 | `erp-vau` | RbelErpVauDecryptionConverter | eRP VAU encrypted traffic decryption
 | `epa3-vau` | RbelVauEpa3Converter | ePA 3.0 VAU encrypted traffic decryption
 | `asl` | RbelAslConverter | ASL encrypted traffic decryption
-| `sicct` | RbelSicctCommandConverter, RbelSicctEnvelopeConverter | SICCT smart card terminal protocol
+| `sicct` | RbelSicctEnvelopeConverter, RbelSicctPairingConverter, RbelAsn1DataObjectsConverter | SICCT smart card terminal protocol, including the ISO 7816-4 APDUs it transports and their BER-TLV data
 | `X500` | RbelX500Converter | X.500 directory service structures
 | `X509` | RbelX509Converter, RbelX500Converter | X.509 certificate parsing
 | `ldap` | RbelLdapConverter | LDAP protocol messages
@@ -1186,6 +1239,47 @@ tigerProxy:
 
 NOTE: Optional converters can also be activated and deactivated at runtime via BDD glue code steps.
 See xref:tigerTestLibrary.adoc#_complete_set_of_steps_in_validation_glue_code[Complete set of steps in validation glue code].
+
+===== SICCT, APDUs and BER-TLV
+
+With `sicct` activated, every SICCT message is split into its envelope and the ISO 7816-4 APDU it carries.
+The envelope fields are `$.messageType`, `$.srcOrDesAddress`, `$.sequenceNumber` and `$.length`.
+The body sits under `$.command`, `$.response` or `$.event`, depending on the message type.
+A response is paired with the command that has the same address and sequence number.
+
+[cols="2,3",options="header"]
+|===
+| RbelPath | Content
+
+| `$.command.cla` | Class byte; `.chaining`, `.secureMessaging` and `.logicalChannel` decode it (interindustry classes only)
+| `$.command.ins`, `$.command.p1`, `$.command.p2` | Instruction and parameter bytes
+| `$.command.name` | Name of the command, e.g. `SELECT`
+| `$.command.case` | ISO 7816-4 case, e.g. `3S` (short) or `2E` (extended)
+| `$.command.lc`, `$.command.le` | Lengths, only present if the APDU has them
+| `$.command.data` / `$.response.data` | Data field, only present if not empty
+| `$.response.sw` | Status word, e.g. `9000`; `$.response.sw.meaning` describes it
+|===
+
+Data fields are parsed further where possible, e.g. as an X.509 certificate.
+BER-TLV data, such as card-verifiable certificates, is structured as ASN.1 even if `asn1` is not activated.
+In ASN.1 trees, tagged children are keyed by their tag in hex:
+
+[source]
+----
+$.response.data.7F21.7F4E.5F20   # CV certificate -> body -> Certificate Holder Reference
+$.command.data.80                # tag 80 in a command's data field
+----
+
+The pairing of Konnektor and card terminal (`EHEALTH TERMINAL AUTHENTICATE`, gemSpec_KT) is named with its mode,
+e.g. `EHEALTH TERMINAL AUTHENTICATE CREATE`. Its display message `$.command.data.50` is decoded as text.
+An ECDSA signature of the shared secret in the response is split into `$.response.data.r` and `$.response.data.s`.
+
+.Example: assert on the status word of the response to a SELECT
+[source,gherkin]
+----
+When TGR find first request to path ".*" with "$.command.name" matching "SELECT"
+Then TGR current response with attribute "$.response.sw.meaning" matches "Normal processing"
+----
 
 ==== parsingShouldBlockCommunication
 
@@ -1346,6 +1440,24 @@ tiger:
 
 The default is 30 seconds.
 Lower it if hostnames change during a test run and Tiger keeps using the previous address; set it to `0` to switch the cache off entirely and resolve every time.
+Note: This behavior can only be customized for all Tiger Proxies.
+
+==== reverseDnsLookup
+
+Tiger shows the names of senders and receivers in the traffic log.
+For a peer known only by its IP, e.g. a client container in a Docker network, Tiger looks up its name via reverse DNS.
+The lookup doesn't block: it runs while the message is parsed, never while it is forwarded.
+Container names are only known to Docker's DNS, so they are found only if the Tiger Proxy runs in the same Docker network.
+
+[source,yaml]
+----
+tiger:
+  rbel:
+    reverseDnsLookup: true
+----
+
+The default is `true`.
+Switch it off if your DNS doesn't answer reverse lookups.
 Note: This behavior can only be customized for all Tiger Proxies.
 
 === Understanding filtering

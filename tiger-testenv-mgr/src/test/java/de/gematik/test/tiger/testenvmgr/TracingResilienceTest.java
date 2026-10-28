@@ -137,6 +137,7 @@ import org.junit.jupiter.api.Timeout;
  */
 @Slf4j
 @Tag("de.gematik.test.tiger.common.LongRunnerTest")
+@Tag("nightly_flaky")
 @Timeout(value = 20, unit = TimeUnit.MINUTES)
 class TracingResilienceTest {
 

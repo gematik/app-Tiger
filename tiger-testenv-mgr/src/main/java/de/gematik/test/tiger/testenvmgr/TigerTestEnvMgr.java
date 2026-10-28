@@ -32,7 +32,6 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -357,9 +356,6 @@ public class TigerTestEnvMgr
     TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
     if (StringUtils.isEmpty(proxyConfig.getName())) {
       proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
-    }
-    if (proxyConfig.getForwardToProxy() == null) {
-      proxyConfig.setForwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build());
     }
     proxyConfig.setSkipTrafficEndpointsSubscription(true);
     proxyConfig.setStandalone(false);

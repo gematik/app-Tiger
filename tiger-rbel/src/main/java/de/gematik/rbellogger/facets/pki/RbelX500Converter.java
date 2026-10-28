@@ -44,6 +44,7 @@ public class RbelX500Converter extends RbelConverterPlugin {
     if (element.hasFacet(RbelAsn1Facet.class)) {
       element
           .getFacet(RbelAsn1Facet.class)
+          .filter(facet -> "30".equals(facet.getTag()))
           .map(RbelAsn1Facet::getAsn1Content)
           .filter(ASN1Sequence.class::isInstance)
           .map(ASN1Sequence.class::cast)

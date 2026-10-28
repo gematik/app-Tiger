@@ -66,6 +66,16 @@ class ServernameFromSpyPortMappingTest {
   }
 
   @Test
+  void aPortOfAnotherMachineShouldNotBeMapped() {
+    RbelElement hostnameFacet =
+        RbelSocketAddressFacet.buildRbelSocketAddressFacet(
+            null, RbelSocketAddress.fromString("client/203.0.113.7:1234").orElseThrow());
+    GlobalServerMap.addServerNameForPort(1234, "myTestServer");
+
+    assertThat(new ServernameFromSpyPortMapping().apply(hostnameFacet)).isEmpty();
+  }
+
+  @Test
   void testExtractPort() {
     // setup a rbel element that is not really a RbelSocketAddressFacet
     RbelElement hostnameFacet = new RbelElement();

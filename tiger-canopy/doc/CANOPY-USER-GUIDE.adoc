@@ -1,58 +1,41 @@
-# CANOPY User Guide
+[#_canopy_user_guide]
+= CANOPY User Guide
 
-**Version:** 1.0
-**Last Updated:** June 3, 2026
-**Audience:** Test engineers, QA automation specialists, DevOps professionals
+*Version:* 1.0 +
+*Last Updated:* June 3, 2026 +
+*Audience:* Test engineers, QA automation specialists, DevOps professionals
 
----
+== Overview
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Quick Start: Choose Your Path](#quick-start-choose-your-path)
-3. [Detailed Configuration](#detailed-configuration)
-4. [Usage Patterns](#usage-patterns)
-5. [DNS-Only vs Dynamic-Route Modes](#dns-only-vs-dynamic-route-modes)
-6. [Cucumber Integration](#cucumber-integration)
-7. [REST API Reference](#rest-api-reference)
-8. [Troubleshooting](#troubleshooting)
-9. [Complete End-to-End Examples](#complete-end-to-end-examples)
-10. [Architecture & Design](#architecture--design)
-11. [Further Reading](#further-reading)
-12. [Checklists](#checklists)
-
----
-
-## Overview
-
-**What is CANOPY?**
+*What is CANOPY?*
 
 CANOPY is a programmable DNS server that dynamically reroutes selected hostnames to a Tiger proxy. It replaces brittle
 static Docker network configurations with a runtime-configurable routing system.
 
-**The Problem It Solves**
+*The Problem It Solves*
 
 In traditional containerized test environments, you wire up Docker network aliases at `docker compose` time to intercept
 traffic:
 
-- Static: Hard-coded at container start, can't change without restart
-- Fragile: Breaking aliases requires environment rebuilding
-- Inflexible: Every routing change needs infrastructure restart
-- Hard to debug: Network configuration spread across multiple files
+* Static: Hard-coded at container start, can't change without restart
+* Fragile: Breaking aliases requires environment rebuilding
+* Inflexible: Every routing change needs infrastructure restart
+* Hard to debug: Network configuration spread across multiple files
 
-**CANOPY's Solution**
+*CANOPY's Solution*
 
 Instead of static Docker aliases, CANOPY runs a DNS server that:
 
-- Answers DNS queries with the Tiger proxy address for **registered hosts**
-- Forwards everything else to the system upstream resolver
-- Allows runtime host registration and removal via **REST API or Cucumber steps**
-- Optionally auto-configures the Tiger proxy (Stage 2 mode)
-- Enables **test-driven routing**: scenarios define what gets intercepted
+* Answers DNS queries with the Tiger proxy address for *registered hosts*
+* Forwards everything else to the system upstream resolver
+* Allows runtime host registration and removal via *REST API or Cucumber steps*
+* Optionally auto-configures the Tiger proxy (Stage 2 mode)
+* Enables *test-driven routing*: scenarios define what gets intercepted
 
-**High-Level Architecture**
+*High-Level Architecture*
 
-```
+[source]
+----
 ┌─────────────────────────────────────────┐
 │      Container requesting DNS           │
 │      (e.g., curl http://api.example)    │
@@ -73,42 +56,41 @@ Instead of static Docker aliases, CANOPY runs a DNS server that:
 │      Container connects to IP            │
 │      (transparent interception)          │
 └──────────────────────────────────────────┘
-```
+----
 
-**When to Use CANOPY**
+*When to Use CANOPY*
 
-✅ **Good fit:**
+✅ *Good fit:*
 
-- Multi-scenario test suites where routing changes per scenario
-- Chaos testing / hypothesis testing (disable routes to test fallbacks)
-- API testing with selective interception
-- Development environments with changing backend URLs
-- Integration tests where you need to swap endpoints dynamically
+* Multi-scenario test suites where routing changes per scenario
+* Chaos testing / hypothesis testing (disable routes to test fallbacks)
+* API testing with selective interception
+* Development environments with changing backend URLs
+* Integration tests where you need to swap endpoints dynamically
 
-❌ **Not a good fit:**
+❌ *Not a good fit:*
 
-- Simple single-scenario docker-compose setups (use network aliases)
-- Pure performance testing (adds DNS hop)
-- Environments where config must be 100% static (compliance)
+* Simple single-scenario docker-compose setups (use network aliases)
+* Pure performance testing (adds DNS hop)
+* Environments where config must be 100% static (compliance)
 
----
+== Quick Start: Choose Your Path
 
-## Quick Start: Choose Your Path
+=== Path A: Pure Docker
 
-### Path A: Pure Docker
+*Goal:* Run CANOPY standalone with docker-compose; no Tiger integration.
 
-**Goal:** Run CANOPY standalone with docker-compose; no Tiger integration.
+*Prerequisites:*
 
-**Prerequisites:**
+* Docker & docker-compose installed
+* Network connectivity (to pull image)
 
-- Docker & docker-compose installed
-- Network connectivity (to pull image)
+*Steps:*
 
-**Steps:**
+. *Create docker-compose.yaml:*
 
-1. **Create docker-compose.yaml:**
-
-```yaml
+[source,yaml]
+----
 version: '2.4'
 
 services:
@@ -162,7 +144,7 @@ services:
     # then stay alive so we can expose a healthcheck. Adjust retries/timeouts as needed.
     command: ["sh", "-c", "for i in $(seq 1 30); do IP=$(getent hosts canopy | awk '{print $1}') && [ -n \"$IP\" ] && break; sleep 1; done; \
       if [ -z \"$IP\" ]; then echo 'ERROR: could not resolve canopy' >&2; exit 1; fi; \
-      cat > /dns/resolv.conf <<EOF\n+nameserver $IP\n+nameserver 127.0.0.11\n+EOF\n+      # Keep container running so healthcheck remains valid
+      cat > /dns/resolv.conf <<EOF\nnameserver $IP\nnameserver 127.0.0.11\nEOF\n\
       tail -f /dev/null"]
     networks:
       - testhub_network
@@ -190,72 +172,76 @@ services:
 networks:
    testhub_network:
       driver: bridge
-```
+----
 
-2. **Start the environment:**
+. *Start the environment:*
 
-```bash
+[source,bash]
+----
 docker compose up -d
-```
+----
 
-3. **Verify DNS resolution:**
+. *Verify DNS resolution:*
 
-```bash
+[source,bash]
+----
 # The resolv-writer produced ./dns/resolv.conf which the client mounted as /etc/resolv.conf
 docker compose exec test-app nslookup api.example.com
 # Should return: Canopy's IP (the proxy IP)
-```
+----
 
-4. **Add a host at runtime (REST API):**
+. *Add a host at runtime (REST API):*
 
-```bash
+[source,bash]
+----
 curl -X POST http://localhost:8080/api/v1/proxied-hosts \
      -H 'Content-Type: application/json' \
      -d '{"host":"login.example.com","matchType":"EXACT"}'
-```
+----
 
-5. **Verify it works:**
+. *Verify it works:*
 
-```bash
+[source,bash]
+----
 docker compose exec test-app curl -v http://api.example.com
 # Should be intercepted by Tiger proxy (check logs)
-```
+----
 
-**Troubleshooting:**
+*Troubleshooting:*
 
-- DNS not resolving? Check `docker compose logs canopy` for startup errors
-- Port 53 already in use? Switch to ephemeral port: `dnsPort: 5353` in environment vars and update the resolv-writer
-  command
-  to use the correct port
+* DNS not resolving? Check `docker compose logs canopy` for startup errors
+* Port 53 already in use? Switch to ephemeral port: `dnsPort: 5353` in environment vars and update the resolv-writer
+command
+to use the correct port
 
----
+=== Path B: Tiger Integration
 
-### Path B: Tiger Integration
+*Goal:* Use CANOPY within Tiger testenv-mgr with auto-wiring and Docker DNS injection.
 
-**Goal:** Use CANOPY within Tiger testenv-mgr with auto-wiring and Docker DNS injection.
+*Prerequisites:*
 
-**Prerequisites:**
+* Tiger project set up (pom.xml, tiger.yaml)
+* `tiger-canopy-extension` in POM dependencies
+* Tiger test runner available
 
-- Tiger project set up (pom.xml, tiger.yaml)
-- `tiger-canopy-extension` in POM dependencies
-- Tiger test runner available
+*Dependency Setup (pom.xml):*
 
-**Dependency Setup (pom.xml):**
-
-```xml
+[source,xml]
+----
 
 <dependency>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-canopy-extension</artifactId>
     <version>${tiger.version}</version>
 </dependency>
-```
+----
 
-**Steps:**
+*Steps:*
 
-1. **Create tiger.yaml:**
+. *Create tiger.yaml:*
 
-```yaml
+[source,yaml]
+----
 localProxyActive: true
 
 servers:
@@ -285,24 +271,26 @@ servers:
       image: my-test-app:latest
       exposedPorts: [ 8080 ]
     # DNS is auto-injected; testApp uses Canopy
-```
+----
 
-2. **Run your Tiger test suite:**
+. *Run your Tiger test suite:*
 
-```bash
+[source,bash]
+----
 mvn verify
-```
+----
 
 Tiger will:
 
-- Start the proxy
-- Start CANOPY with auto-wired proxy URL
-- Start test app with DNS set to CANOPY
-- Routes are automatically registered on the proxy
+* Start the proxy
+* Start CANOPY with auto-wired proxy URL
+* Start test app with DNS set to CANOPY
+* Routes are automatically registered on the proxy
 
-3. **Verify in Cucumber steps:**
+. *Verify in Cucumber steps:*
 
-```gherkin
+[source,gherkin]
+----
 Given TGR set CANOPY base URL to http://myCanopy:8080
 
 When TGR add the following proxied hosts to CANOPY:
@@ -314,30 +302,29 @@ Then TGR CANOPY contains proxied host service.example
 
 # Later, swap routing:
 When TGR remove proxied host service.example from CANOPY
-```
+----
 
-**What Happens Automatically:**
+*What Happens Automatically:*
 
-- ✅ Proxy starts first (dependency ordering)
-- ✅ Canopy reads proxy URL from Tiger's placeholder system
-- ✅ Canopy registers routes with proxy (Stage 2)
-- ✅ Test containers get Canopy's IP as DNS server
-- ✅ Placeholder resolution: `${myCanopy.baseUrl}`, `${myCanopy.dnsAddress}`, etc.
+* ✅ Proxy starts first (dependency ordering)
+* ✅ Canopy reads proxy URL from Tiger's placeholder system
+* ✅ Canopy registers routes with proxy (Stage 2)
+* ✅ Test containers get Canopy's IP as DNS server
+* ✅ Placeholder resolution: `+${myCanopy.baseUrl}+`, `+${myCanopy.dnsAddress}+`, etc.
 
-**Troubleshooting:**
+*Troubleshooting:*
 
-- Auto-wiring didn't happen? Check you have exactly **one** tigerProxy sibling
-- DNS not injected? Verify `docker.injectDns: true` (default) in test app config
+* Auto-wiring didn't happen? Check you have exactly *one* tigerProxy sibling
+* DNS not injected? Verify `docker.injectDns: true` (default) in test app config
 
----
+=== Path C: Existing Docker Compose → Tiger Integration Migration
 
-### Path C: Existing Docker Compose → Tiger Integration Migration
+*Goal:* Convert working docker-compose setup to Tiger testenv-mgr.
 
-**Goal:** Convert working docker-compose setup to Tiger testenv-mgr.
+*Before (docker-compose.yaml - static):*
 
-**Before (docker-compose.yaml - static):**
-
-```yaml
+[source,yaml]
+----
 services:
   canopy:
     image: gematik1/tiger-canopy-image:latest
@@ -357,11 +344,12 @@ services:
 networks:
   test-net:
     driver: bridge
-```
+----
 
-**After (tiger.yaml - dynamic):**
+*After (tiger.yaml - dynamic):*
 
-```yaml
+[source,yaml]
+----
 servers:
   myCanopy:
     type: canopy
@@ -375,34 +363,33 @@ servers:
     docker:
       image: my-app:latest
     # DNS auto-injected; no manual dns: setting needed
-```
+----
 
-**Migration Checklist:**
+*Migration Checklist:*
 
-- [ ] Rename config file to `tiger.yaml`
-- [ ] Convert service definitions to Tiger server types
-- [ ] Remove docker compose DNS configuration (Tiger handles it)
-- [ ] Add `type: canopy` for CANOPY service
-- [ ] Run Tiger setup: `mvn verify`
-- [ ] Verify routes still work by running tests
-- [ ] Add Cucumber steps for dynamic routing (optional)
+* [ ] Rename config file to `tiger.yaml`
+* [ ] Convert service definitions to Tiger server types
+* [ ] Remove docker compose DNS configuration (Tiger handles it)
+* [ ] Add `type: canopy` for CANOPY service
+* [ ] Run Tiger setup: `mvn verify`
+* [ ] Verify routes still work by running tests
+* [ ] Add Cucumber steps for dynamic routing (optional)
 
-**Key Differences:**
+*Key Differences:*
 
-- Docker-compose: Static config, restart needed for changes
-- Tiger: Dynamic config, routes can change mid-test
-- Docker-compose: Manual DNS setup
-- Tiger: Automatic DNS injection
+* Docker-compose: Static config, restart needed for changes
+* Tiger: Dynamic config, routes can change mid-test
+* Docker-compose: Manual DNS setup
+* Tiger: Automatic DNS injection
 
----
+== Detailed Configuration
 
-## Detailed Configuration
+=== Tiger YAML Configuration
 
-### Tiger YAML Configuration
+*Basic Structure:*
 
-**Basic Structure:**
-
-```yaml
+[source,yaml]
+----
 servers:
   myCanopy:
     type: canopy                      # Required: identifies this as canopy server
@@ -423,42 +410,46 @@ servers:
       networks: [ ]                        # Additional Docker networks
       extraEnv: # Extra env vars passed to container
         DEBUG: "true"
-```
+----
 
-**Field Explanations:**
+*Field Explanations:*
 
-| Field                          | Type   | Default      | Purpose                                                       |
-|--------------------------------|--------|--------------|---------------------------------------------------------------|
-| `tigerProxyUrl`                | URL    | (auto-wired) | Tiger proxy to route through; can be `${<serverId>.adminUrl}` |
-| `controlMode`                  | enum   | NONE         | NONE = DNS only; ROUTE_PER_HOST = also config proxy           |
-| `dnsPort`                      | int    | 53           | Container port for DNS (UDP+TCP)                              |
-| `proxiedHosts[]`               | list   | empty        | Initial hosts registered at startup                           |
-| `proxiedHosts[].host`          | string | required     | Hostname to intercept (e.g., api.example.com)                 |
-| `proxiedHosts[].matchType`     | enum   | EXACT        | EXACT = exact match; SUFFIX = wildcard                        |
-| `proxiedHosts[].tigerProxyUrl` | URL    | inherited    | Override proxy for this host only                             |
-| `upstreamDnsServers[]`         | list   | []           | Upstream DNS servers (empty = use system)                     |
-| `defaultTtlSeconds`            | int    | 30           | TTL for synthesized answers                                   |
-| `proxyClientHttpVersion`       | enum   | AUTO         | HTTP or HTTP/2 for admin API calls                            |
-| `adminPort`                    | int    | 0            | REST API port (0 = auto-assign)                               |
-| `dnsHostPort`                  | int    | 0            | DNS host port (0 = auto-assign)                               |
-| `image`                        | string | latest       | Docker image (tag resolved from pom)                          |
-| `networks[]`                   | list   | []           | Additional Docker networks to join                            |
-| `extraEnv`                     | map    | {}           | Extra environment variables                                   |
+|===
+|Field |Type |Default |Purpose
 
-### Three Configuration Methods
+|`tigerProxyUrl` |URL |(auto-wired) |Tiger proxy to route through; can be `+${<serverId>.adminUrl}+`
+|`controlMode` |enum |NONE |NONE = DNS only; ROUTE_PER_HOST = also config proxy
+|`dnsPort` |int |53 |Container port for DNS (UDP+TCP)
+|`proxiedHosts[]` |list |empty |Initial hosts registered at startup
+|`proxiedHosts[].host` |string |required |Hostname to intercept (e.g., api.example.com)
+|`proxiedHosts[].matchType` |enum |EXACT |EXACT = exact match; SUFFIX = wildcard
+|`proxiedHosts[].tigerProxyUrl` |URL |inherited |Override proxy for this host only
+|`upstreamDnsServers[]` |list |[] |Upstream DNS servers (empty = use system)
+|`defaultTtlSeconds` |int |30 |TTL for synthesized answers
+|`proxyClientHttpVersion` |enum |AUTO |HTTP or HTTP/2 for admin API calls
+|`adminPort` |int |0 |REST API port (0 = auto-assign)
+|`dnsHostPort` |int |0 |DNS host port (0 = auto-assign)
+|`image` |string |latest |Docker image (tag resolved from pom)
+|`networks[]` |list |[] |Additional Docker networks to join
+|`extraEnv` |map |{} |Extra environment variables
+|===
 
-**Method 1: Docker Environment Variables (Indexed)**
+=== Three Configuration Methods
 
-```bash
+*Method 1: Docker Environment Variables (Indexed)*
+
+[source,bash]
+----
 export TIGER_PROXY_URL="http://proxy:9090/"
 export CANOPY_DNS_PORT="53"
 export CANOPY_PROXIEDHOSTS_0_HOST="api.example.com"
 export CANOPY_PROXIEDHOSTS_0_MATCHTYPE="EXACT"
-```
+----
 
-**Method 2: SPRING_APPLICATION_JSON (Single Env Var)**
+*Method 2: SPRING_APPLICATION_JSON (Single Env Var)*
 
-```bash
+[source,bash]
+----
 export SPRING_APPLICATION_JSON='{
   "canopy": {
     "dnsPort": 53,
@@ -468,11 +459,12 @@ export SPRING_APPLICATION_JSON='{
     ]
   }
 }'
-```
+----
 
-**Method 3: Mounted YAML File**
+*Method 3: Mounted YAML File*
 
-```yaml
+[source,yaml]
+----
 # canopy-config.yaml
 canopy:
   dnsPort: 53
@@ -480,22 +472,24 @@ canopy:
   proxiedHosts:
     - host: api.example.com
       matchType: EXACT
-```
+----
 
-```bash
+[source,bash]
+----
 docker run \
   -v ./canopy-config.yaml:/app/config/application.yaml:ro \
   -e SPRING_CONFIG_ADDITIONAL_LOCATION="/app/config/" \
   gematik1/tiger-canopy-image:latest
-```
+----
 
-### Auto-Wiring Behavior
+=== Auto-Wiring Behavior
 
 When using Tiger testenv-mgr, CANOPY's `tigerProxyUrl` can auto-wire:
 
-**Scenario 1: Single Proxy (Auto-Wire)**
+*Scenario 1: Single Proxy (Auto-Wire)*
 
-```yaml
+[source,yaml]
+----
 servers:
   proxy:
     type: tigerProxy
@@ -506,11 +500,12 @@ servers:
     canopy:
     # tigerProxyUrl left blank → auto-wires to ${proxy.adminUrl}
     # controlMode auto-set to ROUTE_PER_HOST (unless explicitly NONE)
-```
+----
 
-**Scenario 2: Multiple Proxies (Manual)**
+*Scenario 2: Multiple Proxies (Manual)*
 
-```yaml
+[source,yaml]
+----
 servers:
   httpProxy:
     type: tigerProxy
@@ -529,22 +524,24 @@ servers:
         - host: api.example.com  # → httpProxy
         - host: smtp.example.com
           tigerProxyUrl: ${smtpProxy.adminUrl}  # → smtpProxy
-```
+----
 
-### Published Placeholders
+=== Published Placeholders
 
 After CANOPY starts, these placeholders are available for other servers:
 
-```yaml
+[source,yaml]
+----
 ${myCanopy.baseUrl}      # http://canopy:8080 (REST API)
 ${myCanopy.dnsAddress}   # 172.20.0.5 (container network IP)
 ${myCanopy.dnsPort}      # 53 (DNS host port)
 ${myCanopy.containerName}  # container_id_hash
-```
+----
 
-**Usage Example:**
+*Usage Example:*
 
-```yaml
+[source,yaml]
+----
 servers:
   myCanopy:
     type: canopy
@@ -556,19 +553,18 @@ servers:
       environment:
         CANOPY_URL: ${myCanopy.baseUrl}
         CANOPY_DNS: ${myCanopy.dnsAddress}:${myCanopy.dnsPort}
-```
+----
 
----
+== Usage Patterns
 
-## Usage Patterns
+=== Pattern 1: Static Configuration
 
-### Pattern 1: Static Configuration
+*Use Case:* Hosts are known at startup; routing doesn't change.
 
-**Use Case:** Hosts are known at startup; routing doesn't change.
+*Configuration:*
 
-**Configuration:**
-
-```yaml
+[source,yaml]
+----
 servers:
   canopy:
     type: canopy
@@ -577,36 +573,36 @@ servers:
         - host: api.internal.example.com
         - host: db.internal.example.com
         - host: cache.internal.example.com
-```
+----
 
-**Behavior:**
+*Behavior:*
 
-- Hosts registered at CANOPY startup
-- Remain registered for entire test suite
-- Queries for unregistered hosts go to upstream DNS
-- No REST API calls needed
+* Hosts registered at CANOPY startup
+* Remain registered for entire test suite
+* Queries for unregistered hosts go to upstream DNS
+* No REST API calls needed
 
-**Best For:** Single-scenario suites, integration tests with fixed endpoints
+*Best For:* Single-scenario suites, integration tests with fixed endpoints
 
----
+=== Pattern 2: Runtime Configuration
 
-### Pattern 2: Runtime Configuration
+*Use Case:* Different tests need different routing; routes change mid-suite.
 
-**Use Case:** Different tests need different routing; routes change mid-suite.
+*YAML Setup:*
 
-**YAML Setup:**
-
-```yaml
+[source,yaml]
+----
 servers:
   canopy:
     type: canopy
     canopy:
       proxiedHosts: [ ]  # Start empty; tests add as needed
-```
+----
 
-**Cucumber Steps:**
+*Cucumber Steps:*
 
-```gherkin
+[source,gherkin]
+----
 Feature: Multi-scenario API testing
 
   Scenario: Test against staging backend
@@ -623,11 +619,12 @@ Feature: Multi-scenario API testing
       | host             | matchType |
       | fallback.example | EXACT     |
     Then test calls http://fallback.example (intercepted)
-```
+----
 
-**REST API Calls:**
+*REST API Calls:*
 
-```bash
+[source,bash]
+----
 # Add hosts
 curl -X POST http://canopy:8080/api/v1/proxied-hosts \
   -d '{"host":"api.prod","matchType":"EXACT"}'
@@ -640,19 +637,18 @@ curl -X DELETE http://canopy:8080/api/v1/proxied-hosts/api.prod
 
 # Clear all (cleanup)
 curl -X DELETE http://canopy:8080/api/v1/proxied-hosts
-```
+----
 
-**Best For:** Multi-scenario suites, chaos testing, hypothesis testing
+*Best For:* Multi-scenario suites, chaos testing, hypothesis testing
 
----
+=== Pattern 3: Multi-Proxy Fan-Out
 
-### Pattern 3: Multi-Proxy Fan-Out
+*Use Case:* Route different protocols to different proxies (HTTP, POP3, SMTP, etc).
 
-**Use Case:** Route different protocols to different proxies (HTTP, POP3, SMTP, etc).
+*Configuration:*
 
-**Configuration:**
-
-```yaml
+[source,yaml]
+----
 servers:
   httpProxy:
     type: tigerProxy
@@ -689,57 +685,56 @@ servers:
         # SMTP routes to smtpProxy
         - host: smtp.example.com
           tigerProxyUrl: ${smtpProxy.adminUrl}
-```
+----
 
-**Behavior:**
+*Behavior:*
 
-- `api.example.com` → HTTP proxy (9090)
-- `mail.example.com` → POP3 proxy (9110)
-- `smtp.example.com` → SMTP proxy (9210)
-- All routed through Canopy's single DNS server
+* `api.example.com` → HTTP proxy (9090)
+* `mail.example.com` → POP3 proxy (9110)
+* `smtp.example.com` → SMTP proxy (9210)
+* All routed through Canopy's single DNS server
 
-**Best For:** Protocol-specific testing, complex backend scenarios
+*Best For:* Protocol-specific testing, complex backend scenarios
 
----
+=== Comparison Matrix
 
-### Comparison Matrix
+|===
+|Pattern |Static |Runtime |Multi-Proxy
 
-| Pattern           | Static              | Runtime                | Multi-Proxy               |
-|-------------------|---------------------|------------------------|---------------------------|
-| **Config**        | Hardcoded in YAML   | Empty, add via steps   | Per-host overrides        |
-| **Routes Change** | No (restart needed) | Yes (at runtime)       | Limited (per-host prefix) |
-| **Complexity**    | Low                 | Medium                 | Medium                    |
-| **Use Case**      | Integration tests   | Scenario tests         | Protocol gateways         |
-| **REST API**      | Not needed          | Required               | Not needed                |
-| **Stage Mode**    | Can be NONE         | Usually ROUTE_PER_HOST | Usually ROUTE_PER_HOST    |
+|*Config* |Hardcoded in YAML |Empty, add via steps |Per-host overrides
+|*Routes Change* |No (restart needed) |Yes (at runtime) |Limited (per-host prefix)
+|*Complexity* |Low |Medium |Medium
+|*Use Case* |Integration tests |Scenario tests |Protocol gateways
+|*REST API* |Not needed |Required |Not needed
+|*Stage Mode* |Can be NONE |Usually ROUTE_PER_HOST |Usually ROUTE_PER_HOST
+|===
 
----
+== DNS-Only vs Dynamic-Route Mode Deep Dive
 
-## DNS-Only vs Dynamic-Route Mode Deep Dive
-
-### Understanding Control Modes
+=== Understanding Control Modes
 
 CANOPY has two operational modes affecting how it coordinates with the Tiger proxy.
 
-**DNS-Only: `controlMode: NONE`**
+*DNS-Only: `controlMode: NONE`*
 
-- CANOPY handles DNS rewriting
-- Tiger proxy is **configured separately** (static routes or other)
-- Two independent systems
-- DNS tells clients "use this IP for this hostname"
-- Proxy must already know how to handle traffic to that IP
+* CANOPY handles DNS rewriting
+* Tiger proxy is *configured separately* (static routes or other)
+* Two independent systems
+* DNS tells clients "use this IP for this hostname"
+* Proxy must already know how to handle traffic to that IP
 
-**Dynamic-Route: `controlMode: ROUTE_PER_HOST` (DNS + Route Registration)**
+*Dynamic-Route: `controlMode: ROUTE_PER_HOST` (DNS + Route Registration)*
 
-- CANOPY handles DNS rewriting **and** proxy configuration
-- Every host added to CANOPY also registers a route on the Tiger proxy
-- Tightly integrated
-- DNS + proxy stay in sync
-- If host added to CANOPY, proxy knows how to route it
+* CANOPY handles DNS rewriting *and* proxy configuration
+* Every host added to CANOPY also registers a route on the Tiger proxy
+* Tightly integrated
+* DNS + proxy stay in sync
+* If host added to CANOPY, proxy knows how to route it
 
-### Decision Tree: Which Mode to Use?
+=== Decision Tree: Which Mode to Use?
 
-```
+[source]
+----
 Does your Tiger proxy already have the routes configured?
 ├─ YES → Use DNS-only (NONE)
 │   Reason: Proxy already handles traffic; CANOPY just does DNS
@@ -751,13 +746,14 @@ Does your Tiger proxy already have the routes configured?
     │
     └─ NO → Configure proxy manually, then use DNS-only
         Reason: You have special routing logic that CANOPY can't handle
-```
+----
 
-### DNS-only Example
+=== DNS-only Example
 
-**When to use:** Proxy has static routes configured elsewhere
+*When to use:* Proxy has static routes configured elsewhere
 
-```yaml
+[source,yaml]
+----
 servers:
   myProxy:
     type: tigerProxy
@@ -777,19 +773,20 @@ servers:
       proxiedHosts:
         - host: api.example.com      # CANOPY redirects DNS to proxy
         # proxy already has route configured above
-```
+----
 
-**Flow:**
+*Flow:*
 
-1. Client: `nslookup api.example.com` → DNS: returns proxy IP
-2. Client connects to proxy IP
-3. Proxy: matches route `api.example.com` → forwards to backend
+. Client: `nslookup api.example.com` → DNS: returns proxy IP
+. Client connects to proxy IP
+. Proxy: matches route `api.example.com` → forwards to backend
 
-### Dynamic Route Example
+=== Dynamic Route Example
 
-**When to use:** Dynamic routes; proxy needs CANOPY to tell it what to do
+*When to use:* Dynamic routes; proxy needs CANOPY to tell it what to do
 
-```yaml
+[source,yaml]
+----
 servers:
   myProxy:
     type: tigerProxy
@@ -804,18 +801,19 @@ servers:
       tigerProxyUrl: ${myProxy.adminUrl}  # auto-wired
       proxiedHosts:
         - host: api.example.com  # CANOPY tells proxy about this
-```
+----
 
-**Flow:**
+*Flow:*
 
-1. CANOPY startup: registers route on proxy via admin API
-2. Client: `nslookup api.example.com` → DNS: returns proxy IP
-3. Client connects to proxy IP
-4. Proxy: has route (via CANOPY registration) → handles it
+. CANOPY startup: registers route on proxy via admin API
+. Client: `nslookup api.example.com` → DNS: returns proxy IP
+. Client connects to proxy IP
+. Proxy: has route (via CANOPY registration) → handles it
 
-**At Runtime (Cucumber):**
+*At Runtime (Cucumber):*
 
-```gherkin
+[source,gherkin]
+----
 When TGR add the following proxied hosts to CANOPY:
 | host | matchType |
 | staging.api.com | EXACT |
@@ -823,111 +821,122 @@ When TGR add the following proxied hosts to CANOPY:
   # 1. Adds to DNS registry
   # 2. Registers route on proxy via admin API
   # → proxy immediately knows how to handle it
-```
+----
 
-### Trade-offs
+=== Trade-offs
 
-| Aspect              | DNS-only               | Dynamic Routes         |
-|---------------------|------------------------|------------------------|
-| **Setup**           | More manual            | Automatic              |
-| **Runtime Changes** | Need proxy API calls   | CANOPY handles it      |
-| **Complexity**      | Higher (manage both)   | Lower (CANOPY manages) |
-| **Control**         | Full (explicit routes) | Less (CANOPY handles)  |
-| **Dependencies**    | CANOPY on proxy        | Proxy on CANOPY        |
+|===
+|Aspect |DNS-only |Dynamic Routes
 
----
+|*Setup* |More manual |Automatic
+|*Runtime Changes* |Need proxy API calls |CANOPY handles it
+|*Complexity* |Higher (manage both) |Lower (CANOPY manages)
+|*Control* |Full (explicit routes) |Less (CANOPY handles)
+|*Dependencies* |CANOPY on proxy |Proxy on CANOPY
+|===
 
-## Cucumber Integration
+== Cucumber Integration
 
-### Overview
+=== Overview
 
 CANOPY ships Cucumber glue steps that let test scenarios add/remove hosts dynamically without Java code.
 
-**Auto-Discovery:** Steps are auto-discovered if you use `TigerCucumberRunner`. If you use custom `@CucumberOptions`,
+*Auto-Discovery:* Steps are auto-discovered if you use `TigerCucumberRunner`. If you use custom `@CucumberOptions`,
 manually add glue package:
 
-```java
+[source,java]
+----
 @CucumberOptions(glue = {
     "de.gematik.test.tiger.glue",
     "de.gematik.test.tiger.canopy.extension.glue"  // ← Add this
 })
-```
+----
 
-### Available Steps
+=== Available Steps
 
-#### Configuration
+==== Configuration
 
-**Set the base URL:**
+*Set the base URL:*
 
-```gherkin
+[source,gherkin]
+----
 Given TGR set CANOPY base URL to http://canopy:8080
-```
+----
 
 Alternative: Configure in `tiger.yaml`
 
-```yaml
+[source,yaml]
+----
 tiger:
   canopy:
     baseUrl: http://canopy:8080
-```
+----
 
-#### Add Hosts
+==== Add Hosts
 
-**Add single host (simple):**
+*Add single host (simple):*
 
-```gherkin
+[source,gherkin]
+----
 When TGR add proxied host api.example.com to CANOPY
-```
+----
 
-**Add single host with match type:**
+*Add single host with match type:*
 
-```gherkin
+[source,gherkin]
+----
 When TGR add proxied host api.example.com to CANOPY with:
 | matchType | EXACT |
-```
+----
 
-**Add multiple hosts:**
+*Add multiple hosts:*
 
-```gherkin
+[source,gherkin]
+----
 When TGR add the following proxied hosts to CANOPY:
 | host              | matchType |
 | api.example.com   | EXACT     |
 | *.internal.local  | SUFFIX    |
 | staging.api       | EXACT     |
-```
+----
 
-#### Query/Verify
+==== Query/Verify
 
-**Check if host is registered:**
+*Check if host is registered:*
 
-```gherkin
+[source,gherkin]
+----
 Then TGR CANOPY contains proxied host api.example.com
 Then TGR CANOPY contains proxied host api.example.com with matchType EXACT
-```
+----
 
-**Check if host is NOT registered:**
+*Check if host is NOT registered:*
 
-```gherkin
+[source,gherkin]
+----
 Then TGR CANOPY does not contain proxied host deleted.host
-```
+----
 
-#### Remove Hosts
+==== Remove Hosts
 
-**Remove single host:**
+*Remove single host:*
 
-```gherkin
+[source,gherkin]
+----
 When TGR remove proxied host api.example.com from CANOPY
-```
+----
 
-**Clear all hosts:**
+*Clear all hosts:*
 
-```gherkin
+[source,gherkin]
+----
 When TGR remove all proxied hosts from CANOPY
-```
+----
 
-### Complete Example Scenario
+=== Complete Example Scenario
 
-```gherkin
+[source,gherkin]
+----
 Feature: API Testing with Dynamic Routing Switching
 
   Scenario: Switch between staging and production backends
@@ -954,67 +963,70 @@ Feature: API Testing with Dynamic Routing Switching
 
     # Cleanup
     When TGR remove all proxied hosts from CANOPY
-```
+----
 
-### Best Practices
+=== Best Practices
 
-1. **Set base URL once at suite level:**
+. *Set base URL once at suite level:*
 
-```gherkin
+[source,gherkin]
+----
 Feature: My Feature Suite
 
   Background:
     Given TGR set CANOPY base URL to http://canopy:8080
 
   Scenario: ...
-```
+----
 
-2. **Use meaningful host names:**
+. *Use meaningful host names:*
 
-```gherkin
+[source,gherkin]
+----
 # Good
 When TGR add proxied host auth.staging.example.com to CANOPY
 
 # Avoid
 When TGR add proxied host temp1 to CANOPY
-```
+----
 
-3. **Clean up after each scenario:**
+. *Clean up after each scenario:*
 
-```gherkin
+[source,gherkin]
+----
   Scenario: ...
     # ... test steps ...
 
 Scenario Teardown:
 When TGR remove all proxied hosts from CANOPY
-```
+----
 
-4. **Use `SUFFIX` for wildcard patterns:**
+. *Use `SUFFIX` for wildcard patterns:*
 
-```gherkin
+[source,gherkin]
+----
 # Catches api.example.com, v2.api.example.com, etc.
 When TGR add proxied host api.example.com to CANOPY with:
 | matchType | SUFFIX |
-```
+----
 
----
+== REST API Reference
 
-## REST API Reference
-
-### Overview
+=== Overview
 
 CANOPY exposes a REST API for programmatic host registration. Base path: `/api/v1/proxied-hosts`
 
-### Endpoints
+=== Endpoints
 
-#### GET `/api/v1/proxied-hosts`
+==== GET `/api/v1/proxied-hosts`
 
 List all registered hosts.
 
-**Request:** No body
-**Response:** `200 OK`
+*Request:* No body +
+*Response:* `200 OK`
 
-```json
+[source,json]
+----
 [
   {
     "host": "api.example.com",
@@ -1029,41 +1041,44 @@ List all registered hosts.
     "addedAt": "2026-06-03T10:31:00Z"
   }
 ]
-```
+----
 
-#### POST `/api/v1/proxied-hosts`
+==== POST `/api/v1/proxied-hosts`
 
 Add a single host (idempotent).
 
-**Request:**
+*Request:*
 
-```json
+[source,json]
+----
 {
   "host": "api.example.com",
   "matchType": "EXACT",
   "tigerProxyUrl": null
   // optional: per-host proxy override
 }
-```
+----
 
-**Response:** `201 Created`
+*Response:* `201 Created`
 
-```json
+[source,json]
+----
 {
   "host": "api.example.com",
   "matchType": "EXACT",
   "tigerProxyUrl": null,
   "addedAt": "2026-06-03T10:30:00Z"
 }
-```
+----
 
-#### POST `/api/v1/proxied-hosts/bulk`
+==== POST `/api/v1/proxied-hosts/bulk`
 
 Add multiple hosts atomically.
 
-**Request:**
+*Request:*
 
-```json
+[source,json]
+----
 {
   "hosts": [
     {
@@ -1081,11 +1096,12 @@ Add multiple hosts atomically.
     }
   ]
 }
-```
+----
 
-**Response:** `200 OK`
+*Response:* `200 OK`
 
-```json
+[source,json]
+----
 {
   "added": [
     {
@@ -1107,75 +1123,81 @@ Add multiple hosts atomically.
     }
   ]
 }
-```
+----
 
-#### DELETE `/api/v1/proxied-hosts/{host}`
+==== DELETE `+/api/v1/proxied-hosts/{host}+`
 
 Remove a specific host.
 
-**Request:** No body
-**Response:** `204 No Content`
+*Request:* No body +
+*Response:* `204 No Content`
 
-**Example:**
+*Example:*
 
-```bash
+[source,bash]
+----
 curl -X DELETE http://canopy:8080/api/v1/proxied-hosts/api.example.com
-```
+----
 
-#### DELETE `/api/v1/proxied-hosts`
+==== DELETE `/api/v1/proxied-hosts`
 
 Clear all registered hosts.
 
-**Request:** No body
-**Response:** `204 No Content`
+*Request:* No body +
+*Response:* `204 No Content`
 
-```bash
+[source,bash]
+----
 curl -X DELETE http://canopy:8080/api/v1/proxied-hosts
-```
+----
 
-#### GET `/api/v1/proxied-hosts/config`
+==== GET `/api/v1/proxied-hosts/config`
 
 Retrieve current configuration.
 
-**Response:** `200 OK`
+*Response:* `200 OK`
 
-```json
+[source,json]
+----
 {
   "tigerProxyUrl": "http://tiger-proxy:9090/",
   "controlMode": "ROUTE_PER_HOST",
   "dnsPort": 53
 }
-```
+----
 
-#### PUT `/api/v1/proxied-hosts/config/proxy-url`
+==== PUT `/api/v1/proxied-hosts/config/proxy-url`
 
 Change the Tiger proxy URL at runtime.
 
-**Request:**
+*Request:*
 
-```json
+[source,json]
+----
 {
   "url": "http://new-proxy:9100/"
 }
-```
+----
 
-**Response:** `200 OK`
+*Response:* `200 OK`
 
-```json
+[source,json]
+----
 {
   "tigerProxyUrl": "http://new-proxy:9100/",
   "controlMode": "ROUTE_PER_HOST",
   "dnsPort": 53
 }
-```
+----
 
-#### GET `/actuator/health`
+==== GET `/actuator/health`
 
 Health check endpoint.
 
-**Response:** `200 OK`
+*Response:* `200 OK`
 
-```json
+[source,json]
+----
 {
   "status": "UP",
   "components": {
@@ -1188,13 +1210,14 @@ Health check endpoint.
     }
   }
 }
-```
+----
 
-### Example Workflows
+=== Example Workflows
 
-**Bulk add + verify:**
+*Bulk add + verify:*
 
-```bash
+[source,bash]
+----
 # Add multiple hosts
 curl -X POST http://canopy:8080/api/v1/proxied-hosts/bulk \
   -H 'Content-Type: application/json' \
@@ -1210,20 +1233,22 @@ curl http://canopy:8080/api/v1/proxied-hosts
 
 # Test DNS (from inside a container)
 nslookup api.example.com canopy
-```
+----
 
-**Runtime proxy swap:**
+*Runtime proxy swap:*
 
-```bash
+[source,bash]
+----
 # Switch which proxy handles traffic
 curl -X PUT http://canopy:8080/api/v1/proxied-hosts/config/proxy-url \
   -H 'Content-Type: application/json' \
   -d '{"url": "http://backup-proxy:9090/"}'
-```
+----
 
-**Error handling:**
+*Error handling:*
 
-```bash
+[source,bash]
+----
 # Invalid host name → 400 Bad Request
 curl -X POST http://canopy:8080/api/v1/proxied-hosts \
   -d '{"host": "", "matchType": "EXACT"}'
@@ -1238,62 +1263,79 @@ curl -X POST http://canopy:8080/api/v1/proxied-hosts \
 # Remove non-existent host → 204 No Content (idempotent)
 curl -X DELETE http://canopy:8080/api/v1/proxied-hosts/never-added
 # Response: 204 (no error)
-```
+----
 
----
+== Troubleshooting
 
-## Troubleshooting
+=== Issue 1: DNS Resolution Not Working
 
-### Issue 1: DNS Resolution Not Working
+*Symptom:* Containers can't resolve proxied hostnames; `nslookup` returns NXDOMAIN or wrong IP
 
-**Symptom:** Containers can't resolve proxied hostnames; `nslookup` returns NXDOMAIN or wrong IP
+*Diagnosis Steps:*
 
-**Diagnosis Steps:**
+. *Is CANOPY running?*
++
+[source,bash]
+----
+docker ps | grep canopy
+docker logs <canopy-container>
+----
++
+If missing, start it. If failed startup, check logs for binding errors (port 53?).
 
-1. **Is CANOPY running?**
-   ```bash
-   docker ps | grep canopy
-   docker logs <canopy-container>
-   ```
-   If missing, start it. If failed startup, check logs for binding errors (port 53?).
+. *Is the container using CANOPY as DNS?*
++
+[source,bash]
+----
+docker inspect <app-container> | grep Dns
+# Should show canopy's IP or "canopy" name
+----
++
+If not, add `dns: [canopy]` or run with `-e CANOPY_ENABLED=true`.
 
-2. **Is the container using CANOPY as DNS?**
-   ```bash
-   docker inspect <app-container> | grep Dns
-   # Should show canopy's IP or "canopy" name
-   ```
-   If not, add `dns: [canopy]` or run with `-e CANOPY_ENABLED=true`.
+. *Is the host registered with CANOPY?*
++
+[source,bash]
+----
+curl http://canopy:8080/api/v1/proxied-hosts | grep "your-hostname"
+----
++
+If missing, add it:
++
+[source,bash]
+----
+curl -X POST http://canopy:8080/api/v1/proxied-hosts \
+  -d '{"host": "your-hostname"}'
+----
 
-3. **Is the host registered with CANOPY?**
-   ```bash
-   curl http://canopy:8080/api/v1/proxied-hosts | grep "your-hostname"
-   ```
-   If missing, add it:
-   ```bash
-   curl -X POST http://canopy:8080/api/v1/proxied-hosts \
-     -d '{"host": "your-hostname"}'
-   ```
+. *Does CANOPY have a proxy configured?*
++
+[source,bash]
+----
+curl http://canopy:8080/api/v1/proxied-hosts/config
+# Check tigerProxyUrl is not empty
+----
++
+If empty, set it:
++
+[source,bash]
+----
+curl -X PUT http://canopy:8080/api/v1/proxied-hosts/config/proxy-url \
+  -d '{"url": "http://proxy:9090/"}'
+----
 
-4. **Does CANOPY have a proxy configured?**
-   ```bash
-   curl http://canopy:8080/api/v1/proxied-hosts/config
-   # Check tigerProxyUrl is not empty
-   ```
-   If empty, set it:
-   ```bash
-   curl -X PUT http://canopy:8080/api/v1/proxied-hosts/config/proxy-url \
-     -d '{"url": "http://proxy:9090/"}'
-   ```
+. *Test DNS from inside container:*
++
+[source,bash]
+----
+docker exec <app-container> nslookup your-hostname canopy
+# Should return proxy IP (not NXDOMAIN)
+----
 
-5. **Test DNS from inside container:**
-   ```bash
-   docker exec <app-container> nslookup your-hostname canopy
-   # Should return proxy IP (not NXDOMAIN)
-   ```
+*Quick Fix Sequence:*
 
-**Quick Fix Sequence:**
-
-```bash
+[source,bash]
+----
 # 1. Verify CANOPY is up
 curl http://canopy:8080/actuator/health
 
@@ -1306,75 +1348,81 @@ curl -X POST http://canopy:8080/api/v1/proxied-hosts \
 
 # 4. Test from app
 docker exec <app> nslookup your-hostname canopy
-```
+----
 
----
+=== Issue 2: Health Check Timeout (CANOPY Fails to Start)
 
-### Issue 2: Health Check Timeout (CANOPY Fails to Start)
+*Symptom:* Container start hangs for 60 seconds, then fails with health check timeout
 
-**Symptom:** Container start hangs for 60 seconds, then fails with health check timeout
+*Diagnosis:*
 
-**Diagnosis:**
+. *Check CANOPY logs:*
++
+[source,bash]
+----
+docker logs <canopy-container>
+# Look for errors in Spring Boot startup
+----
 
-1. **Check CANOPY logs:**
-   ```bash
-   docker logs <canopy-container>
-   # Look for errors in Spring Boot startup
-   ```
+. *Common causes:*
+* Port 53 already in use → use ephemeral port (`dnsPort: 5353`)
+* Missing Tiger proxy URL → set `TIGER_PROXY_URL` env var
+* DNS initialization slow → wait longer (normal on first start)
 
-2. **Common causes:**
-    - Port 53 already in use → use ephemeral port (`dnsPort: 5353`)
-    - Missing Tiger proxy URL → set `TIGER_PROXY_URL` env var
-    - DNS initialization slow → wait longer (normal on first start)
+. *Check if port 53 is free:*
++
+[source,bash]
+----
+netstat -an | grep 53
+# If in use, either stop other process or change port
+----
 
-3. **Check if port 53 is free:**
-   ```bash
-   netstat -an | grep 53
-   # If in use, either stop other process or change port
-   ```
+. *Verify REST API responds:*
++
+[source,bash]
+----
+curl -v http://canopy:8080/actuator/health
+# Should return 200 quickly
+----
 
-4. **Verify REST API responds:**
-   ```bash
-   curl -v http://canopy:8080/actuator/health
-   # Should return 200 quickly
-   ```
+*Quick Fix:*
 
-**Quick Fix:**
-
-```yaml
+[source,yaml]
+----
 # Use unprivileged port if 53 is blocked
 canopy:
   dnsPort: 5353  # Use this instead of 53
-```
+----
 
 Then update container DNS references:
 
-```bash
+[source,bash]
+----
 docker run --dns=canopy:5353 my-app
-```
+----
 
----
+=== Issue 3: Port Already in Use
 
-### Issue 3: Port Already in Use
+*Symptom:*
 
-**Symptom:**
+* Port 53 TCP/UDP: `bind: permission denied` or `already in use`
+* Port 8080: REST API unreachable
 
-- Port 53 TCP/UDP: `bind: permission denied` or `already in use`
-- Port 8080: REST API unreachable
+*Solutions:*
 
-**Solutions:**
+*Option A: Use Unprivileged Port*
 
-**Option A: Use Unprivileged Port**
-
-```yaml
+[source,yaml]
+----
 canopy:
   adminPort: 8090      # REST API on 8090 instead of 8080
   dnsPort: 5353        # DNS on 5353 instead of 53
-```
+----
 
-**Option B: Free Up Port (if something else has it)**
+*Option B: Free Up Port (if something else has it)*
 
-```bash
+[source,bash]
+----
 # Find what's using port 53
 sudo lsof -i :53
 
@@ -1382,54 +1430,58 @@ sudo lsof -i :53
 kill -9 <pid>
 
 # Then restart CANOPY
-```
+----
 
-**Option C: Run as Root (Not Recommended)**
+*Option C: Run as Root (Not Recommended)*
 
-```bash
+[source,bash]
+----
 # Requires CAP_NET_BIND_SERVICE capability
 # Official image handles this safely; custom images need:
 docker run --cap-add=NET_BIND_SERVICE canopy:latest
-```
+----
 
----
+=== Issue 4: Placeholder Resolution Failed
 
-### Issue 4: Placeholder Resolution Failed
+*Symptom:* Tiger can't resolve `+${myCanopy.baseUrl}+` or other placeholders
 
-**Symptom:** Tiger can't resolve `${myCanopy.baseUrl}` or other placeholders
+*Diagnosis:*
 
-**Diagnosis:**
+. *Is the canopy server defined?*
++
+[source,yaml]
+----
+servers:
+  myCanopy:
+    type: canopy
+    # ...
+----
 
-1. **Is the canopy server defined?**
-   ```yaml
-   servers:
-     myCanopy:
-       type: canopy
-       # ...
-   ```
+. *Is the placeholder spelled correctly?*
++
+[source,yaml]
+----
+# Correct
+${myCanopy.baseUrl}
+${myCanopy.dnsAddress}
+${myCanopy.dnsPort}
+${myCanopy.containerName}
 
-2. **Is the placeholder spelled correctly?**
-   ```yaml
-   # Correct
-   ${myCanopy.baseUrl}
-   ${myCanopy.dnsAddress}
-   ${myCanopy.dnsPort}
-   ${myCanopy.containerName}
+# Common typos
+${myCanopy.url}        # ← Wrong (baseUrl, not url)
+${canopy.baseUrl}      # ← Wrong (use server ID, not type)
+${MyCanopy.baseUrl}    # ← Wrong (case sensitive)
+----
 
-   # Common typos
-   ${myCanopy.url}        # ← Wrong (baseUrl, not url)
-   ${canopy.baseUrl}      # ← Wrong (use server ID, not type)
-   ${MyCanopy.baseUrl}    # ← Wrong (case sensitive)
-   ```
+. *Has CANOPY started before the placeholder is evaluated?*
+* YAML config parsing happens after startup ordering
+* If placeholder used in another server starting immediately, it might not exist yet
+* Add explicit `dependsUpon: myCanopy` to use the placeholder in that server
 
-3. **Has CANOPY started before the placeholder is evaluated?**
-    - YAML config parsing happens after startup ordering
-    - If placeholder used in another server starting immediately, it might not exist yet
-    - Add explicit `dependsUpon: myCanopy` to use the placeholder in that server
+*Quick Fix:*
 
-**Quick Fix:**
-
-```yaml
+[source,yaml]
+----
 servers:
   myCanopy:
     type: canopy
@@ -1444,69 +1496,74 @@ servers:
       image: my-app
       environment:
         CANOPY_URL: ${myCanopy.baseUrl}  # Now resolved correctly
-```
+----
 
----
+=== Issue 5: Dynamic Route Registration Failure
 
-### Issue 5: Dynamic Route Registration Failure
+*Symptom:* Hosts added to CANOPY but Tiger proxy doesn't route; error in logs like "PUT /route failed"
 
-**Symptom:** Hosts added to CANOPY but Tiger proxy doesn't route; error in logs like "PUT /route failed"
+*Diagnosis:*
 
-**Diagnosis:**
+. *Is controlMode set to ROUTE_PER_HOST?*
++
+[source,yaml]
+----
+canopy:
+  controlMode: ROUTE_PER_HOST  # Must be this for Stage 2
+----
 
-1. **Is controlMode set to ROUTE_PER_HOST?**
-   ```yaml
-   canopy:
-     controlMode: ROUTE_PER_HOST  # Must be this for Stage 2
-   ```
+. *Can CANOPY reach the proxy admin API?*
++
+[source,bash]
+----
+curl http://proxy:9000/route  # Should be reachable
+----
 
-2. **Can CANOPY reach the proxy admin API?**
-   ```bash
-   curl http://proxy:9000/route  # Should be reachable
-   ```
+. *Were hosts added correctly?*
++
+[source,bash]
+----
+curl http://canopy:8080/api/v1/proxied-hosts
+# Should show your hosts
+----
 
-3. **Were hosts added correctly?**
-   ```bash
-   curl http://canopy:8080/api/v1/proxied-hosts
-   # Should show your hosts
-   ```
+. *Check CANOPY logs for registration errors:*
++
+[source,bash]
+----
+docker logs <canopy-container> | grep -i route
+# Should NOT show errors
+----
 
-4. **Check CANOPY logs for registration errors:**
-   ```bash
-   docker logs <canopy-container> | grep -i route
-   # Should NOT show errors
-   ```
+*Quick Fix:*
 
-**Quick Fix:**
+* Ensure proxy is running before adding hosts
+* Check proxy admin port is correct in `tigerProxyUrl`
+* Check network connectivity between CANOPY and proxy containers
 
-- Ensure proxy is running before adding hosts
-- Check proxy admin port is correct in `tigerProxyUrl`
-- Check network connectivity between CANOPY and proxy containers
+=== Issue 6: Configuration Mistakes
 
----
+*Common mistakes and fixes:*
 
-### Issue 6: Configuration Mistakes
+|===
+|Mistake |Error |Fix
 
-**Common mistakes and fixes:**
+|Host name typo |DNS says NXDOMAIN |Verify with `curl .../proxied-hosts`
+|Empty proxiedHosts |Nothing gets routed |Add hosts via Cucumber or REST API
+|NONE mode, proxy fails |Routes don't work |Switch to ROUTE_PER_HOST or configure proxy manually
+|Multiple proxies, no tigerProxyUrl |Auto-wire skipped |Set tigerProxyUrl explicitly
+|Port out of range |Start fails |Use port 0-65535
+|controlMode typo |Start fails |Use NONE or ROUTE_PER_HOST (exact)
+|===
 
-| Mistake                            | Error               | Fix                                                  |
-|------------------------------------|---------------------|------------------------------------------------------|
-| Host name typo                     | DNS says NXDOMAIN   | Verify with `curl .../proxied-hosts`                 |
-| Empty proxiedHosts                 | Nothing gets routed | Add hosts via Cucumber or REST API                   |
-| NONE mode, proxy fails             | Routes don't work   | Switch to ROUTE_PER_HOST or configure proxy manually |
-| Multiple proxies, no tigerProxyUrl | Auto-wire skipped   | Set tigerProxyUrl explicitly                         |
-| Port out of range                  | Start fails         | Use port 0-65535                                     |
-| controlMode typo                   | Start fails         | Use NONE or ROUTE_PER_HOST (exact)                   |
+== Complete End-to-End Examples
 
----
+=== Example 1: Pure Docker Setup
 
-## Complete End-to-End Examples
+*Files:* `docker-compose.yaml`
 
-### Example 1: Pure Docker Setup
-
-**Files:** `docker-compose.yaml`
-
-```yaml
+[source,yaml]
+----
 version: '3.8'
 
 services:
@@ -1547,7 +1604,8 @@ services:
     image: alpine:3
     command: ["sh", "-c", "for i in $(seq 1 30); do IP=$(getent hosts canopy | awk '{print $1}') && [ -n \"$IP\" ] && break; sleep 1; done; \
       if [ -z \"$IP\" ]; then echo 'ERROR: could not resolve canopy' >&2; exit 1; fi; \
-      cat > /dns/resolv.conf <<EOF\n+nameserver $IP\nnameserver 127.0.0.11\n+EOF\n+      tail -f /dev/null"]
+      cat > /dns/resolv.conf <<EOF\nnameserver $IP\nnameserver 127.0.0.11\nEOF\n\
+      tail -f /dev/null"]
     networks:
       - test-network
     depends_on:
@@ -1575,11 +1633,12 @@ services:
 networks:
   test-network:
     driver: bridge
-```
+----
 
-**Verify:**
+*Verify:*
 
-```bash
+[source,bash]
+----
 # Start
 docker compose up -d
 
@@ -1591,40 +1650,33 @@ docker compose exec test-app nslookup api.example.com
 curl -X POST http://localhost:8080/api/v1/proxied-hosts \
   -d '{"host": "staging.api", "matchType": "EXACT"}'
 
-# Stop
-docker compose down
-```
-
 # List hosts
-
 curl http://localhost:8080/api/v1/proxied-hosts | jq .
 
 # Stop
-
 docker compose down
+----
 
-```
+=== Example 2: Tiger Integration (Simple)
 
----
+*Files:* `pom.xml`, `tiger.yaml`
 
-### Example 2: Tiger Integration (Simple)
+*pom.xml:*
 
-**Files:** `pom.xml`, `tiger.yaml`
-
-**pom.xml:**
-
-```xml
+[source,xml]
+----
 
 <dependency>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-canopy-extension</artifactId>
     <version>${tiger.version}</version>
 </dependency>
-```
+----
 
-**tiger.yaml:**
+*tiger.yaml:*
 
-```yaml
+[source,yaml]
+----
 localProxyActive: true
 
 servers:
@@ -1671,22 +1723,24 @@ servers:
     environment:
       - API_URL=http://api.example.com  # Will be intercepted
       - DB_URL=${testDatabase.DB_URL}
-```
+----
 
-**Test (MyApiIT.java):**
+*Test (MyApiIT.java):*
 
-```java
+[source,java]
+----
 
 @RunWith(TigerCucumberRunner.class)
 @CucumberOptions(features = "src/test/resources/features")
 public class MyApiIT {
   // Tests run with CANOPY routing active
 }
-```
+----
 
-**Feature (test.feature):**
+*Feature (test.feature):*
 
-```gherkin
+[source,gherkin]
+----
 Given TGR set CANOPY base URL to http://myCanopy:8080
 
 Scenario: API test with dynamic routing
@@ -1702,15 +1756,14 @@ When I call the API via http://api.example.com/users
 Then I should get a valid response
 
 When TGR remove proxied host api.example.com from CANOPY
-```
+----
 
----
+=== Example 3: Multi-Proxy Setup
 
-### Example 3: Multi-Proxy Setup
+*tiger.yaml:*
 
-**tiger.yaml:**
-
-```yaml
+[source,yaml]
+----
 localProxyActive: true
 
 servers:
@@ -1752,23 +1805,22 @@ servers:
         # SMTP routes to smtpProxy
         - host: smtp.example.com
           tigerProxyUrl: ${smtpProxy.adminUrl}
-```
+----
 
-**Result:**
+*Result:*
 
-- `api.example.com` → HTTP proxy (9090) → backend
-- `mail.example.com` → POP3 proxy (9110) → mail server
-- `smtp.example.com` → SMTP proxy (9210) → SMTP server
+* `api.example.com` → HTTP proxy (9090) → backend
+* `mail.example.com` → POP3 proxy (9110) → mail server
+* `smtp.example.com` → SMTP proxy (9210) → SMTP server
 
 All routed through CANOPY's single DNS server.
 
----
+== Architecture & Design
 
-##Architecture & Design
+=== Component Overview
 
-### Component Overview
-
-```
+[source]
+----
 Application Container
 ├─ DNS query: "resolve api.example.com"
 │
@@ -1778,89 +1830,83 @@ Application Container
     │
     └─ NO → forward to upstream DNS resolver
          └─ return real IP from upstream
-```
+----
 
-### Performance Characteristics
+=== Performance Characteristics
 
-- **DNS lookups:** <1ms for exact matches, <5ms for suffix matching
-- **Registry add/remove:** <10ms (async proxy updates don't block)
-- **REST API:** <50ms typical (includes async tasks)
-- **Memory:** ~10MB base + 100KB per 1000 hosts
-- **Throughput:** >10,000 queries/sec per CPU core (typical modern hardware)
+* *DNS lookups:* <1ms for exact matches, <5ms for suffix matching
+* *Registry add/remove:* <10ms (async proxy updates don't block)
+* *REST API:* <50ms typical (includes async tasks)
+* *Memory:* ~10MB base + 100KB per 1000 hosts
+* *Throughput:* >10,000 queries/sec per CPU core (typical modern hardware)
 
-### Security
+=== Security
 
-- **No authentication:** REST API is unsecured (runs inside testenv network)
-- **Port 53 privilege:** Requires CAP_NET_BIND_SERVICE on Linux (official image has this)
-- **DNS spoofing:** Only affects containers using CANOPY as DNS; external queries unaffected
-- **Network isolation:** Runs in Docker network; unreachable from outside
+* *No authentication:* REST API is unsecured (runs inside testenv network)
+* *Port 53 privilege:* Requires CAP_NET_BIND_SERVICE on Linux (official image has this)
+* *DNS spoofing:* Only affects containers using CANOPY as DNS; external queries unaffected
+* *Network isolation:* Runs in Docker network; unreachable from outside
 
-### Limitations
+=== Limitations
 
-- **Single DNS server per testenv:** Multi-CANOPY future work
-- **In-memory registry:** Lost on restart (acceptable for tests)
-- **No persistence:** Perfect for ephemeral test environments
-- **No clustering:** Each container is independent
-- **No service discovery:** Requires manual host registration
+* *Single DNS server per testenv:* Multi-CANOPY future work
+* *In-memory registry:* Lost on restart (acceptable for tests)
+* *No persistence:* Perfect for ephemeral test environments
+* *No clustering:* Each container is independent
+* *No service discovery:* Requires manual host registration
 
----
+== Further Reading
 
-## Further Reading
+*In this repository:*
 
-**In this repository:**
+* `tiger-canopy/README.md` — API reference, quick start, configuration table
+* `doc/adr/canopy.md` — Architecture decision record, design details
 
-- [README.md](../README.md) — API reference, quick start, configuration table
-- [ADR](../../doc/adr/canopy.md) — Architecture decision record, design details
+*Using CANOPY:*
 
-**Using CANOPY:**
+* <<_tiger_test_environment_manager,Tiger Test Environment Manager>> — Integration with Tiger testenv-mgr
 
-- [Tiger User Manual](../../../doc/user_manual/tigerTestEnvironmentManager.adoc) — Integration with Tiger testenv-mgr
+*External Resources:*
 
-**External Resources:**
+* https://github.com/gematik/app-Tiger/[Tiger Test Framework] — Main Tiger repository
+* https://docs.docker.com/compose/[Docker Compose] — Docker networking reference
+* http://www.dnsjava.org/[dnsjava] — Java DNS library powering CANOPY
 
-- [Tiger Test Framework](https://github.com/gematik/app-Tiger/) — Main Tiger repository
-- [Docker Compose](https://docs.docker.com/compose/) — Docker networking reference
-- [dnsjava](http://www.dnsjava.org/) — Java DNS library powering CANOPY
+== Checklists
 
----
+=== Pre-Setup Checklist
 
-## Checklists
+* [ ] Docker and docker-compose installed (or Tiger testenv-mgr)
+* [ ] Port 53 (UDP/TCP) available on host (or plan to use ephemeral port)
+* [ ] Port 8080 available for REST API (or configure alternates)
+* [ ] Tiger proxy running (if using Stage 2 mode)
+* [ ] Familiar with DNS basics (CNAME, A records, etc.)
+* [ ] Network connectivity verified between containers
 
-### Pre-Setup Checklist
+=== Tiger Integration Setup Checklist
 
-- [ ] Docker and docker-compose installed (or Tiger testenv-mgr)
-- [ ] Port 53 (UDP/TCP) available on host (or plan to use ephemeral port)
-- [ ] Port 8080 available for REST API (or configure alternates)
-- [ ] Tiger proxy running (if using Stage 2 mode)
-- [ ] Familiar with DNS basics (CNAME, A records, etc.)
-- [ ] Network connectivity verified between containers
+* [ ] `tiger-canopy-extension` added to POM dependencies
+* [ ] `type: canopy` server defined in `tiger.yaml`
+* [ ] Exactly one `type: tigerProxy` sibling (for auto-wiring) OR explicit `tigerProxyUrl` set
+* [ ] `proxiedHosts` list populated with initial hosts (or left empty for runtime config)
+* [ ] `dependsUpon: myCanopy` added to any server using `+${myCanopy.xxx}+` placeholders
+* [ ] Test app has `dns: [canopy]` or uses Tiger DNS auto-injection
+* [ ] `mvn clean verify` runs without errors
+* [ ] Logs show: "CANOPY running, admin=http://localhost:8080, dns=172.20.0.X:53"
 
-### Tiger Integration Setup Checklist
-
-- [ ] `tiger-canopy-extension` added to POM dependencies
-- [ ] `type: canopy` server defined in `tiger.yaml`
-- [ ] Exactly one `type: tigerProxy` sibling (for auto-wiring) OR explicit `tigerProxyUrl` set
-- [ ] `proxiedHosts` list populated with initial hosts (or left empty for runtime config)
-- [ ] `dependsUpon: myCanopy` added to any server using `${myCanopy.xxx}` placeholders
-- [ ] Test app has `dns: [canopy]` or uses Tiger DNS auto-injection
-- [ ] `mvn clean verify` runs without errors
-- [ ] Logs show: "CANOPY running, admin=http://localhost:8080, dns=172.20.0.X:53"
-
-### Troubleshooting Checklist
+=== Troubleshooting Checklist
 
 When DNS/routing isn't working:
 
-- [ ] CANOPY container is running (`docker ps`)
-- [ ] No startup errors in logs (`docker logs canopy`)
-- [ ] Host is registered (`curl .../proxied-hosts`)
-- [ ] Proxy is reachable (`curl proxy:9000/xyz`)
-- [ ] Container uses correct DNS server (`docker inspect app | grep Dns`)
-- [ ] Test DNS manually (`docker exec app nslookup host canopy`)
-- [ ] Health check passes (`curl .../ actuator/health`)
+* [ ] CANOPY container is running (`docker ps`)
+* [ ] No startup errors in logs (`docker logs canopy`)
+* [ ] Host is registered (`curl .../proxied-hosts`)
+* [ ] Proxy is reachable (`curl proxy:9000/xyz`)
+* [ ] Container uses correct DNS server (`docker inspect app | grep Dns`)
+* [ ] Test DNS manually (`docker exec app nslookup host canopy`)
+* [ ] Health check passes (`curl .../ actuator/health`)
 
----
-
-**Last Updated:** June 3, 2026
-**Version:** 1.0
-**Audience:** All CANOPY users
-**Questions?** See FAQ.md or open a GitHub issue
+*Last Updated:* June 3, 2026 +
+*Version:* 1.0 +
+*Audience:* All CANOPY users
+*Questions?* See the FAQ of the Tiger user manual or open a GitHub issue

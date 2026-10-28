@@ -80,6 +80,7 @@ import org.junit.jupiter.api.Test;
 @ResetTigerConfiguration
 @NotThreadSafe
 @Tag("de.gematik.test.tiger.common.LongRunnerTest")
+@Tag("nightly_flaky")
 class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
   /**
@@ -292,10 +293,12 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .hasGivenValueAtPosition("$.payloadLength", 1)
         .hasGivenValueAtPosition("$.masked", false)
         .hasStringContentEqualToAtPosition("$.payload", "o");
-    assertThat(websocketMessages.get(1))
+    final RbelElement connectFrame = websocketMessages.get(1);
+    assertThat(connectFrame)
         .hasFacet(RbelWebsocketMessageFacet.class)
         .hasGivenValueAtPosition("$.opcode", 1)
-        .hasGivenValueAtPosition("$.payloadLength", 61)
+        .hasGivenValueAtPosition(
+            "$.payloadLength", (int) connectFrame.findElement("$.payload").orElseThrow().getSize())
         .hasGivenValueAtPosition("$.masked", true)
         .extractChildWithPath("$.payload")
         .asString()

@@ -20,13 +20,15 @@
  */
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.web.InsecureTrustAllManager;
+import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.util.NoProxyUtils;
 import java.io.IOException;
 import java.net.*;
 import java.net.Proxy.Type;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,8 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 public class TigerRouteSelector {
+  /** Answers the forward proxy sends when it cannot reach the target itself. */
+  private static final Set<Integer> PROXY_FAILURE_CODES = Set.of(403, 502, 503, 504);
+
   private final List<String> routeDestinations;
-  private final ForwardProxyInfo forwardProxyInfo;
+  private final ProxyConfiguration forwardProxy;
 
   public String selectFirstReachableDestination() {
     if (routeDestinations.isEmpty()) {
@@ -56,7 +61,9 @@ public class TigerRouteSelector {
   private boolean isReachable(String destination) {
     try {
       log.debug("Checking if destination '{}' is reachable", destination);
-      HttpURLConnection connection = openConnection(URI.create(destination).toURL());
+      URL url = URI.create(destination).toURL();
+      boolean viaProxy = shouldUseForwardProxy(url);
+      HttpURLConnection connection = openConnection(url, viaProxy);
       connection.setConnectTimeout(5000);
       connection.setReadTimeout(5000);
       connection.setInstanceFollowRedirects(false);
@@ -65,6 +72,13 @@ public class TigerRouteSelector {
       connection.connect();
       var responseCode = connection.getResponseCode();
       log.debug("Got response code {} for destination '{}'", responseCode, destination);
+      if (viaProxy && PROXY_FAILURE_CODES.contains(responseCode)) {
+        log.warn(
+            "Destination '{}' is not reachable, forward proxy answered {}",
+            destination,
+            responseCode);
+        return false;
+      }
       return responseCode != -1;
     } catch (IOException e) {
       log.warn("Destination '{}' is not reachable:", destination, e);
@@ -72,28 +86,27 @@ public class TigerRouteSelector {
     }
   }
 
-  private HttpURLConnection openConnection(URL destination) throws IOException {
-    HttpURLConnection connection;
-    if (forwardProxyInfo != null) {
-      final InetAddress targetHost = InetAddress.getByName(forwardProxyInfo.getHostname());
-      if (NoProxyUtils.shouldUseProxyForHost(targetHost, forwardProxyInfo.getNoProxyHosts())) {
-        final InetSocketAddress inetSocketAddress =
-            new InetSocketAddress(targetHost, forwardProxyInfo.getPort());
-        log.debug(
-            "Using forward proxy for host '{}': {}:{}",
-            targetHost,
-            inetSocketAddress.getHostName(),
-            inetSocketAddress.getPort());
-        connection =
-            (HttpURLConnection) destination.openConnection(new Proxy(Type.HTTP, inetSocketAddress));
-      } else {
-        log.debug("No forward proxy configured for host '{}', using direct connection", targetHost);
-        connection = (HttpURLConnection) destination.openConnection(Proxy.NO_PROXY);
-      }
-    } else {
-      log.debug("No forward proxy configured, using direct connection for {}", destination);
-      connection = (HttpURLConnection) destination.openConnection(Proxy.NO_PROXY);
+  private boolean shouldUseForwardProxy(URL destination) {
+    if (forwardProxy == null) {
+      return false;
     }
-    return connection;
+    final String host = destination.getHost();
+    final InetAddress resolved = NoProxyUtils.resolveIfNeeded(host, forwardProxy.getNoProxyHosts());
+    final Optional<String> bypassEntry =
+        NoProxyUtils.findBypassingNoProxyEntry(host, resolved, forwardProxy.getNoProxyHosts());
+    if (bypassEntry.isPresent()) {
+      log.debug("direct (matched {} from no_proxy) for '{}'", bypassEntry.get(), destination);
+      return false;
+    }
+    log.debug("via proxy for '{}'", destination);
+    return true;
+  }
+
+  private HttpURLConnection openConnection(URL destination, boolean viaProxy) throws IOException {
+    if (viaProxy) {
+      return (HttpURLConnection)
+          destination.openConnection(new Proxy(Type.HTTP, forwardProxy.getProxyAddress()));
+    }
+    return (HttpURLConnection) destination.openConnection(Proxy.NO_PROXY);
   }
 }

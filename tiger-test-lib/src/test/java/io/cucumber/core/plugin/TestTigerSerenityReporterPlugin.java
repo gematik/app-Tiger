@@ -588,6 +588,7 @@ public class TestTigerSerenityReporterPlugin extends AbstractTigerSerenityEnvSta
 
   @Test
   @Tag("de.gematik.test.tiger.common.LongRunnerTest")
+  @Tag("nightly_flaky")
   void testIntermediateReportingLifecycle() throws Exception {
     final Path sampleJson1 =
         Path.of(

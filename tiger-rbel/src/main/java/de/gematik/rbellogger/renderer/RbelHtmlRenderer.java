@@ -37,7 +37,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
@@ -108,12 +107,18 @@ public class RbelHtmlRenderer {
                         .with(div().with(body))));
   }
 
+  public static DomContent showCopyAsCurlButton(String protocol) {
+    return div()
+        .withClass("copy-as-curl-button-placeholder float-end")
+        .withData("protocol", protocol);
+  }
+
   public static DomContent showContentButtonAndDialog(
       final RbelElement el, final RbelHtmlRenderingToolkit renderingToolkit) {
     if (el.getContent().isNull()) {
       return div();
     }
-    final String id = "dialog" + RandomStringUtils.insecure().nextAlphanumeric(20); // NOSONAR
+    final String id = "dialog" + el.getUuid();
     return span()
         .with(
             a().withClass("btn modal-button modal-button-details float-end mx-2 test-modal-content")

@@ -104,7 +104,7 @@ class TopologyVisualizerStandaloneTest {
 
   @ParameterizedTest
   @CsvSource({
-    "tiger-proxy-with-connections, 5",
+    "tiger-proxy-with-connections, 6",
     "tiger-external-url, 2",
     "tiger-external-jar, 2",
     "tiger-httpbin, 2",
@@ -118,8 +118,7 @@ class TopologyVisualizerStandaloneTest {
     var nodes = page.locator(".vue-flow__node");
     nodes.first().waitFor();
 
-    int nodeCount = nodes.count();
-    assertThat(nodeCount).isEqualTo(expectedNodeCount);
+    PlaywrightAssertions.assertThat(nodes).hasCount(expectedNodeCount);
     screenshotDiagram("topology_" + yamlName + ".png");
 
     clearUploadedFiles();

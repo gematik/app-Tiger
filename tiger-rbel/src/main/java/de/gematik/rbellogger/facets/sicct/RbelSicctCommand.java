@@ -20,7 +20,9 @@
  */
 package de.gematik.rbellogger.facets.sicct;
 
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.apdu.ApduCommandDictionary;
+import de.gematik.rbellogger.facets.apdu.ApduCommandDictionary.Description;
+import de.gematik.rbellogger.facets.apdu.CommandApdu;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -39,23 +41,40 @@ public enum RbelSicctCommand {
   SICCT_SELECT_CT_MODE((byte) 0x80, (byte) 0x20),
   SICCT_COMFORT_AUTHENTICATION((byte) 0x80, (byte) 0x21),
   SICCT_COMFORT_ENROLL((byte) 0x80, (byte) 0x22),
-  SICCT_SET_STATUS((byte) 0x8, (byte) 0x23),
+  SICCT_SET_STATUS((byte) 0x80, (byte) 0x23),
   SICCT_DOWNLOAD_INIT((byte) 0x80, (byte) 0x24),
   SICCT_DOWNLOAD_DATA((byte) 0x80, (byte) 0x25),
   SICCT_DOWNLOAD_FINISH((byte) 0x80, (byte) 0x26),
   SICCT_CONTROLCOMMAND((byte) 0x80, (byte) 0x27),
   SICCT_INIT_CT_SESSION((byte) 0x80, (byte) 0x28),
-  SICCT_CLOSE_CT_SESSION((byte) 0x80, (byte) 0x29);
+  SICCT_CLOSE_CT_SESSION((byte) 0x80, (byte) 0x29),
+  // compare gemSpec_KT, chapter 2.5.2.1 (TIP1-A_3119)
+  EHEALTH_TERMINAL_AUTHENTICATE((byte) 0x81, (byte) 0xAA);
+
+  public static final ApduCommandDictionary DICTIONARY =
+      apdu ->
+          find(apdu.getCla(), apdu.getIns())
+              .map(cmd -> new Description(cmd.label(), cmd.details(apdu)));
 
   final byte cla;
   final byte ins;
 
-  public static Optional<RbelSicctCommand> from(RbelElement cla, RbelElement ins) {
+  public static Optional<RbelSicctCommand> find(int cla, int ins) {
     return Stream.of(values())
-        .filter(cmd -> cla.getRawContent() != null && cla.getRawContent().length == 1)
-        .filter(cmd -> cla.getRawContent()[0] == cmd.cla)
-        .filter(cmd -> ins.getRawContent() != null && ins.getRawContent().length == 1)
-        .filter(cmd -> ins.getRawContent()[0] == cmd.ins)
-        .findAny();
+        .filter(cmd -> Byte.toUnsignedInt(cmd.cla) == cla && Byte.toUnsignedInt(cmd.ins) == ins)
+        .findFirst();
+  }
+
+  public String label() {
+    return name().replace('_', ' ');
+  }
+
+  private String details(CommandApdu apdu) {
+    if (this != EHEALTH_TERMINAL_AUTHENTICATE) {
+      return "";
+    }
+    return EhealthTerminalAuthenticate.Qualifier.find(apdu.getP2())
+        .map(EhealthTerminalAuthenticate.Qualifier::label)
+        .orElse("");
   }
 }

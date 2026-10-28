@@ -27,7 +27,18 @@ import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrAndOut;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import kong.unirest.core.UnirestException;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
@@ -38,6 +49,51 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @ResetTigerConfiguration
 @Slf4j
 class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
+
+  @Test
+  void bypassedTargetShouldReceiveTheRequestLineInOriginForm() throws Exception {
+    try (ServerSocket backend = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+      CompletableFuture<String> requestLine =
+          CompletableFuture.supplyAsync(() -> answerOnceAndReturnRequestLine(backend));
+
+      spawnTigerProxyWithDefaultRoutesAndWith(
+          TigerProxyConfiguration.builder()
+              .forwardToProxy(
+                  ForwardProxyInfo.builder()
+                      .hostname("localhost")
+                      .port(1)
+                      .noProxyHosts(List.of("127.0.0.1"))
+                      .build())
+              .build());
+
+      proxyRest.get("http://127.0.0.1:" + backend.getLocalPort() + "/origin-form").asString();
+
+      Assertions.assertThat(requestLine.get(10, TimeUnit.SECONDS))
+          .as("a direct connection must not use the proxy's absolute form")
+          .startsWith("GET /origin-form ");
+    }
+  }
+
+  private static String answerOnceAndReturnRequestLine(ServerSocket backend) {
+    try (Socket socket = backend.accept();
+        BufferedReader in =
+            new BufferedReader(
+                new InputStreamReader(socket.getInputStream(), StandardCharsets.US_ASCII))) {
+      final String line = in.readLine();
+      String header = in.readLine();
+      while (header != null && !header.isEmpty()) {
+        header = in.readLine();
+      }
+      final OutputStream out = socket.getOutputStream();
+      out.write(
+          "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+              .getBytes(StandardCharsets.US_ASCII));
+      out.flush();
+      return line;
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
 
   /**
    * client -> local proxy -> forward proxy -> fakebackend
@@ -135,7 +191,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
 
       Assertions.assertThat(output)
           .doesNotContain("NullPointerException")
-          .contains("Caused by: java.net.UnknownHostException: notresolvable.invalid");
+          .contains("java.nio.channels.UnresolvedAddressException");
     }
   }
 

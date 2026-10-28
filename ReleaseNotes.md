@@ -1,5 +1,50 @@
 # Changelog Tiger Test platform
 
+# Release 4.5.0
+
+## Breaking Changes
+
+* TGR-2315: RBel: new RbelPaths for SICCT (response body at `$.response`, `R_COMMAND` renamed to `R_RESPONSE`) and ASN.1
+  (tagged children are keyed by their hex tag, e.g. `$.0.A0.0` instead of `$.0.0.content`).
+* TGR-2321: Tiger Proxy no longer uses the system proxy by default. Without a `forwardToProxy` block, no forward proxy is used, both in the test environment and in the standalone proxy. To keep using the system proxy, add a `forwardToProxy` block without a `hostname`, or set `hostname: "$SYSTEM"`:
+
+  ```yaml
+  tigerProxy:
+      tigerProxyConfiguration:
+          forwardToProxy:
+              noProxyHosts:
+                - ".ti-dienste.de"
+  ```
+
+  This fixes test nodes whose system proxy only serves the internet, where internal TI and Docker targets failed through the proxy.
+
+## Features
+
+* TGR-2301: Workflow UI: Kann die Workflow-UI beim Start nicht hochfahren, weil
+  der Port belegt ist, prüft Tiger, ob dort noch eine Workflow-UI läuft (z.B. ein nicht beendeter vorheriger
+  Lauf) und gibt in diesem Fall eine entsprechende Fehlermeldung aus.
+* TGR-2315: RBel: SICCT messages are parsed down to their ISO 7816-4 APDUs (e.g. `$.command.ins`, `$.response.sw`), with readable
+  info lines and paired commands and responses. BER-TLV data fields (e.g. CV certificates) are structured by the
+  ASN.1 parser, which now renders as a readable tree.
+* TGR-2316: Tiger-Proxy: traffic logs keep the names of senders and receivers instead of only their IPs, also when passed on to
+  other Tiger Proxies. Peers known only by their IP, e.g. clients in a Docker network, are named via a non-blocking reverse
+  DNS lookup (`tiger.rbel.reverseDnsLookup`, on by default). Servers of type `externalUrl` name traffic to their local port.
+* TGR-786: The proxy WebUI now includes a "copy as cURL" button for http requests. This allows to copy a curl command corresponding to the request and to execute it in bash or cmd.
+
+## Bugfixes
+
+* TGR-1906: RBel: The SICCT pairing handshake (`EHEALTH TERMINAL AUTHENTICATE`, gemSpec_KT) is now parsed. The command is
+  named with its mode (e.g. `EHEALTH TERMINAL AUTHENTICATE CREATE`), the display message in `$.command.data.50` is
+  shown as text, and an ECDSA signature in the response is split into `$.response.data.r` and `$.response.data.s`.
+  Signature, hash and challenge in the response are shown as hex instead of garbled text.
+* TGR-2321: Tiger Proxy no longer sends internal targets through a system proxy that only serves the internet. Test nodes with such a proxy could no longer reach TI and Docker targets, and test suites failed with `No reachable destination found`. Targets listed in `noProxyHosts` now connect directly, and a route target that the forward proxy answers with 502 or 504 is no longer treated as reachable.
+* TGR-2334: Tiger Proxy WebUI: The sidebar no longer flickers between two views and freezes when scrolling through many messages,
+  and the last message can be reached by scrolling again.
+* TGR-2350: Tiger Proxy: `noProxyHosts`, `no_proxy`/`NO_PROXY` and `http.nonProxyHosts` now bypass the forward proxy for the formats you would expect: `host.corp.de` (the host and its subdomains), `.corp.de` or `*.corp.de` (domain and subdomains), `10.0.0.0/8` or `fd00::/8` (CIDR), `10.*` or `*corp.de` (wildcards, as in `http.nonProxyHosts`; a numeric one like `10.*` also matches targets that resolve into that range), and `*` (everything). Entries in none of these formats log a warning that names the entry and its source.
+
+  Targets that match a no-proxy entry connect directly, and the same decision is used for requests, route selection, the ALPN probe and the health check of external servers. A route target that the forward proxy answers with 403, 502, 503 or 504 is treated as unreachable.
+
+
 # Release 4.4.5
 
 ## Features

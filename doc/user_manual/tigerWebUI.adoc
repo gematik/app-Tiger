@@ -110,6 +110,26 @@ By clicking on this button the full message will be displayed in a new tab/windo
 
 image::screenshots/webui_single_message_page.png[title="Single message view to show the full message"]
 
+[#_copy_as_curl]
+===== Copy as cURL
+
+HTTP requests can be copied as a cURL command to replay them from a terminal.
+This action is available in the Tiger Proxy WebUI.
+
+image::screenshots/webui_copy_as_curl.png[title="Copy an HTTP request as cURL"]
+
+A click on the cURL button opens a dropdown with the options to copy as a Bash or Windows Command Line command. The main difference between both commands is in how special characters are escaped. When selecting an options the corresponding command is copied into the clipboard and can be directly pasted in a terminal.
+
+====== HTTP/2 Requests
+
+If the http request was originally sent as http2, the command includes the corresponding flag. This requires a curl build with HTTP/2 support.
+
+====== Limitations
+
+The Windows Command Line has a https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/command-line-string-limitation[limit of 8191 characters] for a command. For very large messages that exceed this limit, the command is not generated and the user is informed about it in the UI.
+
+Currently, no full support exists for binary data.
+
 ===== Switching between request/response
 
 Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message.

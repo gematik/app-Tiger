@@ -21,12 +21,17 @@
 package de.gematik.rbellogger.util;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.net.InetAddresses;
 import de.gematik.test.tiger.exceptions.RbelHostnameFormatException;
 import java.io.Serializable;
 import java.net.*;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +53,9 @@ import tools.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(using = RbelSocketAddress.RbelSocketAddressSerializer.class)
 @JsonDeserialize(using = RbelSocketAddress.RbelSocketAddressDeserializer.class)
 public class RbelSocketAddress implements Serializable {
+
+  private static final Cache<InetAddress, Boolean> LOCAL_ADDRESS_CACHE =
+      CacheBuilder.newBuilder().expireAfterWrite(Duration.ofMinutes(1)).maximumSize(1_000).build();
 
   private final transient RbelInternetAddress address;
   private final int port;
@@ -170,24 +178,34 @@ public class RbelSocketAddress implements Serializable {
     return new RbelSocketAddress(RbelInternetAddressParser.parseInetAddress(address), port);
   }
 
+  /**
+   * {@code name/ip:port} if the address carries a name, so that names survive writing, reading and
+   * forwarding while comparisons can still use the IP. Without a name, and for loopback addresses,
+   * just {@code ip:port}. A name that can't be resolved is printed on its own.
+   */
   @JsonProperty
   public String toString() {
-    try {
-      // Prefer the resolved IP address for stable, deterministic metadata writing
-      return Optional.ofNullable(address)
-          .map(
-              adr ->
-                  adr.toInetAddress()
-                      .map(InetAddress::getHostAddress)
-                      .orElseGet(adr::printValidHostname))
-          .map(host -> normalizeHostPort(host, port))
-          .orElse("");
-    } catch (RuntimeException e) {
-      // Fallback to previous behavior in case of unexpected errors
-      return Optional.of(address)
-          .map(adr -> adr.toInetAddress().map(Object::toString).orElseGet(adr::printValidHostname))
-          .orElse("");
+    if (address == null) {
+      return "";
     }
+    try {
+      return normalizeHostPort(printHostAndIp(), port);
+    } catch (RuntimeException e) {
+      return normalizeHostPort(address.printValidHostname(), port);
+    }
+  }
+
+  private String printHostAndIp() {
+    final Optional<InetAddress> resolved = address.toInetAddress();
+    if (resolved.isEmpty()) {
+      return address.printValidHostname();
+    }
+    final String ip = resolved.get().getHostAddress();
+    final String name = address.getHostname();
+    if (name == null || resolved.get().isLoopbackAddress() || InetAddresses.isInetAddress(name)) {
+      return ip;
+    }
+    return name + "/" + ip;
   }
 
   public String printHostname() {
@@ -199,18 +217,7 @@ public class RbelSocketAddress implements Serializable {
     @Override
     public void serialize(RbelSocketAddress value, JsonGenerator gen, SerializationContext ctxt)
         throws JacksonException {
-      // Prefer the resolved IP address when serializing socket addresses so that
-      // JSON output is stable and environment-independent (e.g. '127.0.0.1:8080'
-      // instead of 'localhost:8080'). Fall back to the printed hostname on error.
-      try {
-        String host =
-            Optional.ofNullable(value.getAddress())
-                .flatMap(adr -> adr.toInetAddress().map(InetAddress::getHostAddress))
-                .orElseGet(value::printHostname);
-        gen.writeString(normalizeHostPort(host, value.getPort()));
-      } catch (RuntimeException e) {
-        gen.writeString(value.toString());
-      }
+      gen.writeString(value.toString());
     }
   }
 
@@ -240,6 +247,30 @@ public class RbelSocketAddress implements Serializable {
     try {
       return address.toInetAddress().map(InetAddress::isLoopbackAddress).orElse(false);
     } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
+   * Whether the address belongs to this machine (loopback or one of its network interfaces). Only
+   * then does a port say which local process or server is behind it.
+   */
+  public boolean isOnThisMachine() {
+    try {
+      return address.toInetAddress().map(RbelSocketAddress::isLocalAddress).orElse(false);
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
+  private static boolean isLocalAddress(InetAddress inetAddress) {
+    if (inetAddress.isLoopbackAddress() || inetAddress.isAnyLocalAddress()) {
+      return true;
+    }
+    try {
+      return LOCAL_ADDRESS_CACHE.get(
+          inetAddress, () -> NetworkInterface.getByInetAddress(inetAddress) != null);
+    } catch (ExecutionException e) {
       return false;
     }
   }

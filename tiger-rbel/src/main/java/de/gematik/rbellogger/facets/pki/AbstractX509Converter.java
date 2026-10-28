@@ -27,7 +27,7 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
-import de.gematik.rbellogger.facets.asn1.RbelAsn1Converter.RbelAllowAsn1FragmentsFacet;
+import de.gematik.rbellogger.facets.asn1.RbelAllowAsn1FragmentsFacet;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1ExtensionFacet;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

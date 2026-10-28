@@ -378,7 +378,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   public TigerProxyRoute addRoute(final TigerConfigurationRoute tigerRoute) {
     return addRoute(
         TigerProxyRoute.convertFromTigerConfigurationRoute(
-            tigerRoute, getTigerProxyConfiguration().getForwardToProxy()));
+            tigerRoute, resolvedForwardProxyConfiguration.orElse(null)));
   }
 
   @Override
@@ -609,6 +609,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             .addArgument(configNotEmpty::getPassword)
             .log("Forward proxy is set to {}://{}:{}@{}:{}");
       }
+      log.atInfo()
+          .addArgument(configNotEmpty::getNoProxyHosts)
+          .log("Forward proxy bypassed for no-proxy hosts {}");
     }
   }
 

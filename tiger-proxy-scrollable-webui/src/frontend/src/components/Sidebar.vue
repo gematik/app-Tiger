@@ -21,7 +21,7 @@
 
 -->
 <script setup lang="ts">
-import { inject, type Ref, ref } from "vue";
+import { computed, inject, type Ref, ref, toRaw } from "vue";
 import { messageQueueSymbol } from "@/api/MessageQueue.ts";
 import { useVirtualList } from "@vueuse/core";
 import MessageItem from "./MessageItem.vue";
@@ -36,16 +36,32 @@ const props = defineProps<{
 const messageQueue = inject(messageQueueSymbol)!;
 const messages = messageQueue.messagesMeta;
 
-const sidebarMessageElementHeight: Ref<number> = ref(10);
+// Items differ in height (additional info strings), so heights are tracked per message. A single shared
+// height flips between values as differently sized items scroll in, and every flip moves the rendered
+// window, which mounts other items that flip it back.
+const measuredHeights = new Map<string, number>();
+const measuredHeightsVersion = ref(0);
+const estimatedItemHeight: Ref<number> = ref(10);
 
-const { list, containerProps, wrapperProps } = useVirtualList(messages, {
-  itemHeight: () => {
-    return sidebarMessageElementHeight.value;
-  },
+// useVirtualList walks the whole list on every height change. The overview is replaced, never mutated, so
+// handing it the raw array avoids tracking each element on every walk.
+const rawMessages = computed(() => toRaw(messages.value));
+const itemHeights = computed(() => {
+  void measuredHeightsVersion.value;
+  const estimate = estimatedItemHeight.value;
+  return rawMessages.value.map((message) => measuredHeights.get(toRaw(message).uuid) ?? estimate);
 });
 
-function onItemHeightChanged(height: number) {
-  if (sidebarMessageElementHeight.value != height) sidebarMessageElementHeight.value = height;
+const { list, containerProps, wrapperProps } = useVirtualList(rawMessages, {
+  itemHeight: (index) => itemHeights.value[index] ?? estimatedItemHeight.value,
+});
+
+function onItemHeightChanged(uuid: string, height: number) {
+  if (measuredHeights.get(uuid) === height) return;
+  measuredHeights.set(uuid, height);
+  if (measuredHeights.size === 1 || height < estimatedItemHeight.value)
+    estimatedItemHeight.value = height;
+  measuredHeightsVersion.value++;
 }
 
 const revMsgQueue = messageQueue.reversedMessageQueue;
@@ -76,7 +92,7 @@ const revMsgQueue = messageQueue.reversedMessageQueue;
                   ? ''
                   : 'border-bottom',
             ]"
-            :on-height-changed="onItemHeightChanged"
+            :on-height-changed="(height: number) => onItemHeightChanged(message.data.uuid, height)"
             :key="message.data.uuid"
             :message="message.data"
             :on-click="() => messageQueue.scrollToMessage(message.data.uuid)"

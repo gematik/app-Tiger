@@ -23,15 +23,13 @@
 <script setup lang="ts">
 import { computed, inject } from "vue";
 import { type Message } from "@/api/MessageQueue.ts";
-import SshPre from "simple-syntax-highlighter";
-import "simple-syntax-highlighter/dist/sshpre.css";
 import { rawContentModalSymbol } from "../RawContentModal.ts";
 import { useClipboard } from "@vueuse/core";
 
-const rawContent = inject(rawContentModalSymbol)!;
+const rawContentModal = inject(rawContentModalSymbol)!;
 
 const selected = computed(
-  () => rawContent.selected.value ?? { message: {} as Message, rawContent: "" },
+  () => rawContentModal.currentlySelected.value ?? { message: {} as Message, rawContent: "" },
 );
 
 const { copy, copied } = useClipboard();
@@ -62,7 +60,7 @@ const { copy, copied } = useClipboard();
         </div>
         <div class="modal-body">
           <div class="position-relative">
-            <SshPre>{{ selected.rawContent }}</SshPre>
+            <pre class="raw-content">{{ selected.rawContent }}</pre>
             <button
               class="btn btn-sm btn-primary position-absolute top-0 end-0 m-2"
               @click="
@@ -84,7 +82,9 @@ const { copy, copied } = useClipboard();
 </template>
 
 <style scoped>
-.ssh-pre {
-  margin-top: 0 !important;
+.raw-content {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 </style>

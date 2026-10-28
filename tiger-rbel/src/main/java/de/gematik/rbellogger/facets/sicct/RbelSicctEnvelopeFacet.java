@@ -31,12 +31,12 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.math.BigInteger;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 public class RbelSicctEnvelopeFacet implements RbelFacet {
 
@@ -65,16 +65,17 @@ public class RbelSicctEnvelopeFacet implements RbelFacet {
                                         .with(
                                             context.packAsInfoLine(
                                                 "Message Type",
-                                                context.formatHexAlike(
-                                                    sicctEnv
-                                                        .getMessageType()
-                                                        .seekValue()
-                                                        .orElse("")
-                                                        .toString())))
+                                                context.formatHex(sicctEnv.getMessageType()),
+                                                text(printValue(sicctEnv.getMessageType()))))
                                         .with(
                                             context.packAsInfoLine(
-                                                "SrcOrDesaddress",
-                                                context.formatHex(sicctEnv.getSrcOrDesAddress())))
+                                                "SrcOrDesAddress",
+                                                context.formatHex(sicctEnv.getSrcOrDesAddress()),
+                                                text(sicctEnv.describeAddress())))
+                                        .with(
+                                            context.packAsInfoLine(
+                                                "Sequence Number",
+                                                context.formatHex(sicctEnv.getSequenceNumber())))
                                         .with(
                                             context.packAsInfoLine(
                                                 "Reserved for future use",
@@ -84,32 +85,55 @@ public class RbelSicctEnvelopeFacet implements RbelFacet {
                                                 "Length",
                                                 context.formatHex(sicctEnv.getLength()),
                                                 text(
-                                                    " ("
-                                                        + new BigInteger(
-                                                            sicctEnv.getLength().getRawContent())
+                                                    "("
+                                                        + printValue(sicctEnv.getLength())
                                                         + " bytes)"))),
                                     childBoxNotifTitle(CLS_BODY)
                                         .with(t2("Body"))
-                                        .with(context.convert(sicctEnv.getCommand())))));
+                                        .with(context.convert(sicctEnv.getBody())))));
+          }
+
+          private static String printValue(RbelElement element) {
+            return element.printValue().orElse("");
           }
         });
   }
 
-  private RbelElement messageType;
-  private RbelElement srcOrDesAddress;
-  private RbelElement sequenceNumber;
-  private RbelElement abRfu;
-  private RbelElement length;
-  private RbelElement command;
+  RbelElement messageType;
+  RbelElement srcOrDesAddress;
+  RbelElement sequenceNumber;
+  RbelElement abRfu;
+  RbelElement length;
+  String bodyKey;
+  RbelElement body;
 
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>()
-        .with("messageType", messageType)
-        .with("srcOrDesAddress", srcOrDesAddress)
-        .with("sequenceNumber", sequenceNumber)
-        .with("abRfu", abRfu)
-        .with("length", length)
-        .with("command", command);
+  public Optional<SicctMessageType> findMessageType() {
+    return messageType.seekValue(SicctMessageType.class);
   }
+
+  public int getAddress() {
+    return srcOrDesAddress.seekValue(Integer.class).orElseThrow();
+  }
+
+  /**
+   * Without the SICCT specification at hand, this follows observed traffic: the card terminal
+   * itself uses address 0, card slots are numbered from 1.
+   */
+  public boolean isAddressedToCardTerminal() {
+    return getAddress() == 0;
+  }
+
+  public String describeAddress() {
+    return isAddressedToCardTerminal() ? "(card terminal)" : "(card slot " + getAddress() + ")";
+  }
+
+  @Getter(lazy = true)
+  RbelMultiMap<RbelElement> childElements =
+      new RbelMultiMap<RbelElement>()
+          .with("messageType", messageType)
+          .with("srcOrDesAddress", srcOrDesAddress)
+          .with("sequenceNumber", sequenceNumber)
+          .with("abRfu", abRfu)
+          .with("length", length)
+          .with(bodyKey, body);
 }

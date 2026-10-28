@@ -1,0 +1,45 @@
+/*
+ *
+ * Copyright 2021-2025 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ */
+package de.gematik.rbellogger.data.decorator;
+
+import com.google.common.net.InetAddresses;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.RbelSocketAddressFacet;
+import java.util.Optional;
+import java.util.function.Function;
+
+/**
+ * Uses the hostname of an address as its server name, e.g. the name of a Docker container, unless
+ * the address already has a server name (e.g. forwarded by a remote Tiger proxy). Plain IPs and
+ * loopback addresses are left alone.
+ */
+public class ServerNameFromKnownHostname implements Function<RbelElement, Optional<String>> {
+
+  @Override
+  public Optional<String> apply(RbelElement hostNameElement) {
+    return hostNameElement
+        .getFacet(RbelSocketAddressFacet.class)
+        .filter(facet -> facet.getBundledServerName().isEmpty())
+        .filter(facet -> !facet.toRbelSocketAddress().isLoopbackAddress())
+        .flatMap(facet -> facet.getDomain().printValue())
+        .filter(name -> !InetAddresses.isInetAddress(name));
+  }
+}

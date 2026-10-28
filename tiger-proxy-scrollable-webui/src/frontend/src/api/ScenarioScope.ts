@@ -87,8 +87,7 @@ export function useScenarioScope(): UseScenarioScopeReturn {
     // be strictly less than its real transmission time - filtering out the scenario's own
     // last message (or, for a single-message scenario, the whole scenario). Rounding up by
     // 1ms covers any sub-millisecond remainder the truncation dropped.
-    const bumpedMax =
-      max !== undefined ? new Date(new Date(max).getTime() + 1).toISOString() : max;
+    const bumpedMax = max !== undefined ? new Date(new Date(max).getTime() + 1).toISOString() : max;
     return { min, max: bumpedMax };
   });
 

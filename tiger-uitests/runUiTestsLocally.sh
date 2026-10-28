@@ -20,7 +20,7 @@
 #
 
 # Usage: ./runUiTestsLocally.sh [stage]
-# Stages: base, report, replay, sequencediagram, testselector
+# Stages: base, report, replay, sequencediagram, testselector, scenario-scope
 trap 'echo "Interrupted. Killing background jobs..."; jobs -p | xargs -r kill; exit 130' INT
 
 STAGE="$1"
@@ -33,7 +33,6 @@ run_base() {
   export TGR_TESTENV_CFG_EDIT_MODE="editEnv"
   export TGR_TESTENV_CFG_MULTILINE_CHECK_MODE="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. ..."
   rm -f mvn-playwright-log.txt
-  mvn --no-transfer-progress -DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp -P start-tiger-dummy verify | tee mvn-playwright-log.txt &
   mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify &
   wait
 }
@@ -71,12 +70,22 @@ run_testselector() {
   wait
 }
 
+run_scenario_scope() {
+  echo "Running: Scenario scope tests"
+  mvn -ntp test-compile -P start-tiger-dummy-for-scenario-scope-tests
+  rm -f mvn-playwright-log.txt
+  mvn --no-transfer-progress -P start-tiger-dummy-for-scenario-scope-tests failsafe:integration-test | tee mvn-playwright-log.txt &
+  mvn --no-transfer-progress -P run-playwright-test-for-scenario-scope failsafe:integration-test failsafe:verify &
+  wait
+}
+
 if [[ -z "$STAGE" ]]; then
   run_base
   run_report
   run_replay
   run_sequencediagram
   run_testselector
+  run_scenario_scope
 else
   case "$STAGE" in
     base) run_base ;;
@@ -84,6 +93,7 @@ else
     replay) run_replay ;;
     sequencediagram) run_sequencediagram ;;
     testselector) run_testselector ;;
+    scenario-scope) run_scenario_scope ;;
     *) echo "Unknown stage: $STAGE"; exit 1 ;;
   esac
 fi

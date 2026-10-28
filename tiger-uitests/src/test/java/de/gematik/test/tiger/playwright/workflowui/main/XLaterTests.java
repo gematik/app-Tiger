@@ -56,16 +56,16 @@ class XLaterTests extends AbstractBase {
     FrameLocator rbelFrame = page.frameLocator("#rbellog-details-iframe");
     assertAll(
         () ->
-            Assertions.assertThat(rbelFrame.locator("#test-rbel-section .test-card").count())
+            Assertions.assertThat(rbelFrame.locator(".test-rbel-section .test-card").count())
                 .withFailMessage("No rbel message at all found")
                 .isPositive(),
         () ->
-            Assertions.assertThat(rbelFrame.locator("#test-rbel-section .test-card-header").count())
+            Assertions.assertThat(rbelFrame.locator(".test-rbel-section .test-card-header").count())
                 .withFailMessage("No rbel message header found")
                 .isPositive(),
         () ->
             Assertions.assertThat(
-                    rbelFrame.locator("#test-rbel-section .test-card-content").count())
+                    rbelFrame.locator(".test-rbel-section .test-card-content").count())
                 .withFailMessage("No rbel message content found")
                 .isPositive());
   }

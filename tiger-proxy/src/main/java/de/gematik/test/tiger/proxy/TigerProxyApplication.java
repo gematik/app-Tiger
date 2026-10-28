@@ -93,8 +93,7 @@ public class TigerProxyApplication implements ServletContextListener {
     return new SpringApplicationBuilder()
         .main(TigerProxyApplication.class)
         .bannerMode(Mode.OFF)
-        .sources(TigerProxyApplication.class)
-        .properties("tiger-proxy.forward-to-proxy.hostname=$SYSTEM");
+        .sources(TigerProxyApplication.class);
   }
 
   @Bean

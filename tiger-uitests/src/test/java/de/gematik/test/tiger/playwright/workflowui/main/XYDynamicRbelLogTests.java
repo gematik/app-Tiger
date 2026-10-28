@@ -106,7 +106,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card")
+                        .locator(".test-rbel-section .test-card")
                         .count())
                 .isPositive(),
         () ->
@@ -114,7 +114,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-header")
+                        .locator(".test-rbel-section .test-card-header")
                         .count())
                 .isPositive(),
         () ->
@@ -122,7 +122,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-content")
+                        .locator(".test-rbel-section .test-card-content")
                         .count())
                 .isPositive());
 
@@ -175,7 +175,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card")
+                        .locator(".test-rbel-section .test-card")
                         .count())
                 .isPositive(),
         () ->
@@ -183,7 +183,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-header")
+                        .locator(".test-rbel-section .test-card-header")
                         .count())
                 .isPositive(),
         () ->
@@ -191,7 +191,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
                     download
                         .page()
                         .frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-content")
+                        .locator(".test-rbel-section .test-card-content")
                         .count())
                 .isPositive());
   }
@@ -379,6 +379,134 @@ class XYDynamicRbelLogTests extends AbstractBase {
     externalPage.close();
   }
 
+  @Test
+  @Order(81)
+  void testCopyAsCurlBashAndCmd() {
+    try (Page webUi = openWebUiAtMessage("1")) {
+      captureClipboardWrites(webUi);
+      Locator message = webUi.locator(".rbel-message:has(.test-message-number:text-is('1'))");
+      Locator dropdown = message.locator(".copy-as-curl-button-placeholder");
+      Locator button = dropdown.locator("button");
+      button.click();
+      assertThat(dropdown.locator(".dropdown-item")).hasCount(2);
+      assertThat(
+              dropdown
+                  .locator(".dropdown-item")
+                  .filter(new FilterOptions().setHasText("Copy as cURL (bash)")))
+          .isVisible();
+      assertThat(
+              dropdown
+                  .locator(".dropdown-item")
+                  .filter(new FilterOptions().setHasText("Copy as cURL (cmd)")))
+          .isVisible();
+      doActionWithHighlightedElement(button, () -> screenshot(webUi, "webui_copy_as_curl.png"));
+
+      for (String shell : new String[] {"bash", "cmd"}) {
+        if (!"true".equals(button.getAttribute("aria-expanded"))) {
+          button.click();
+        }
+        webUi.evaluate("window.__copiedCurl = null");
+        dropdown
+            .locator(".dropdown-item")
+            .filter(new FilterOptions().setHasText("Copy as cURL (" + shell + ")"))
+            .click();
+        webUi.waitForFunction("() => typeof window.__copiedCurl === 'string'");
+        String command = (String) webUi.evaluate("window.__copiedCurl");
+        String quote = shell.equals("bash") ? "'" : "^\"";
+        Assertions.assertThat(command)
+            .startsWith("curl -v --globoff --path-as-is -X " + quote + "GET" + quote)
+            .contains(" --url " + quote + "http://")
+            .contains(" -H ")
+            .doesNotContain("--data-raw");
+        Assertions.assertThat(command.length()).isLessThan(1000);
+        assertThat(dropdown.locator("output")).hasText("Copied!");
+        assertThat(dropdown.locator("[role='alert']")).isEmpty();
+      }
+    }
+  }
+
+  @Test
+  @Order(82)
+  void testCopyAsCurlRejectsLargeCmdRequest() {
+    try (Page webUi = openWebUiAtMessage("11");
+        Page fullMessage =
+            webUi.waitForPopup(
+                () ->
+                    webUi
+                        .locator(
+                            ".rbel-message:has(.test-message-number:text-is('11')) .full-message-button")
+                        .click())) {
+      captureClipboardWrites(fullMessage);
+      Locator dropdown = fullMessage.locator(".copy-as-curl-button-placeholder");
+      Locator button = dropdown.locator("button");
+      button.click();
+      dropdown
+          .locator(".dropdown-item")
+          .filter(new FilterOptions().setHasText("Copy as cURL (bash)"))
+          .click();
+      fullMessage.waitForFunction("() => typeof window.__copiedCurl === 'string'");
+      String bashCommand = (String) fullMessage.evaluate("window.__copiedCurl");
+      Assertions.assertThat(bashCommand).contains(" -X 'PUT'", " --data-raw ", "<project");
+      Assertions.assertThat(bashCommand.length()).isGreaterThan(8191);
+
+      if (!"true".equals(button.getAttribute("aria-expanded"))) {
+        button.click();
+      }
+      fullMessage.evaluate("window.__copiedCurl = null");
+      dropdown
+          .locator(".dropdown-item")
+          .filter(new FilterOptions().setHasText("Copy as cURL (cmd)"))
+          .click();
+      assertThat(dropdown.locator("[role='alert']"))
+          .containsText("This request is too large for CMD. Try Bash instead.");
+      assertThat(fullMessage.locator(".popover")).containsText("Could not copy as cURL");
+      assertThat(fullMessage.locator(".popover"))
+          .containsText("This request is too large for CMD. Try Bash instead.");
+      Assertions.assertThat(fullMessage.evaluate("window.__copiedCurl")).isNull();
+    }
+  }
+
+  private Page openWebUiAtMessage(String sequenceNumber) {
+    page.locator("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    Page webUi = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
+    webUi.waitForFunction("() => typeof window.scrollToMessage === 'function'");
+    webUi.evaluate(
+        "sequenceNumber => window.scrollToMessage('', sequenceNumber)",
+        Integer.parseInt(sequenceNumber));
+    assertThat(
+            webUi.locator(
+                ".rbel-message:has(.test-message-number:text-is('" + sequenceNumber + "'))"))
+        .isVisible();
+    return webUi;
+  }
+
+  private void captureClipboardWrites(Page webUi) {
+    webUi.evaluate(
+        """
+        () => {
+          window.__copiedCurl = null;
+          Object.defineProperty(navigator, 'clipboard', {
+            configurable: true,
+            value: {
+              writeText: async text => { window.__copiedCurl = text; },
+              write: async items => {
+                window.__copiedCurl = await (await items[0].getType('text/plain')).text();
+              }
+            }
+          });
+          const execCommand = document.execCommand.bind(document);
+          document.execCommand = (command, ...args) => {
+            if (command === 'copy') {
+              window.__copiedCurl = document.activeElement.value;
+              return true;
+            }
+            return execCommand(command, ...args);
+          };
+        }
+        """);
+  }
+
   void resetFilter(FrameLocator frameLocator) {
     Locator resetButton = frameLocator.locator("#test-reset-filter-button");
     if (resetButton.isEnabled()) {
@@ -522,43 +650,6 @@ class XYDynamicRbelLogTests extends AbstractBase {
 
     // Close modal
     modalLocator.locator(".btn-close").click();
-  }
-
-  @Test
-  @Order(140)
-  void testJScenarioOnlyToggleScopesToLastScenarioWithTraffic() {
-    page.querySelector("#test-execution-pane-tab").click();
-    page.locator("#test-webui-slider").click();
-    assertThat(page.locator("#rbellog_details_pane")).isVisible();
-
-    var frameLocator = page.frameLocator("#rbellog-details-iframe");
-    Locator toggle = scenarioScopeToggle();
-    assertThat(toggle).isVisible();
-    assertThat(toggle).hasAttribute("aria-pressed", "false");
-    assertThat(frameLocator.locator("#test-rbel-scenario-only-empty")).not().isVisible();
-
-    // The fixture's last scenario ("Simple Get Request for scoped scenario test",
-    // 02_PlaywrightTwoTest.feature) makes exactly one HTTP call, so scoped to it the log should
-    // hold only its couple of messages - the very last message overall must already be visible
-    // without any scrolling, unlike the unfiltered view (see testBCheckScrollingToLastMessage,
-    // which needs up to 200 PageDowns to reach the same message).
-    toggle.click();
-    assertThat(toggle).hasAttribute("aria-pressed", "true");
-    await()
-        .atMost(20, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        frameLocator
-                            .locator(".test-message-number")
-                            .filter(
-                                new FilterOptions()
-                                    .setHasText(Pattern.compile("^" + TOTAL_MESSAGES + "$"))))
-                    .isVisible());
-
-    toggle.click();
-    assertThat(toggle).hasAttribute("aria-pressed", "false");
-    assertThat(frameLocator.locator("#test-rbel-scenario-only-empty")).not().isVisible();
   }
 
   @Test

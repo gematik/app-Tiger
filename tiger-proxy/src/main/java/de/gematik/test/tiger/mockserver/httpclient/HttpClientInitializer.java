@@ -33,6 +33,7 @@ import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.mockserver.netty.unification.WebSocketUpgradeHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
+import de.gematik.test.tiger.util.NoProxyUtils;
 import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -42,10 +43,10 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import java.net.InetSocketAddress;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -64,6 +65,15 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   private final NettySslContextFactory nettySslContextFactory;
   private final BinaryBridgeHandler binaryBridgeHandler;
   private final MockServerConfiguration mockServerConfiguration;
+
+  /**
+   * The proxy decision the request already made for its target. Set, it spares initChannel a second
+   * decision, and with it a DNS lookup on the event loop.
+   */
+  @Setter private Boolean useProxyForTarget;
+
+  /** Only a connection that really goes through the proxy writes requests in absolute form. */
+  private ProxyConfiguration codecProxyConfiguration;
 
   HttpClientInitializer(
       MockServerConfiguration configuration,
@@ -98,7 +108,10 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
 
     pipeline.addFirst(new LoggingHandler(LogLevel.DEBUG));
-    if (isHostNotOnNoProxyHostList(remoteAddress)) {
+    final boolean useProxy =
+        useProxyForTarget != null ? useProxyForTarget : isHostNotOnNoProxyHostList(remoteAddress);
+    codecProxyConfiguration = useProxy ? proxyConfiguration : null;
+    if (useProxy) {
       addProxyHandlerIfApplicable(pipeline, secure);
     }
     pipeline.addLast(CONNECTION_ERROR_HANDLER_NAME, httpClientConnectionHandler);
@@ -180,7 +193,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast(new HttpClientCodec());
     // TODO: make max content length configurable instead of Integer.MAX_VALUE
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
-    pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
+    pipeline.addLast(new MockServerHttpClientCodec(codecProxyConfiguration));
     pipeline.addLast(
         new WebSocketUpgradeHandler(
             mockServerConfiguration, binaryBridgeHandler.getBinaryModifierApplier()));
@@ -198,7 +211,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
             ? mockServerConfiguration.binaryProxyListener()
             : null);
     pipeline.addLast(new Http2SettingsHandler(protocolFuture));
-    pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
+    pipeline.addLast(new MockServerHttpClientCodec(codecProxyConfiguration));
     pipeline.addLast(httpClientHandler);
   }
 
@@ -209,38 +222,9 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   }
 
   public boolean isHostNotOnNoProxyHostList(InetSocketAddress address) {
-    if (address == null
-        || address.getHostString() == null
-        || proxyConfiguration == null
-        || proxyConfiguration.getNoProxyHosts() == null
-        || proxyConfiguration.getNoProxyHosts().isEmpty()) {
+    if (proxyConfiguration == null) {
       return true;
     }
-
-    String host = address.getHostString().toLowerCase(Locale.ROOT);
-
-    for (String pattern : proxyConfiguration.getNoProxyHosts()) {
-      if (pattern == null || pattern.isBlank()) {
-        continue;
-      }
-
-      String p = pattern.toLowerCase(Locale.ROOT).trim();
-
-      if (hostPatternMatches(host, p)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  static boolean hostPatternMatches(String host, String pattern) {
-    if (!pattern.contains("*")) {
-      return host.equals(pattern);
-    }
-
-    String regex = pattern.replace(".", "\\.").replace("*", ".*");
-
-    return host.matches(regex);
+    return NoProxyUtils.shouldUseProxyForAddress(address, proxyConfiguration.getNoProxyHosts());
   }
 }

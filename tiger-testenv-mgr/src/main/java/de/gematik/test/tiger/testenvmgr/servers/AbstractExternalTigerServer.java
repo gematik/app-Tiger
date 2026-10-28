@@ -35,6 +35,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import de.gematik.test.tiger.util.NoProxyUtils;
 import java.io.IOException;
 import java.net.*;
 import java.net.Proxy.Type;
@@ -244,7 +245,13 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
   private URLConnection getUrlConnectionToServer(URL url) throws IOException {
     final Optional<ProxyConfiguration> forwardProxyInfo = createProxyConfiguration();
 
-    if (forwardProxyInfo.isPresent() && !url.getHost().matches("((127\\.0\\.0\\.1)|(localhost))")) {
+    final String host = url.getHost();
+    if (forwardProxyInfo.isPresent()
+        && !host.matches("((127\\.0\\.0\\.1)|(localhost))")
+        && NoProxyUtils.shouldUseProxyForHost(
+            host,
+            NoProxyUtils.resolveIfNeeded(host, forwardProxyInfo.get().getNoProxyHosts()),
+            forwardProxyInfo.get().getNoProxyHosts())) {
       Proxy proxy =
           new Proxy(
               Type.HTTP,

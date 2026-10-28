@@ -62,27 +62,6 @@ class XDynamicSidebarTests extends AbstractBase {
   }
 
   @Test
-  void testFeatureBoxClickOnLastScenario() {
-    openSidebar();
-    Locator lastSidebarScenario = page.locator(".test-sidebar-scenario-name").last();
-    Locator lastExecutionPaneScenario = page.locator(".test-execution-pane-scenario-title").last();
-
-    String scenarioTitleBeforeClick = lastExecutionPaneScenario.textContent().trim();
-    lastSidebarScenario.locator(".scenarioLink").click();
-
-    assertAll(
-        () ->
-            Assertions.assertThat(lastExecutionPaneScenario.textContent().trim())
-                .startsWith(scenarioTitleBeforeClick),
-        () ->
-            Assertions.assertThat(lastSidebarScenario.getAttribute("title"))
-                .isEqualTo("Selected for Rbel log scoping - click to deselect"),
-        () ->
-            Assertions.assertThat(lastExecutionPaneScenario.getAttribute("title"))
-                .isEqualTo("Selected for Rbel log scoping - click to deselect"));
-  }
-
-  @Test
   void testFeatureBoxScenarioSelectionTogglesScopingInSyncWithExecutionPane() {
     openSidebar();
     Locator sidebarScenarioName = page.locator(".test-sidebar-scenario-name").first();

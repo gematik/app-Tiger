@@ -341,6 +341,7 @@ class FanOutPcapCaptureServiceOnFakeNetworkTest {
     Path b = tempDir.resolve("b.pcapng");
     assertThat(service.openCapture("a", a, false)).isTrue();
     network.deliver(LOOPBACK, frame(1));
+    network.awaitProcessed(LOOPBACK);
     assertThat(service.openCapture("b", b, false)).isTrue();
     network.deliver(LOOPBACK, frame(2));
     network.awaitProcessed(LOOPBACK);

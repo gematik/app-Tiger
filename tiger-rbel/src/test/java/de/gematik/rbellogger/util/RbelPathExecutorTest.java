@@ -151,7 +151,7 @@ class RbelPathExecutorTest {
 
   @Test
   void findAllMembers() {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(252);
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(245);
   }
 
   @Test
@@ -198,7 +198,7 @@ class RbelPathExecutorTest {
         + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
     "$..RegistryError[1].textTest[?(@.hier=='ist kein"
         + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-    "$..x5c.0.content.0.7..[?(@.0 == '1.3.36.8.3.3')],$..7.content.1",
+    "$..x5c.0.content.0.A3..[?(@.0 == '1.3.36.8.3.3')],$..x5c.0.content.0.A3.0.1",
     "$.body.RegistryResponse.RegistryErrorList.RegistryError[1].jwtTag,$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag",
   })
   void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {

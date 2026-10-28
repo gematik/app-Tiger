@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import de.gematik.test.tiger.util.NoProxyUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,7 +36,6 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -280,23 +280,14 @@ public class BackendAlpnProber {
     return "Basic " + token;
   }
 
-  /** Returns false if {@code host} matches one of the proxy's no-proxy entries. */
   private static boolean shouldUseProxy(String host, ProxyConfiguration forwardProxy) {
-    List<String> noProxyHosts = forwardProxy.getNoProxyHosts();
-    if (noProxyHosts == null || noProxyHosts.isEmpty() || host == null) {
+    if (host == null) {
       return true;
     }
-    String normalized = host.toLowerCase(Locale.ROOT);
-    for (String entry : noProxyHosts) {
-      if (entry == null || entry.isBlank()) {
-        continue;
-      }
-      String e = entry.trim().toLowerCase(Locale.ROOT);
-      if (normalized.equals(e) || normalized.endsWith("." + e)) {
-        return false;
-      }
-    }
-    return true;
+    return NoProxyUtils.shouldUseProxyForHost(
+        host,
+        NoProxyUtils.resolveIfNeeded(host, forwardProxy.getNoProxyHosts()),
+        forwardProxy.getNoProxyHosts());
   }
 
   private static final X509TrustManager INSECURE_TRUST_MANAGER =

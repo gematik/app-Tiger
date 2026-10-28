@@ -24,9 +24,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.data.config.tigerproxy.AlpnProtocol;
-import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRouteAuthenticationConfiguration;
+import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerRouteSelector;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.Serializable;
@@ -62,11 +62,11 @@ public class TigerProxyRoute implements Serializable {
   @Builder.Default private boolean preserveHostHeader = false;
 
   public static TigerProxyRoute convertFromTigerConfigurationRoute(
-      TigerConfigurationRoute tigerRoute, ForwardProxyInfo forwardProxyInfo) {
+      TigerConfigurationRoute tigerRoute, ProxyConfiguration resolvedForwardProxy) {
     return TigerProxyRoute.builder()
         .from(tigerRoute.getFrom())
         .to(
-            new TigerRouteSelector(tigerRoute.getTo(), forwardProxyInfo)
+            new TigerRouteSelector(tigerRoute.getTo(), resolvedForwardProxy)
                 .selectFirstReachableDestination())
         .authentication(tigerRoute.getAuthentication())
         .hosts(tigerRoute.getHosts())

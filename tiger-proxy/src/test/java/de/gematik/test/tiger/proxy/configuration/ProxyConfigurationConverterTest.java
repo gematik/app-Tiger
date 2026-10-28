@@ -21,11 +21,15 @@
 package de.gematik.test.tiger.proxy.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import de.gematik.test.tiger.util.NoProxyUtils;
+import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -69,6 +73,78 @@ class ProxyConfigurationConverterTest {
 
                       assertThat(proxyConfiguration.getNoProxyHosts())
                           .contains("localhost", "*.internal.example.com");
+                    }));
+  }
+
+  @SneakyThrows
+  @Test
+  void blockWithoutHostname_shouldUseSystemProxyAndKeepNoProxyHosts() {
+    restoreSystemProperties(
+        () -> {
+          System.setProperty("http.proxyHost", "corporate-proxy.example.com");
+          System.setProperty("http.proxyPort", "3128");
+
+          var proxyConfiguration =
+              ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+                      TigerProxyConfiguration.builder()
+                          .forwardToProxy(
+                              ForwardProxyInfo.builder()
+                                  .noProxyHosts(List.of(".ti-dienste.de"))
+                                  .build())
+                          .build())
+                  .orElseThrow();
+
+          assertThat(proxyConfiguration.getProxyAddress().getHostString())
+              .isEqualTo("corporate-proxy.example.com");
+          assertThat(proxyConfiguration.getNoProxyHosts()).contains(".ti-dienste.de");
+        });
+  }
+
+  @Test
+  void invalidHostname_shouldFailAtStartupAndNameTheValue() {
+    final TigerProxyConfiguration configuration =
+        TigerProxyConfiguration.builder()
+            .forwardToProxy(ForwardProxyInfo.builder().hostname("bad host!").build())
+            .build();
+
+    assertThatThrownBy(
+            () ->
+                ProxyConfigurationConverter
+                    .convertForwardProxyConfigurationToMockServerConfiguration(configuration))
+        .isInstanceOf(TigerProxyToForwardProxyException.class)
+        .hasMessageContaining("'bad host!'");
+  }
+
+  @Test
+  void emptyHostname_shouldFailWithAClearMessage() {
+    final TigerProxyConfiguration configuration =
+        TigerProxyConfiguration.builder()
+            .forwardToProxy(ForwardProxyInfo.builder().hostname("").build())
+            .build();
+
+    assertThatThrownBy(
+            () ->
+                ProxyConfigurationConverter
+                    .convertForwardProxyConfigurationToMockServerConfiguration(configuration))
+        .isInstanceOf(TigerProxyToForwardProxyException.class)
+        .hasMessageContaining("forwardToProxy.hostname is empty");
+  }
+
+  @SneakyThrows
+  @Test
+  void bareDomainInNoProxyShouldAlsoCoverSubdomains() {
+    new EnvironmentVariables("no_proxy", "corp.de")
+        .execute(
+            () ->
+                restoreSystemProperties(
+                    () -> {
+                      System.setProperty("http.proxyHost", "corporate-proxy.example.com");
+                      System.setProperty("http.proxyPort", "3128");
+
+                      assertThat(
+                              NoProxyUtils.shouldUseProxyForHost(
+                                  "x.corp.de", null, convertSystemProxyConfig().getNoProxyHosts()))
+                          .isFalse();
                     }));
   }
 

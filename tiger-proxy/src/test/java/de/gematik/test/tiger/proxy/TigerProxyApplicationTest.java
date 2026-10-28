@@ -38,11 +38,11 @@ class TigerProxyApplicationTest {
   }
 
   @Test
-  void emptyApplicationYamlShouldUseInternalForwardProxyDefault() {
+  void emptyApplicationYamlShouldUseNoForwardProxy() {
     try (var context = startApplicationWithConfig("empty-application-test.yaml")) {
       var configuration = context.getBean(ApplicationConfiguration.class);
 
-      assertThat(configuration.getForwardToProxy().getHostname()).isEqualTo("$SYSTEM");
+      assertThat(configuration.getForwardToProxy()).isNull();
     }
   }
 

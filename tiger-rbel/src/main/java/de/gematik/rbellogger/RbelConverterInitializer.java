@@ -35,7 +35,6 @@ import de.gematik.rbellogger.facets.jose.RbelJweConverter;
 import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
 import de.gematik.rbellogger.facets.pki.RbelX500Converter;
 import de.gematik.rbellogger.facets.pki.RbelX509Converter;
-import de.gematik.rbellogger.facets.sicct.RbelSicctCommandConverter;
 import de.gematik.rbellogger.facets.sicct.RbelSicctEnvelopeConverter;
 import de.gematik.rbellogger.facets.uri.RbelUriConverter;
 import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaKeyDeriver;
@@ -176,7 +175,6 @@ public class RbelConverterInitializer {
                 RbelX509Converter.class,
                 RbelX500Converter.class,
                 RbelSicctEnvelopeConverter.class,
-                RbelSicctCommandConverter.class,
                 RbelCetpConverter.class,
                 RbelCborConverter.class,
                 RbelAsn1Converter.class));
