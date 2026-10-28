@@ -32,6 +32,7 @@ import { rawContentModalSymbol } from "../RawContentModal.ts";
 import hljs from "highlight.js/lib/core";
 import "highlight.js/styles/stackoverflow-dark.css";
 import { extractJsonNotes, restoreJsonNotes } from "./messageNoteDom.ts";
+import CopyAsCurlButton from "@/components/CopyAsCurlButton.vue";
 
 const props = defineProps<{
   message: Message;
@@ -49,6 +50,7 @@ const rbelQuery = inject(rbelQueryModalSymbol)!;
 const rawContentModal = inject(rawContentModalSymbol)!;
 
 const messageElement: Ref<HTMLElement | null> = ref(null);
+let copyAsCurlContainer: HTMLElement | null = null;
 
 const toggleMessageDetails = ref<((isHidden: boolean) => void) | null>(null);
 const toggleMessageHeaders = ref<((isHidden: boolean) => void) | null>(null);
@@ -181,6 +183,7 @@ function delegatedClickHandler(event: MouseEvent) {
 }
 
 onBeforeUnmount(() => {
+  unmountCopyAsCurlButton();
   if (messageElement.value && delegatedHandlerAttached.value) {
     messageElement.value.removeEventListener("click", delegatedClickHandler);
     delegatedHandlerAttached.value = false;
@@ -443,7 +446,13 @@ function detachListenerForChangedElement() {
   }
 }
 
-function setupRawMessageButton() {
+interface RawContentEntry {
+  button: HTMLElement;
+  dialog: HTMLElement;
+  rawContent: string;
+}
+
+function extractRawContentEntries(): RawContentEntry[] {
   // The raw content of the message (e.g. the http message)
   const rawContentModalButtons = messageElement.value?.querySelectorAll<HTMLElement>(
     "div [data-bs-target^='#dialog']",
@@ -455,18 +464,49 @@ function setupRawMessageButton() {
     rawContentModalContents &&
     rawContentModalButtons.length === rawContentModalContents.length
   ) {
-    for (let i = 0; i < rawContentModalButtons.length; i++) {
-      const rawContentModalButton = rawContentModalButtons[i];
-      const rawContentModalContent = rawContentModalContents[i];
-      const rawContentText = rawContentModalContent.querySelector("pre")?.innerHTML ?? "";
+    return Array.from(rawContentModalButtons, (button, index) => {
+      const dialog = rawContentModalContents[index];
+      return {
+        button,
+        dialog,
+        rawContent: dialog.querySelector("pre")?.textContent ?? "",
+      };
+    });
+  }
+  return [];
+}
 
-      rawContentModalButton.dataset.bsTarget = "#rawContentModal";
-      rawContentModalButton.addEventListener("click", () => {
-        rawContentModal.show(props.message, rawContentText);
-      });
+function setupRawMessageButton(rawContentEntries: RawContentEntry[]) {
+  for (const { button, dialog, rawContent } of rawContentEntries) {
+    button.dataset.bsTarget = "#rawContentModal";
+    button.addEventListener("click", () => {
+      rawContentModal.show(props.message, rawContent);
+    });
 
-      rawContentModalContent.remove();
-    }
+    dialog.remove();
+  }
+}
+
+function unmountCopyAsCurlButton() {
+  //to ensure vue umounts the previous copy as curl button
+  if (copyAsCurlContainer) {
+    render(null, copyAsCurlContainer);
+    copyAsCurlContainer = null;
+  }
+}
+
+function setupCopyAsCurlButton(rawMessageContent: string) {
+  unmountCopyAsCurlButton();
+  const copyAsCurlButtonPlaceholder = messageElement.value?.querySelector<HTMLElement>(
+    ".copy-as-curl-button-placeholder",
+  );
+  const protocol = copyAsCurlButtonPlaceholder?.dataset.protocol === "https" ? "https" : "http";
+  if (copyAsCurlButtonPlaceholder) {
+    copyAsCurlContainer = copyAsCurlButtonPlaceholder;
+    render(
+      h(CopyAsCurlButton, { rawMessageContent: rawMessageContent, protocol }),
+      copyAsCurlButtonPlaceholder,
+    );
   }
 }
 
@@ -527,7 +567,15 @@ async function setupInteractiveMessageContent(msgUuid: any) {
     }
   }
 
-  setupRawMessageButton();
+  const rawContentEntries = extractRawContentEntries();
+  const fullMessageEntry = rawContentEntries.find(
+    ({ button }) => button.closest(".card-header") === messageHeader,
+  );
+  const rawMessageContent = fullMessageEntry?.dialog.querySelector("pre")?.textContent;
+  if (rawMessageContent != null) {
+    setupCopyAsCurlButton(rawMessageContent);
+  }
+  setupRawMessageButton(rawContentEntries);
 
   // During initial render, sync state map with the actual DOM state
   // (the HTML from server has the correct initial state, so read from it!)
@@ -588,6 +636,7 @@ function attachClickHandler() {
 }
 
 async function setHtmlContentForRecycledElement(htmlContent: string, msgUuid: any) {
+  unmountCopyAsCurlButton();
   if (messageElement.value) {
     messageElement.value.innerHTML = htmlContent;
     await nextTick();
@@ -645,6 +694,7 @@ function toggleMessageHeader(
 }
 
 async function handleUninitializedElement(msgUuid: any, htmlContent: string) {
+  unmountCopyAsCurlButton();
   if (messageElement.value) {
     messageElement.value.innerHTML = htmlContent;
   }
@@ -685,7 +735,7 @@ watch([messageElement, () => props.message.uuid], async () => {
 </script>
 
 <template>
-  <div class="rbel-message pb-3" id="test-rbel-section">
+  <div class="rbel-message pb-3 test-rbel-section">
     <div v-if="props.htmlContent !== undefined" ref="messageElement" />
     <div v-else class="loading">
       <div>Loading...</div>

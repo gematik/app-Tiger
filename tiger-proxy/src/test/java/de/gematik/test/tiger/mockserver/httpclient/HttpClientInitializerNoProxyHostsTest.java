@@ -44,12 +44,6 @@ class HttpClientInitializerNoProxyHostsTest {
     assertThat(initializer.isHostNotOnNoProxyHostList(remoteAddress)).isEqualTo(shouldUseProxy);
   }
 
-  @ParameterizedTest(name = "host={0}, pattern={1} -> matches={2}")
-  @MethodSource("matchesCases")
-  void matches_shouldHandleExactAndWildcardPatterns(String host, String pattern, boolean expected) {
-    assertThat(HttpClientInitializer.hostPatternMatches(host, pattern)).isEqualTo(expected);
-  }
-
   private static Stream<Arguments> isHostNotOnNoProxyHostListCases() {
     return Stream.of(
         Arguments.of(null, List.of("example.com"), true),
@@ -64,11 +58,17 @@ class HttpClientInitializerNoProxyHostsTest {
         Arguments.of(
             new InetSocketAddress("internal.example.com", 443),
             List.of("*.internal.example.com"),
-            true),
+            false),
         Arguments.of(
             new InetSocketAddress("service-a.internal.example.com", 443),
             List.of("service-*.internal.example.com"),
             false),
+        Arguments.of(
+            InetSocketAddress.createUnresolved("ti-konnektor.example", 443),
+            List.of(".example"),
+            false),
+        Arguments.of(
+            InetSocketAddress.createUnresolved("127.0.0.1", 443), List.of("127.0.0.0/8"), false),
         Arguments.of(new InetSocketAddress("foo.bar", 443), List.of("*"), false),
         Arguments.of(
             new InetSocketAddress("service.internal.example.com", 443),
@@ -78,18 +78,6 @@ class HttpClientInitializerNoProxyHostsTest {
             new InetSocketAddress("service.external.example.com", 443),
             List.of("*.internal.example.com", "localhost"),
             true));
-  }
-
-  private static Stream<Arguments> matchesCases() {
-    return Stream.of(
-        Arguments.of("example.com", "example.com", true),
-        Arguments.of("example.com", "EXAMPLE.COM", false),
-        Arguments.of("service.internal.example.com", "*.internal.example.com", true),
-        Arguments.of("internal.example.com", "*.internal.example.com", false),
-        Arguments.of("service-a.internal.example.com", "service-*.internal.example.com", true),
-        Arguments.of("foo.bar", "*", true),
-        Arguments.of("foo.bar", "f*", true),
-        Arguments.of("foo.bar", "*.baz", false));
   }
 
   private static HttpClientInitializer initializerWithNoProxyHosts(List<String> noProxyHosts) {

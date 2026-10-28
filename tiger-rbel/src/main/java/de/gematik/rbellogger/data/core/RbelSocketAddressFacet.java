@@ -79,6 +79,20 @@ public class RbelSocketAddressFacet implements RbelFacet {
     return toRbelSocketAddress().toString();
   }
 
+  /**
+   * The address as recorded in the element, including the IP. {@link #toRbelSocketAddress()} only
+   * knows the hostname and would have to resolve it again, possibly to a different address.
+   */
+  public static Optional<RbelSocketAddress> recordedAddress(RbelElement addressElement) {
+    try {
+      return RbelSocketAddress.fromString(addressElement.getRawStringContent());
+    } catch (RuntimeException e) {
+      return addressElement
+          .getFacet(RbelSocketAddressFacet.class)
+          .map(RbelSocketAddressFacet::toRbelSocketAddress);
+    }
+  }
+
   public RbelSocketAddress toRbelSocketAddress() {
     return toUnbundledRbelSocketAddress();
   }

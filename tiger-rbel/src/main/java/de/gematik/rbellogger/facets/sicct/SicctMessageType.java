@@ -20,7 +20,7 @@
  */
 package de.gematik.rbellogger.facets.sicct;
 
-import de.gematik.test.tiger.exceptions.GenericTigerException;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 
@@ -28,22 +28,14 @@ import lombok.RequiredArgsConstructor;
 public enum SicctMessageType {
   // compare SICCT-specification, chapter 6.1.4.2
 
-  C_COMMAND((byte) 0x6B),
-  R_COMMAND((byte) 0x83),
-  EVENT_MESSAGE((byte) 0x50);
+  C_COMMAND((byte) 0x6B, "command"),
+  R_RESPONSE((byte) 0x83, "response"),
+  EVENT_MESSAGE((byte) 0x50, "event");
 
   final byte value;
+  final String bodyKey;
 
-  public static SicctMessageType of(byte input) {
-    return Stream.of(SicctMessageType.values())
-        .filter(type -> type.value == input)
-        .findFirst()
-        .orElseThrow(() -> new UnknownSicctMessageTypeException(input));
-  }
-
-  private static class UnknownSicctMessageTypeException extends GenericTigerException {
-    public UnknownSicctMessageTypeException(byte input) {
-      super("Could not determine message type for " + input + "!");
-    }
+  public static Optional<SicctMessageType> find(byte input) {
+    return Stream.of(SicctMessageType.values()).filter(type -> type.value == input).findFirst();
   }
 }

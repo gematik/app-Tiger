@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,10 @@
  */
 package de.gematik.rbellogger.facets.asn1;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
-import lombok.Getter;
-import lombok.Value;
 
-@Value
-public class RbelAsn1TaggedValueFacet implements RbelFacet {
-
-  RbelElement tag;
-  RbelElement nestedElement;
-
-  @Getter(lazy = true)
-  RbelMultiMap<RbelElement> childElements = buildChildElements();
-
-  private RbelMultiMap<RbelElement> buildChildElements() {
-    if (nestedElement == null) {
-      return new RbelMultiMap<>();
-    } else {
-      return new RbelMultiMap<RbelElement>().with("content", nestedElement).with("tag", tag);
-    }
-  }
-}
+/**
+ * Marks an element whose children may be a single ASN.1 data object of any type instead of a
+ * SEQUENCE, e.g. an X.509 extension value.
+ */
+public class RbelAllowAsn1FragmentsFacet implements RbelFacet {}

@@ -34,5 +34,3 @@ defineProps<{ onShowModal: () => void }>();
     <span class="is-size-7 fw-bold">Inspect</span>
   </a>
 </template>
-
-<style scoped></style>

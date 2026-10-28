@@ -71,6 +71,10 @@ public class TigerConfigurationKeys {
       new TigerTypedConfigurationKey<>("tiger.tigerProxy.maxLoopCounter", Integer.class, 10);
   public static final TigerTypedConfigurationKey<Integer> RBEL_DNS_CACHE_TTL_SECONDS =
       new TigerTypedConfigurationKey<>("tiger.rbel.dnsCacheTtlSeconds", Integer.class, 30);
+  public static final TigerTypedConfigurationKey<Boolean> RBEL_REVERSE_DNS_LOOKUP =
+      new TigerTypedConfigurationKey<>("tiger.rbel.reverseDnsLookup", Boolean.class, true);
+  public static final TigerTypedConfigurationKey<Integer> RBEL_REVERSE_DNS_LOOKUP_TIMEOUT_MS =
+      new TigerTypedConfigurationKey<>("tiger.rbel.reverseDnsLookupTimeoutMs", Integer.class, 1000);
   public static final TigerTypedConfigurationKey<String[]> TIGER_PROXY_DEFAULT_NAMED_GROUPS =
       new TigerTypedConfigurationKey<>(
           "tiger.tigerProxy.defaultNamedGroups", String[].class, DEFAULT_NAMED_GROUPS_FALLBACK);

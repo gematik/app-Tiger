@@ -37,12 +37,16 @@ const { message } = props;
 
 const el: Ref<HTMLElement | null> = ref(null);
 
-useResizeObserver(el, (entries) => {
-  const h = entries[0].contentRect.height;
-  if (h > 0) {
-    props.onHeightChanged(h);
-  }
-});
+useResizeObserver(
+  el,
+  (entries) => {
+    const h = entries[0].borderBoxSize[0].blockSize;
+    if (h > 0) {
+      props.onHeightChanged(h);
+    }
+  },
+  { box: "border-box" },
+);
 
 function extractTimeFromISO(isoDatetime: string): string {
   if (isoDatetime) {

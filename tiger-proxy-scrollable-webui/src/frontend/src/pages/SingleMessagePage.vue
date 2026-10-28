@@ -21,7 +21,16 @@
 
 -->
 <script setup lang="ts">
-import { computed, onMounted, provide, readonly, ref, type ComputedRef, type Ref, watch } from "vue";
+import {
+  computed,
+  onMounted,
+  provide,
+  readonly,
+  ref,
+  type ComputedRef,
+  type Ref,
+  watch,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { rawContentModalSymbol, useRawContentModal } from "@/RawContentModal.ts";
 import { settingsSymbol, useSettings } from "@/Settings.ts";

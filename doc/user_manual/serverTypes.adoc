@@ -438,7 +438,7 @@ Published placeholders (available for use in other server configurations):
 - `${<serverId>.containerName}` — Container ID/name
 
 For comprehensive documentation, configuration reference, troubleshooting, and examples, see the
-xref:../../tiger-canopy/doc/CANOPY-USER-GUIDE.md[Canopy User Guide].
+<<_canopy_user_guide,Canopy User Guide>>.
 
 .Simple Canopy setup with auto-wiring to a sibling Tiger proxy
 [source,yaml]

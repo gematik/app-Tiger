@@ -25,12 +25,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
 import { scenarioScopeSymbol } from "@/api/ScenarioScope.ts";
 import { computed, inject } from "vue";
-import {
-  faCircleInfo,
-  faCrosshairs,
-  faFilter,
-  faSearch,
-} from "@fortawesome/free-solid-svg-icons";
+import { faCircleInfo, faCrosshairs, faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
 const scenarioScope = inject(scenarioScopeSymbol)!;

@@ -56,7 +56,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -455,14 +454,14 @@ public class RbelHtmlRenderingToolkit {
                                                             "col-2 "
                                                                 + isSize(7)
                                                                 + " navbar-version"),
-                                                    RbelReportMetadataRenderer.renderButton(rbelHtmlRenderer.getReportMetadata())),
+                                                    RbelReportMetadataRenderer.renderButton(
+                                                        rbelHtmlRenderer.getReportMetadata())),
                                             div(
                                                 new UnescapedText(
                                                     rbelHtmlRenderer.getSubTitle()))))),
                     RbelReportMetadataRenderer.renderModal(rbelHtmlRenderer.getReportMetadata()),
                     section()
-                        .withClass("row is-fullheight mainsection")
-                        .withId("test-rbel-section")
+                        .withClass("row is-fullheight mainsection test-rbel-section")
                         .with(
                             renderMenu(),
                             div()
@@ -491,7 +490,6 @@ public class RbelHtmlRenderingToolkit {
             script(elements.stream().map(this::menuTab).collect(Collectors.joining("\n"))))
         .render(FlatHtml.into(writer, Config.global()));
   }
-
 
   public String renderDocument(List<RbelElement> elements, boolean localRessources)
       throws IOException {

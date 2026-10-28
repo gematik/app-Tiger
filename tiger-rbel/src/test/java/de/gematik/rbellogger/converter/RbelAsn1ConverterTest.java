@@ -28,8 +28,8 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.asn1.RbelAsn1DataObjectsFacet;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1Facet;
-import de.gematik.rbellogger.facets.asn1.RbelAsn1TaggedValueFacet;
 import de.gematik.rbellogger.facets.uri.RbelUriFacet;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -39,8 +39,11 @@ import java.nio.charset.StandardCharsets;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 public class RbelAsn1ConverterTest {
@@ -178,22 +181,88 @@ public class RbelAsn1ConverterTest {
     assertThat(rbelMessage) // NOSONAR
         .hasGivenValueAtPosition("$.body.0.2.0", "1.2.840.10045.4.3.2")
         // check X509-Version (Tagged-sequence)
-        .hasGivenValueAtPosition("$.body.0.0.content", BigInteger.valueOf(2))
+        .hasGivenValueAtPosition("$.body.0.A0.0", BigInteger.valueOf(2))
         // check OCSP URL
-        .hasGivenFacetAtPosition(
-            "$.body.0.7.content.3.1.content.0.1.content.content", RbelUriFacet.class)
-        .hasGivenFacetAtPosition("$.body.0.7.content.3.1.content.0", RbelAsn1Facet.class)
-        .hasGivenFacetAtPosition("$.body.0.7.content.3.1.content.0", RbelAsn1Facet.class)
-        .hasGivenFacetAtPosition(
-            "$.body.0.7.content.3.1.content.0.1", RbelAsn1TaggedValueFacet.class)
-        .hasGivenValueAtPosition("$.body.0.7.content.3.1.content.0.1.tag", 6)
-        .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
+        .hasGivenFacetAtPosition("$.body.0.A3.0.3.1.content.0.86.content", RbelUriFacet.class)
+        .hasGivenFacetAtPosition("$.body.0.A3.0.3.1.content.0", RbelAsn1Facet.class)
+        .extractChildWithPath("$.body.0.A3.0.3.1.content.0.86.content")
         .hasStringContentEqualTo("http://ehca.gematik.de/ocsp/")
-        // Parse y-coordinate of signature (Nested in BitString)
         .andTheInitialElement()
+        .extractChildWithPath("$.body.0.A3.0.3.1.content.0.86")
+        .extractFacet(RbelAsn1Facet.class)
+        .extracting(RbelAsn1Facet::getTag)
+        .isEqualTo("86");
+    assertThat(rbelMessage)
+        // Parse y-coordinate of signature (Nested in BitString)
         .hasGivenValueAtPosition(
             "$.body.2.content.1",
             new BigInteger(
                 "9528585714247878020400211740123936754253798904841060501006300662224159406199"));
+  }
+
+  private static RbelElement convertHex(String hex) {
+    return rbelLogger.getRbelConverter().convertElement(Hex.decode(hex), null);
+  }
+
+  @Test
+  void taggedChildrenShouldBeKeyedByTagAndUniversalOnesByPosition() {
+    final RbelElement sequence = convertHex("300B" + "A003020102" + "020105" + "8101FF");
+
+    assertThat(sequence)
+        .hasGivenValueAtPosition("$.A0.0", BigInteger.valueOf(2))
+        .hasGivenValueAtPosition("$.1", BigInteger.valueOf(5))
+        .hasGivenValueAtPosition("$.81", new byte[] {(byte) 0xFF})
+        .doesNotHaveChildWithPath("$.0");
+    assertThat(sequence)
+        .extractFacet(RbelAsn1Facet.class)
+        .extracting(RbelAsn1Facet::getTag)
+        .isEqualTo("30");
+  }
+
+  @Test
+  void elementsShouldBeSlicesOfTheOriginalEncoding() {
+    final RbelElement longFormLength = convertHex("308103" + "020105");
+    final RbelElement indefiniteLength = convertHex("3080" + "020105" + "0000");
+
+    assertThat(longFormLength)
+        .extractChildWithPath("$.0")
+        .getContent()
+        .isEqualTo(Hex.decode("020105"));
+    assertThat(indefiniteLength)
+        .hasGivenValueAtPosition("$.0", BigInteger.valueOf(5))
+        .extractChildWithPath("$.0")
+        .getContent()
+        .isEqualTo(Hex.decode("020105"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"020105", "3003020105" + "3003020105", "3005020105", "E0034F0100"})
+  void outsideOfMarkedFieldsOnlyASingleSequenceShouldBeParsed(String hex) {
+    assertThat(convertHex(hex)).doesNotHaveFacet(RbelAsn1Facet.class);
+  }
+
+  @Test
+  void markedFieldsShouldContainAllDataObjects() {
+    final RbelElement field = convertMarkedField("E0034F0101" + "E0034F0102" + "7F2103420100");
+
+    assertThat(field.findRbelPathMembers("$.E0.4F")).hasSize(2);
+    assertThat(field).hasGivenValueAtPosition("$.7F21.42", new byte[] {0});
+  }
+
+  @Test
+  void aSingleDataObjectInAMarkedFieldShouldBeAddressedLikeSeveral() {
+    assertThat(convertMarkedField("7F2103420100")).hasChildWithPath("$.7F21.42");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"2FFFFFFFFFFFFFFF", "A000000167455349474E", "E0034F01", "E0034F010100"})
+  void markedFieldsShouldOnlyBeParsedIfCompletelyWellFormed(String hex) {
+    assertThat(convertMarkedField(hex)).doesNotHaveFacet(RbelAsn1Facet.class);
+  }
+
+  private static RbelElement convertMarkedField(String hex) {
+    final RbelElement parent = new RbelElement(new byte[0], null);
+    parent.addFacet(new RbelAsn1DataObjectsFacet());
+    return rbelLogger.getRbelConverter().convertElement(new RbelElement(Hex.decode(hex), parent));
   }
 }

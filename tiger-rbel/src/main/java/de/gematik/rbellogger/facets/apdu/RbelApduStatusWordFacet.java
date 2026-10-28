@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.rbellogger.facets.asn1;
+package de.gematik.rbellogger.facets.apdu;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
@@ -26,11 +26,13 @@ import de.gematik.rbellogger.data.core.RbelFacet;
 import lombok.Getter;
 import lombok.Value;
 
+/** The meaning of a status word, see {@link StatusWord}. */
 @Value
-public class RbelAsn1UnparsedBytesFacet implements RbelFacet {
-  RbelElement unparsedBytes;
+public class RbelApduStatusWordFacet implements RbelFacet {
+
+  RbelElement meaning;
 
   @Getter(lazy = true)
   RbelMultiMap<RbelElement> childElements =
-      new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
+      new RbelMultiMap<RbelElement>().with("meaning", meaning);
 }

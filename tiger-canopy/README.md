@@ -3,7 +3,7 @@
 > **CANOPY** — a programmable DNS server that dynamically reroutes selected hostnames to a Tiger
 > proxy. Replaces brittle, static Docker alias setups with runtime-configurable interception.
 
-**For comprehensive user documentation, see [CANOPY User Guide](doc/CANOPY-USER-GUIDE.md).**
+**For comprehensive user documentation, see [CANOPY User Guide](doc/CANOPY-USER-GUIDE.adoc).**
 
 ## What it does
 

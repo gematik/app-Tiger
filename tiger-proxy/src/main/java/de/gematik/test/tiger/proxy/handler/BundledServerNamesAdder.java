@@ -24,6 +24,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
 import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
 import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
+import de.gematik.rbellogger.data.decorator.ServerNameFromKnownHostname;
 import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
 import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
 
@@ -31,11 +32,14 @@ import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
  * encapsulates the logic to add bundled server names to the requests and responses HostnameFacet
  */
 public class BundledServerNamesAdder {
+  private final MessageMetadataModifier modifierBasedOnKnownHostname;
   private final MessageMetadataModifier modifierBasedOnProcessAndPort;
   private final MessageMetadataModifier modifierBasedOnHostname;
   private final MessageMetadataModifier modifierBasedOnlyOnPort;
 
   public BundledServerNamesAdder() {
+    this.modifierBasedOnKnownHostname =
+        AddBundledServerNamesModifier.createModifier(new ServerNameFromKnownHostname());
     this.modifierBasedOnProcessAndPort =
         AddBundledServerNamesModifier.createModifier(new ServernameFromProcessAndPortSupplier());
     this.modifierBasedOnHostname =
@@ -46,6 +50,7 @@ public class BundledServerNamesAdder {
 
   public void addBundledServerNameToHostnameFacet(RbelElement element) {
     // order is important!!
+    modifierBasedOnKnownHostname.modifyMetadata(element);
     modifierBasedOnHostname.modifyMetadata(element);
     modifierBasedOnlyOnPort.modifyMetadata(element);
     modifierBasedOnProcessAndPort.modifyMetadata(element);

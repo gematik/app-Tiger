@@ -103,6 +103,8 @@ lib:
   createIntermediateReports: true
 ----
 
+include::pcap_capture.adoc[leveloffset=+2]
+
 === Registering Lifecycle Callbacks
 
 When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.

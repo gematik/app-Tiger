@@ -13,6 +13,7 @@ Run an individual suite by passing one of these stages:
 ./runUiTestsLocally.sh replay
 ./runUiTestsLocally.sh sequencediagram
 ./runUiTestsLocally.sh testselector
+./runUiTestsLocally.sh scenario-scope
 ```
 
 To run a suite with a visible browser, start the dummy environment in one Git Bash window:

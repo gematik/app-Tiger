@@ -20,7 +20,6 @@
  */
 package de.gematik.test.tiger.mockserver.httpclient;
 
-import static de.gematik.test.tiger.common.util.FunctionWithCheckedException.nullOnException;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
@@ -94,12 +93,13 @@ public class NettyHttpClient {
               + " not possible to send a request");
     }
 
-    if (shouldUseProxy(requestInfo.getRemoteServerAddress())) {
+    final boolean useProxyForTarget = shouldUseProxy(requestInfo.getRemoteServerAddress());
+    if (useProxyForTarget) {
       modifyProxyInformation(requestInfo);
     }
 
     final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
-    doSendRequest(requestInfo, customTimeout, false, httpResponseFuture);
+    doSendRequest(requestInfo, customTimeout, false, useProxyForTarget, httpResponseFuture);
     return httpResponseFuture;
   }
 
@@ -107,6 +107,7 @@ public class NettyHttpClient {
       HttpRequestInfo requestInfo,
       Long customTimeout,
       boolean forceNewChannel,
+      boolean useProxyForTarget,
       CompletableFuture<HttpResponse> httpResponseFuture) {
 
     long requestStartTime = System.currentTimeMillis();
@@ -118,6 +119,7 @@ public class NettyHttpClient {
             : HttpProtocol.HTTP_1_1;
 
     final HttpClientInitializer clientInitializer = createClientInitializer(httpProtocol);
+    clientInitializer.setUseProxyForTarget(useProxyForTarget);
 
     var isSecure = Optional.ofNullable(requestInfo.getDataToSend().isSecure()).orElse(false);
 
@@ -147,6 +149,7 @@ public class NettyHttpClient {
                 requestInfo,
                 customTimeout,
                 forceNewChannel,
+                useProxyForTarget,
                 httpResponseFuture,
                 message,
                 throwable,
@@ -197,6 +200,7 @@ public class NettyHttpClient {
       HttpRequestInfo requestInfo,
       Long customTimeout,
       boolean forceNewChannel,
+      boolean useProxyForTarget,
       CompletableFuture<HttpResponse> httpResponseFuture,
       Message message,
       Throwable throwable,
@@ -220,7 +224,7 @@ public class NettyHttpClient {
         if (deadChannel != null) {
           clientBootstrapFactory.removeChannelFromPool(deadChannel);
         }
-        doSendRequest(requestInfo, customTimeout, true, httpResponseFuture);
+        doSendRequest(requestInfo, customTimeout, true, useProxyForTarget, httpResponseFuture);
       } else {
         log.atWarn()
             .addArgument(elapsed)
@@ -330,13 +334,18 @@ public class NettyHttpClient {
     if (remoteAddress == null || proxyConfiguration == null) {
       return true;
     }
-    return Optional.ofNullable(remoteAddress.getAddress())
-        .or(
-            () ->
-                Optional.ofNullable(remoteAddress.getHostName())
-                    .map(nullOnException(InetAddress::getByName)))
-        .map(adr -> NoProxyUtils.shouldUseProxyForHost(adr, proxyConfiguration.getNoProxyHosts()))
-        .orElse(true);
+    final String host = remoteAddress.getHostString();
+    final List<String> noProxyHosts = proxyConfiguration.getNoProxyHosts();
+    final InetAddress resolved =
+        remoteAddress.getAddress() != null
+            ? remoteAddress.getAddress()
+            : NoProxyUtils.resolveIfNeeded(host, noProxyHosts);
+    final Optional<String> bypassEntry =
+        NoProxyUtils.findBypassingNoProxyEntry(host, resolved, noProxyHosts);
+    bypassEntry.ifPresentOrElse(
+        entry -> log.debug("direct (matched {} from no_proxy) for '{}'", entry, host),
+        () -> log.debug("via proxy for '{}'", host));
+    return bypassEntry.isEmpty();
   }
 
   public int queryClientPort(int port) {

@@ -28,7 +28,7 @@ The nodes configured in the YAML file are started asynchronously unless the `dep
 
 One optional but powerful server type is `canopy`, a DNS server that can intercept and dynamically reroute selected hostnames to the Tiger proxy at runtime.
 This enables test scenarios to change routing configuration without restarting the environment, making it ideal for multi-scenario testing, chaos injection, and hypothesis testing.
-For details on why and how to use Canopy, see xref:../../tiger-canopy/doc/CANOPY-USER-GUIDE.md[the Canopy User Guide].
+For details on why and how to use Canopy, see <<_canopy_user_guide,the Canopy User Guide>>.
 
 Before writing your own `tiger.yaml` configuration files, ensure you are familiar with YAML syntax and structure.
 
@@ -54,6 +54,8 @@ All `exports` entries of a node are available for subsequent nodes and can be us
 <<<
 
 include::serverTypes.adoc[]
+
+include::../../tiger-canopy/doc/CANOPY-USER-GUIDE.adoc[leveloffset=+2]
 
 === Server type example
 

@@ -1,0 +1,31 @@
+diff --git a/node_modules/vue-virtual-scroller/dist/useRecycleScroller-D_RDrEg2.js b/node_modules/vue-virtual-scroller/dist/useRecycleScroller-D_RDrEg2.js
+--- a/node_modules/vue-virtual-scroller/dist/useRecycleScroller-D_RDrEg2.js
++++ b/node_modules/vue-virtual-scroller/dist/useRecycleScroller-D_RDrEg2.js
+@@ -740,6 +740,26 @@
+     const et = w <= X && g >= G, Tt = ce(r) === "flow", tt = Tt && et && !e;
+     let nt = null;
+-    if (!et || e)
++    if (e) {
++      // Keep surviving visible keys in their current views on list changes.
++      const visibleItems = new Map();
++      Gn(w, g, C, (index) => {
++        const item = z[index];
++        visibleItems.set(p ? Oe(item, index, p) : index, { item, index });
++      });
++      for (const view of E) {
++        if (!view.nr.used) continue;
++        const next = visibleItems.get(view.nr.key);
++        if (!next || next.item[S] !== view.nr.type) {
++          St(view, Tt);
++        } else {
++          view.item = next.item;
++          if (view.nr.index !== next.index) {
++            view.nr.index = next.index;
++            Dn(view);
++          }
++        }
++      }
++    } else if (!et)
+       Kt();
+     else {
+       const b = (W) => {

@@ -42,6 +42,9 @@ public class ServernameFromProcessAndPortSupplier
     Integer port =
         extractPort(hostNameElement)
             .orElseThrow(() -> new IllegalStateException("failed to extract port"));
+    if (!isOnThisMachine(hostNameElement)) {
+      return Optional.empty();
+    }
 
     Long processId = GlobalServerMap.getPortToProcessId().get(port);
 
@@ -56,6 +59,13 @@ public class ServernameFromProcessAndPortSupplier
       return Optional.of(GlobalServerMap.getProcessIdToBundledServerName().get(processId));
     }
     return Optional.empty();
+  }
+
+  private static boolean isOnThisMachine(RbelElement hostNameElement) {
+    return hostNameElement.hasFacet(RbelSocketAddressFacet.class)
+        && RbelSocketAddressFacet.recordedAddress(hostNameElement)
+            .map(RbelSocketAddress::isOnThisMachine)
+            .orElse(false);
   }
 
   private Optional<Integer> extractPort(RbelElement hostNameElement) {

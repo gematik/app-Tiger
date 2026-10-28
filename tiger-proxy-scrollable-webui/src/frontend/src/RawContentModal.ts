@@ -26,24 +26,24 @@ export const rawContentModalSymbol: InjectionKey<UseRawContentModalReturn> =
   Symbol("rawContentModalSymbol");
 
 export interface UseRawContentModalReturn {
-  selected: Ref<{ message: Message; rawContent: string } | null>;
+  currentlySelected: Ref<{ message: Message; rawContent: string } | null>;
   show: (message: Message, rawContent: string) => void;
   hide: () => void;
 }
 
 export function useRawContentModal(): UseRawContentModalReturn {
-  const selected: Ref<{ message: Message; rawContent: string } | null> = ref(null);
+  const currentlySelected: Ref<{ message: Message; rawContent: string } | null> = ref(null);
 
   const show = (message: Message, rawContent: string) => {
-    selected.value = { message, rawContent };
+    currentlySelected.value = { message, rawContent };
   };
 
   const hide = () => {
-    selected.value = null;
+    currentlySelected.value = null;
   };
 
   return {
-    selected,
+    currentlySelected: currentlySelected,
     show,
     hide,
   };

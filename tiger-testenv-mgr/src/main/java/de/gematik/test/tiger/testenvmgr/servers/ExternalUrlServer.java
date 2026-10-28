@@ -20,6 +20,9 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
+
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -62,6 +65,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
 
     final var url = buildUrl();
     addServerToLocalProxyRouteMap(url);
+    registerServerNameForLocalPort(url);
     publishNewStatusUpdate(TigerServerStatusUpdate.builder().baseUrl(extractBaseUrl(url)).build());
     waitForServerUp();
   }
@@ -73,6 +77,13 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
             .from(TigerTestEnvMgr.HTTP + getHostname())
             .to(url.toString())
             .build());
+  }
+
+  /** Names local traffic to this server, e.g. a port that Docker publishes for a container. */
+  private void registerServerNameForLocalPort(URL url) {
+    RbelSocketAddress.generateFromUrl(url.toString())
+        .filter(RbelSocketAddress::isOnThisMachine)
+        .ifPresent(address -> addServerNameForPort(address.getPort(), getServerId()));
   }
 
   @Override

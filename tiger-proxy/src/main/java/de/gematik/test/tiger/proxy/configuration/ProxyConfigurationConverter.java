@@ -23,12 +23,15 @@ package de.gematik.test.tiger.proxy.configuration;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.Type.HTTP;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
 
+import com.google.common.net.InetAddresses;
+import com.google.common.net.InternetDomainName;
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import de.gematik.test.tiger.util.NoProxyUtils;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -36,9 +39,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
+@Slf4j
 public class ProxyConfigurationConverter {
 
   private ProxyConfigurationConverter() {}
@@ -63,8 +68,21 @@ public class ProxyConfigurationConverter {
 
   public static Optional<ProxyConfiguration> createMockServerProxyConfiguration(
       ForwardProxyInfo forwardProxyInfo) {
-    if (StringUtils.isEmpty(forwardProxyInfo.getHostname())) {
-      return Optional.empty();
+    if (forwardProxyInfo.getHostname() != null && forwardProxyInfo.getHostname().isEmpty()) {
+      throw new TigerProxyToForwardProxyException(
+          "forwardToProxy.hostname is empty. Remove the forwardToProxy block to use no forward"
+              + " proxy, or set it to a proxy host, or to $SYSTEM.");
+    }
+    final String hostname = forwardProxyInfo.getHostname();
+    if (hostname != null
+        && !"$SYSTEM".equals(hostname)
+        && !InetAddresses.isInetAddress(hostname)
+        && !InternetDomainName.isValid(hostname)) {
+      throw new TigerProxyToForwardProxyException(
+          "forwardToProxy.hostname '"
+              + hostname
+              + "' is not a valid host name or IP address. Use a host name, an IP address, or"
+              + " $SYSTEM.");
     }
     Optional<ProxyConfiguration> proxyConfiguration;
     proxyConfiguration = convertForwardProxyInfoConfig(forwardProxyInfo);
@@ -72,6 +90,8 @@ public class ProxyConfigurationConverter {
     return proxyConfiguration.map(
         configuration -> {
           if (forwardProxyInfo.getNoProxyHosts() != null) {
+            warnAboutUnreadableEntries(
+                forwardProxyInfo.getNoProxyHosts(), "forwardToProxy.noProxyHosts");
             configuration.getNoProxyHosts().addAll(forwardProxyInfo.getNoProxyHosts());
           }
           return configuration;
@@ -80,7 +100,8 @@ public class ProxyConfigurationConverter {
 
   private static Optional<ProxyConfiguration> convertForwardProxyInfoConfig(
       ForwardProxyInfo forwardProxyInfo) {
-    if (Strings.CS.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
+    if (forwardProxyInfo.getHostname() == null
+        || Strings.CS.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
       return convertSystemProxyConfig();
     } else {
       return Optional.of(
@@ -193,28 +214,40 @@ public class ProxyConfigurationConverter {
   }
 
   private static ProxyConfiguration addSystemNoProxyHosts(ProxyConfiguration proxyConfiguration) {
-    addNoProxyHosts(proxyConfiguration, System.getProperty("http.nonProxyHosts"), "\\|");
+    addNoProxyHosts(
+        proxyConfiguration, System.getProperty("http.nonProxyHosts"), "\\|", "http.nonProxyHosts");
     return proxyConfiguration;
   }
 
   private static ProxyConfiguration addEnvironmentNoProxyHosts(
       ProxyConfiguration proxyConfiguration) {
-    addNoProxyHosts(proxyConfiguration, System.getenv("no_proxy"), ",");
-    addNoProxyHosts(proxyConfiguration, System.getenv("NO_PROXY"), ",");
+    addNoProxyHosts(proxyConfiguration, System.getenv("no_proxy"), ",", "no_proxy");
+    addNoProxyHosts(proxyConfiguration, System.getenv("NO_PROXY"), ",", "NO_PROXY");
     return proxyConfiguration;
   }
 
   private static void addNoProxyHosts(
-      ProxyConfiguration proxyConfiguration, String noProxyHosts, String separator) {
+      ProxyConfiguration proxyConfiguration, String noProxyHosts, String separator, String source) {
     if (StringUtils.isNotBlank(noProxyHosts)) {
-      proxyConfiguration
-          .getNoProxyHosts()
-          .addAll(
-              Stream.of(noProxyHosts.split(separator))
-                  .map(String::trim)
-                  .filter(StringUtils::isNotEmpty)
-                  .toList());
+      final List<String> entries =
+          Stream.of(noProxyHosts.split(separator))
+              .map(String::trim)
+              .filter(StringUtils::isNotEmpty)
+              .toList();
+      warnAboutUnreadableEntries(entries, source);
+      proxyConfiguration.getNoProxyHosts().addAll(entries);
     }
+  }
+
+  private static void warnAboutUnreadableEntries(List<String> entries, String source) {
+    entries.stream()
+        .filter(entry -> !NoProxyUtils.isReadableNoProxyEntry(entry))
+        .forEach(
+            entry ->
+                log.warn(
+                    "Ignoring no-proxy entry '{}' from {}: not a host, .domain, *.domain, CIDR or *",
+                    entry,
+                    source));
   }
 
   private static ProxyConfiguration addDefaultNoProxyHosts(ProxyConfiguration proxyConfiguration) {

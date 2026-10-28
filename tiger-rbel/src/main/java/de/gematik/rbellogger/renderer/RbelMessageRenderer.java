@@ -20,8 +20,7 @@
  */
 package de.gematik.rbellogger.renderer;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.*;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.*;
 
@@ -128,10 +127,15 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     List<DomContent> messageTitleElements = new ArrayList<>();
     messageTitleElements.add(a().attr("name", element.getUuid()));
     messageTitleElements.add(showBodyToggleButton(showExpanded, "msg-toggle", messageInfoFacet));
+    if (httpRequestFacet.isPresent()) {
+      var protocol = element.findElement("$.tlsVersion").isPresent() ? "https" : "http";
+      messageTitleElements.add(showCopyAsCurlButton(protocol));
+    }
     messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
     if (!renderingToolkit.shouldRenderEntitiesWithSize(element.getSize())) {
       messageTitleElements.add(RENDER_FULLY_BUTTON);
     }
+
     partnerMessage
         .map(RbelMessageRenderer::showPartnerMessageButton)
         .ifPresent(messageTitleElements::add);

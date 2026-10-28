@@ -40,7 +40,17 @@ public class ServernameFromSpyPortMapping implements Function<RbelElement, Optio
     Integer port =
         extractPort(hostNameElement)
             .orElseThrow(() -> new IllegalStateException("failed to extract port"));
+    if (!isOnThisMachine(hostNameElement)) {
+      return Optional.empty();
+    }
     return GlobalServerMap.getServerNameForPort(port);
+  }
+
+  private static boolean isOnThisMachine(RbelElement hostNameElement) {
+    return hostNameElement.hasFacet(RbelSocketAddressFacet.class)
+        && RbelSocketAddressFacet.recordedAddress(hostNameElement)
+            .map(RbelSocketAddress::isOnThisMachine)
+            .orElse(false);
   }
 
   private Optional<Integer> extractPort(RbelElement hostNameElement) {

@@ -218,3 +218,37 @@ Then  TGR CANOPY contains proxied host api.example.com
 
 See `tiger-canopy/README.md` for the full REST reference, configuration options and a ready-to-run
 `docker-compose.example.yaml`.
+
+=== FO05 Why do I see "WARN ... pcap capture disabled" in the logs?
+
+Pcap capture requires the native libpcap library to be installed and available. This warning typically means that it is missing or that the user lacks the permissions to use it:
+
+*Windows:*
+
+* Install https://npcap.com/[Npcap] (modern Windows packet capture library, WinPcap-compatible).
+* Choose "Install Npcap in WinPcap API-compatible Mode" during installation.
+
+*Linux:*
+
+* For non-root execution, enable raw packet capture with:
++
+[source,bash]
+----
+sudo setcap cap_net_raw,cap_net_admin=eip $(readlink -f $(which java))
+----
+* Alternatively, run the test suite with `sudo`.
+* Or install libpcap: `sudo apt-get install libpcap-dev` (Debian/Ubuntu) or equivalent for your distro.
+
+*macOS:*
+
+* Install https://www.wireshark.org/download/[Wireshark], which bundles ChmodBPF for BPF device permissions.
+* Or manually add your user to the `access_bpf` group:
++
+[source,bash]
+----
+sudo dseditgroup -o edit -a $(whoami) -t user access_bpf
+----
+
+Once installed, restart the test suite and pcap capture will activate automatically if `lib.pcapCapture.enabled: true` is set.
+
+Pcap capture is optional and graceful: if the native library is unavailable, the test suite continues normally without network packet recording.
