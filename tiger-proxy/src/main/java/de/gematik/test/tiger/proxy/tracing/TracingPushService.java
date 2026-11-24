@@ -37,21 +37,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.broker.SimpleBrokerMessageHandler;
+import org.springframework.messaging.support.MessageBuilder;
 
-@RequiredArgsConstructor
 public class TracingPushService {
 
   public static final int MAX_MESSAGE_SIZE = 64 * KB;
   private final SimpMessagingTemplate template;
   private final TigerBuildPropertiesService buildPropertiesService;
   private final TigerProxy tigerProxy;
+
+  /** Tells who has subscribed to what. */
+  private final SimpleBrokerMessageHandler broker;
+
   private Logger log = LoggerFactory.getLogger(TracingPushService.class);
+
+  public TracingPushService(
+      SimpMessagingTemplate template,
+      TigerBuildPropertiesService buildPropertiesService,
+      TigerProxy tigerProxy,
+      SimpleBrokerMessageHandler broker) {
+    this.template = template;
+    this.buildPropertiesService = buildPropertiesService;
+    this.tigerProxy = tigerProxy;
+    this.broker = broker;
+  }
 
   public void addWebSocketListener() {
     tigerProxy.addRbelMessageListener(this::propagateRbelMessageSafe);
@@ -147,9 +165,15 @@ public class TracingPushService {
                   msg.hasFacet(RbelRequestFacet.class) || !msg.hasFacet(RbelResponseFacet.class))
               .build();
 
-      template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto, versionHeader());
-
-      mapRbelMessageAndSent(msg);
+      if (isSubscribedTo(TigerRemoteProxyClient.WS_TRACING)) {
+        template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto, versionHeader());
+      }
+      if (isSubscribedTo(TigerRemoteProxyClient.WS_DATA)) {
+        mapRbelMessageAndSent(msg);
+      }
+      if (isSubscribedTo(TigerRemoteProxyClient.WS_RAW_BINARY)) {
+        sendInBinaryFrames(msg);
+      }
       log.trace("completed sending message {}", msg.getUuid());
     } catch (RuntimeException e) {
       log.error("Error while sending message: {}", e.getMessage());
@@ -172,6 +196,33 @@ public class TracingPushService {
             .stacktrace(ExceptionUtils.getStackTrace(exception))
             .build(),
         versionHeader());
+  }
+
+  private boolean isSubscribedTo(String destination) {
+    var accessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+    accessor.setDestination(destination);
+    accessor.setLeaveMutable(true);
+    Message<byte[]> probe = MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+    return !broker.getSubscriptionRegistry().findSubscriptions(probe).isEmpty();
+  }
+
+  /** The bytes of the message in frames of at most {@link #MAX_MESSAGE_SIZE}. */
+  private void sendInBinaryFrames(RbelElement rbelMessage) {
+    RbelContent content = rbelMessage.getContent();
+    if (content.isNull()) {
+      return;
+    }
+    final int size = content.size();
+    final int numberOfParts = (size + MAX_MESSAGE_SIZE - 1) / MAX_MESSAGE_SIZE;
+    for (int index = 0, nextPartIndex = 0; nextPartIndex < size; index++) {
+      byte[] partContent =
+          content.toByteArray(nextPartIndex, Math.min(nextPartIndex + MAX_MESSAGE_SIZE, size));
+      template.convertAndSend(
+          TigerRemoteProxyClient.WS_RAW_BINARY,
+          partContent,
+          BinaryTracingFrame.headers(rbelMessage.getUuid(), index, numberOfParts));
+      nextPartIndex += partContent.length;
+    }
   }
 
   private void mapRbelMessageAndSent(RbelElement rbelMessage) {

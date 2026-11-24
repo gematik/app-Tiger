@@ -28,6 +28,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelNestedFacet;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.data.core.RbelValueFacet;
+import de.gematik.rbellogger.util.Base64Alphabet;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -129,6 +130,9 @@ class Asn1TreeBuilder {
       return Optional.empty();
     }
     final String trimmed = element.getRawStringContent().strip();
+    if (!Base64Alphabet.canBeBase64(trimmed)) {
+      return Optional.empty();
+    }
     try {
       return Optional.of(RbelContent.of(decoder.decode(trimmed)));
     } catch (IllegalArgumentException e) {

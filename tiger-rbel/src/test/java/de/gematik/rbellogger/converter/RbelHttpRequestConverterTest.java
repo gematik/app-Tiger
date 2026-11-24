@@ -24,6 +24,9 @@ import static de.gematik.rbellogger.TestUtils.readAndConvertCurlMessage;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LENIENT_HTTP_PARSING;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
@@ -35,6 +38,7 @@ import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestConverter;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.val;
@@ -42,6 +46,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("de.gematik.test.tiger.common.SmokeTest")
 class RbelHttpRequestConverterTest {
@@ -53,6 +58,31 @@ class RbelHttpRequestConverterTest {
     LENIENT_HTTP_PARSING.putValue(true);
     lenientRbelConverter = RbelLogger.build().getRbelConverter();
     LENIENT_HTTP_PARSING.clearValue();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"POST /upload HTTP/1.1", "HTTP/1.1 200 OK"})
+  void parsingTheHeadOfAMessageDoesNotFlattenOrDecodeItsBody(String startLine) {
+    byte[] body = new byte[1 << 20];
+    java.util.Arrays.fill(body, (byte) 0xe4);
+    byte[] head =
+        (startLine
+                + "%sHost: server%sContent-Type: application/octet-stream%sContent-Length: %d%s%s")
+            .formatted("\r\n", "\r\n", "\r\n", body.length, "\r\n", "\r\n")
+            .getBytes(StandardCharsets.US_ASCII);
+    byte[] message = new byte[head.length + body.length];
+    System.arraycopy(head, 0, message, 0, head.length);
+    System.arraycopy(body, 0, message, head.length, body.length);
+    RbelContent content = spy(RbelContent.of(message));
+    RbelElement element = RbelElement.create(content, null);
+
+    rbelConverter.convertElement(element);
+
+    assertThat(element.hasFacet(RbelHttpMessageFacet.class)).isTrue();
+    assertThat(element.findElement("$.header.Content-Type").map(RbelElement::getRawStringContent))
+        .contains("application/octet-stream");
+    verify(content, never()).toByteArray();
+    verify(content, never()).toByteArray(0, message.length);
   }
 
   @ParameterizedTest
@@ -248,7 +278,9 @@ class RbelHttpRequestConverterTest {
         .andPrintTree()
         .extractFacet(RbelHttpMessageFacet.class)
         .extracting(RbelHttpMessageFacet::getBody)
-        .matches(el -> el.getSize() == 32);
+        .matches(
+            el ->
+                el.getSize() == 22 && "Wikipedia in \r\nchunks.".equals(el.getRawStringContent()));
   }
 
   @Test

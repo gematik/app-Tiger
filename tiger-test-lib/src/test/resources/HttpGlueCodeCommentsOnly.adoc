@@ -55,8 +55,8 @@ Example:
 [.indent]
 ----
     When TGR send empty GET request to "${myAddress}" with headers:
-     | name | bob |
-     | age  | 27  |
+     | name | age |
+     | bob  | 27  |
 ----
 
 [.indent]

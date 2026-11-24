@@ -116,4 +116,19 @@ class RbelLoggerTest {
         .extractChildWithPath("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
         .hasValueEqualTo("IDP symmetricEncryptionKey");
   }
+
+  @Test
+  void aNoteAddedBelowAMessage_changesTheHistoryRevision() {
+    var rbelLogger = RbelLogger.build();
+    var message =
+        rbelLogger
+            .getRbelConverter()
+            .parseMessage(
+                "GET /x HTTP/1.1\r\nHost: a\r\n\r\n".getBytes(), new RbelMessageMetadata());
+    long before = rbelLogger.getMessageHistory().getHistoryRevision();
+
+    message.findElement("$.header.Host").orElseThrow().addFacet(new RbelNoteFacet("hello"));
+
+    assertThat(rbelLogger.getMessageHistory().getHistoryRevision()).isGreaterThan(before);
+  }
 }

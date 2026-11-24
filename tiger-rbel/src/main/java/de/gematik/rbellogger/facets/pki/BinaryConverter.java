@@ -22,8 +22,8 @@ package de.gematik.rbellogger.facets.pki;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.Base64Alphabet;
 import java.io.InputStream;
-import java.util.Base64;
 import java.util.function.Supplier;
 import lombok.val;
 
@@ -36,11 +36,12 @@ public interface BinaryConverter {
   static void consumeElement(
       BinaryConverter converter, final RbelElement element, final RbelConversionExecutor context) {
     val content = element.getContent();
-    if (!converter.tryConversion(element, context, content::toInputStream)
-        && !converter.tryConversion(
-            element, context, () -> Base64.getDecoder().wrap(content.toInputStream()))) {
-      converter.tryConversion(
-          element, context, () -> Base64.getUrlDecoder().wrap(content.toInputStream()));
+    if (converter.tryConversion(element, context, content::toInputStream)) {
+      return;
+    }
+    val decoder = Base64Alphabet.streamDecoderFor(content);
+    if (decoder != null) {
+      converter.tryConversion(element, context, () -> decoder.wrap(content.toInputStream()));
     }
   }
 }

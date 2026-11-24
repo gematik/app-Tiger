@@ -24,7 +24,9 @@ import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
+import de.gematik.rbellogger.util.Base64Alphabet;
 import de.gematik.rbellogger.util.RbelContent;
+import java.io.IOException;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -36,33 +38,49 @@ public class RbelBase64JsonConverter extends RbelConverterPlugin {
       return;
     }
     var content = rbel.getContent();
-    safeConvertBase64Using(Base64.getDecoder(), content, context, rbel)
-        .or(() -> safeConvertBase64Using(Base64.getUrlDecoder(), content, context, rbel))
+    if (!Base64Alphabet.canBeBase64(content)) {
+      return;
+    }
+    // the alphabets differ only in + / and - _, so a text that the standard decoder took gives the
+    // same bytes with the URL decoder or none at all, and converting them twice would be futile
+    tryDecode(Base64.getDecoder(), content)
+        .or(() -> tryDecode(Base64.getUrlDecoder(), content))
+        .flatMap(decoded -> convertDecoded(decoded, context, rbel))
         .ifPresent(rbel::addFacet);
   }
 
-  private Optional<RbelBase64Facet> safeConvertBase64Using(
-      Base64.Decoder decoder,
-      RbelContent input,
-      RbelConversionExecutor context,
-      RbelElement parentNode) {
-    final Optional<RbelElement> rawElement =
-        Optional.ofNullable(input)
-            .map(
-                i -> {
-                  try {
-                    return RbelContent.from(decoder.wrap(input.toInputStream()));
-                  } catch (Exception e) {
-                    return null;
-                  }
-                })
-            .map(data -> RbelElement.builder().content(data).parentNode(parentNode).build());
-    if (rawElement.isEmpty()) {
+  private static Optional<RbelContent> tryDecode(Base64.Decoder decoder, RbelContent encoded) {
+    try {
+      return Optional.of(decode(decoder, encoded));
+    } catch (IOException | RuntimeException e) {
       return Optional.empty();
     }
-    context.convertElement(rawElement.get());
-    if (rawElement.get().hasFacet(RbelRootFacet.class)) {
-      return Optional.of(new RbelBase64Facet(rawElement.get()));
+  }
+
+  // the size of the buffer a stream reads with, which dwarfs the content of most short values
+  private static final int SMALL_CONTENT_LIMIT = 8192;
+
+  static RbelContent decode(Base64.Decoder decoder, RbelContent encoded) throws IOException {
+    if (encoded.size() <= SMALL_CONTENT_LIMIT) {
+      try {
+        return RbelContent.wrap(decoder.decode(encoded.toByteArray()));
+      } catch (IllegalArgumentException e) {
+        // only the stream decoder tolerates a wrong number of padding characters
+        if (encoded.get(encoded.size() - 1) != '=') {
+          throw e;
+        }
+      }
+    }
+    return RbelContent.from(decoder.wrap(encoded.toInputStream()));
+  }
+
+  private Optional<RbelBase64Facet> convertDecoded(
+      RbelContent decoded, RbelConversionExecutor context, RbelElement parentNode) {
+    final RbelElement rawElement =
+        RbelElement.builder().content(decoded).parentNode(parentNode).build();
+    context.convertElement(rawElement);
+    if (rawElement.hasFacet(RbelRootFacet.class)) {
+      return Optional.of(new RbelBase64Facet(rawElement));
     }
     return Optional.empty();
   }

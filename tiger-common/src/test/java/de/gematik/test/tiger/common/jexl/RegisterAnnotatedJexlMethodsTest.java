@@ -23,10 +23,27 @@ package de.gematik.test.tiger.common.jexl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.tiger.CustomerJexlMethods;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class RegisterAnnotatedJexlMethodsTest {
+
+  @Test
+  void indexContainsBuiltInAndCustomerTestNamespaces() {
+    var indexed = TigerJexlExecutor.findIndexedNamespaces(List.of(getClass().getClassLoader()));
+    assertThat(indexed)
+        .containsEntry("test", DummyJexlMethods.class)
+        .containsEntry("customer", CustomerJexlMethods.class);
+  }
 
   /** Tests that the {@link DummyJexlMethods} are registered by calling them. */
   @Test
@@ -37,5 +54,27 @@ class RegisterAnnotatedJexlMethodsTest {
     var resultResolvePlaceHolders =
         TigerGlobalConfiguration.resolvePlaceholders("!{test:testMethod()}");
     assertThat(resultResolvePlaceHolders).isEqualTo("test");
+  }
+
+  @Test
+  void registersCustomerNamespaceBeforeConfigurationEvaluation() {
+    assertThat(TigerGlobalConfiguration.resolvePlaceholders("!{customer:testMethod()}"))
+        .isEqualTo("customer");
+  }
+
+  @Test
+  void corruptIndexIsSkipped(@TempDir Path temp) throws IOException {
+    URL resource = Files.writeString(temp.resolve("broken.idx"), "not an index").toUri().toURL();
+    ClassLoader loader =
+        new ClassLoader(getClass().getClassLoader()) {
+          @Override
+          public Enumeration<URL> getResources(String name) throws IOException {
+            return name.equals("META-INF/jandex.idx")
+                ? Collections.enumeration(List.of(resource))
+                : super.getResources(name);
+          }
+        };
+    var loaders = List.of(loader);
+    assertThat(TigerJexlExecutor.findIndexedNamespaces(loaders)).isEmpty();
   }
 }

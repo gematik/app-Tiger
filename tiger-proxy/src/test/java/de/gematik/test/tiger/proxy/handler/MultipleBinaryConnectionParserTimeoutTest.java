@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelMessageKind;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TcpIpConnectionIdentifier;
@@ -68,7 +69,8 @@ class MultipleBinaryConnectionParserTimeoutTest {
   @DisplayName("A parsing task that never finishes does not block the caller for ever")
   void aStuckTaskDoesNotBlockForEver() {
     var parser = parserThatNeverFinishes();
-    parser.addToBuffer(CLIENT, SERVER, request(), ZonedDateTime.now(), RbelMessageKind.REQUEST);
+    parser.addToBuffer(
+        CLIENT, SERVER, RbelContent.of(request()), ZonedDateTime.now(), RbelMessageKind.REQUEST);
 
     assertTimeoutPreemptively(
         Duration.ofSeconds(10),
@@ -84,7 +86,14 @@ class MultipleBinaryConnectionParserTimeoutTest {
   void theStuckMessageIsNamed() {
     var parser = parserThatNeverFinishes();
     parser.addToBuffer(
-        "the-stuck-one", CLIENT, SERVER, request(), Map.of(), RbelMessageKind.REQUEST, null, null);
+        "the-stuck-one",
+        CLIENT,
+        SERVER,
+        RbelContent.of(request()),
+        Map.of(),
+        RbelMessageKind.REQUEST,
+        null,
+        null);
 
     assertTimeoutPreemptively(
         Duration.ofSeconds(10),
@@ -98,7 +107,8 @@ class MultipleBinaryConnectionParserTimeoutTest {
   @DisplayName("A message that was given up on is not waited for a second time")
   void anAbandonedTaskIsNotWaitedForAgain() {
     var parser = parserThatNeverFinishes();
-    parser.addToBuffer(CLIENT, SERVER, request(), ZonedDateTime.now(), RbelMessageKind.REQUEST);
+    parser.addToBuffer(
+        CLIENT, SERVER, RbelContent.of(request()), ZonedDateTime.now(), RbelMessageKind.REQUEST);
 
     assertThatThrownBy(() -> parser.waitForAllParsingTasksToBeFinished())
         .isInstanceOf(TigerProxyParsingException.class);
@@ -112,7 +122,8 @@ class MultipleBinaryConnectionParserTimeoutTest {
   @DisplayName("The timeout configured on the proxy is the one the parser uses")
   void theConfiguredTimeoutIsUsed() {
     var parser = parserOfProxyConfiguredWith(1);
-    parser.addToBuffer(CLIENT, SERVER, request(), ZonedDateTime.now(), RbelMessageKind.REQUEST);
+    parser.addToBuffer(
+        CLIENT, SERVER, RbelContent.of(request()), ZonedDateTime.now(), RbelMessageKind.REQUEST);
 
     assertTimeoutPreemptively(
         Duration.ofSeconds(30),
@@ -127,7 +138,8 @@ class MultipleBinaryConnectionParserTimeoutTest {
   @DisplayName("Messages that parse normally are still waited for")
   void finishedTasksAreStillWaitedFor() {
     var parser = parserThatFinishes();
-    parser.addToBuffer(CLIENT, SERVER, request(), ZonedDateTime.now(), RbelMessageKind.REQUEST);
+    parser.addToBuffer(
+        CLIENT, SERVER, RbelContent.of(request()), ZonedDateTime.now(), RbelMessageKind.REQUEST);
 
     assertThatCode(() -> parser.waitForAllParsingTasksToBeFinished()).doesNotThrowAnyException();
   }

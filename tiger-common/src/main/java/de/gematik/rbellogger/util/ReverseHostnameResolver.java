@@ -115,7 +115,10 @@ public class ReverseHostnameResolver {
   /**
    * The name the address resolves to. Docker answers with {@code <container>.<network>}: if the
    * first label alone resolves back to the address, only that label is returned, otherwise the full
-   * name (e.g. {@code dev.mydomain.com} stays as it is).
+   * name (e.g. {@code dev.mydomain.com} stays as it is). For a verified first label, derives the
+   * Compose project prefix from {@code <project>_<network>} and removes it together with a trailing
+   * numeric instance suffix. Uses that service alias only if it resolves to exactly the original
+   * address. No other suffixes are tried.
    */
   public Optional<String> lookup(InetAddress address) {
     try {
@@ -155,7 +158,12 @@ public class ReverseHostnameResolver {
     }
     final String firstLabel = name.substring(0, firstDot);
     try {
-      return forwardLookup.lookup(firstLabel).contains(address) ? firstLabel : name;
+      if (!forwardLookup.lookup(firstLabel).contains(address)) {
+        return name;
+      }
+      return composeServiceName(firstLabel, name.substring(firstDot + 1))
+          .filter(service -> resolvesOnlyTo(service, address))
+          .orElse(firstLabel);
     } catch (UnknownHostException | RuntimeException e) {
       log.atTrace()
           .addArgument(firstLabel)
@@ -163,5 +171,40 @@ public class ReverseHostnameResolver {
           .log("{} does not resolve on its own, keeping the full name");
       return name;
     }
+  }
+
+  private boolean resolvesOnlyTo(String name, InetAddress address) {
+    try {
+      return forwardLookup.lookup(name).equals(List.of(address));
+    } catch (UnknownHostException | RuntimeException e) {
+      log.atTrace()
+          .addArgument(name)
+          .setCause(e)
+          .log("{} could not be resolved as a shorter alias");
+      return false;
+    }
+  }
+
+  private String removeTrailingNumericSuffix(String name) {
+    final int lastHyphen = name.lastIndexOf('-');
+    if (lastHyphen <= 0 || lastHyphen == name.length() - 1) {
+      return name;
+    }
+    final String lastSegment = name.substring(lastHyphen + 1);
+    return lastSegment.chars().allMatch(Character::isDigit) ? name.substring(0, lastHyphen) : name;
+  }
+
+  private Optional<String> composeServiceName(String containerName, String networkName) {
+    for (int separator = networkName.lastIndexOf('_');
+        separator > 0;
+        separator = networkName.lastIndexOf('_', separator - 1)) {
+      final String projectPrefix = networkName.substring(0, separator) + "-";
+      if (containerName.startsWith(projectPrefix)) {
+        return Optional.of(
+                removeTrailingNumericSuffix(containerName.substring(projectPrefix.length())))
+            .filter(service -> !service.isEmpty());
+      }
+    }
+    return Optional.empty();
   }
 }

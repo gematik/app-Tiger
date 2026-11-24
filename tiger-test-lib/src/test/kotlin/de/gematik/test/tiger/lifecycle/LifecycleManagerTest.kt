@@ -21,21 +21,35 @@
 package de.gematik.test.tiger.lifecycle
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration
+import com.example.tiger.CustomerLifecycleCallback
+import com.example.tiger.CustomerLifecycleBase
+import de.gematik.test.tiger.common.util.JandexIndexReader
+import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Collections
+import org.jboss.jandex.Index
+import org.jboss.jandex.IndexWriter
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class LifecycleManagerTest {
 
     @BeforeEach
     fun setup() {
         DummyLifecycleCallback.callbacksCalled = 0
+        CustomerLifecycleCallback.calls.clear()
     }
 
     @AfterEach
     fun teardown() {
         DummyLifecycleCallback.callbacksCalled = 0
+        CustomerLifecycleCallback.calls.clear()
     }
 
     @Test
@@ -50,7 +64,70 @@ class LifecycleManagerTest {
         lifecycleManager.beforeLocalTigerProxyStart(TigerProxyConfiguration())
         lifecycleManager.afterLocalTigerProxyStart(TigerProxyConfiguration())
         assertThat(DummyLifecycleCallback.callbacksCalled).isEqualTo(6)
+        assertThat(CustomerLifecycleCallback.calls).containsExactly(
+            "beforeConfiguration", "afterConfiguration", "beforeServers", "afterServers",
+            "beforeProxy", "afterProxy"
+        )
     }
+
+    @Test
+    fun `index contains production and test callbacks`() {
+        val indexed = LifecycleManager()
+            .findIndexedCallbacks(JandexIndexReader.classLoaders(LifecycleManager::class.java))
+            .map { it.javaClass.name }
+        assertThat(indexed).contains(
+            LoggingCallback::class.java.name,
+            DummyLifecycleCallback::class.java.name,
+            CustomerLifecycleCallback::class.java.name
+        )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["corrupt", "unsupported"])
+    fun `unreadable index does not prevent discovery from valid indexes`(
+        kind: String,
+        @TempDir temp: Path
+    ) {
+        val valid = temp.resolve("valid.idx")
+        Files.newOutputStream(valid).use {
+            IndexWriter(it).write(
+                Index.of(
+                    LifecycleCallbacks::class.java,
+                    CustomerLifecycleBase::class.java,
+                    CustomerLifecycleCallback::class.java
+                )
+            )
+        }
+        val broken = temp.resolve("$kind.idx")
+        if (kind == "corrupt") {
+            Files.writeString(broken, "not an index")
+        } else {
+            val bytes = Files.readAllBytes(valid)
+            bytes[4] = 127
+            Files.write(broken, bytes)
+        }
+
+        val callbacks = LifecycleManager().findIndexedCallbacks(
+            listOf(loader(broken.toUri().toURL(), valid.toUri().toURL()))
+        )
+
+        assertThat(callbacks.map { it.javaClass.name }).containsExactly(CustomerLifecycleCallback::class.java.name)
+    }
+
+    @Test
+    fun `missing indexes produce no callbacks`() {
+        assertThat(LifecycleManager().findIndexedCallbacks(listOf(loader()))).isEmpty()
+    }
+
+    private fun loader(vararg resources: URL): ClassLoader =
+        object : ClassLoader(javaClass.classLoader) {
+            override fun getResources(name: String) =
+                if (name == JandexIndexReader.INDEX_RESOURCE) {
+                    Collections.enumeration(resources.toList())
+                } else {
+                    super.getResources(name)
+                }
+        }
 }
 
 class DummyLifecycleCallback : LifecycleCallbacks {

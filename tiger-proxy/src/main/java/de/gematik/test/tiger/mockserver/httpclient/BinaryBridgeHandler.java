@@ -27,7 +27,6 @@ import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
-import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -35,7 +34,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.util.Optional;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -53,13 +51,10 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   public static final AttributeKey<RbelSocketAddress> VIRTUAL_SERVER_ADDRESS =
       AttributeKey.valueOf("VIRTUAL_SERVER_ADRESS");
   private final BinaryExchangeHandler binaryProxyListener;
-  @Getter private final BinaryModifierApplier binaryModifierApplier;
   private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
 
-  public BinaryBridgeHandler(
-      MockServerConfiguration configuration, BinaryModifierApplier binaryModifierApplier) {
+  public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
-    this.binaryModifierApplier = binaryModifierApplier;
   }
 
   @Override
@@ -71,18 +66,14 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
     The other location is in BinaryHandler.sendMessage
      */
     synchronized (binaryProxyListener) {
-      for (val msgToSend :
-          binaryModifierApplier.applyModifierPlugins(msg, ctx, RbelMessageKind.RESPONSE)) {
-        final Channel incomingChannel = ctx.channel().attr(INCOMING_CHANNEL).get();
-        if (incomingChannel == null) {
-          throw new IllegalStateException("Incoming channel is not set.");
-        }
-        incomingChannel.writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
-        val clientAddress = getVirtualServerAddress(ctx.channel(), incomingChannel);
-        val serverAddress = RbelSocketAddress.create(incomingChannel.remoteAddress());
-        binaryProxyListener.onProxy(
-            msgToSend, serverAddress, clientAddress, RbelMessageKind.RESPONSE);
+      final Channel incomingChannel = ctx.channel().attr(INCOMING_CHANNEL).get();
+      if (incomingChannel == null) {
+        throw new IllegalStateException("Incoming channel is not set.");
       }
+      incomingChannel.writeAndFlush(Unpooled.copiedBuffer(msg.getBytes()));
+      val clientAddress = getVirtualServerAddress(ctx.channel(), incomingChannel);
+      val serverAddress = RbelSocketAddress.create(incomingChannel.remoteAddress());
+      binaryProxyListener.onProxy(msg, serverAddress, clientAddress, RbelMessageKind.RESPONSE);
     }
   }
 

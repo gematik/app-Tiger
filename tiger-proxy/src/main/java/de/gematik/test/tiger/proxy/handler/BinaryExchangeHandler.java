@@ -24,6 +24,7 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -54,7 +55,7 @@ public class BinaryExchangeHandler {
     connectionParser.addToBuffer(
         clientAddress,
         serverAddress,
-        binaryMessage.getBytes(),
+        RbelContent.of(binaryMessage.getBytes()),
         binaryMessage.getTimestamp().atZone(ZoneId.systemDefault()),
         messageKind);
   }

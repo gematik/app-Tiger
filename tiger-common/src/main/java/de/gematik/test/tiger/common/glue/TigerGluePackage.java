@@ -31,17 +31,17 @@ import java.lang.annotation.Target;
  * into the effective {@code cucumber.glue} list.
  *
  * <p>Pure marker annotation; no attributes. Apply it to any class inside the glue package you want
- * Tiger to discover (typically the glue class itself). The runner scans {@code
- * de.gematik.test.tiger} for {@code @TigerGluePackage}-bearing classes and adds each annotated
- * class's package to the glue list before delegating to Cucumber. Mirrors the existing
- * classpath-scan discovery used for {@code @TigerServerType}.
+ * Tiger to discover (typically the glue class itself). The runner reads {@code META-INF/jandex.idx}
+ * resources and adds each annotated class's package to the glue list before delegating to Cucumber.
+ * Classes may reside in any package; their module must generate and ship a Jandex index, as with
+ * {@code @TigerServerType}. Projects inheriting from {@code tiger-starter-parent} generate main and
+ * test indexes automatically.
  *
  * <p>Lives in {@code tiger-common} so both core and out-of-tree extensions can reference it without
  * forcing a compile-time dependency on {@code tiger-test-lib}.
  *
  * <p>Use it once per glue package — multiple annotated classes in the same package collapse to one
- * entry. The annotation has no behavioural effect at compile time; it is only read reflectively at
- * test-runner startup.
+ * entry. Marker classes are not loaded during discovery.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

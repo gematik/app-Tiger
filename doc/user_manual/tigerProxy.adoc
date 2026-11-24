@@ -186,7 +186,6 @@ servers:
         port: 3858                        # target port
         ignoreConnectionErrors: false     # true = suppress connection error logs
         tcpIdleTimeoutInSeconds: 5.0        # OPTIONAL TCP keep-alive timeout in seconds (default: 5), null = disabled
-        modifierPlugins: []               # OPTIONAL plugin classes to modify traffic on the TCP layer before forwarding
 
       logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
       # Folders containing keys (e.g. PEM, P12) loaded into RBel for decrypting traffic during analysis
@@ -1112,7 +1111,7 @@ Each entry is a `name` (the fully qualified, or simple, class name of the plugin
 
 ===== How it works
 
-* On startup, Tiger scans the classpath (via `Reflections`) for all implementations of the `RbelBinaryModifierPlugin` interface and looks up the class matching `name`.
+* Tiger discovers public, concrete implementations of `RbelBinaryModifierPlugin` from `META-INF/jandex.idx` resources and looks up the class matching `name`. Plugins may use any package. Generate indexes for their modules and any intermediate base types, including test indexes for test-only plugins, as described in <<_adding_custom_rbel_converters,Adding custom RBel converters>>.
 * An instance of that class is created by deserializing the `parameters` map into it with Jackson - i.e. the plugin class is a plain POJO whose fields correspond to the `parameters` keys (bean-style getters/setters, or Lombok `@Data`).
 * For every binary message flowing through the `directReverseProxy`, the message is first parsed into an `RbelElement`, then each configured plugin is called, in the order it was registered, via:
 +
@@ -1177,6 +1176,80 @@ How it works:
 === Rbel Parsing
 
 For a detailed description of RBelPath, please refer to the xref:tigerProxy.adoc#_rbel_path_details[Understanding RBelPath].
+
+==== Adding custom RBel converters
+
+To add a converter, create a public class extending `de.gematik.rbellogger.RbelConverterPlugin` and implement `consumeElement`.
+The converter needs a public constructor accepting `RbelConfiguration` or a public no-argument constructor.
+`@ConverterInfo` is optional: it controls automatic activation, optional parser identifiers (`onlyActivateFor`),
+and ordering dependencies (`dependsOn`).
+
+Tiger discovers converters from the `META-INF/jandex.idx` resources in the application and its dependency JARs,
+not by scanning the classpath.
+Converters can use any Java package; they no longer need to be under `de.gematik`.
+Projects inheriting from `tiger-starter-parent` generate indexes for main and test classes automatically.
+No additional plugin configuration is needed in those projects.
+For projects not inheriting from that parent, configure the following plugin in every module containing
+converters or intermediate converter base classes:
+
+[source,xml]
+----
+<plugin>
+    <groupId>io.smallrye</groupId>
+    <artifactId>jandex-maven-plugin</artifactId>
+    <version>3.6.0</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>jandex</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+Run `mvn package` (or at least `mvn process-classes`) to generate the index after compilation.
+The plugin indexes the module's compiled classes; it is not an annotation processor and requires no
+`annotationProcessorPaths` configuration, including on JDK 23 and newer.
+Use the Jandex version supported by your Tiger release (3.6.0 for this release);
+indexes written in newer formats may not be readable by Tiger's runtime dependency.
+Tiger reads standard indexes from all application and dependency modules. Unreadable or unsupported
+indexes are skipped with a WARN identifying the resource and cause; discovery continues with the
+remaining indexes. Extensions in skipped indexes, or depending on intermediate types in them,
+may not be discovered. Check these warnings if an extension is missing.
+If an IDE compiles classes without running Maven plugins, regenerate the index before starting Tiger.
+Test-only converters also need an index in `target/test-classes/META-INF/jandex.idx`, generated after test compilation.
+Without `tiger-starter-parent`, add a second execution to the same plugin for these:
+
+[source,xml]
+----
+<execution>
+    <id>index-test-classes</id>
+    <phase>process-test-classes</phase>
+    <goals>
+        <goal>jandex</goal>
+    </goals>
+    <configuration>
+        <processDefaultFileSet>false</processDefaultFileSet>
+        <fileSets>
+            <fileSet>
+                <directory>${project.build.testOutputDirectory}</directory>
+                <includes>
+                    <include>**/*.class</include>
+                </includes>
+            </fileSet>
+        </fileSets>
+        <indexDir>${project.build.testOutputDirectory}/META-INF</indexDir>
+    </configuration>
+</execution>
+----
+
+The existing seed converter order is preserved. Additional converters are sorted by fully qualified class name,
+then `dependsOn` ordering is applied. Use explicit dependencies rather than relying on classpath order.
+
+IMPORTANT: When producing a shaded JAR, preserve all indexed classes and regenerate a combined Jandex index for
+the shaded contents. Binary `jandex.idx` files cannot be concatenated with Shade's `AppendingTransformer`
+or Shadow's `append`. Spring Boot repackaging keeps dependency JARs and their indexes separate.
 
 ==== activateRbelParsing
 
@@ -1306,7 +1379,7 @@ Several buffer-size properties allow fine-tuning of memory usage:
 ----
 tigerProxy:
   tigerProxyConfiguration:
-    rbelBufferSizeInMb: 1024          # Limits the RBel buffer to approximately this size (default: 1024)
+    rbelBufferSizeInMb: 1024          # Limits the RBel buffer to approximately this size, fractions like 0.5 are allowed (default: 1024)
     stompClientBufferSizeInMb: 1      # Buffer size for reassembling an inbound STOMP message on the remote-proxy client (default: 1)
     stompServerSendBufferSizeInMb: 16 # Pending-send buffer per tracing WebSocket session before the tracing broker closes it as unreliable (default: 16)
     stompServerSendTimeLimitInSeconds: 20 # How long the tracing broker may take to flush a message to a session before giving up on it (default: 20)
@@ -1345,7 +1418,7 @@ Default is 5.0 minutes.
 ==== parsingTimeoutInSeconds
 
 How long the proxy waits for messages to finish parsing before giving up on them.
-This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log), for a single message to be parsed, and for a message to be parsed before the binary modifier plugins are applied to it.
+This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log) and for a single message to be parsed.
 Raise it if you routinely handle very large messages; there is no reason to lower it, as the wait ends as soon as parsing is done.
 Default is 100 seconds.
 
@@ -1448,6 +1521,10 @@ Tiger shows the names of senders and receivers in the traffic log.
 For a peer known only by its IP, e.g. a client container in a Docker network, Tiger looks up its name via reverse DNS.
 The lookup doesn't block: it runs while the message is parsed, never while it is forwarded.
 Container names are only known to Docker's DNS, so they are found only if the Tiger Proxy runs in the same Docker network.
+For Compose networks named `<project>_<network>`, Tiger derives the service name by removing the matching `<project>-` prefix and a trailing numeric instance suffix from the container name.
+The service name is used only if it resolves to exactly the peer's IP; scaled services keep their container names.
+Tiger checks only this derived alias, without probing arbitrary hyphen-separated suffixes.
+Custom container or network names without a matching project prefix keep the container name.
 
 [source,yaml]
 ----

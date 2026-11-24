@@ -54,16 +54,12 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   private final NettyHttpClient httpClient;
   private final BinaryExchangeHandler binaryExchangeCallback;
-  private final BinaryModifierApplier binaryModifierApplier;
 
   public BinaryHandler(
-      final MockServerConfiguration configuration,
-      final NettyHttpClient httpClient,
-      BinaryModifierApplier binaryModifierApplier) {
+      final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
     super(true);
     this.httpClient = httpClient;
     this.binaryExchangeCallback = configuration.binaryProxyListener();
-    this.binaryModifierApplier = binaryModifierApplier;
   }
 
   @Override
@@ -71,22 +67,15 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get() != null) {
-      binaryModifierApplier
-          .applyModifierPlugins(binaryRequest, ctx, RbelMessageKind.REQUEST)
-          .forEach(
-              msg ->
-                  sendMessage(
-                      BinaryRequestInfo.builder()
-                          .incomingChannel(ctx.channel())
-                          .outgoingChannel(
-                              ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get())
-                          .remoteServerAddress(remoteAddress)
-                          .dataToSend(msg)
-                          .build()));
+      sendMessage(
+          BinaryRequestInfo.builder()
+              .incomingChannel(ctx.channel())
+              .outgoingChannel(ctx.channel().attr(BinaryBridgeHandler.OUTGOING_CHANNEL).get())
+              .remoteServerAddress(remoteAddress)
+              .dataToSend(binaryRequest)
+              .build());
     } else if (remoteAddress != null) {
-      binaryModifierApplier
-          .applyModifierPlugins(binaryRequest, ctx, RbelMessageKind.REQUEST)
-          .forEach(msg -> sendMessage(new BinaryRequestInfo(ctx.channel(), msg, remoteAddress)));
+      sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
     } else {
       log.info(
           "unknown message format, only HTTP requests are supported for mocking or HTTP &"

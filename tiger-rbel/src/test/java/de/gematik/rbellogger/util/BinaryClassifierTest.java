@@ -79,4 +79,89 @@ class BinaryClassifierTest {
   void jsonText_shouldNotBeBinary() {
     assertThat(BinaryClassifier.isBinary("{\"key\":\"value\"}".getBytes())).isFalse();
   }
+
+  @Test
+  void incompleteSequenceAtTheEnd_shouldBeBinary() {
+    byte[] data = {'a', 'b', 'c', (byte) 0xE2, (byte) 0x82};
+
+    assertThat(BinaryClassifier.isBinary(data)).isTrue();
+    assertThat(BinaryClassifier.isBinary(new java.io.ByteArrayInputStream(data))).isTrue();
+  }
+
+  @Test
+  void onlyTheFirst512Characters_areLookedAt() {
+    byte[] data = new byte[600];
+    java.util.Arrays.fill(data, (byte) 'a');
+    data[550] = 0;
+
+    assertThat(BinaryClassifier.isBinary(data)).isFalse();
+    assertThat(BinaryClassifier.isBinary(new java.io.ByteArrayInputStream(data))).isFalse();
+    data[500] = 0;
+    assertThat(BinaryClassifier.isBinary(data)).isTrue();
+    assertThat(BinaryClassifier.isBinary(new java.io.ByteArrayInputStream(data))).isTrue();
+  }
+
+  @Test
+  void content_isClassifiedLikeTheBytes_alsoInSeveralChunksAndViews() {
+    byte[][] samples = {
+      "plain text".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+      "grüße € 日本語 🌍".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+      {'a', 'b', 0, 'c'},
+      {'a', 'b', (byte) 0xE2, (byte) 0x82},
+      {(byte) 0xC3, 0x28},
+      new byte[700]
+    };
+    java.util.Arrays.fill(samples[5], (byte) 'x');
+    samples[5][600] = 1;
+
+    for (byte[] sample : samples) {
+      for (int split = 0; split <= sample.length; split++) {
+        var chunks =
+            RbelContent.of(
+                java.util.List.of(
+                    RbelContent.of(java.util.Arrays.copyOfRange(sample, 0, split)),
+                    RbelContent.of(java.util.Arrays.copyOfRange(sample, split, sample.length))));
+        assertThat(BinaryClassifier.isBinary(chunks))
+            .as("%s split at %d", java.util.Arrays.toString(sample), split)
+            .isEqualTo(BinaryClassifier.isBinary(sample));
+      }
+    }
+  }
+
+  @Test
+  void aViewOntoALargerContent_isClassifiedLikeItsBytes() {
+    byte[][] samples = {
+      "plain text".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+      "grüße € 日本語".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+      {'a', 0, 'b'},
+      {(byte) 0xC3, 0x28}
+    };
+
+    for (byte[] sample : samples) {
+      byte[] outside =
+          "A\u0000\u0001ÿ outside \u0000".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+      byte[] all = new byte[outside.length * 2 + sample.length];
+      System.arraycopy(outside, 0, all, 0, outside.length);
+      System.arraycopy(sample, 0, all, outside.length, sample.length);
+      System.arraycopy(outside, 0, all, outside.length + sample.length, outside.length);
+
+      var view = RbelContent.of(all).subArray(outside.length, outside.length + sample.length);
+
+      assertThat(BinaryClassifier.isBinary(view))
+          .as(java.util.Arrays.toString(sample))
+          .isEqualTo(BinaryClassifier.isBinary(sample));
+    }
+  }
+
+  @Test
+  void controlCharacterAfterAMultibyteCharacter_shouldBeBinary() {
+    byte[] data = "ä".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    data = java.util.Arrays.copyOf(data, data.length + 3);
+    data[2] = 'a';
+    data[3] = 3;
+    data[4] = 'b';
+
+    assertThat(BinaryClassifier.isBinary(data)).isTrue();
+    assertThat(BinaryClassifier.isBinary(new java.io.ByteArrayInputStream(data))).isTrue();
+  }
 }

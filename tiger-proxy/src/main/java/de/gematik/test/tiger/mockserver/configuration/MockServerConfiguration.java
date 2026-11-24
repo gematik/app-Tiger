@@ -29,7 +29,6 @@ import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
-import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -85,7 +84,6 @@ public class MockServerConfiguration {
   private boolean http2FrameParsingActive = false;
 
   private boolean enableTlsTermination = true;
-  private List<RbelBinaryModifierPlugin> binaryModifierPlugins;
 
   // callbacks
   private BiConsumer<TigerProxyRoutingException, ChannelHandlerContext> exceptionHandlingCallback =

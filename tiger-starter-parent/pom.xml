@@ -24,7 +24,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-starter-parent</artifactId>
-  <version>4.5.0</version>
+  <version>5.0.0</version>
   <packaging>pom</packaging>
   <name>tiger-starter-parent</name>
   <description>Parent pom for getting a tiger test suite project quickly up and running</description>
@@ -54,9 +54,10 @@
   </scm>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <version.jandex>3.6.0</version.jandex>
     <version.maven.failsafe>3.5.6</version.maven.failsafe>
     <tiger.featuresDir>${basedir}/src/test/resources/features</tiger.featuresDir>
     <tiger.glues>${project.groupId}</tiger.glues>
@@ -69,7 +70,7 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -103,11 +104,44 @@
         <plugin>
           <groupId>de.gematik.test</groupId>
           <artifactId>tiger-maven-plugin</artifactId>
-          <version>4.5.0</version>
+          <version>5.0.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>${version.jandex}</version>
+        <executions>
+          <execution>
+            <id>index-classes</id>
+            <goals>
+              <goal>jandex</goal>
+            </goals>
+            <phase>process-classes</phase>
+          </execution>
+          <execution>
+            <id>index-test-classes</id>
+            <goals>
+              <goal>jandex</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+            <configuration>
+              <processDefaultFileSet>false</processDefaultFileSet>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.testOutputDirectory}</directory>
+                  <includes>
+                    <include>**/*.class</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+              <indexDir>${project.build.testOutputDirectory}/META-INF</indexDir>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>

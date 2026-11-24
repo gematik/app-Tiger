@@ -46,10 +46,21 @@ import org.dom4j.tree.AbstractBranch;
 import org.dom4j.tree.DefaultComment;
 import org.dom4j.tree.DefaultProcessingInstruction;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 @ConverterInfo(dependsOn = {RbelHttpRequestConverter.class, RbelHttpResponseConverter.class})
 @Slf4j
 public class RbelXmlConverter extends RbelConverterPlugin {
+
+  // creating a SAXReader builds a new SAX parser, so each thread keeps one for its lifetime
+  private static final ThreadLocal<SAXReader> SAX_READER = // NOSONAR
+      ThreadLocal.withInitial(
+          () -> {
+            SAXReader reader = new SAXReader(); // NOSONAR
+            reader.setMergeAdjacentText(true);
+            return reader;
+          });
 
   private static final String XML_TEXT_KEY = "text";
   private static final RbelHtmlConverter HTML_CONVERTER = new RbelHtmlConverter();
@@ -102,10 +113,26 @@ public class RbelXmlConverter extends RbelConverterPlugin {
         .ifPresent(charset -> rbel.setCharset(Optional.of(charset)));
   }
 
-  private Document parseXml(InputSource source) throws DocumentException {
-    SAXReader reader = new SAXReader(); // NOSONAR
-    reader.setMergeAdjacentText(true);
-    return reader.read(source);
+  static Document parseXml(InputSource source) throws DocumentException {
+    SAXReader reader = SAX_READER.get();
+    try {
+      return reader.read(source);
+    } finally {
+      releaseHandlerOfLastParse(reader);
+    }
+  }
+
+  // the reader keeps the handler of its last parse, and with it the document and source
+  private static void releaseHandlerOfLastParse(SAXReader reader) {
+    try {
+      XMLReader xmlReader = reader.getXMLReader();
+      xmlReader.setContentHandler(null);
+      xmlReader.setErrorHandler(null);
+      xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", null);
+      xmlReader.setProperty("http://xml.org/sax/properties/declaration-handler", null);
+    } catch (SAXException e) {
+      log.atDebug().setCause(e).log("Could not release the handlers of the XML reader");
+    }
   }
 
   private InputSource buildInputSource(RbelElement parentElement) {

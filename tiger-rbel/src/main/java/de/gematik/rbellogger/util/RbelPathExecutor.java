@@ -31,6 +31,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,9 +51,11 @@ public class RbelPathExecutor<T extends RbelPathAble<T>> {
         .stream();
   }
 
+  private static final Pattern KEY_SEPARATOR = Pattern.compile("\\.(?!(\\.|[^\\[]*]))");
+
   @VisibleForTesting
   public static List<String> splitRbelPathIntoKeys(String rbelPath) {
-    final String[] split = rbelPath.substring(1).trim().split("\\.(?!(\\.|[^\\[]*]))");
+    final String[] split = KEY_SEPARATOR.split(rbelPath.substring(1).trim());
     final ArrayList<String> keys = new ArrayList<>();
     for (String part : split) {
       if (StringUtils.isBlank(part)) {
@@ -118,9 +121,10 @@ public class RbelPathExecutor<T extends RbelPathAble<T>> {
                 .toList());
       }
       List<T> lastIterationCandidates = candidates;
+      final String[] keyParts = key.split("\\[", 2);
       candidates =
           candidates.stream()
-              .flatMap(element -> resolveRbelPathElement(key, element))
+              .flatMap(element -> resolveRbelPathElement(key, keyParts, element))
               .map(RbelPathAble::descendToContentNodeIfAdvised)
               .flatMap(List::stream)
               .map(o -> (T) o)
@@ -178,11 +182,10 @@ public class RbelPathExecutor<T extends RbelPathAble<T>> {
   }
 
   private Stream<? extends RbelPathAble<?>> resolveRbelPathElement(
-      final String key, final RbelPathAble<?> content) {
+      final String key, final String[] parts, final RbelPathAble<?> content) {
     if (key.equals(".")) {
       return Stream.concat(findAllChildrenRecursive(content), Stream.of(content));
     }
-    final String[] parts = key.split("\\[", 2);
     final String selectorPart = parts[0];
     List<? extends RbelPathAble<?>> keySelectionResult =
         executeNonFunctionalExpression(selectorPart, content);

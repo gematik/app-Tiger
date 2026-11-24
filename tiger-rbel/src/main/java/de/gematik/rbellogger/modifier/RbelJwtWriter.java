@@ -29,6 +29,7 @@ import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -56,12 +57,12 @@ public class RbelJwtWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     final RbelJwtFacet jwtFacet = oldTargetElement.getFacetOrFail(RbelJwtFacet.class);
 
-    return createUpdatedJws(oldTargetModifiedChild, new String(newContent, UTF_8), jwtFacet)
-        .getBytes(UTF_8);
+    return RbelContent.of(
+        createUpdatedJws(oldTargetModifiedChild, newContent.toReadableString(), jwtFacet), UTF_8);
   }
 
   private String createUpdatedJws(

@@ -46,11 +46,39 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   Scenario: Request with custom header
     When TGR send empty GET request to "http://httpbin/get" with headers:
-      | foo    | bar |
-      | schmoo | lar |
+      | foo | schmoo |
+      | bar | lar    |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.schmoo')}" matches "lar"
+
+  Scenario: Request with repeated custom headers
+    Given TGR set local variable "headerName" to "X-Example"
+    And TGR set local variable "headerValue" to "first"
+    And TGR set default header "Content-Type" to "application/json"
+    And TGR set default header "Accept" to "text/plain"
+    When TGR send empty GET request to "http://httpbin/get" with headers:
+      | ${headerName}  | X-Example | Accept           | Accept                 |
+      | ${headerValue} | second    | application/json | application/json;q=0.8 |
+    Then TGR find last request to path ".*"
+    And TGR current response with attribute "$.body.headers.X-Example.0" matches "first"
+    And TGR current response with attribute "$.body.headers.X-Example.1" matches "second"
+    And TGR current response with attribute "$.body.headers.Accept.0" matches "application/json"
+    And TGR current response with attribute "$.body.headers.Accept.1" matches "application/json;q=0.8"
+    And TGR current response with attribute "$.body.headers.Content-Type.0" matches "application/json"
+    And TGR clear default header "Content-Type"
+    And TGR clear default header "Accept"
+    And TGR clear default header "X-Example"
+
+  Scenario: Non-blocking request with repeated custom headers
+    Given TGR set request wait timeout to 10 seconds
+    When TGR send empty GET request to "http://httpbin/get" without waiting for the response with headers:
+      | X-Async | X-Async |
+      | first   | second  |
+    Then TGR wait for message with node "$.body.headers.X-Async.1" matching "second"
+    And TGR find first request to path "/get"
+    And TGR current response with attribute "$.body.headers.X-Async.0" matches "first"
+    And TGR current response with attribute "$.body.headers.X-Async.1" matches "second"
 
   Scenario: Request with default header
     Given TGR set default header "key" to "value"
@@ -65,7 +93,8 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Scenario: Request with custom and default header, check headers
     Given TGR set default header "key" to "value"
     When TGR send empty GET request to "http://httpbin/get" with headers:
-      | foo | bar |
+      | foo |
+      | bar |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
@@ -185,4 +214,3 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Given TGR send empty GET request to "http://httpbin/anything?foobar=66"
     When TGR find last request with "$.path.foobar.value" matching "66"
     Then TGR current response with attribute "$.body.args.foobar.0" matches "66"
-

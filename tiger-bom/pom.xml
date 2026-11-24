@@ -20,7 +20,7 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-bom</artifactId>
-  <version>4.5.0</version>
+  <version>5.0.0</version>
   <packaging>pom</packaging>
 
   <name>Tiger Bill of Materials</name>
@@ -53,7 +53,7 @@
   <properties>
     <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <tiger.build.java.minimum>17.0.3</tiger.build.java.minimum>
+    <tiger.build.java.minimum>21.0.0</tiger.build.java.minimum>
     <tiger.build.maven.minimum>3.9</tiger.build.maven.minimum>
 
     <!-- work around for owasp plugin requiring yarn to perform its task, alas we don't use yarn at all
@@ -69,7 +69,6 @@
     <version.bootstrap>5.3.8</version.bootstrap>
     <version.bouncycastle>1.85</version.bouncycastle>
     <version.central-publishing-maven-plugin>0.11.0</version.central-publishing-maven-plugin>
-    <version.classgraph>4.8.194</version.classgraph>
     <version.commons-codec>1.22.1</version.commons-codec>
     <version.commons-collections4>4.6.0</version.commons-collections4>
     <version.commons-compress>1.28.0</version.commons-compress>
@@ -94,6 +93,7 @@
     <version.jackson-databind-nullable>0.2.11</version.jackson-databind-nullable>
     <version.jacoco-maven-plugin>0.8.15</version.jacoco-maven-plugin>
     <version.jakarta.xml.bind>4.0.5</version.jakarta.xml.bind>
+    <version.jandex>3.6.0</version.jandex>
     <version.javaparser>3.28.2</version.javaparser>
     <version.jcommander>1.82</version.jcommander>
     <version.jetty>11.0.15</version.jetty>
@@ -112,7 +112,7 @@
     <version.junit>6.1.3</version.junit>
     <version.junit-platform>${version.junit}</version.junit-platform>
     <version.junit5>${version.junit}</version.junit5>
-    <version.kotlin>2.4.20</version.kotlin>
+    <version.kotlin>2.4.21</version.kotlin>
     <version.kotlin-io>0.9.1</version.kotlin-io>
     <version.kotlin-serialization>1.11.0</version.kotlin-serialization>
     <version.kotlinx-coroutines>1.11.0</version.kotlinx-coroutines>
@@ -134,7 +134,7 @@
     <version.maven.surefire>3.5.6</version.maven.surefire>
     <version.mockito>5.23.0</version.mockito>
     <version.mockserver>5.15.0</version.mockserver>
-    <version.netty>4.2.18.Final</version.netty>
+    <version.netty>4.2.19.Final</version.netty>
     <version.node>v24.19.0</version.node>
     <version.npm>12.0.2</version.npm>
     <version.objenesis>3.6</version.objenesis>
@@ -150,7 +150,7 @@
     <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
     <version.spotless-maven-plugin>3.10.1</version.spotless-maven-plugin>
     <version.spotless.google-java-format>1.28.0</version.spotless.google-java-format>
-    <version.spring-boot>4.1.1</version.spring-boot>
+    <version.spring-boot>4.1.2</version.spring-boot>
     <version.springdoc>3.1.0</version.springdoc>
     <version.stomp-websocket>2.3.4</version.stomp-websocket>
     <version.swagger-parser>2.1.47</version.swagger-parser>
@@ -165,6 +165,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>io.smallrye</groupId>
+        <artifactId>jandex</artifactId>
+        <version>${version.jandex}</version>
+      </dependency>
       <dependency>
         <groupId>com.konghq</groupId>
         <artifactId>unirest-java-bom</artifactId>
@@ -264,7 +269,7 @@
       <dependency>
         <groupId>tools.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
-        <version>3.2.2</version>
+        <version>3.2.4</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -306,7 +311,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.50.0</version>
+        <version>2.51.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -352,78 +357,78 @@
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-common</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-client</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-canopy-extension</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-httpbin</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
         <classifier>jar-with-dependencies</classifier>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-java-agent</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-maven-plugin</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-proxy-scrollable-webui</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-rbel</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-lib</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-test-utils</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-testenv-mgr</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-topology-visualizer</artifactId>
-        <version>4.5.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>dnsjava</groupId>
@@ -855,11 +860,6 @@
         <groupId>org.pcap4j</groupId>
         <artifactId>pcap4j-packetfactory-static</artifactId>
         <version>${version.pcap4j}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.github.classgraph</groupId>
-        <artifactId>classgraph</artifactId>
-        <version>${version.classgraph}</version>
       </dependency>
       <dependency>
         <groupId>org.skyscreamer</groupId>

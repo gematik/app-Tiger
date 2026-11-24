@@ -107,7 +107,7 @@ public class MultipleBinaryConnectionParser {
   public CompletableFuture<List<RbelElement>> addToBuffer(
       RbelSocketAddress senderAddress,
       RbelSocketAddress receiverAddress,
-      byte[] part,
+      RbelContent part,
       ZonedDateTime timestamp,
       RbelMessageKind messageKind) {
     return addToBuffer(
@@ -125,7 +125,7 @@ public class MultipleBinaryConnectionParser {
       String uuid,
       RbelSocketAddress senderAddress,
       RbelSocketAddress receiverAddress,
-      byte[] part,
+      RbelContent part,
       Map<String, Object> additionalData,
       RbelMessageKind messageKind,
       Consumer<RbelElement> messagePreProcessor,
@@ -139,7 +139,7 @@ public class MultipleBinaryConnectionParser {
         connectionParser.bufferNewPart(
             TcpConnectionEntry.builder()
                 .uuid(uuid)
-                .data(RbelContent.of(part))
+                .data(part)
                 .connectionIdentifier(connectionId)
                 .messagePreProcessor(messagePreProcessor)
                 .previousUuid(previousMessageUuid)

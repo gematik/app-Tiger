@@ -29,6 +29,7 @@ import de.gematik.rbellogger.facets.jose.RbelJweFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +53,13 @@ public class RbelJweWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     final RbelJweFacet rbelJweFacet = oldTargetElement.getFacetOrFail(RbelJweFacet.class);
 
-    return createUpdatedJwe(oldTargetModifiedChild, new String(newContent, UTF_8), rbelJweFacet)
-        .getBytes(UTF_8);
+    return RbelContent.of(
+        createUpdatedJwe(oldTargetModifiedChild, newContent.toReadableString(), rbelJweFacet),
+        UTF_8);
   }
 
   private String createUpdatedJwe(

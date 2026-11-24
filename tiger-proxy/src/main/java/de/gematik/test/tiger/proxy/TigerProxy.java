@@ -47,7 +47,6 @@ import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
 import de.gematik.test.tiger.proxy.handler.HostHeaderForwardCallback;
-import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import de.gematik.test.tiger.proxy.tls.BackendAlpnRegistry;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
@@ -261,13 +260,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         InetSocketAddress.createUnresolved(
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
-    if (getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins() != null) {
-      mockServerConfiguration.binaryModifierPlugins(
-          getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins().stream()
-              .map(RbelBinaryModifierPlugin::instantiateModifierPlugin)
-              .toList());
-    }
-
     Optional.ofNullable(getTigerProxyConfiguration())
         .map(TigerProxyConfiguration::getDirectReverseProxy)
         .map(DirectReverseProxyInfo::getTcpIdleTimeoutInSeconds)

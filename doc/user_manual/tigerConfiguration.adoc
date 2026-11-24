@@ -354,12 +354,14 @@ Conversely, you can deregister an existing namespace with `TigerJexlExecutor.der
 
 If you need to register a namespace early in the start up process you can use annotated classes.
 For example, you may need the namespace to be already registered when tiger reads the tiger configuration.
-To do it, create a class with the inline methods in the java package `de.gematik.test.tiger.common.jexl` and add the annotation `@InlineJexlMethods(namespacePrefix = <namespace-prefix>)`.
+To do it, create a public class with the inline methods in any Java package and add the annotation `@InlineJexlMethods(namespacePrefix = <namespace-prefix>)`.
 Below is an example:
 
 [source,java]
 ----
-package de.gematik.test.tiger.common.jexl;
+package com.example;
+
+import de.gematik.test.tiger.common.jexl.InlineJexlMethods;
 
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
@@ -369,7 +371,14 @@ public class DummyJexlMethods {
 }
 ----
 
-Tiger will scan the classes in the package and add register all annotated classes.
+Tiger automatically registers annotated classes from `META-INF/jandex.idx` resources before configuration
+expressions are evaluated. No customer bootstrap code is needed.
+Projects inheriting from `tiger-starter-parent` generate main and test indexes automatically.
+Other projects must configure `io.smallrye:jandex-maven-plugin:3.6.0` as described in
+xref:tigerProxy.adoc#_adding_custom_rbel_converters[Adding custom RBel converters].
+Run Maven through `process-classes` for main classes or `process-test-classes` for test classes before starting Tiger.
+The old package restriction no longer applies. Classes without an index are not discovered.
+Programmatic registration with `registerAdditionalNamespace` remains available.
 
 [#_tiger_configuration_editor]
 === Configuration Editor
@@ -414,8 +423,6 @@ image::screenshots/config_editor_expand_icon.png[id="expand_icon",alt="expand ic
 
 To hide the multiline content and return to a truncated view, simply click on the collapse icon.
 This action collapses the multiline content, returning the text to its truncated state.
-
-
 
 
 

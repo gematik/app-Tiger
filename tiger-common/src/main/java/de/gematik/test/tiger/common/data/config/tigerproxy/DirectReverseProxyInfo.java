@@ -20,7 +20,6 @@
  */
 package de.gematik.test.tiger.common.data.config.tigerproxy;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +34,5 @@ public class DirectReverseProxyInfo {
   private String hostname;
   private Integer port;
   private boolean ignoreConnectionErrors = false;
-  @Builder.Default private List<TigerProxyModifierDescription> modifierPlugins = List.of();
   @Builder.Default private Float tcpIdleTimeoutInSeconds = 5f;
 }

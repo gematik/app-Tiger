@@ -942,19 +942,32 @@ class TigerRemoteProxyClientTest {
     rbelConverter.parseMessage(response, new RbelMessageMetadata());
   }
 
-  @Disabled("waiting on TGR-1684")
   @Test
-  void exceptionDuringRequest_shouldShowUpInLog() {
+  void exceptionDuringRequest_shouldBePropagatedToMeshClient() {
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
     tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
+    int receivedExceptionsBefore = tigerRemoteProxyClient.getReceivedRemoteExceptions().size();
 
     unirestInstance.config().retryAfter(false);
-    assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString()).isNotNull();
+    assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString())
+        .isInstanceOf(UnirestException.class);
 
     await().atMost(8, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    await()
+        .atMost(8, TimeUnit.SECONDS)
+        .until(
+            () ->
+                tigerRemoteProxyClient.getReceivedRemoteExceptions().size()
+                    > receivedExceptionsBefore);
 
-    // wir erwarten zwei Nachrichten im tigerRemoteProxyClient
-    // wir erwarten eine propagierte Exception im tigerRemoteProxyClient
+    assertThat(tigerRemoteProxyClient.getMessages()).isNotEmpty();
+    var receivedException =
+        tigerRemoteProxyClient.getReceivedRemoteExceptions().get(receivedExceptionsBefore);
+    assertThat(
+            receivedException.getClassName()
+                + receivedException.getMessage()
+                + receivedException.getStacktrace())
+        .containsAnyOf("Connection reset", "SocketException");
   }
 
   private void addMessagePart(

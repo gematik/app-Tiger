@@ -29,6 +29,7 @@ import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,55 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 class RbelModifierTest extends AbstractModifierTest {
+
+  private static final String CHUNKED_HEAD = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n";
+
+  private String modifiedChunkedMessage(
+      String chunkedBody, String targetElement, String replacement) {
+    final RbelElement message =
+        rbelLogger
+            .getRbelConverter()
+            .convertElement(
+                (CHUNKED_HEAD + "X-Test: a\r\n\r\n" + chunkedBody).getBytes(StandardCharsets.UTF_8),
+                null);
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement(targetElement)
+                .replaceWith(replacement)
+                .build());
+    return new String(
+        modifyMessageAndParseResponse(message).getRawContent(), StandardCharsets.UTF_8);
+  }
+
+  @Test
+  void changingAHeaderOfAChunkedMessageWritesItsBodyAsAChunkAgain() {
+    assertThat(modifiedChunkedMessage("5\r\nHello\r\n0\r\n\r\n", "$.header.X-Test", "b"))
+        .isEqualTo(CHUNKED_HEAD + "X-Test: b\r\n\r\n5\r\nHello\r\n0\r\n\r\n");
+  }
+
+  @Test
+  void aChunkIsWrittenWithItsSizeInHexadecimal() {
+    final String body = "abcdefghijklmnopqrstuvwxyz";
+
+    assertThat(modifiedChunkedMessage("1a\r\n" + body + "\r\n0\r\n\r\n", "$.header.X-Test", "b"))
+        .isEqualTo(CHUNKED_HEAD + "X-Test: b\r\n\r\n1a\r\n" + body + "\r\n0\r\n\r\n");
+  }
+
+  @Test
+  void aBodyInSeveralChunksIsWrittenAsOneChunk() {
+    assertThat(
+            modifiedChunkedMessage(
+                "5\r\nHello\r\n6\r\n World\r\n0\r\n\r\n", "$.header.X-Test", "b"))
+        .isEqualTo(CHUNKED_HEAD + "X-Test: b\r\n\r\nb\r\nHello World\r\n0\r\n\r\n");
+  }
+
+  @Test
+  void replacingTheBodyOfAChunkedMessageKeepsItChunkedWithoutAContentLength() {
+    assertThat(modifiedChunkedMessage("5\r\nHello\r\n0\r\n\r\n", "$.body", "0123456789ABCDEF"))
+        .isEqualTo(CHUNKED_HEAD + "X-Test: a\r\n\r\n10\r\n0123456789ABCDEF\r\n0\r\n\r\n");
+  }
 
   @Test
   void simpleHeaderReplace() throws IOException {
@@ -61,6 +111,34 @@ class RbelModifierTest extends AbstractModifierTest {
         .extractChildWithPath("$.header.Version")
         .asString()
         .contains("foobar");
+  }
+
+  @Test
+  void headerThatDoesNotExistYetIsAdded() throws IOException {
+    final RbelElement message =
+        readAndConvertCurlMessage("src/test/resources/sampleMessages/jsonMessage.curl");
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .name("blub")
+                .targetElement("$.header.X-Added")
+                .replaceWith("added value")
+                .build());
+
+    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
+
+    assertThat(modifiedMessage)
+        .extractChildWithPath("$.header.X-Added")
+        .asString()
+        .contains("added value");
+    assertThat(modifiedMessage)
+        .extractChildWithPath("$.header.Version")
+        .asString()
+        .contains("9.0.0");
+    assertThat(
+            modifiedMessage.findElement("$.body.keys.0.kid").map(RbelElement::getRawStringContent))
+        .contains("idpSig");
   }
 
   @Test
@@ -434,6 +512,85 @@ class RbelModifierTest extends AbstractModifierTest {
                 .map(RbelElement::getRawStringContent)
                 .get())
         .contains(specialCaseParameter);
+  }
+
+  @Test
+  void modifyRequestBasicPath() throws IOException {
+    final RbelElement message =
+        readAndConvertCurlMessage(
+            "src/test/resources/sampleMessages/getRequest.curl",
+            in -> in.replace("?", "?first=parameter&"));
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.path.basicPath")
+                .replaceWith("/another/path")
+                .build());
+
+    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
+
+    assertThat(modifiedMessage.findElement("$.path").map(RbelElement::getRawStringContent).get())
+        .startsWith("/another/path?")
+        .contains("first=parameter");
+  }
+
+  @Test
+  void modifyHeaderOfMessageWithBodyLargerThanOneChunk() {
+    final String body = "a".repeat(20_000);
+    final RbelElement message = convertTextMessage(body);
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.header.Version")
+                .replaceWith("1.2.3")
+                .build());
+
+    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
+
+    assertThat(
+            modifiedMessage.findElement("$.header.Version").map(RbelElement::getRawStringContent))
+        .contains("1.2.3");
+    assertThat(modifiedMessage.findElement("$.body").map(RbelElement::getRawStringContent))
+        .contains(body);
+    assertThat(
+            modifiedMessage
+                .findElement("$.header.Content-Length")
+                .map(RbelElement::getRawStringContent))
+        .contains("20000");
+  }
+
+  @Test
+  void replaceBodyWithContentLargerThanOneChunk() {
+    final String newBody = "b".repeat(30_000);
+    final RbelElement message = convertTextMessage("short body");
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.body")
+                .replaceWith(newBody)
+                .build());
+
+    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
+
+    assertThat(modifiedMessage.findElement("$.body").map(RbelElement::getRawStringContent))
+        .contains(newBody);
+    assertThat(
+            modifiedMessage
+                .findElement("$.header.Content-Length")
+                .map(RbelElement::getRawStringContent))
+        .contains("30000");
+  }
+
+  private RbelElement convertTextMessage(String body) {
+    return rbelLogger
+        .getRbelConverter()
+        .convertElement(
+            "HTTP/1.1 200%sVersion: 9.0.0%sContent-Type: text/plain%sContent-Length: %d%s%s%s"
+                .formatted("\r\n", "\r\n", "\r\n", body.length(), "\r\n", "\r\n", body),
+            null);
   }
 
   @Test

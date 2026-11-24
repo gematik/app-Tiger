@@ -24,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.util.Map;
 import java.util.StringJoiner;
 
@@ -34,17 +35,17 @@ public class RbelHttpHeaderWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     StringJoiner joiner = new StringJoiner("\r\n");
     for (Map.Entry<String, RbelElement> entry :
         oldTargetElement.getFacetOrFail(RbelHttpHeaderFacet.class).entries()) {
       if (entry.getValue() == oldTargetModifiedChild) {
-        joiner.add(entry.getKey() + ": " + new String(newContent, UTF_8));
+        joiner.add(entry.getKey() + ": " + newContent.toReadableString());
       } else {
         joiner.add(entry.getKey() + ": " + entry.getValue().getRawStringContent());
       }
     }
-    return joiner.toString().getBytes(UTF_8);
+    return RbelContent.of(joiner.toString(), UTF_8);
   }
 }

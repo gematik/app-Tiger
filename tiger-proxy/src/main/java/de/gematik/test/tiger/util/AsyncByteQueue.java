@@ -113,7 +113,7 @@ public class AsyncByteQueue {
     val direction = initialDirection ? primaryDirection : primaryDirection.reverse();
     return TcpConnectionEntry.builder()
         .uuid(headNode.uuid)
-        .data(RbelContent.of(data))
+        .data(RbelContent.concat(data))
         .connectionIdentifier(direction)
         .messagePreProcessor(headNode.preProcessingMessageManipulator)
         .positionInBaseNode(initialReadPos)

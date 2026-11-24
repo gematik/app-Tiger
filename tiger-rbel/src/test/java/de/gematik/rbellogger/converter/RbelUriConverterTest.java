@@ -24,6 +24,9 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class RbelUriConverterTest {
@@ -46,6 +49,19 @@ class RbelUriConverterTest {
         .hasStringContentEqualToAtPosition("$.arg2.value", "par2")
         .hasStringContentEqualToAtPosition("$.arg1[0].value", "par1a")
         .hasStringContentEqualToAtPosition("$.arg1[1].value", "par1b");
+  }
+
+  @Test
+  void aUriInACharsetThatIsNotAsciiIsStillConverted() {
+    final var charset = Charset.forName("IBM037");
+    final var element = new RbelElement("/a/b?x=1".getBytes(charset), null, Optional.of(charset));
+
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(element);
+
+    assertThat(convertedMessage)
+        .hasStringContentEqualToAtPosition("$.path", "/a/b")
+        .hasStringContentEqualToAtPosition("$.query", "x=1");
   }
 
   @Test
@@ -74,6 +90,45 @@ class RbelUriConverterTest {
         .doesNotHaveChildWithPath("$.authority")
         .hasStringContentEqualToAtPosition("$.scheme", "file")
         .hasStringContentEqualToAtPosition("$.path", "/home/user/docs/file.txt");
+  }
+
+  @Test
+  void contentWithNewline_shouldNotBeParsedAsUri() {
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement("http://example.com/a\nb", null);
+
+    assertThat(convertedMessage).doesNotHaveChildWithPath("$.scheme");
+  }
+
+  @Test
+  void contentWithControlByte_shouldNotBeParsedAsUri() {
+    final byte[] content = "http://example.com/a".getBytes(StandardCharsets.UTF_8);
+    content[content.length - 1] = 0x01;
+
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(content, null);
+
+    assertThat(convertedMessage).doesNotHaveChildWithPath("$.scheme");
+  }
+
+  @Test
+  void latin1UriWithUmlaut_shouldStillBeParsed() {
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .convertElement("http://example.com/grüße".getBytes(StandardCharsets.ISO_8859_1), null);
+
+    assertThat(convertedMessage).hasStringContentEqualToAtPosition("$.scheme", "http");
+  }
+
+  @Test
+  void utf8UriWithEuroSign_shouldStillBeParsed() {
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .convertElement("http://example.com/€".getBytes(StandardCharsets.UTF_8), null);
+
+    assertThat(convertedMessage).hasStringContentEqualToAtPosition("$.scheme", "http");
   }
 
   @Test

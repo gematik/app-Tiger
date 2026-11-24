@@ -35,6 +35,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
   private final TigerRemoteProxyClient remoteProxyClient;
   @Getter private TracingStompHandler tracingStompHandler;
   @Getter private DataStompHandler dataStompHandler;
+  @Getter private BinaryTracingStompHandler binaryTracingStompHandler;
   @Getter private ErrorsStompHandler errorStompHandler;
   @Setter private Runnable onConnectedCallback;
 
@@ -43,9 +44,15 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     log.info("Connecting to tracing point {}", remoteProxyClient.getRemoteProxyUrl());
 
     tracingStompHandler = new TracingStompHandler(remoteProxyClient);
-    stompSession.subscribe(TigerRemoteProxyClient.WS_TRACING, tracingStompHandler);
     dataStompHandler = new DataStompHandler(remoteProxyClient);
-    stompSession.subscribe(TigerRemoteProxyClient.WS_DATA, dataStompHandler);
+    stompSession.subscribe(TigerRemoteProxyClient.WS_TRACING, tracingStompHandler);
+    if (remoteProxyClient.isBinaryTracing()) {
+      log.info("The remote proxy offers binary frames, using them for the data");
+      binaryTracingStompHandler = new BinaryTracingStompHandler(remoteProxyClient);
+      stompSession.subscribe(TigerRemoteProxyClient.WS_RAW_BINARY, binaryTracingStompHandler);
+    } else {
+      stompSession.subscribe(TigerRemoteProxyClient.WS_DATA, dataStompHandler);
+    }
     errorStompHandler = new ErrorsStompHandler(remoteProxyClient);
     stompSession.subscribe(TigerRemoteProxyClient.WS_ERRORS, errorStompHandler);
 

@@ -26,6 +26,8 @@ import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.facets.pki.base64.RbelBase64JsonConverter;
+import de.gematik.rbellogger.util.Base64Alphabet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.PublicKey;
@@ -47,12 +49,36 @@ public class RbelJwtConverter extends RbelConverterPlugin {
   @Override
   @SuppressWarnings({"java:S1135", "java:S108"})
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+    if (cannotStartWithJsonObject(rbelElement.getContent())) {
+      return;
+    }
     int dotCount =
         rbelElement.getContent().countOccurrencesUpTo((byte) '.', JWT_DOT_SEPARATOR_COUNT + 1);
     if (dotCount != JWT_DOT_SEPARATOR_COUNT) {
       return;
     }
     parseJwt(rbelElement, converter);
+  }
+
+  static boolean cannotStartWithJsonObject(RbelContent content) {
+    int first = -1;
+    for (int i = 0; i < content.size(); i++) {
+      final byte current = content.get(i);
+      if (current == '.') {
+        return true;
+      }
+      final int value = Base64Alphabet.urlSafeValue(current);
+      if (value < 0) {
+        continue;
+      }
+      if (first < 0) {
+        first = value;
+      } else {
+        final int firstDecodedByte = (first << 2) | (value >> 4);
+        return firstDecodedByte != '{' && !Character.isWhitespace(firstDecodedByte);
+      }
+    }
+    return true;
   }
 
   private void parseJwt(RbelElement rbelElement, RbelConversionExecutor converter) {

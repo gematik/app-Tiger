@@ -51,6 +51,11 @@ class RbelContentSlice extends RbelContent {
   }
 
   @Override
+  public int offsetInBase() {
+    return start;
+  }
+
+  @Override
   public boolean isEmpty() {
     return size() == 0;
   }
@@ -73,6 +78,30 @@ class RbelContentSlice extends RbelContent {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(index);
     }
+  }
+
+  private void checkStart(int index) {
+    if (index < 0 || index > size()) {
+      throw new IndexOutOfBoundsException(index);
+    }
+  }
+
+  private int firstNonBlankFrom(int from) {
+    for (int i = from; i < size(); i++) {
+      if (!Character.isWhitespace(baseContent.getWithoutChecks(start + i))) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  private int lastNonBlankBefore(int endIndex) {
+    for (int i = endIndex - 1; i >= 0; i--) {
+      if (!Character.isWhitespace(baseContent.getWithoutChecks(start + i))) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   @Override
@@ -111,7 +140,7 @@ class RbelContentSlice extends RbelContent {
 
   @Override
   public int indexOf(byte o, int startIndex) {
-    checkIndex(startIndex);
+    checkStart(startIndex);
     return Math.max(-1, baseContent.indexOf(o, start + startIndex, end) - start);
   }
 
@@ -121,34 +150,32 @@ class RbelContentSlice extends RbelContent {
   }
 
   public int indexOf(byte[] searchContent, int startIndex) {
-    checkIndex(startIndex);
+    checkStart(startIndex);
     return Math.max(-1, baseContent.indexOf(searchContent, start + startIndex, end) - start);
   }
 
   @Override
   public boolean startsWith(byte[] prefix) {
-    if (isEmpty()) {
-      return prefix.length == 0;
-    }
     return startsWith(prefix, 0);
   }
 
   public boolean startsWith(byte[] searchContent, int startIndex) {
-    checkIndex(startIndex);
-    return baseContent.startsWith(searchContent, start + startIndex);
+    checkStart(startIndex);
+    return searchContent.length <= size() - startIndex
+        && baseContent.startsWith(searchContent, start + startIndex);
   }
 
   @Override
   public boolean startsTrimmedWith(byte[] firstNonBlankBytes) {
-    if (isEmpty()) {
-      return firstNonBlankBytes.length == 0;
-    }
     return startsTrimmedWith(firstNonBlankBytes, 0);
   }
 
   public boolean startsTrimmedWith(byte[] firstNonBlankBytes, int startIndex) {
-    checkIndex(startIndex);
-    return baseContent.startsTrimmedWith(firstNonBlankBytes, start + startIndex);
+    checkStart(startIndex);
+    int first = firstNonBlankFrom(startIndex);
+    return first >= 0
+        && firstNonBlankBytes.length <= size() - first
+        && baseContent.startsWith(firstNonBlankBytes, start + first);
   }
 
   public boolean startsWithIgnoreCase(byte[] firstBytes, Charset charset) {
@@ -165,8 +192,12 @@ class RbelContentSlice extends RbelContent {
 
   public boolean startsTrimmedWithIgnoreCase(
       byte[] firstNonBlankBytes, Charset charset, int startIndex) {
-    checkIndex(startIndex);
-    return baseContent.startsTrimmedWithIgnoreCase(firstNonBlankBytes, charset, start + startIndex);
+    checkStart(startIndex);
+    int first = firstNonBlankFrom(startIndex);
+    return first >= 0
+        && firstNonBlankBytes.length <= size() - first
+        && baseContent.startsWithIgnoreCaseWithoutChecks(
+            Pair.of(firstNonBlankBytes, charset), start + first);
   }
 
   @Override
@@ -176,7 +207,10 @@ class RbelContentSlice extends RbelContent {
 
   public boolean endsTrimmedWith(byte[] lastNonBlankBytes, int endIndex) {
     checkRange(0, endIndex);
-    return baseContent.endsTrimmedWith(lastNonBlankBytes, start + endIndex);
+    int last = lastNonBlankBefore(endIndex);
+    return last >= 0
+        && lastNonBlankBytes.length <= last + 1
+        && baseContent.endsWith(lastNonBlankBytes, start + last + 1);
   }
 
   @Override
@@ -187,7 +221,10 @@ class RbelContentSlice extends RbelContent {
   public boolean endsTrimmedWithIgnoreCase(
       byte[] lastNonBlankBytes, Charset charset, int endIndex) {
     checkRange(0, endIndex);
-    return baseContent.endsTrimmedWithIgnoreCase(lastNonBlankBytes, charset, start + endIndex);
+    int last = lastNonBlankBefore(endIndex);
+    return last >= 0
+        && lastNonBlankBytes.length <= last + 1
+        && baseContent.endsTrimmedWithIgnoreCase(lastNonBlankBytes, charset, start + last + 1);
   }
 
   @Override
@@ -197,7 +234,7 @@ class RbelContentSlice extends RbelContent {
 
   public boolean endsWith(byte[] postfix, int endIndex) {
     checkRange(0, endIndex);
-    return baseContent.endsWith(postfix, start + endIndex);
+    return postfix.length <= endIndex && baseContent.endsWith(postfix, start + endIndex);
   }
 
   @Override

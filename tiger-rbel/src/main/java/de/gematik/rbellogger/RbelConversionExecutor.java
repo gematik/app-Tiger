@@ -59,6 +59,8 @@ public class RbelConversionExecutor {
    */
   private final Instant parsingDeadline;
 
+  private final Predicate<RbelConverterPlugin> pluginFilter;
+
   private boolean messageWasDeleted = false;
 
   public RbelElement execute() {
@@ -100,12 +102,24 @@ public class RbelConversionExecutor {
     return converter.convertElement(convertedInput);
   }
 
+  /**
+   * Converts an element that is a plain value, one with no structure inside it to parse, with only
+   * the converters that return true from {@link RbelConverterPlugin#handlesPlainValues()}, where
+   * {@link #convertElement} offers an element to all of them.
+   */
+  public RbelElement convertPlainValue(final RbelElement plainValue) {
+    return converter.convertPlainValue(plainValue);
+  }
+
   /** Triggers conversion FOR THE GIVEN PHASE ONLY for the root element. */
   private void executeConversionPhase(RbelConversionPhase conversionPhase) {
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (rootElement.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);
     for (RbelConverterPlugin plugin : converter.getConverterPlugins().get(conversionPhase)) {
+      if (!pluginFilter.test(plugin)) {
+        continue;
+      }
       if (conversionPhase == RbelConversionPhase.CONTENT_PARSING
           && elementIsOversized
           && plugin.skipParsingOversizedContent()) {

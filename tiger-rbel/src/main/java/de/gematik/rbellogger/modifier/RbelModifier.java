@@ -23,6 +23,7 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -88,7 +89,7 @@ public class RbelModifier {
 
         var target = targetOptional.get();
 
-        final Optional<byte[]> input =
+        final Optional<RbelContent> input =
             applyModification(modification, target, jexlContext.withCurrentElement(target));
         reduceTtl(modification);
         if (input.isPresent()) {
@@ -115,19 +116,19 @@ public class RbelModifier {
       throw new IllegalArgumentException("Trying to add header, but no header element found!");
     }
     var headerName = extractHeaderName(target);
-    var rawHeader = httpHeaderElement.get().getRawContent();
-    var newHeader =
+    var headerLine =
         "\r\n"
             + headerName
             + ": "
             + TigerGlobalConfiguration.resolvePlaceholdersWithContext(
                 modification.getReplaceWith(), jexlContext);
-    var newHeaderBytes = newHeader.getBytes(modifiedMessage.getElementCharset());
-    var newContent = Arrays.copyOf(rawHeader, rawHeader.length + newHeaderBytes.length);
-    System.arraycopy(newHeaderBytes, 0, newContent, rawHeader.length, newHeaderBytes.length);
+    var extendedHeader =
+        RbelContent.concat(
+            httpHeaderElement.get().getContent(),
+            RbelContent.of(headerLine, modifiedMessage.getElementCharset()));
 
-    return propagateChangesToParents(httpHeaderElement.get(), newContent)
-        .map(bytes -> rbelConverter.convertElement(bytes, null));
+    return propagateChangesToParents(httpHeaderElement.get(), extendedHeader)
+        .map(content -> rbelConverter.convertElement(content, null));
   }
 
   private String extractHeaderName(String target) {
@@ -194,7 +195,7 @@ public class RbelModifier {
     }
   }
 
-  private Optional<byte[]> applyModification(
+  private Optional<RbelContent> applyModification(
       RbelModificationDescription modification,
       RbelElement targetElement,
       TigerJexlContext tigerJexlContext) {
@@ -204,14 +205,15 @@ public class RbelModifier {
     if (Arrays.equals(newContent, targetElement.getRawContent())) {
       return Optional.empty();
     }
-    return propagateChangesToParents(targetElement, newContent);
+    return propagateChangesToParents(targetElement, RbelContent.wrap(newContent));
   }
 
-  private Optional<byte[]> propagateChangesToParents(RbelElement targetElement, byte[] newContent) {
+  private Optional<RbelContent> propagateChangesToParents(
+      RbelElement targetElement, RbelContent newContent) {
     RbelElement currentParent = targetElement.getParentNode();
     RbelElement currentChildToBeModified = targetElement;
     while (currentParent != null) {
-      Optional<byte[]> found = Optional.empty();
+      Optional<RbelContent> found = Optional.empty();
       for (RbelElementWriter writer : elementWriterList) {
         if (writer.canWrite(currentParent)) {
           found = Optional.of(writer.write(currentParent, currentChildToBeModified, newContent));

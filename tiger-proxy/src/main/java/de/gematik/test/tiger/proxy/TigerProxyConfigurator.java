@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.broker.SimpleBrokerMessageHandler;
 
 @Configuration
 @RequiredArgsConstructor
@@ -55,7 +56,13 @@ public class TigerProxyConfigurator
     var shouldSubscribeAfterStart = !tigerProxyConfiguration.isSkipTrafficEndpointsSubscription();
     tigerProxyConfiguration.setSkipTrafficEndpointsSubscription(false);
     tigerProxy = new TigerProxy(tigerProxyConfiguration);
-    tracingPushService = new TracingPushService(template, buildPropertiesService, tigerProxy);
+    tracingPushService =
+        new TracingPushService(
+            template,
+            buildPropertiesService,
+            tigerProxy,
+            webServerAppCtxt.getBean(
+                "simpleBrokerMessageHandler", SimpleBrokerMessageHandler.class));
     tracingPushService.addWebSocketListener();
     tigerWebUiController.setTigerProxy(tigerProxy);
     if (shouldSubscribeAfterStart) {

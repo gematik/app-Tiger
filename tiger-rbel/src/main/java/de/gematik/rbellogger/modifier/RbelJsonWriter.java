@@ -23,6 +23,8 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelJexlException;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.util.RbelContent;
+import java.nio.charset.Charset;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 import tools.jackson.databind.JsonNode;
@@ -35,14 +37,14 @@ public class RbelJsonWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
+    final Charset charset = oldTargetElement.getElementCharset();
     final JsonNode jsonElement =
         oldTargetElement.getFacetOrFail(RbelJsonFacet.class).getJsonElement();
     if (jsonElement.isValueNode()) {
       if (jsonElement.isString()) {
-        return (quote(new String(newContent, oldTargetElement.getElementCharset())))
-            .getBytes(oldTargetElement.getElementCharset());
+        return RbelContent.of(quote(newContent.toReadableString(charset)), charset);
       } else {
         return newContent;
       }
@@ -52,12 +54,12 @@ public class RbelJsonWriter implements RbelElementWriter {
       StringJoiner joiner = new StringJoiner(",");
       for (JsonNode entry : jsonElement.values()) {
         if (entry == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
-          joiner.add(new String(newContent, oldTargetElement.getElementCharset()));
+          joiner.add(newContent.toReadableString(charset));
         } else {
           joiner.add(entry.toString());
         }
       }
-      return ("[" + joiner + "]").getBytes(oldTargetElement.getElementCharset());
+      return RbelContent.of("[" + joiner + "]", charset);
     } else {
       throw new RbelJexlException(
           "Unable to write element that has no Json facet: "
@@ -65,24 +67,22 @@ public class RbelJsonWriter implements RbelElementWriter {
     }
   }
 
-  private byte[] writeJsonObject(
+  private RbelContent writeJsonObject(
       RbelElement oldTargetElement,
       RbelElement oldTargetModifiedChild,
-      byte[] newContent,
+      RbelContent newContent,
       JsonNode jsonElement) {
+    final Charset charset = oldTargetElement.getElementCharset();
     StringJoiner joiner = new StringJoiner(",");
     for (Entry<String, JsonNode> entry : jsonElement.properties()) {
       if (entry.getValue()
           == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
-        joiner.add(
-            quote(entry.getKey())
-                + ": "
-                + new String(newContent, oldTargetElement.getElementCharset()));
+        joiner.add(quote(entry.getKey()) + ": " + newContent.toReadableString(charset));
       } else {
         joiner.add(quote(entry.getKey()) + ": " + entry.getValue().toString());
       }
     }
-    return ("{" + joiner + "}").getBytes(oldTargetElement.getElementCharset());
+    return RbelContent.of("{" + joiner + "}", charset);
   }
 
   private String quote(String str) {

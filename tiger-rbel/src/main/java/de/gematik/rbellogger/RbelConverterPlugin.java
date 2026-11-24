@@ -48,6 +48,16 @@ public abstract class RbelConverterPlugin {
 
   public abstract void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter);
 
+  /**
+   * Whether the converter is offered the plain values of structured content, the numbers and
+   * booleans of a JSON document, for example. They have nothing to convert for the converters of
+   * Tiger, so most converters leave them out. A converter that does something with a bare number or
+   * boolean returns true.
+   */
+  public boolean handlesPlainValues() {
+    return false;
+  }
+
   private boolean isActive = true;
 
   public boolean isOptional() {

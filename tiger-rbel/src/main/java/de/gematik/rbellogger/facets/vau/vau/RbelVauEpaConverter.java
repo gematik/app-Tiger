@@ -20,6 +20,8 @@
  */
 package de.gematik.rbellogger.facets.vau.vau;
 
+import static de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet.KEY_ID_LENGTH;
+import static de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet.keyIdHexOf;
 import static de.gematik.rbellogger.util.CryptoUtils.decryptUnsafe;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
@@ -38,13 +40,13 @@ import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
 import de.gematik.rbellogger.util.RbelContent;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(
@@ -53,11 +55,13 @@ import org.bouncycastle.util.encoders.Hex;
 @Slf4j
 public class RbelVauEpaConverter extends RbelConverterPlugin {
 
+  private static final int BASE64_KEY_ID_PREFIX_LENGTH = 44;
+
   @Override
   public void consumeElement(RbelElement element, RbelConversionExecutor context) {
     context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
-    tryToExtractRawVauContent(element)
-        .flatMap(content -> decipherVauMessage(content, context, element))
+    tryToExtractKeyIdHex(element)
+        .flatMap(keyIdHex -> decipherVauMessage(keyIdHex, context, element))
         .ifPresent(
             vauMsg -> {
               element.addFacet(vauMsg);
@@ -66,42 +70,76 @@ public class RbelVauEpaConverter extends RbelConverterPlugin {
             });
   }
 
-  private Optional<byte[]> tryToExtractRawVauContent(RbelElement element) {
-    if (element.getParentNode() != null && element.getParentNode().hasFacet(RbelJsonFacet.class)) {
-      try {
-        return Optional.ofNullable(
-            Base64.getDecoder().wrap(element.getContent().toInputStream()).readAllBytes());
-      } catch (IllegalArgumentException | IOException e) {
-        return Optional.empty();
-      }
-    } else {
-      return Optional.ofNullable(element.getRawContent());
+  private static boolean isJsonChild(RbelElement element) {
+    return element.getParentNode() != null && element.getParentNode().hasFacet(RbelJsonFacet.class);
+  }
+
+  private Optional<String> tryToExtractKeyIdHex(RbelElement element) {
+    final RbelContent content = element.getContent();
+    if (content == null || content.isNull()) {
+      return Optional.empty();
+    }
+    return isJsonChild(element) ? keyIdOfBase64(content) : keyIdOfRaw(content);
+  }
+
+  private static Optional<String> keyIdOfRaw(RbelContent content) {
+    return content.size() < KEY_ID_LENGTH ? Optional.empty() : Optional.of(keyIdHexOf(content));
+  }
+
+  private static Optional<String> keyIdOfBase64(RbelContent content) {
+    try {
+      final byte[] prefix =
+          Base64.getDecoder()
+              .decode(
+                  content.toByteArray(0, Math.min(content.size(), BASE64_KEY_ID_PREFIX_LENGTH)));
+      return prefix.length < KEY_ID_LENGTH
+          ? Optional.empty()
+          : Optional.of(Hex.toHexString(prefix, 0, KEY_ID_LENGTH));
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<RbelContent> tryToExtractEncryptedPart(RbelElement element) {
+    final RbelContent content = element.getContent();
+    if (!isJsonChild(element)) {
+      return Optional.of(content.subArray(KEY_ID_LENGTH, content.size()));
+    }
+    try {
+      final InputStream decoded = Base64.getDecoder().wrap(content.toInputStream());
+      decoded.skipNBytes(KEY_ID_LENGTH);
+      return Optional.of(RbelContent.from(decoded));
+    } catch (IllegalArgumentException | IOException e) {
+      return Optional.empty();
     }
   }
 
   private Optional<RbelVauEpaFacet> decipherVauMessage(
-      byte[] content, RbelConversionExecutor converter, RbelElement parentNode) {
-    List<RbelNoteFacet> errorNotes = new ArrayList<>();
-    final Optional<Pair<byte[], byte[]>> splitOptional = splitVauMessage(content);
-    if (splitOptional.isEmpty()) {
-      return Optional.empty();
-    }
-    final Pair<byte[], byte[]> splitVauMessage = splitOptional.get();
+      String keyIdHex, RbelConversionExecutor converter, RbelElement parentNode) {
     final List<RbelKey> potentialVauKeys =
         converter
             .getRbelKeyManager()
             .getAllKeys()
-            .filter(key -> key.getKeyName().startsWith(Hex.toHexString(splitVauMessage.getKey())))
+            .filter(key -> key.getKeyName().startsWith(keyIdHex))
             .filter(key -> key.getKey() instanceof SecretKey)
             .toList();
+    if (potentialVauKeys.isEmpty()) {
+      markAsUndecipherable(parentNode, noMatchingKeyNotes(keyIdHex, converter));
+      return Optional.empty();
+    }
+    final Optional<RbelContent> encryptedPart = tryToExtractEncryptedPart(parentNode);
+    if (encryptedPart.isEmpty()) {
+      return Optional.empty();
+    }
 
+    List<RbelNoteFacet> errorNotes = new ArrayList<>();
     for (RbelKey rbelKey : potentialVauKeys) {
       Optional<byte[]> decryptedBytes;
       try {
         decryptedBytes =
             Optional.ofNullable(
                 decryptUnsafe(
-                    RbelContent.of(splitVauMessage.getValue()),
+                    encryptedPart.get(),
                     rbelKey.getKey(),
                     CryptoUtils.GCM_IV_LENGTH_IN_BYTES,
                     CryptoUtils.GCM_TAG_LENGTH_IN_BYTES));
@@ -119,45 +157,49 @@ public class RbelVauEpaConverter extends RbelConverterPlugin {
             log.trace("Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get()));
           }
           return buildVauMessageFromCleartext(
-              converter, splitVauMessage, decryptedBytes.get(), parentNode, rbelKey);
+              converter, keyIdHex, encryptedPart.get(), decryptedBytes.get(), parentNode, rbelKey);
         } catch (RuntimeException e) {
           log.error("Exception while building cleartext VAU message:", e);
           throw new RbelConversionException("Exception while building cleartext VAU message", e);
         }
       }
     }
-    if (potentialVauKeys.isEmpty()) {
-      errorNotes.add(
-          RbelNoteFacet.builder()
-              .value(
-                  "Found no matching key! (Was the handshake logged?) key-name: '"
-                      + Hex.toHexString(splitVauMessage.getKey())
-                      + "'")
-              .style(NoteStyling.WARN)
-              .build());
-      errorNotes.add(
-          RbelNoteFacet.builder()
-              .style(NoteStyling.INFO)
-              .value(
-                  "Known keys: <br/>"
-                      + converter
-                          .getRbelKeyManager()
-                          .getAllKeys()
-                          .map(RbelKey::getKeyName)
-                          .collect(Collectors.joining("<br/>")))
-              .build());
-    }
-    if (parentNode.getParentNode() != null
-        && parentNode.getParentNode().hasFacet(RbelHttpMessageFacet.class)
-        && parentNode.getFacets().isEmpty()) {
-      parentNode.addFacet(new RbelUndecipherableVauEpaFacet(errorNotes));
-    }
+    markAsUndecipherable(parentNode, errorNotes);
     return Optional.empty();
+  }
+
+  private static List<RbelNoteFacet> noMatchingKeyNotes(
+      String keyIdHex, RbelConversionExecutor converter) {
+    return List.of(
+        RbelNoteFacet.builder()
+            .value(
+                "Found no matching key! (Was the handshake logged?) key-name: '" + keyIdHex + "'")
+            .style(NoteStyling.WARN)
+            .build(),
+        RbelNoteFacet.builder()
+            .style(NoteStyling.INFO)
+            .value(
+                "Known keys: <br/>"
+                    + converter
+                        .getRbelKeyManager()
+                        .getAllKeys()
+                        .map(RbelKey::getKeyName)
+                        .collect(Collectors.joining("<br/>")))
+            .build());
+  }
+
+  private static void markAsUndecipherable(RbelElement element, List<RbelNoteFacet> errorNotes) {
+    if (element.getParentNode() != null
+        && element.getParentNode().hasFacet(RbelHttpMessageFacet.class)
+        && element.getFacets().isEmpty()) {
+      element.addFacet(new RbelUndecipherableVauEpaFacet(errorNotes));
+    }
   }
 
   private Optional<RbelVauEpaFacet> buildVauMessageFromCleartext(
       RbelConversionExecutor converter,
-      Pair<byte[], byte[]> splitVauMessage,
+      String keyIdHex,
+      RbelContent encryptedPart,
       byte[] decryptedBytes,
       RbelElement parentNode,
       RbelKey rbelKey) {
@@ -169,17 +211,19 @@ public class RbelVauEpaConverter extends RbelConverterPlugin {
       return Optional.of(
           RbelVauEpaFacet.builder()
               .message(decryptedPayload)
-              .encryptedMessage(RbelElement.wrap(parentNode, splitVauMessage.getValue()))
+              .encryptedMessage(RbelElement.create(encryptedPart, parentNode))
               .keyIdUsed(RbelElement.wrap(parentNode, rbelKey.getKeyName().split("_")[0]))
               .keyUsed(Optional.of(rbelKey))
               .build());
     } else {
-      return Optional.of(fromRaw(splitVauMessage, converter, decryptedBytes, parentNode, rbelKey));
+      return Optional.of(
+          fromRaw(keyIdHex, encryptedPart, converter, decryptedBytes, parentNode, rbelKey));
     }
   }
 
   private RbelVauEpaFacet fromRaw(
-      Pair<byte[], byte[]> payloadPair,
+      String keyIdHex,
+      RbelContent encryptedPart,
       RbelConversionExecutor converter,
       byte[] decryptedBytes,
       RbelElement parentNode,
@@ -219,24 +263,12 @@ public class RbelVauEpaConverter extends RbelConverterPlugin {
     return RbelVauEpaFacet.builder()
         .message(new RbelElement(body, parentNode))
         .additionalHeaders(headerElement)
-        .encryptedMessage(RbelElement.wrap(payloadPair.getValue(), parentNode, null))
-        .keyIdUsed(RbelElement.wrap(parentNode, Hex.toHexString(payloadPair.getKey())))
+        .encryptedMessage(RbelElement.create(encryptedPart, parentNode))
+        .keyIdUsed(RbelElement.wrap(parentNode, keyIdHex))
         .pVersionNumber(RbelElement.wrap(parentNode, (int) decryptedBytes[0]))
         .sequenceNumber(RbelElement.wrap(parentNode, (long) sequenceNumber))
         .keyUsed(Optional.ofNullable(rbelKey))
         .pHeaderInformation(RbelElement.wrap(parentNode, pHeaderHexString))
         .build();
-  }
-
-  private Optional<Pair<byte[], byte[]>> splitVauMessage(byte[] vauMessage) {
-    try {
-      byte[] keyID = new byte[32];
-      System.arraycopy(vauMessage, 0, keyID, 0, 32);
-      byte[] enc = new byte[vauMessage.length - 32];
-      System.arraycopy(vauMessage, 32, enc, 0, vauMessage.length - 32);
-      return Optional.of(Pair.of(keyID, enc));
-    } catch (ArrayIndexOutOfBoundsException e) {
-      return Optional.empty();
-    }
   }
 }

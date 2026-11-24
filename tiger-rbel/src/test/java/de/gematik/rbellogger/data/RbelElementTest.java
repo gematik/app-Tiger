@@ -25,9 +25,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.data.core.RbelMapFacet;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelContent;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +45,34 @@ class RbelElementTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Test
+  void theSearchForAKeyOnlyEntersTheSubtreesThatTheCallerAccepts() {
+    var top = new RbelElement(new byte[0], null);
+    var child = new RbelElement(new byte[0], top);
+    var keys = new RbelElement(new byte[0], child);
+    child.addFacet(new RbelMapFacet(new RbelMultiMap<RbelElement>().with("keys", keys)));
+    top.addFacet(new RbelMapFacet(new RbelMultiMap<RbelElement>().with("child", child)));
+
+    assertThat(top.findAllInTreeWithKey("keys")).containsExactly(keys);
+    assertThat(top.findAllInTreeWithKey("keys", element -> element != child)).isEmpty();
+    assertThat(top.findAllInTreeWithKey("child", element -> false)).containsExactly(child);
+  }
+
+  @Test
+  void facetMetadataListeners_areNotifiedThroughTheRootOfTheTree() {
+    var root = new RbelElement(new byte[0], null);
+    var child = new RbelElement(new byte[0], root);
+    var notified = new java.util.concurrent.atomic.AtomicInteger();
+    Runnable listener = notified::incrementAndGet;
+    root.addFacetMetadataUpdateListener(listener);
+
+    child.addFacet(new de.gematik.rbellogger.data.core.RbelBinaryFacet());
+    root.removeFacetMetadataUpdateListener(listener);
+    child.addFacet(new de.gematik.rbellogger.data.core.RbelNoteFacet("x"));
+
+    assertThat(notified).hasValue(1);
   }
 
   @Test
@@ -102,6 +133,20 @@ class RbelElementTest {
     element.setUsedBytes(0);
 
     assertThat(element.getSize()).isZero();
+  }
+
+  @Test
+  void getChildNodes_listsTheSameElementsAsTheStream() {
+    final List<RbelElement> everyNode = new ArrayList<>(List.of(msg));
+    for (int i = 0; i < everyNode.size(); i++) {
+      everyNode.addAll(everyNode.get(i).getChildNodesStream().toList());
+    }
+
+    assertThat(everyNode).hasSizeGreaterThan(50);
+    for (RbelElement node : everyNode) {
+      assertThat(node.getChildNodes())
+          .containsExactlyElementsOf(node.getChildNodesStream().toList());
+    }
   }
 
   @Test

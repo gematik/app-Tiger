@@ -24,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
+import de.gematik.test.tiger.proxy.client.TracingCapabilities;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -48,6 +50,11 @@ public class TracingpointsController {
   @GetMapping(value = "/clock", produces = MediaType.APPLICATION_JSON_VALUE)
   public ClockResponse getClock() {
     return new ClockResponse(ZonedDateTime.now());
+  }
+
+  @GetMapping(value = "/tracing/capabilities", produces = MediaType.APPLICATION_JSON_VALUE)
+  public TracingCapabilities getTracingCapabilities() {
+    return new TracingCapabilities(TigerRemoteProxyClient.WS_RAW_BINARY);
   }
 
   @GetMapping(value = "/tracingpoints", produces = MediaType.APPLICATION_JSON_VALUE)

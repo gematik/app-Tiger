@@ -21,14 +21,21 @@
 package de.gematik.test.tiger.common.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
+import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 class TigerBrowserUtilTest {
 
@@ -131,6 +138,49 @@ class TigerBrowserUtilTest {
     TigerBrowserUtil.openUrlInBrowser("/tmp/report.html", "test");
 
     assertThat(captured.get(0)[0]).isEqualTo("xdg-open");
-    assertThat(captured.get(0)[1]).startsWith("file:/");
+    assertThat(captured.get(0)[1]).startsWith("file:///");
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  void runCommand_failsOnNonZeroExitCode() {
+    assertThatThrownBy(() -> TigerBrowserUtil.runCommand(new String[] {"sh", "-c", "exit 3"}))
+        .isInstanceOf(IOException.class)
+        .hasMessageContaining("3");
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  void runCommand_succeedsOnZeroExitCode() {
+    assertThatNoException()
+        .isThrownBy(() -> TigerBrowserUtil.runCommand(new String[] {"sh", "-c", "exit 0"}));
+  }
+
+  @Test
+  @DisabledOnOs(OS.WINDOWS)
+  void runCommand_doesNotWaitForCommandsThatKeepRunning() {
+    assertTimeout(
+        Duration.ofSeconds(4),
+        () -> TigerBrowserUtil.runCommand(new String[] {"sh", "-c", "sleep 6"}));
+  }
+
+  @Test
+  void openUrlInBrowser_triesNextMethod_whenCommandReportsFailure() {
+    TigerBrowserUtil.desktopBrowser =
+        uri -> {
+          throw new UnsupportedOperationException("no desktop");
+        };
+    List<String[]> captured = new ArrayList<>();
+    TigerBrowserUtil.commandExecutor =
+        cmd -> {
+          captured.add(cmd);
+          if (cmd[0].equals("xdg-open")) {
+            throw new IOException("xdg-open exited with code 2");
+          }
+        };
+
+    TigerBrowserUtil.openUrlInBrowser(TEST_URL, "test");
+
+    assertThat(captured.get(1)).containsExactly("wslview", TEST_URL);
   }
 }

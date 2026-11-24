@@ -22,7 +22,6 @@ package de.gematik.test.tiger.mockserver.httpclient;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.Type;
 import java.net.InetSocketAddress;
@@ -91,7 +90,6 @@ class HttpClientInitializerNoProxyHostsTest {
       configuration.proxyConfiguration(proxyConfiguration);
     }
 
-    return new HttpClientInitializer(
-        configuration, null, null, new BinaryModifierApplier(configuration));
+    return new HttpClientInitializer(configuration, null, null);
   }
 }

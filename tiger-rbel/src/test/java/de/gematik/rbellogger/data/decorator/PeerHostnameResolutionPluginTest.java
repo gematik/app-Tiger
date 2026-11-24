@@ -58,10 +58,16 @@ class PeerHostnameResolutionPluginTest {
           address -> {
             lookedUp.add(address.getHostAddress());
             return address.getHostAddress().equals("172.18.0.12")
-                ? Optional.of("popp-client.testhub_default")
+                ? Optional.of("testhub-123-popp-client-1.testhub-123_default")
                 : Optional.empty();
           },
-          name -> List.of(InetAddress.getByName("172.18.0.12")),
+          name -> {
+            if (name.equals("testhub-123-popp-client-1") || name.equals("popp-client")) {
+              return List.of(InetAddress.getByName("172.18.0.12"));
+            } else {
+              throw new AssertionError("Unexpected DNS query: " + name);
+            }
+          },
           Duration.ofMinutes(1),
           Duration.ofSeconds(1));
 

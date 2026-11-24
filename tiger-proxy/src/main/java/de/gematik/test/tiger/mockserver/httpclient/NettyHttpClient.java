@@ -28,7 +28,6 @@ import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
-import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.util.NoProxyUtils;
@@ -67,19 +66,16 @@ public class NettyHttpClient {
   private final NettySslContextFactory nettySslContextFactory;
 
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
-  private final BinaryModifierApplier binaryModifierApplier;
 
   public NettyHttpClient(
       MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
-      NettySslContextFactory nettySslContextFactory,
-      BinaryModifierApplier binaryModifierApplier) {
+      NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.eventLoopGroup = eventLoopGroup;
     this.proxyConfiguration = configuration.proxyConfiguration();
     this.nettySslContextFactory = nettySslContextFactory;
     this.clientBootstrapFactory = new ClientBootstrapFactory(configuration, eventLoopGroup);
-    this.binaryModifierApplier = binaryModifierApplier;
   }
 
   public CompletableFuture<HttpResponse> sendRequest(
@@ -270,8 +266,7 @@ public class NettyHttpClient {
   }
 
   public HttpClientInitializer createClientInitializer(HttpProtocol httpProtocol) {
-    return new HttpClientInitializer(
-        configuration, nettySslContextFactory, httpProtocol, binaryModifierApplier);
+    return new HttpClientInitializer(configuration, nettySslContextFactory, httpProtocol);
   }
 
   public CompletableFuture<BinaryMessage> sendRequest(

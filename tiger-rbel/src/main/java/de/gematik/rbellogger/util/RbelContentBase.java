@@ -32,11 +32,10 @@ import java.nio.charset.Charset;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.function.IntPredicate;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.SneakyThrows;
-import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,10 +48,17 @@ class RbelContentBase extends RbelContent {
   private int size = 0;
   private @Nullable ArrayList<byte[]> chunks;
 
-  private WeakReference<byte[]> cachedByteArray = new WeakReference<>(null);
+  private @Nullable WeakReference<byte[]> cachedByteArray;
 
   public static RbelContentBase of(byte[] content) {
     return RbelContent.builder().content(content != null ? List.of(content) : null).build();
+  }
+
+  public static RbelContentBase wrap(byte[] content) {
+    if (content.length == 0) {
+      return of(content);
+    }
+    return RbelContent.builder().chunkSize(content.length).content(List.of(content)).build();
   }
 
   public static RbelContentBase of(List<RbelContent> contents) {
@@ -108,6 +114,29 @@ class RbelContentBase extends RbelContent {
     return index % chunkSize;
   }
 
+  /**
+   * The index of the first byte in {@code [from, to)} of this base content that the predicate
+   * accepts, or -1. The chunks are read in place, and the search ends at the first match.
+   */
+  int indexOfFirstInBase(IntPredicate matches, int from, int to) {
+    int index = from;
+    while (index < to) {
+      byte[] chunk = getChunk(index);
+      int start = getIndexInChunk(index);
+      int stop = Math.min(chunk.length, start + (to - index));
+      if (stop <= start) {
+        throw new IllegalStateException("No content at the index " + index + " of " + size);
+      }
+      for (int position = start; position < stop; position++) {
+        if (matches.test(chunk[position])) {
+          return index + (position - start);
+        }
+      }
+      index += stop - start;
+    }
+    return -1;
+  }
+
   private int getBeginIndexOfChunkContaining(int i) {
     return i - getIndexInChunk(i);
   }
@@ -139,14 +168,15 @@ class RbelContentBase extends RbelContent {
   }
 
   private void deleteWeakReferences() {
-    if (cachedByteArray.get() != null) {
-      cachedByteArray = new WeakReference<>(null);
-    }
+    cachedByteArray = null;
   }
 
   public void append(byte[] array) {
     if (chunks == null) {
       chunks = new ArrayList<>();
+    }
+    if (array.length == 0) {
+      return;
     }
     if (size % chunkSize == 0 && array.length <= chunkSize) {
       chunks.add(array);
@@ -226,7 +256,7 @@ class RbelContentBase extends RbelContent {
     var parts = new ArrayList<RbelContent>();
     int nextStart = start;
     while (nextStart + delimiter.length <= end) {
-      int foundIndex = indexOf(delimiter, nextStart);
+      int foundIndex = indexOf(delimiter, nextStart, end);
       if (foundIndex < 0) {
         break;
       }
@@ -253,7 +283,8 @@ class RbelContentBase extends RbelContent {
 
   @Override
   public byte[] toByteArray() {
-    var byteArray = cachedByteArray.get();
+    var cached = cachedByteArray;
+    var byteArray = cached == null ? null : cached.get();
     if (byteArray == null) {
       byteArray = toByteArrayWithoutChecks(0, size);
       cachedByteArray = new WeakReference<>(byteArray);
@@ -266,33 +297,36 @@ class RbelContentBase extends RbelContent {
     return toInputStream(0, size);
   }
 
-  @SneakyThrows
+  /**
+   * A stream of the bytes in {@code [start, end)}. The chunks have a fixed size, so the first chunk
+   * is found by its index: the bytes before {@code start} are never read, which matters for many
+   * small slices of a large content. The streams of the chunks are created one by one, when the
+   * stream gets to them.
+   */
   public InputStream toInputStream(int start, int end) {
-    var result =
-        BoundedInputStream.builder()
-            .setInputStream(
-                new SequenceInputStream(
-                    new Enumeration<>() {
-                      final Iterator<byte[]> iterator =
-                          chunks != null ? chunks.iterator() : Collections.emptyIterator();
-
-                      @Override
-                      public boolean hasMoreElements() {
-                        return iterator.hasNext();
-                      }
-
-                      @Override
-                      public InputStream nextElement() {
-                        return new ByteArrayInputStream(iterator.next());
-                      }
-                    }))
-            .setMaxCount(end)
-            .get();
-    long skipped = result.skip(start);
-    while (skipped < start) {
-      skipped += result.skip(start - skipped);
+    if (chunks == null || start >= end) {
+      return InputStream.nullInputStream();
     }
-    return result;
+    final List<byte[]> chunkList = chunks;
+    return new SequenceInputStream(
+        new Enumeration<>() {
+          private int index = start / chunkSize;
+
+          @Override
+          public boolean hasMoreElements() {
+            return index < chunkList.size() && (long) index * chunkSize < end;
+          }
+
+          @Override
+          public InputStream nextElement() {
+            byte[] chunk = chunkList.get(index);
+            int chunkStart = index * chunkSize;
+            index++;
+            int from = Math.max(start, chunkStart) - chunkStart;
+            int to = Math.min(end, chunkStart + chunk.length) - chunkStart;
+            return new ByteArrayInputStream(chunk, from, Math.max(0, to - from));
+          }
+        });
   }
 
   @Override
@@ -451,9 +485,18 @@ class RbelContentBase extends RbelContent {
   }
 
   boolean startsWithIgnoreCaseWithoutChecks(Pair<byte[], Charset> prefix, int startInclusive) {
-    byte[] prefixBytes = prefix.getLeft();
+    return startsWithIgnoreCaseWithoutChecks(prefix.getLeft(), prefix.getRight(), startInclusive);
+  }
+
+  private boolean startsWithIgnoreCaseWithoutChecks(
+      byte[] prefixBytes, Charset charset, int startInclusive) {
     if (startInclusive + prefixBytes.length <= size) {
-      Charset charset = prefix.getRight();
+      if (CharsetUtils.isAsciiCompatible(charset)) {
+        final int asciiAnswer = compareAsciiIgnoringCase(prefixBytes, startInclusive);
+        if (asciiAnswer != UNDECIDED) {
+          return asciiAnswer == EQUAL;
+        }
+      }
       var prefixString = new String(prefixBytes, charset);
       byte[] start = new byte[prefixBytes.length];
       for (int i = 0; i < start.length; i++) {
@@ -464,7 +507,41 @@ class RbelContentBase extends RbelContent {
     return false;
   }
 
+  private static final int UNDECIDED = -1;
+  private static final int DIFFERENT = 0;
+  private static final int EQUAL = 1;
+
+  /**
+   * Compares the bytes as the ASCII characters they are. A non-ASCII byte in the prefix is left to
+   * the decoded strings, which fold the case of more than ASCII. A non-ASCII byte in the content
+   * never equals an ASCII character in these charsets: in UTF-8 it shortens the decoded text or
+   * becomes U+FFFD, in ISO-8859-1 it is a character that folds to non-ASCII ones only.
+   */
+  private int compareAsciiIgnoringCase(byte[] prefixBytes, int startInclusive) {
+    for (int i = 0; i < prefixBytes.length; i++) {
+      final byte expected = prefixBytes[i];
+      final byte actual = getWithoutChecks(startInclusive + i);
+      if (expected < 0) {
+        return UNDECIDED;
+      }
+      if (actual < 0) {
+        return DIFFERENT;
+      }
+      if (expected != actual && toLowerAscii(expected) != toLowerAscii(actual)) {
+        return DIFFERENT;
+      }
+    }
+    return EQUAL;
+  }
+
+  private static int toLowerAscii(byte b) {
+    return b >= 'A' && b <= 'Z' ? b + ('a' - 'A') : b;
+  }
+
   public boolean startsWith(byte[] searchContent, int startIndex) {
+    if (searchContent.length > size - startIndex) {
+      return false; // it does not fit into what is left of the content
+    }
     for (int j = 0, k = startIndex; j < searchContent.length; j++, k++) {
       if (getWithoutChecks(k) != searchContent[j]) {
         return false;
@@ -492,7 +569,7 @@ class RbelContentBase extends RbelContent {
     if (firstBytes.length > size) {
       return false;
     }
-    return startsWithIgnoreCaseWithoutChecks(Pair.of(firstBytes, charset), 0);
+    return startsWithIgnoreCaseWithoutChecks(firstBytes, charset, 0);
   }
 
   public boolean startsTrimmedWithIgnoreCase(

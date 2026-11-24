@@ -25,11 +25,10 @@ import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
-import java.nio.charset.StandardCharsets;
+import de.gematik.rbellogger.util.RbelContent;
+import java.nio.charset.Charset;
 import java.util.*;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class RbelHttpMessageWriter implements RbelElementWriter {
 
@@ -40,8 +39,8 @@ public class RbelHttpMessageWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     final Optional<RbelHttpResponseFacet> responseFacet =
         oldTargetElement.getFacet(RbelHttpResponseFacet.class);
     final Optional<RbelHttpRequestFacet> requestFacet =
@@ -52,30 +51,39 @@ public class RbelHttpMessageWriter implements RbelElementWriter {
 
     joiner.add(buildTitleLine(oldTargetModifiedChild, newContent, responseFacet, requestFacet));
 
-    byte[] body =
-        getChunkedMapper(oldTargetElement)
-            .apply(getBodyContent(messageFacet, oldTargetModifiedChild, newContent));
+    final boolean chunked = isChunkedMessage(oldTargetElement);
+    final RbelContent body =
+        applyChunkedEncoding(
+            chunked,
+            oldTargetElement.getElementCharset(),
+            getBodyContent(messageFacet, oldTargetModifiedChild, newContent));
     if (messageFacet.getHeader() == oldTargetModifiedChild) {
-      joiner.add(new String(newContent));
+      joiner.add(asString(newContent));
     } else {
-      joiner.add(patchHeader(new String(messageFacet.getHeader().getRawContent()), body.length));
+      joiner.add(
+          patchHeader(new String(messageFacet.getHeader().getRawContent()), body.size(), chunked));
     }
     joiner.add("");
     joiner.add("");
-    return ArrayUtils.addAll(
-        joiner.toString().getBytes(oldTargetModifiedChild.getElementCharset()), body);
+    return RbelContent.concat(
+        RbelContent.of(joiner.toString(), oldTargetModifiedChild.getElementCharset()), body);
   }
 
-  private UnaryOperator<byte[]> getChunkedMapper(RbelElement oldTargetElement) {
-    if (isChunkedMessage(oldTargetElement)) {
-      return array ->
-          ArrayUtils.addAll(
-              (array.length + "\r\n").getBytes(oldTargetElement.getElementCharset()),
-              ArrayUtils.addAll(
-                  array, ("\r\n0\r\n").getBytes(oldTargetElement.getElementCharset())));
-    } else {
-      return UnaryOperator.identity();
+  private RbelContent applyChunkedEncoding(boolean chunked, Charset charset, RbelContent body) {
+    if (!chunked) {
+      return body;
     }
+    if (body.size() == 0) {
+      return RbelContent.of("0\r\n\r\n", charset);
+    }
+    return RbelContent.concat(
+        RbelContent.of(Integer.toHexString(body.size()) + "\r\n", charset),
+        body,
+        RbelContent.of("\r\n0\r\n\r\n", charset));
+  }
+
+  private static String asString(RbelContent content) {
+    return new String(content.toByteArray());
   }
 
   private boolean isChunkedMessage(RbelElement oldTargetElement) {
@@ -89,16 +97,20 @@ public class RbelHttpMessageWriter implements RbelElementWriter {
         .anyMatch(value -> value.equalsIgnoreCase("chunked"));
   }
 
-  private String patchHeader(String headerRaw, int length) {
+  /**
+   * The body is written decoded, so the content encoding is dropped. A chunked message stays
+   * chunked and has no length of its own, any other body is given its length.
+   */
+  private String patchHeader(String headerRaw, int length, boolean chunked) {
     return Arrays.stream(headerRaw.split("\r\n"))
         .map(
             headerLine -> {
               if (headerLine.toLowerCase(Locale.ROOT).startsWith("content-length")) {
-                return "Content-Length: " + length;
+                return chunked ? null : "Content-Length: " + length;
               } else if (headerLine.toLowerCase(Locale.ROOT).startsWith("content-encoding")) {
                 return null;
               } else if (headerLine.toLowerCase(Locale.ROOT).startsWith("transfer-encoding")) {
-                return null;
+                return chunked ? headerLine : null;
               } else {
                 return headerLine;
               }
@@ -107,81 +119,80 @@ public class RbelHttpMessageWriter implements RbelElementWriter {
         .collect(Collectors.joining("\r\n"));
   }
 
-  private byte[] getBodyContent(
-      RbelHttpMessageFacet messageFacet, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  private RbelContent getBodyContent(
+      RbelHttpMessageFacet messageFacet,
+      RbelElement oldTargetModifiedChild,
+      RbelContent newContent) {
     if (messageFacet.getBody() == oldTargetModifiedChild) {
       return newContent;
     } else {
-      return messageFacet.getBody().getRawContent();
+      return messageFacet.getBody().getContent();
     }
   }
 
   private String getResponseCode(
       Optional<RbelHttpResponseFacet> responseFacet,
       RbelElement oldTargetModifiedChild,
-      byte[] newContent) {
+      RbelContent newContent) {
     if (responseFacet.isEmpty()) {
       return "200";
     }
     if (responseFacet.get().getResponseCode() == oldTargetModifiedChild) {
-      return new String(newContent);
+      return asString(newContent);
     } else {
       return responseFacet.get().getResponseCode().getRawStringContent();
     }
   }
 
-  private Optional<byte[]> getReasonPhrase(
+  private Optional<RbelContent> getReasonPhrase(
       Optional<RbelHttpResponseFacet> responseFacet,
       RbelElement oldTargetModifiedChild,
-      byte[] newContent) {
+      RbelContent newContent) {
     if (responseFacet.isEmpty() || responseFacet.get().getReasonPhrase() == null) {
       return Optional.empty();
     }
     if (responseFacet.get().getReasonPhrase() == oldTargetModifiedChild) {
       return Optional.of(newContent);
     } else {
-      return Optional.ofNullable(responseFacet.get().getReasonPhrase().getRawContent());
+      return Optional.of(responseFacet.get().getReasonPhrase().getContent())
+          .filter(content -> !content.isNull());
     }
   }
 
   private String buildTitleLine(
       RbelElement oldTargetModifiedChild,
-      byte[] newContent,
+      RbelContent newContent,
       Optional<RbelHttpResponseFacet> responseFacet,
       Optional<RbelHttpRequestFacet> requestFacet) {
     StringBuilder builder = new StringBuilder();
 
-    String request =
-        buildRequest(oldTargetModifiedChild, new String(newContent), requestFacet, builder);
+    String request = buildRequest(oldTargetModifiedChild, newContent, requestFacet, builder);
     if (request != null) {
       return request;
     }
-    String responseCodeContent = getResponseCode(responseFacet, oldTargetModifiedChild, newContent);
-
-    final Optional<byte[]> reasonPhrase =
-        getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent);
-    if (reasonPhrase.isPresent() && new String(reasonPhrase.get()).trim().length() > 0) {
-      String reasonPhraseContent = " " + new String(reasonPhrase.get(), StandardCharsets.UTF_8);
-      return "HTTP/1.1 " + responseCodeContent + reasonPhraseContent;
-    }
-
-    return "HTTP/1.1 " + responseCodeContent;
+    return "HTTP/1.1 "
+        + getResponseCode(responseFacet, oldTargetModifiedChild, newContent)
+        + getReasonPhrase(responseFacet, oldTargetModifiedChild, newContent)
+            .map(RbelContent::toReadableString)
+            .filter(phrase -> !phrase.trim().isEmpty())
+            .map(phrase -> " " + phrase)
+            .orElse("");
   }
 
   private String buildRequest(
       RbelElement oldTargetModifiedChild,
-      String newContent,
+      RbelContent newContent,
       Optional<RbelHttpRequestFacet> requestFacet,
       StringBuilder builder) {
     if (requestFacet.isPresent()) {
       if (requestFacet.get().getMethod() == oldTargetModifiedChild) {
-        builder.append(newContent);
+        builder.append(asString(newContent));
       } else {
         builder.append(requestFacet.get().getMethod().getRawStringContent());
       }
       builder.append(" ");
       if (requestFacet.get().getPath() == oldTargetModifiedChild) {
-        builder.append(newContent);
+        builder.append(asString(newContent));
       } else {
         builder.append(requestFacet.get().getPath().getRawStringContent());
       }

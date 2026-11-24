@@ -42,7 +42,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RbelMessageHistory {
 
   private final boolean manageBuffer;
-  private final int rbelBufferSizeInMb;
+  private final double rbelBufferSizeInMb;
   private final Duration parsingTimeout;
   private final NavigableMap<Long, RbelElement> messageHistory = new TreeMap<>();
   private final Map<String, RbelElement> messageByUuid = new HashMap<>();
@@ -151,7 +151,7 @@ public class RbelMessageHistory {
         bumpHistoryRevision();
       }
       if (rbelBufferSizeInMb > 0) {
-        long exceedingLimit = currentBufferSize - ((long) rbelBufferSizeInMb * 1024 * 1024);
+        long exceedingLimit = currentBufferSize - (long) (rbelBufferSizeInMb * 1024 * 1024);
         if (exceedingLimit > 0) {
           log.atTrace()
               .addArgument(() -> ((double) currentBufferSize / (1024 * 1024)))

@@ -40,6 +40,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
+import java.util.Base64;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeAll;
@@ -193,6 +194,51 @@ class VauEpaConverterTest {
         .extractChildWithPath("$.body.FinishedData.content.keyId")
         .hasStringContentEqualTo(
             "f787a8db0b2e0d7c418ea20aba6125349871dfe36ab0f60a3d55bf4d1b556023");
+  }
+
+  @Test
+  void messageShorterThanKeyId_shouldNotBeParsedAsVau() {
+    final RbelElement element = rbelLogger.getRbelConverter().convertElement(new byte[31], null);
+
+    assertThat(element.hasFacet(RbelVauEpaFacet.class)).isFalse();
+  }
+
+  @Test
+  void base64JsonValueShorterThanKeyId_shouldNotBeParsedAsVau() {
+    final String shortValue = Base64.getEncoder().encodeToString(new byte[31]);
+
+    final RbelElement element =
+        rbelLogger
+            .getRbelConverter()
+            .convertElement(("{\"a\":\"" + shortValue + "\"}").getBytes(), null);
+
+    assertThat(element.findElement("$.a").orElseThrow().hasFacet(RbelVauEpaFacet.class)).isFalse();
+  }
+
+  @Test
+  void base64JsonValueWithUnknownKeyId_shouldNotBeParsedAsVau() {
+    final String unknownKeyValue = Base64.getEncoder().encodeToString(new byte[100]);
+
+    final RbelElement element =
+        rbelLogger
+            .getRbelConverter()
+            .convertElement(("{\"a\":\"" + unknownKeyValue + "\"}").getBytes(), null);
+
+    assertThat(element.findElement("$.a").orElseThrow().hasFacet(RbelVauEpaFacet.class)).isFalse();
+  }
+
+  @Test
+  void handshakeMessage_shouldKeepTheEncryptedBytes() {
+    final RbelVauEpaFacet facet =
+        rbelLogger
+            .getMessagesByOrder()
+            .get(2)
+            .findElement("$.body.FinishedData.content")
+            .orElseThrow()
+            .getFacetOrFail(RbelVauEpaFacet.class);
+
+    assertThat(facet.getEncryptedMessage().getRawContent()).hasSizeGreaterThan(16);
+    assertThat(facet.getEncryptedMessage().getRawStringContent()).doesNotStartWith("[B@");
   }
 
   @Test
