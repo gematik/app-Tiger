@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 4.5.0 - 2026-10-28</span>
+<span id="revdate">Version 5.0.0 - 2026-11-24</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -227,10 +227,11 @@ video {
 <li><a href="#_yaml_loading_and_overriding">3.2. YAML loading and overriding logic</a></li>
 <li><a href="#_server_types">3.3. Server type reference</a></li>
 <li><a href="#_canopy_user_guide">3.4. CANOPY User Guide</a></li>
-<li><a href="#server-type-example">3.5. Server type example</a></li>
-<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.6. Configuring the local test suite Tiger Proxy</a></li>
-<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.7. Standalone mode vs. implicit startup with test suite</a></li>
-<li><a href="#using-environment-variables-and-system-properties">3.8. Using Environment variables and system properties</a></li>
+<li><a href="#adding-custom-server-types">3.5. Adding custom server types</a></li>
+<li><a href="#server-type-example">3.6. Server type example</a></li>
+<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.7. Configuring the local test suite Tiger Proxy</a></li>
+<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.8. Standalone mode vs. implicit startup with test suite</a></li>
+<li><a href="#using-environment-variables-and-system-properties">3.9. Using Environment variables and system properties</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_proxy">4. Tiger Proxy</a>
@@ -257,16 +258,17 @@ video {
 <li><a href="#_tiger_test_lib_configuration">5.1. Tiger test lib configuration</a></li>
 <li><a href="#intermediate-serenity-reports">5.2. Intermediate Serenity Reports</a></li>
 <li><a href="#_pcap_capture">5.3. PCAP Capture Configuration and Usage</a></li>
-<li><a href="#registering-lifecycle-callbacks">5.4. Registering Lifecycle Callbacks</a></li>
-<li><a href="#_cucumber_hooks">5.5. Cucumber and Hooks</a></li>
-<li><a href="#using-the-cucumber-tiger-validation-steps">5.6. Using the Cucumber Tiger validation steps</a></li>
-<li><a href="#writing-your-own-glue-code">5.7. Writing your own Glue code</a></li>
-<li><a href="#modifying-rbelobjects-rbelbuilder">5.8. Modifying RbelObjects (RbelBuilder)</a></li>
-<li><a href="#using-the-http-client-steps">5.9. Using the HTTP client steps</a></li>
-<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.10. Exemplaric scenario Konnektorfarm EAU validation</a></li>
-<li><a href="#using-tiger-test-lib-helper-classes">5.11. Using Tiger test lib helper classes</a></li>
-<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.12. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
-<li><a href="#junit-test-report-when-using-scenario-outlines">5.13. JUnit test report when using Scenario Outlines</a></li>
+<li><a href="#registering-extension-glue-packages">5.4. Registering extension glue packages</a></li>
+<li><a href="#registering-lifecycle-callbacks">5.5. Registering Lifecycle Callbacks</a></li>
+<li><a href="#_cucumber_hooks">5.6. Cucumber and Hooks</a></li>
+<li><a href="#using-the-cucumber-tiger-validation-steps">5.7. Using the Cucumber Tiger validation steps</a></li>
+<li><a href="#writing-your-own-glue-code">5.8. Writing your own Glue code</a></li>
+<li><a href="#modifying-rbelobjects-rbelbuilder">5.9. Modifying RbelObjects (RbelBuilder)</a></li>
+<li><a href="#using-the-http-client-steps">5.10. Using the HTTP client steps</a></li>
+<li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.11. Exemplaric scenario Konnektorfarm EAU validation</a></li>
+<li><a href="#using-tiger-test-lib-helper-classes">5.12. Using Tiger test lib helper classes</a></li>
+<li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.13. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#junit-test-report-when-using-scenario-outlines">5.14. JUnit test report when using Scenario Outlines</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -570,7 +572,7 @@ However, if you are using it in your projects, feel free to contact us and we mi
 <div class="title">System requirements</div>
 <ul>
 <li>
-<p>JDK 17 or newer</p>
+<p>JDK 21 or newer</p>
 </li>
 <li>
 <p>Maven <code>3.9</code> or newer</p>
@@ -601,7 +603,7 @@ On Windows you can use Git Bash or Powershell
 <div class="ulist">
 <ul>
 <li>
-<p>JDK <code>17.0.3</code> or newer</p>
+<p>JDK <code>21.0.0</code> or newer</p>
 </li>
 <li>
 <p>Maven <code>3.9</code> or newer</p>
@@ -609,8 +611,7 @@ On Windows you can use Git Bash or Powershell
 </ul>
 </div>
 <div class="paragraph">
-<p>Tiger is currently built with JDK <code>17</code> and targets Java <code>17</code> bytecode.<br>
-Newer JDKs may work, but they are not currently used to build Tiger.<br>
+<p>Tiger is built with JDK <code>21</code> and targets Java <code>21</code> bytecode.<br>
 Run <code>mvn --version</code> before building to verify both the Maven version and the JDK Maven uses.</p>
 </div>
 </div>
@@ -742,8 +743,8 @@ This means the tests will not be run automatically on start up and you can selec
   &lt;version&gt;1.2.0-SNAPSHOT&lt;/version&gt;
 
   &lt;properties&gt;
-    &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
-    &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+    &lt;maven.compiler.source&gt;21&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;21&lt;/maven.compiler.target&gt;
 
     &lt;version.maven.failsafe&gt;3.3.1&lt;/version.maven.failsafe&gt;
     &lt;!-- please adapt Tiger version property to the most current one obtained from --&gt;
@@ -4450,7 +4451,28 @@ servers:
 </div>
 </div>
 <div class="sect2">
-<h3 id="server-type-example"><a class="anchor" href="#server-type-example"></a>3.5. Server type example</h3>
+<h3 id="adding-custom-server-types"><a class="anchor" href="#adding-custom-server-types"></a>3.5. Adding custom server types</h3>
+<div class="paragraph">
+<p>Implement a concrete subclass of <code>de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer</code><br>
+and annotate it with <code>@TigerServerType("myServer")</code>.<br>
+The token is used as the server&#8217;s <code>type</code> in <code>tiger.yaml</code>.<br>
+Keep the public constructor accepting <code>(String serverId, CfgServer configuration, TigerTestEnvMgr environment)</code>.<br>
+The class must be top-level or a static nested class and may reside in any Java package.</p>
+</div>
+<div class="paragraph">
+<p>Tiger discovers the annotation and its token from <code>META-INF/jandex.idx</code> resources in the application<br>
+and dependency JARs, without a runtime package scan.<br>
+Every module contributing server types must generate and ship an index.<br>
+Projects inheriting from <code>tiger-starter-parent</code> generate main and test indexes automatically.<br>
+Other projects must configure <code>io.smallrye:jandex-maven-plugin:3.6.0</code> as described in<br>
+<a href="#_adding_custom_rbel_converters">Adding custom RBel converters</a>, including the<br>
+test execution for test-only server types.<br>
+Run Maven through <code>process-classes</code> or <code>process-test-classes</code>, respectively, before launching from an IDE.<br>
+The same packaging guidance applies: regenerate a combined index for shaded JARs; do not concatenate binary indexes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="server-type-example"><a class="anchor" href="#server-type-example"></a>3.6. Server type example</h3>
 <div class="paragraph">
 <p>Here is a little example of how the server names are set and used and how the server is reachable via the tiger proxy.</p>
 </div>
@@ -4577,7 +4599,7 @@ Their meaning and format are explained in the related section.</p>
 <p>The configuration of the Tiger Proxy is explained in detail in the section <a href="#_configuring_the_local_test_suite_tiger_proxy">Configuring the local test suite Tiger Proxy</a></p>
 </div>
 <div class="sect3">
-<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.5.1. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
+<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.6.1. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
 <div class="paragraph">
 <p>PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).<br>
 In every place a string can be given.<br>
@@ -4684,7 +4706,7 @@ Invalid pathname strings will also produce an exception.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.5.2. Docker Container node</h4>
+<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.6.2. Docker Container node</h4>
 <div class="paragraph">
 <p>The docker container node allows to instantiate a local docker container from the configured image.<br>
 The exposed port of the docker container is available as a special token in the substitution process of the exports entries (<code>${PORT:xxxx}</code> where xxxx is the port being exposed inside the container).</p>
@@ -4785,7 +4807,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.5.3. Docker Compose node</h4>
+<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.6.3. Docker Compose node</h4>
 <div class="paragraph">
 <p>The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support.<br>
 So many of the yaml compose files will need to be modified to work with the testcontainer library.</p>
@@ -4845,7 +4867,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.5.4. External Jar node</h4>
+<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.6.4. External Jar node</h4>
 <div class="paragraph">
 <p>The External Jar node is along with the Docker container node the most important/used node for test environments.<br>
 Any Jar archive executable which can be started with the <code>java -jar</code> command can be configured as an external Jar node.</p>
@@ -4942,7 +4964,7 @@ To change the JVM used you can set the property <code>tiger.lib.javaHome</code> 
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.5.5. External URL node</h4>
+<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.6.5. External URL node</h4>
 <div class="paragraph">
 <p>The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname.<br>
 This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.</p>
@@ -4991,7 +5013,7 @@ If it is ever necessary to change the external URL, the test suite does not have
 </div>
 </div>
 <div class="sect3">
-<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.5.6. Helm Chart node</h4>
+<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.6.6. Helm Chart node</h4>
 <div class="paragraph">
 <p>The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart).<br>
 The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
@@ -5054,7 +5076,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.5.7. Tiger Proxy node</h4>
+<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.6.7. Tiger Proxy node</h4>
 <div class="paragraph">
 <p>The most complex and versatile node type.<br>
 The Tiger Proxy will be started as an embedded spring boot application.<br>
@@ -5108,7 +5130,7 @@ This way the start-up time can be minimized, and it is always guaranteed to star
 </div>
 </div>
 <div class="sect3">
-<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.5.8. httpbin node</h4>
+<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.6.8. httpbin node</h4>
 <div class="paragraph">
 <p>The httpbin simply starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server.<br>
 This provides several endpoints against which you can perform all kinds of http requests.<br>
@@ -5126,7 +5148,7 @@ The server port on which the server starts can be configured.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.6. Configuring the local test suite Tiger Proxy</h3>
+<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.7. Configuring the local test suite Tiger Proxy</h3>
 <div class="paragraph">
 <p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the <code>tiger.yaml</code> file.<br>
 For more information about what the Tiger Proxy is and how it works, see the chapter <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
@@ -5330,7 +5352,7 @@ tigerProxy:
 </div>
 </div>
 <div class="sect2">
-<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.7. Standalone mode vs. implicit startup with test suite</h3>
+<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.8. Standalone mode vs. implicit startup with test suite</h3>
 <div class="paragraph">
 <p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios, thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.<br>
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.</p>
@@ -5392,7 +5414,7 @@ So you may skip the first and just use it with two different values being set.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.8. Using Environment variables and system properties</h3>
+<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.9. Using Environment variables and system properties</h3>
 <div class="paragraph">
 <p>In many configuration values (e.g. <code>exports</code>, <code>environment</code>, <code>source</code>, etc.), placeholders like <code>${PORT:xxxx}</code> or <code>${NAME}</code> can be used.<br>
 These are replaced at runtime with the actual values (e.g. the exposed port of a Docker container or the hostname of a node).</p>
@@ -5611,7 +5633,6 @@ The individual attributes are described in detail in the subsections below.</p>
         port: 3858                        # target port
         ignoreConnectionErrors: false     # true = suppress connection error logs
         tcpIdleTimeoutInSeconds: 5.0        # OPTIONAL TCP keep-alive timeout in seconds (default: 5), null = disabled
-        modifierPlugins: []               # OPTIONAL plugin classes to modify traffic on the TCP layer before forwarding
 
       logConnectMessages: false   # if set to true, the tiger proxy will log HTTP CONNECT messages (used for tunneling HTTPS through a forward proxy), default is false
       # Folders containing keys (e.g. PEM, P12) loaded into RBel for decrypting traffic during analysis
@@ -6875,7 +6896,7 @@ This is needed for non-HTTP scenarios, where the structured RBel modification me
 <div class="ulist">
 <ul>
 <li>
-<p>On startup, Tiger scans the classpath (via <code>Reflections</code>) for all implementations of the <code>RbelBinaryModifierPlugin</code> interface and looks up the class matching <code>name</code>.</p>
+<p>Tiger discovers public, concrete implementations of <code>RbelBinaryModifierPlugin</code> from <code>META-INF/jandex.idx</code> resources and looks up the class matching <code>name</code>. Plugins may use any package. Generate indexes for their modules and any intermediate base types, including test indexes for test-only plugins, as described in <a href="#_adding_custom_rbel_converters">Adding custom RBel converters</a>.</p>
 </li>
 <li>
 <p>An instance of that class is created by deserializing the <code>parameters</code> map into it with Jackson - i.e. the plugin class is a plain POJO whose fields correspond to the <code>parameters</code> keys (bean-style getters/setters, or Lombok <code>@Data</code>).</p>
@@ -6965,14 +6986,103 @@ For example, if you set <code>tcpIdleTimeoutInSeconds</code> to 5 seconds, the k
 <p>For a detailed description of RBelPath, please refer to the <a href="#_rbel_path_details">Understanding RBelPath</a>.</p>
 </div>
 <div class="sect3">
-<h4 id="activaterbelparsing"><a class="anchor" href="#activaterbelparsing"></a>4.7.1. activateRbelParsing</h4>
+<h4 id="adding-custom-rbel-converters"><a class="anchor" href="#adding-custom-rbel-converters"></a>4.7.1. Adding custom RBel converters</h4>
+<div class="paragraph">
+<p>To add a converter, create a public class extending <code>de.gematik.rbellogger.RbelConverterPlugin</code> and implement <code>consumeElement</code>.<br>
+The converter needs a public constructor accepting <code>RbelConfiguration</code> or a public no-argument constructor.<br>
+<code>@ConverterInfo</code> is optional: it controls automatic activation, optional parser identifiers (<code>onlyActivateFor</code>),<br>
+and ordering dependencies (<code>dependsOn</code>).</p>
+</div>
+<div class="paragraph">
+<p>Tiger discovers converters from the <code>META-INF/jandex.idx</code> resources in the application and its dependency JARs,<br>
+not by scanning the classpath.<br>
+Converters can use any Java package; they no longer need to be under <code>de.gematik</code>.<br>
+Projects inheriting from <code>tiger-starter-parent</code> generate indexes for main and test classes automatically.<br>
+No additional plugin configuration is needed in those projects.<br>
+For projects not inheriting from that parent, configure the following plugin in every module containing<br>
+converters or intermediate converter base classes:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;io.smallrye&lt;/groupId&gt;
+    &lt;artifactId&gt;jandex-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;3.6.0&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;jandex&lt;/goal&gt;
+            &lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>mvn package</code> (or at least <code>mvn process-classes</code>) to generate the index after compilation.<br>
+The plugin indexes the module&#8217;s compiled classes; it is not an annotation processor and requires no<br>
+<code>annotationProcessorPaths</code> configuration, including on JDK 23 and newer.<br>
+Use the Jandex version supported by your Tiger release (3.6.0 for this release);<br>
+indexes written in newer formats may not be readable by Tiger&#8217;s runtime dependency.<br>
+Tiger reads standard indexes from all application and dependency modules. Unreadable or unsupported<br>
+indexes are skipped with a WARN identifying the resource and cause; discovery continues with the<br>
+remaining indexes. Extensions in skipped indexes, or depending on intermediate types in them,<br>
+may not be discovered. Check these warnings if an extension is missing.<br>
+If an IDE compiles classes without running Maven plugins, regenerate the index before starting Tiger.<br>
+Test-only converters also need an index in <code>target/test-classes/META-INF/jandex.idx</code>, generated after test compilation.<br>
+Without <code>tiger-starter-parent</code>, add a second execution to the same plugin for these:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;execution&gt;
+    &lt;id&gt;index-test-classes&lt;/id&gt;
+    &lt;phase&gt;process-test-classes&lt;/phase&gt;
+    &lt;goals&gt;
+        &lt;goal&gt;jandex&lt;/goal&gt;
+    &lt;/goals&gt;
+    &lt;configuration&gt;
+        &lt;processDefaultFileSet&gt;false&lt;/processDefaultFileSet&gt;
+        &lt;fileSets&gt;
+            &lt;fileSet&gt;
+                &lt;directory&gt;${project.build.testOutputDirectory}&lt;/directory&gt;
+                &lt;includes&gt;
+                    &lt;include&gt;**/*.class&lt;/include&gt;
+                &lt;/includes&gt;
+            &lt;/fileSet&gt;
+        &lt;/fileSets&gt;
+        &lt;indexDir&gt;${project.build.testOutputDirectory}/META-INF&lt;/indexDir&gt;
+    &lt;/configuration&gt;
+&lt;/execution&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The existing seed converter order is preserved. Additional converters are sorted by fully qualified class name,<br>
+then <code>dependsOn</code> ordering is applied. Use explicit dependencies rather than relying on classpath order.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+When producing a shaded JAR, preserve all indexed classes and regenerate a combined Jandex index for<br>
+the shaded contents. Binary <code>jandex.idx</code> files cannot be concatenated with Shade&#8217;s <code>AppendingTransformer</code><br>
+or Shadow&#8217;s <code>append</code>. Spring Boot repackaging keeps dependency JARs and their indexes separate.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="activaterbelparsing"><a class="anchor" href="#activaterbelparsing"></a>4.7.2. activateRbelParsing</h4>
 <div class="paragraph">
 <p>Deactivating this flag turns off all Rbel-Analysis of the incoming traffic.<br>
 This is a huge deal in terms of memory- and CPU-consumption, but you will lose all benefits of performing Rbel-Analysis.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="activaterbelparsingfor"><a class="anchor" href="#activaterbelparsingfor"></a>4.7.2. activateRbelParsingFor</h4>
+<h4 id="activaterbelparsingfor"><a class="anchor" href="#activaterbelparsingfor"></a>4.7.3. activateRbelParsingFor</h4>
 <div class="paragraph">
 <p>Tiger RBel parses and decodes a wide range of formats and protocols out of the box.<br>
 The following formats are supported <strong>by default</strong> (always active):</p>
@@ -7210,7 +7320,7 @@ Then TGR current response with attribute "$.response.sw.meaning" matches "Normal
 </div>
 </div>
 <div class="sect3">
-<h4 id="parsingshouldblockcommunication"><a class="anchor" href="#parsingshouldblockcommunication"></a>4.7.3. parsingShouldBlockCommunication</h4>
+<h4 id="parsingshouldblockcommunication"><a class="anchor" href="#parsingshouldblockcommunication"></a>4.7.4. parsingShouldBlockCommunication</h4>
 <div class="paragraph">
 <p>If blocking is enabled, the tiger proxy will only return the response when message parsing is completed.<br>
 This is inadvisable in high-speed scenarios.<br>
@@ -7221,7 +7331,7 @@ For all Tiger Proxies this default behavior can be changed.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.7.4. activateTrafficLogging</h4>
+<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.7.5. activateTrafficLogging</h4>
 <div class="paragraph">
 <p>This flag controls whether the tiger proxy will log all traffic.<br>
 If activated, every request and response is noted in the log.<br>
@@ -7240,7 +7350,7 @@ Default is true.</p>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
   tigerProxyConfiguration:
-    rbelBufferSizeInMb: 1024          # Limits the RBel buffer to approximately this size (default: 1024)
+    rbelBufferSizeInMb: 1024          # Limits the RBel buffer to approximately this size, fractions like 0.5 are allowed (default: 1024)
     stompClientBufferSizeInMb: 1      # Buffer size for reassembling an inbound STOMP message on the remote-proxy client (default: 1)
     stompServerSendBufferSizeInMb: 16 # Pending-send buffer per tracing WebSocket session before the tracing broker closes it as unreliable (default: 16)
     stompServerSendTimeLimitInSeconds: 20 # How long the tracing broker may take to flush a message to a session before giving up on it (default: 20)
@@ -7289,7 +7399,7 @@ Default is 5.0 minutes.</p>
 <h4 id="parsingtimeoutinseconds"><a class="anchor" href="#parsingtimeoutinseconds"></a>4.9.5. parsingTimeoutInSeconds</h4>
 <div class="paragraph">
 <p>How long the proxy waits for messages to finish parsing before giving up on them.<br>
-This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log), for a single message to be parsed, and for a message to be parsed before the binary modifier plugins are applied to it.<br>
+This applies to the waits for live traffic: for all buffered messages to be parsed (at the end of a scenario or before a validation step reads the log) and for a single message to be parsed.<br>
 Raise it if you routinely handle very large messages; there is no reason to lower it, as the wait ends as soon as parsing is done.<br>
 Default is 100 seconds.</p>
 </div>
@@ -7424,7 +7534,11 @@ Note: This behavior can only be customized for all Tiger Proxies.</p>
 <p>Tiger shows the names of senders and receivers in the traffic log.<br>
 For a peer known only by its IP, e.g. a client container in a Docker network, Tiger looks up its name via reverse DNS.<br>
 The lookup doesn&#8217;t block: it runs while the message is parsed, never while it is forwarded.<br>
-Container names are only known to Docker&#8217;s DNS, so they are found only if the Tiger Proxy runs in the same Docker network.</p>
+Container names are only known to Docker&#8217;s DNS, so they are found only if the Tiger Proxy runs in the same Docker network.<br>
+For Compose networks named <code>&lt;project&gt;_&lt;network&gt;</code>, Tiger derives the service name by removing the matching <code>&lt;project&gt;-</code> prefix and a trailing numeric instance suffix from the container name.<br>
+The service name is used only if it resolves to exactly the peer&#8217;s IP; scaled services keep their container names.<br>
+Tiger checks only this derived alias, without probing arbitrary hyphen-separated suffixes.<br>
+Custom container or network names without a matching project prefix keep the container name.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9250,13 +9364,45 @@ sequentially.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="registering-lifecycle-callbacks"><a class="anchor" href="#registering-lifecycle-callbacks"></a>5.4. Registering Lifecycle Callbacks</h3>
+<h3 id="registering-extension-glue-packages"><a class="anchor" href="#registering-extension-glue-packages"></a>5.4. Registering extension glue packages</h3>
+<div class="paragraph">
+<p>Annotate a concrete, top-level or static nested class in your Cucumber glue package with<br>
+<code>de.gematik.test.tiger.common.glue.TigerGluePackage</code>.<br>
+<code>TigerCucumberRunner</code> reads these markers from <code>META-INF/jandex.idx</code> resources and adds their<br>
+packages to its effective <code>--glue</code> arguments before running Cucumber.<br>
+Markers may reside in any Java or Kotlin package and are not loaded during discovery.<br>
+Packages are deduplicated and sorted alphabetically; explicitly supplied glue packages are not added twice.<br>
+Runners that bypass <code>TigerCucumberRunner</code> must configure the extension&#8217;s glue explicitly.</p>
+</div>
+<div class="paragraph">
+<p>Every contributing module must generate and ship its index.<br>
+Projects inheriting from <code>tiger-starter-parent</code> generate main and test indexes automatically.<br>
+Other projects must configure <code>io.smallrye:jandex-maven-plugin:3.6.0</code> as described in<br>
+<a href="#_adding_custom_rbel_converters">Adding custom RBel converters</a>, including test indexing<br>
+for markers in test sources and the shading guidance.<br>
+Run Maven through <code>process-classes</code> or <code>process-test-classes</code> before launching from an IDE.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="registering-lifecycle-callbacks"><a class="anchor" href="#registering-lifecycle-callbacks"></a>5.5. Registering Lifecycle Callbacks</h3>
 <div class="paragraph">
 <p>When the tiger test library starts up it goes through the steps of reading the tiger configuration, starting the configured servers and finally starting the local tiger proxy.</p>
 </div>
 <div class="paragraph">
 <p>By implementing a Java class which implements the interface <code>de.gematik.test.tiger.lifecycle.LifecycleCallbacks</code> you can run custom code before and after each of the mentioned steps.<br>
-All classes that implement this interface and are located in the package <code>de.gematik.test.tiger.lifecycle</code> are automatically registered and their methods will be called on the corresponding event.</p>
+Public, concrete classes implementing this interface are automatically registered from<br>
+<code>META-INF/jandex.idx</code> resources and their methods are called on the corresponding event.<br>
+They may reside in any Java or Kotlin package and must have a public no-argument constructor.<br>
+Callbacks are discovered before Tiger configuration is read, without customer bootstrap code.<br>
+Discovery includes indirect implementations through indexed base classes and interfaces.<br>
+Callbacks are instantiated and invoked in fully qualified class-name order.</p>
+</div>
+<div class="paragraph">
+<p>Projects inheriting from <code>tiger-starter-parent</code> generate indexes for main and test classes automatically.<br>
+Other projects must configure <code>io.smallrye:jandex-maven-plugin:3.6.0</code> as described in<br>
+<a href="#_adding_custom_rbel_converters">Adding custom RBel converters</a>, including modules containing<br>
+intermediate callback base classes or interfaces.<br>
+Run Maven through <code>process-classes</code> for main classes or <code>process-test-classes</code> for test classes.</p>
 </div>
 <div class="paragraph">
 <p>Here is an example of a class that will log messages on each callback method:</p>
@@ -9264,9 +9410,10 @@ All classes that implement this interface and are located in the package <code>d
 <div class="listingblock">
 <div class="title">Listing 35. ExampleCallback.java</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.gematik.test.tiger.lifecycle;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.lifecycle.LifecycleCallbacks;
 import java.util.logging.Logger;
 
 public class ExampleCallback implements LifecycleCallbacks {
@@ -9306,7 +9453,7 @@ public class ExampleCallback implements LifecycleCallbacks {
 </div>
 </div>
 <div class="sect2">
-<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.5. Cucumber and Hooks</h3>
+<h3 id="_cucumber_hooks"><a class="anchor" href="#_cucumber_hooks"></a>5.6. Cucumber and Hooks</h3>
 <div class="paragraph">
 <p>As Tiger focuses on BDD and Cucumber based test suites all the setup and tear down as well as steps based actions are performed.</p>
 </div>
@@ -9328,7 +9475,7 @@ The current test run state (success/failed rate) is logged to the console.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.6. Using the Cucumber Tiger validation steps</h3>
+<h3 id="using-the-cucumber-tiger-validation-steps"><a class="anchor" href="#using-the-cucumber-tiger-validation-steps"></a>5.7. Using the Cucumber Tiger validation steps</h3>
 <div class="paragraph">
 <p>The Tiger validation steps are a set of Cucumber steps that enable you to search for requests and associated responses matching certain criteria.<br>
 All of that without need to write your own code.<br>
@@ -9336,7 +9483,7 @@ Basic knowledge about RBelPath and regular expressions are sufficient.<br>
 In order to use these steps you must ensure that the relevant traffic is routed via the local tiger proxy of the test suite or construct a <a href="#_mesh_setup_traffic_endpoints">tiger proxy mesh</a> set up.</p>
 </div>
 <div class="sect3">
-<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.6.1. Filtering requests</h4>
+<h4 id="filtering-requests"><a class="anchor" href="#filtering-requests"></a>5.7.1. Filtering requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -9365,7 +9512,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 <div class="sect3">
-<h4 id="_validation_message_sort_order"><a class="anchor" href="#_validation_message_sort_order"></a>5.6.2. Validation iteration order</h4>
+<h4 id="_validation_message_sort_order"><a class="anchor" href="#_validation_message_sort_order"></a>5.7.2. Validation iteration order</h4>
 <div class="paragraph">
 <p>By default the validator iterates messages in registration order (sequence number).<br>
 In proxy-mesh setups where upstream traffic can arrive out of chronological order, switch to transmission-timestamp order via <code>tiger.lib.validation.messageSortOrder</code>:</p>
@@ -9395,7 +9542,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.6.3. Validating responses</h4>
+<h4 id="validating-responses"><a class="anchor" href="#validating-responses"></a>5.7.3. Validating responses</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -9461,7 +9608,7 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.6.4. Validating requests</h4>
+<h4 id="validating-requests"><a class="anchor" href="#validating-requests"></a>5.7.4. Validating requests</h4>
 <div class="ulist">
 <div class="title">Core features</div>
 <ul>
@@ -9520,13 +9667,13 @@ For a single, standalone Tiger Proxy both modes are equivalent.
 </div>
 </div>
 <div class="sect3">
-<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.6.5. Regex matching</h4>
+<h4 id="regex-matching"><a class="anchor" href="#regex-matching"></a>5.7.5. Regex matching</h4>
 <div class="paragraph">
 <p>When comparing values (e.g. in the <code>TGR current response body matches:</code>) generally the algorithms check for equality and only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.6.6. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.7.6. Complete set of steps in validation glue code</h4>
 <div class="sect4">
 <h5 id="tgr-setze-anfragerequest-timeout-auf-int-sekunden"><a class="anchor" href="#tgr-setze-anfragerequest-timeout-auf-int-sekunden"></a>TGR setze Anfrage/Request Timeout auf {int} Sekunden</h5>
 
@@ -10372,7 +10519,7 @@ test fails.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.7. Writing your own Glue code</h3>
+<h3 id="writing-your-own-glue-code"><a class="anchor" href="#writing-your-own-glue-code"></a>5.8. Writing your own Glue code</h3>
 <div class="paragraph">
 <p>You can define your own BDD steps and write the corresponding glue code in your own project. The glue code files should be placed either in the test/java directory or in the main/java directory depending on your project structure and needs.<br>
 You must remember to configure the packages where your glue code is defined in the <a href="#maven-plugin-generate-drivers">tiger-maven-plugin</a> configuration.</p>
@@ -10381,7 +10528,7 @@ You must remember to configure the packages where your glue code is defined in t
 <p>Additionally, you can use some tiger-specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.</p>
 </div>
 <div class="sect3">
-<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.7.1. Resolving Variables</h4>
+<h4 id="resolving-variables"><a class="anchor" href="#resolving-variables"></a>5.8.1. Resolving Variables</h4>
 <div class="paragraph">
 <p>When defining a glue code method, you can use the variables with the names {tigerResolvedString} and {tigerResolvedUrl}.<br>
 These will be automatically resolved by the TigerGlobalConfiguration resolver, and the result is injected directly in the java method.</p>
@@ -10437,7 +10584,7 @@ public void multilineStringExample(DataTable dataTable){
 </div>
 </div>
 <div class="sect3">
-<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.7.2. Formating Tables</h4>
+<h4 id="formating-tables"><a class="anchor" href="#formating-tables"></a>5.8.2. Formating Tables</h4>
 <div class="paragraph">
 <p>Depending on the concrete useage, a <code>DataTable</code> may be interpreted by the glue code as a row wise argument or as a column wise argument.<br>
 To make it clearer to the user, it may be helpful to highlight the first row or the first column of the table when displaying it in the Workflow Ui.<br>
@@ -10476,9 +10623,9 @@ You can apply both annotations to the same method.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.8. Modifying RbelObjects (RbelBuilder)</h3>
+<h3 id="modifying-rbelobjects-rbelbuilder"><a class="anchor" href="#modifying-rbelobjects-rbelbuilder"></a>5.9. Modifying RbelObjects (RbelBuilder)</h3>
 <div class="sect3">
-<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.8.1. Introduction</h4>
+<h4 id="introduction"><a class="anchor" href="#introduction"></a>5.9.1. Introduction</h4>
 <div class="paragraph">
 <p>RBelObjects are internal data structures used by the Tiger test framework to represent and manipulate parsed message content, such as JSON, XML, or token formats. They allow you to access, modify, and assert values at specific paths within a message using RBelPath expressions (see <a href="#_rbel_path_details">Understanding RBelPath</a>). RBelObjects enable flexible validation, transformation, and serialization of message data during automated tests.</p>
 </div>
@@ -10509,7 +10656,7 @@ Jexl Expressions are implemented, as for reading a file or for serializing:<br>
 </div>
 </div>
 <div class="sect3">
-<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.8.2. List of all possible Steps</h4>
+<h4 id="list-of-all-possible-steps"><a class="anchor" href="#list-of-all-possible-steps"></a>5.9.2. List of all possible Steps</h4>
 <div class="sect4">
 <h5 id="tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"><a class="anchor" href="#tgr-erstellt-ein-neues-rbel-objekt-tigerresolvedstring-mit-inhalt-tigerresolvedstring"></a>TGR erstellt ein neues Rbel-Objekt {tigerResolvedString} mit Inhalt {tigerResolvedString}</h5>
 
@@ -10602,7 +10749,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.8.3. Usage examples</h4>
+<h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.9.3. Usage examples</h4>
 <div class="listingblock">
 <div class="title">Listing 38. Tiger Rbel Builder steps example</div>
 <div class="content">
@@ -10632,7 +10779,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.9. Using the HTTP client steps</h3>
+<h3 id="using-the-http-client-steps"><a class="anchor" href="#using-the-http-client-steps"></a>5.10. Using the HTTP client steps</h3>
 <div class="paragraph">
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
@@ -10687,11 +10834,39 @@ certain value</p>
 
   Scenario: Request with custom header
     When TGR send empty GET request to "http://httpbin/get" with headers:
-      | foo    | bar |
-      | schmoo | lar |
+      | foo | schmoo |
+      | bar | lar    |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.schmoo')}" matches "lar"
+
+  Scenario: Request with repeated custom headers
+    Given TGR set local variable "headerName" to "X-Example"
+    And TGR set local variable "headerValue" to "first"
+    And TGR set default header "Content-Type" to "application/json"
+    And TGR set default header "Accept" to "text/plain"
+    When TGR send empty GET request to "http://httpbin/get" with headers:
+      | ${headerName}  | X-Example | Accept           | Accept                 |
+      | ${headerValue} | second    | application/json | application/json;q=0.8 |
+    Then TGR find last request to path ".*"
+    And TGR current response with attribute "$.body.headers.X-Example.0" matches "first"
+    And TGR current response with attribute "$.body.headers.X-Example.1" matches "second"
+    And TGR current response with attribute "$.body.headers.Accept.0" matches "application/json"
+    And TGR current response with attribute "$.body.headers.Accept.1" matches "application/json;q=0.8"
+    And TGR current response with attribute "$.body.headers.Content-Type.0" matches "application/json"
+    And TGR clear default header "Content-Type"
+    And TGR clear default header "Accept"
+    And TGR clear default header "X-Example"
+
+  Scenario: Non-blocking request with repeated custom headers
+    Given TGR set request wait timeout to 10 seconds
+    When TGR send empty GET request to "http://httpbin/get" without waiting for the response with headers:
+      | X-Async | X-Async |
+      | first   | second  |
+    Then TGR wait for message with node "$.body.headers.X-Async.1" matching "second"
+    And TGR find first request to path "/get"
+    And TGR current response with attribute "$.body.headers.X-Async.0" matches "first"
+    And TGR current response with attribute "$.body.headers.X-Async.1" matches "second"
 
   Scenario: Request with default header
     Given TGR set default header "key" to "value"
@@ -10706,7 +10881,8 @@ certain value</p>
   Scenario: Request with custom and default header, check headers
     Given TGR set default header "key" to "value"
     When TGR send empty GET request to "http://httpbin/get" with headers:
-      | foo | bar |
+      | foo |
+      | bar |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.key')}" matches "value"
@@ -10829,7 +11005,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.9.1. Complete set of steps in HTTP client glue code</h4>
+<h4 id="complete-set-of-steps-in-http-client-glue-code"><a class="anchor" href="#complete-set-of-steps-in-http-client-glue-code"></a>5.10.1. Complete set of steps in HTTP client glue code</h4>
 <div class="sect4">
 <h5 id="tgr-send-empty-requesttype-request-to-tigerresolvedurl"><a class="anchor" href="#tgr-send-empty-requesttype-request-to-tigerresolvedurl"></a>TGR send empty {requestType} request to {tigerResolvedUrl}</h5>
 
@@ -10886,13 +11062,15 @@ Example:</p>
 <div class="listingblock indent">
 <div class="content">
 <pre>    When TGR send empty GET request to "${myAddress}" with headers:
-     | name | bob |
-     | age  | 27  |</pre>
+     | name | age |
+     | bob  | 27  |</pre>
 </div>
 </div>
 <div class="paragraph indent">
 <p>This will add two headers (name and age) with the respective values "bob" and "27" on top of<br>
-the headers which are used by default.</p>
+the headers which are used by default. To send a header multiple times, repeat its name in the<br>
+first row and provide the corresponding values in the second row, where the header permits<br>
+multiple values.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> method HTTP request method (see {<strong>link</strong> Method})<br>
@@ -10909,7 +11087,9 @@ the headers which are used by default.</p>
 <h5 id="tgr-sende-eine-leere-requesttype-anfrage-an-tigerresolvedurl-ohne-auf-antwort-zu-warten-mit-folgenden-headern"><a class="anchor" href="#tgr-sende-eine-leere-requesttype-anfrage-an-tigerresolvedurl-ohne-auf-antwort-zu-warten-mit-folgenden-headern"></a>TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten" + " mit folgenden Headern:</h5>
 <div class="paragraph indent">
 <p>Sends an empty request via the selected method and expands the list of default headers with the<br>
-headers provided by the caller. Placeholders in address and in the data table will be resolved.</p>
+headers provided by the caller. Placeholders in address and in the data table will be resolved.<br>
+To send a header multiple times, repeat its name in the first row and provide the corresponding<br>
+values in the second row, where the header permits multiple values.</p>
 </div>
 <div class="paragraph indent">
 <p>This method is NON-BLOCKING, meaning it will not wait for the response before continuing the<br>
@@ -11152,7 +11332,7 @@ following redirects.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.9.2. XMLUnit Diff Builder</h4>
+<h4 id="xmlunit-diff-builder"><a class="anchor" href="#xmlunit-diff-builder"></a>5.10.2. XMLUnit Diff Builder</h4>
 <div class="paragraph">
 <p>Using the validation steps <code>TGR current response at {string} matches as XML:</code> or<br>
 <code>TGR current response at {string} matches as XML and diff options {string}:</code> you are able to compare the content of any RbelPath node in the response.<br>
@@ -11183,7 +11363,7 @@ Comparison is also performed on similarity and not equal content.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.9.3. JSONChecker</h4>
+<h4 id="jsonchecker"><a class="anchor" href="#jsonchecker"></a>5.10.3. JSONChecker</h4>
 <div class="paragraph">
 <p>Using the validation step <code>TGR current response at {string} matches as JSON:</code> you are able to compare the content of any RbelPath node in the response to the doc string beneath the step, with the help of the JSONChecker comparison algorithm.</p>
 </div>
@@ -11396,7 +11576,7 @@ address: Friedrichstraße</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.10. Exemplaric scenario Konnektorfarm EAU validation</h3>
+<h3 id="exemplaric-scenario-konnektorfarm-eau-validation"><a class="anchor" href="#exemplaric-scenario-konnektorfarm-eau-validation"></a>5.11. Exemplaric scenario Konnektorfarm EAU validation</h3>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.<br>
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
@@ -11421,7 +11601,7 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.11. Using Tiger test lib helper classes</h3>
+<h3 id="using-tiger-test-lib-helper-classes"><a class="anchor" href="#using-tiger-test-lib-helper-classes"></a>5.12. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -11441,7 +11621,7 @@ All classes listed here are part of the tiger-common module
 <p>For BDD feature files Tiger provides some helper steps too.</p>
 </div>
 <div class="sect3">
-<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.11.1. Complete set of helper steps in Tiger glue code</h4>
+<h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.12.1. Complete set of helper steps in Tiger glue code</h4>
 <div class="sect4">
 <h5 id="tgr-testsuite-string-version-string"><a class="anchor" href="#tgr-testsuite-string-version-string"></a>TGR testsuite {string} version {string}</h5>
 
@@ -11707,7 +11887,7 @@ end up in the configuration.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="banner"><a class="anchor" href="#banner"></a>5.11.2. Banner</h4>
+<h4 id="banner"><a class="anchor" href="#banner"></a>5.12.2. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful, for example take a look at the following figure.</p>
 </div>
@@ -11723,21 +11903,21 @@ Furthermore, all banner messages are displayed and highlighted in the Workflow U
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.11.3. TigerSerializationUtil</h4>
+<h4 id="tigerserializationutil"><a class="anchor" href="#tigerserializationutil"></a>5.12.3. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps.<br>
 If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.11.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="tigerpkiidentityloader-tigerpkiidentity"><a class="anchor" href="#tigerpkiidentityloader-tigerpkiidentity"></a>5.12.4. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files.<br>
 For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.11.5. Performing REST calls with Tiger</h4>
+<h4 id="performing-rest-calls-with-tiger"><a class="anchor" href="#performing-rest-calls-with-tiger"></a>5.12.5. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -11758,7 +11938,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.12. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"><a class="anchor" href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only"></a>5.13. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories.<br>
 To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files.<br>
@@ -11822,7 +12002,7 @@ Background blocks will be merged to each scenario before exporting its steps to 
 </div>
 </div>
 <div class="sect2">
-<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.13. JUnit test report when using Scenario Outlines</h3>
+<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.14. JUnit test report when using Scenario Outlines</h3>
 <div class="paragraph">
 <p>When using Scenario Outlines in your feature files, the JUnit test report will show each example that has run in the scenario outline as a single test case.<br>
 To create a name for each example that is referencing the scenario outline, the system property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> is set to the value <code>pickle</code> in case it is not set by the environment.</p>
@@ -12393,12 +12573,14 @@ Conversely, you can deregister an existing namespace with <code>TigerJexlExecuto
 <div class="paragraph">
 <p>If you need to register a namespace early in the start up process you can use annotated classes.<br>
 For example, you may need the namespace to be already registered when tiger reads the tiger configuration.<br>
-To do it, create a class with the inline methods in the java package <code>de.gematik.test.tiger.common.jexl</code> and add the annotation <code>@InlineJexlMethods(namespacePrefix = &lt;namespace-prefix&gt;)</code>.<br>
+To do it, create a public class with the inline methods in any Java package and add the annotation <code>@InlineJexlMethods(namespacePrefix = &lt;namespace-prefix&gt;)</code>.<br>
 Below is an example:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package de.gematik.test.tiger.common.jexl;
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package com.example;
+
+import de.gematik.test.tiger.common.jexl.InlineJexlMethods;
 
 @InlineJexlMethods(namespacePrefix = "test")
 public class DummyJexlMethods {
@@ -12409,7 +12591,14 @@ public class DummyJexlMethods {
 </div>
 </div>
 <div class="paragraph">
-<p>Tiger will scan the classes in the package and add register all annotated classes.</p>
+<p>Tiger automatically registers annotated classes from <code>META-INF/jandex.idx</code> resources before configuration<br>
+expressions are evaluated. No customer bootstrap code is needed.<br>
+Projects inheriting from <code>tiger-starter-parent</code> generate main and test indexes automatically.<br>
+Other projects must configure <code>io.smallrye:jandex-maven-plugin:3.6.0</code> as described in<br>
+<a href="#_adding_custom_rbel_converters">Adding custom RBel converters</a>.<br>
+Run Maven through <code>process-classes</code> for main classes or <code>process-test-classes</code> for test classes before starting Tiger.<br>
+The old package restriction no longer applies. Classes without an index are not discovered.<br>
+Programmatic registration with <code>registerAdditionalNamespace</code> remains available.</p>
 </div>
 </div>
 </div>
@@ -13196,14 +13385,14 @@ The <code>docker</code> node runs inside a docker host. This is represented in t
 <h5 id="standalone-mode"><a class="anchor" href="#standalone-mode"></a>Standalone mode</h5>
 <div class="paragraph">
 <p>As an alternative to the integration in the Workflow UI, the topology visualizer can be used in a standalone mode.<br>
-You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.5.0/tiger-topology-visualizer-4.5.0-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/4.5.0/tiger-topology-visualizer-4.5.0-standalone.jar</a></p>
+You can download the standalone JAR from the Maven repository: <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/5.0.0/tiger-topology-visualizer-5.0.0-standalone.jar" class="bare">https://repo1.maven.org/maven2/de/gematik/test/tiger-topology-visualizer/5.0.0/tiger-topology-visualizer-5.0.0-standalone.jar</a></p>
 </div>
 <div class="paragraph">
 <p>and run it with:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-4.5.0-standalone.jar</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">java -jar tiger-topology-visualizer-5.0.0-standalone.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -15373,7 +15562,7 @@ Then  TGR CANOPY contains proxied host api.example.com</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2026-10-28 15:49:09 +0100
+Last updated 2026-11-24 14:43:18 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
