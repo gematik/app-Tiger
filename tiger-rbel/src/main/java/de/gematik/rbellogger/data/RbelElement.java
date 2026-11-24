@@ -35,7 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -55,11 +57,13 @@ public class RbelElement extends RbelPathAble<RbelElement> {
     RbelJexlExecutor.initialize();
   }
 
-  private final String uuid;
+  private static final AtomicReferenceFieldUpdater<RbelElement, String> UUID_FIELD =
+      AtomicReferenceFieldUpdater.newUpdater(RbelElement.class, String.class, "uuid");
+
+  private volatile String uuid;
   public Optional<Long> sequenceNumber = Optional.empty();
   private final RbelContent content;
-  private WeakReference<Triple<String, Charset, Integer>> rawStringContent =
-      new WeakReference<>(null);
+  private WeakReference<Triple<String, Charset, Integer>> rawStringContent;
 
   private final RbelElement parentNode;
   private final Queue<RbelFacet> facets = new ObservableQueue<>(this::triggerFacetMetadataUpdate);
@@ -69,27 +73,35 @@ public class RbelElement extends RbelPathAble<RbelElement> {
   private long size;
   @Setter private long conversionTimeInNanos = 0;
 
+  // only the root of a tree is ever listened to, so the others never create the list
   @Getter(AccessLevel.NONE)
-  private final AtomicLong facetMetadataVersion = new AtomicLong(0);
+  private CopyOnWriteArrayList<Runnable> facetMetadataUpdateListeners;
 
-  @Getter(AccessLevel.NONE)
-  private final List<Runnable> facetMetadataUpdateListeners = new CopyOnWriteArrayList<>();
-
-  public void addFacetMetadataUpdateListener(Runnable listener) {
+  public synchronized void addFacetMetadataUpdateListener(Runnable listener) {
+    if (facetMetadataUpdateListeners == null) {
+      facetMetadataUpdateListeners = new CopyOnWriteArrayList<>();
+    }
     facetMetadataUpdateListeners.add(listener);
   }
 
-  public void removeFacetMetadataUpdateListener(Runnable listener) {
-    facetMetadataUpdateListeners.remove(listener);
+  public synchronized void removeFacetMetadataUpdateListener(Runnable listener) {
+    if (facetMetadataUpdateListeners != null) {
+      facetMetadataUpdateListeners.remove(listener);
+    }
   }
 
   public void triggerFacetMetadataUpdate() {
-    facetMetadataVersion.incrementAndGet();
     if (parentNode != null) {
       parentNode.triggerFacetMetadataUpdate();
       return;
     }
-    facetMetadataUpdateListeners.forEach(Runnable::run);
+    final List<Runnable> listeners;
+    synchronized (this) {
+      listeners = facetMetadataUpdateListeners;
+    }
+    if (listeners != null) {
+      listeners.forEach(Runnable::run);
+    }
   }
 
   public byte[] getRawContent() {
@@ -130,11 +142,7 @@ public class RbelElement extends RbelPathAble<RbelElement> {
       RbelContent content,
       RbelElement parentNode,
       Optional<Charset> charset) {
-    if (StringUtils.isNotEmpty(uuid)) {
-      this.uuid = uuid;
-    } else {
-      this.uuid = UUID.randomUUID().toString();
-    }
+    this.uuid = StringUtils.isNotEmpty(uuid) ? uuid : null;
     this.content = content;
     this.parentNode = parentNode;
     this.charset = Objects.requireNonNullElseGet(charset, Optional::empty);
@@ -145,9 +153,19 @@ public class RbelElement extends RbelPathAble<RbelElement> {
     return new Builder();
   }
 
+  /** Only a message has a uuid that anybody needs, so the others get theirs when asked. */
+  public String getUuid() {
+    String result = uuid;
+    if (result == null) {
+      UUID_FIELD.compareAndSet(this, null, UUID.randomUUID().toString());
+      result = uuid;
+    }
+    return result;
+  }
+
   public Builder toBuilder() {
     return new Builder()
-        .uuid(uuid)
+        .uuid(getUuid())
         .content(content)
         .parentNode(parentNode)
         .charset(charset.orElse(null));
@@ -271,6 +289,22 @@ public class RbelElement extends RbelPathAble<RbelElement> {
         .filter(e -> e.getValue() != null);
   }
 
+  @Override
+  public List<RbelElement> getChildNodes() {
+    List<RbelElement> children = null;
+    for (RbelFacet facet : facets) {
+      for (Entry<String, RbelElement> child : facet.getChildElements().entries()) {
+        if (child.getValue() != null) {
+          if (children == null) {
+            children = new ArrayList<>();
+          }
+          children.add(child.getValue());
+        }
+      }
+    }
+    return children == null ? List.of() : Collections.unmodifiableList(children);
+  }
+
   public Stream<RbelElement> traverseNestedMembers() {
     return new RecursiveTreeIterator<RbelElement>(
             getChildNodes().iterator(),
@@ -318,6 +352,58 @@ public class RbelElement extends RbelPathAble<RbelElement> {
         .toList();
   }
 
+  /**
+   * What {@code findRbelPathMembers("$..<key>")} finds, in the same order: the descendants in
+   * document order, each with the children it has under the key, and this element's own last. It is
+   * found by walking the tree once instead of evaluating the RbelPath step by step on a list of all
+   * nodes.
+   */
+  public List<RbelElement> findAllInTreeWithKey(String key) {
+    return findAllInTreeWithKey(key, element -> true);
+  }
+
+  /**
+   * Like {@link #findAllInTreeWithKey(String)}, but the walk only enters the subtree of an element
+   * if {@code descendInto} accepts it. The element itself is still looked at.
+   */
+  public List<RbelElement> findAllInTreeWithKey(String key, Predicate<RbelElement> descendInto) {
+    final Set<RbelElement> found = new LinkedHashSet<>();
+    RecursiveTreeIterator.forEachInPreOrder(
+        this,
+        (node, addChild) -> {
+          if (node == this) {
+            node.forEachChild((childKey, child) -> addChild.accept(child));
+          } else if (descendInto.test(node)) {
+            node.forEachChild(
+                (childKey, child) -> {
+                  collectIfKeyMatches(key, childKey, child, found);
+                  addChild.accept(child);
+                });
+          }
+        },
+        node -> {});
+    forEachChild((childKey, child) -> collectIfKeyMatches(key, childKey, child, found));
+    return found.stream().filter(RbelElement::shouldElementBeKeptInFinalResult).toList();
+  }
+
+  private static void collectIfKeyMatches(
+      String key, String childKey, RbelElement child, Set<RbelElement> found) {
+    if (childKey.equals(key)) {
+      found.addAll(child.descendToContentNodeIfAdvised());
+    }
+  }
+
+  /** Hands over each child with its key without building a list of them. */
+  private void forEachChild(BiConsumer<String, RbelElement> action) {
+    for (RbelFacet facet : facets) {
+      for (Entry<String, RbelElement> child : facet.getChildElements().entries()) {
+        if (child.getValue() != null) {
+          action.accept(child.getKey(), child.getValue());
+        }
+      }
+    }
+  }
+
   @Override
   public List<RbelElement> findRbelPathMembers(String rbelPath) {
     return new RbelPathExecutor<>(this, rbelPath).execute();
@@ -330,7 +416,8 @@ public class RbelElement extends RbelPathAble<RbelElement> {
       return null;
     } else {
       synchronized (content) {
-        Triple<String, Charset, Integer> cachedValue = rawStringContent.get();
+        Triple<String, Charset, Integer> cachedValue =
+            rawStringContent == null ? null : rawStringContent.get();
         var elementCharset = getElementCharset();
         if (cachedValue == null
             || !elementCharset.equals(cachedValue.getMiddle())
@@ -359,7 +446,7 @@ public class RbelElement extends RbelPathAble<RbelElement> {
   @Override
   public String toString() {
     return "[RbelElement ("
-        + uuid
+        + getUuid()
         + ") with "
         + Optional.ofNullable(content)
             .map(RbelContent::size)

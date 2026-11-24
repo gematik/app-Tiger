@@ -25,8 +25,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
+import de.gematik.rbellogger.util.RbelContent;
 import lombok.AllArgsConstructor;
-import org.bouncycastle.util.Arrays;
 
 @AllArgsConstructor
 public class RbelJwtSignatureWriter implements RbelElementWriter {
@@ -43,11 +43,11 @@ public class RbelJwtSignatureWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     if (oldTargetElement.getFacetOrFail(RbelJwtSignature.class).getVerifiedUsing()
         == oldTargetModifiedChild) {
-      return Arrays.concatenate(VERIFIED_USING_MARKER, newContent);
+      return RbelContent.concat(RbelContent.wrap(VERIFIED_USING_MARKER), newContent);
     }
     return newContent;
   }

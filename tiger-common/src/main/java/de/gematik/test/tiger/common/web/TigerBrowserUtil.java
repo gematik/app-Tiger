@@ -25,17 +25,23 @@ import de.gematik.test.tiger.common.Ansi;
 import java.awt.Desktop;
 import java.awt.Desktop.Action;
 import java.awt.HeadlessException;
-import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.ThrowingConsumer;
 
 @Slf4j
 public class TigerBrowserUtil {
 
-  static ThrowingConsumer<String[]> commandExecutor = Runtime.getRuntime()::exec;
+  private static final int COMMAND_EXIT_TIMEOUT_SECONDS = 2;
+
+  static ThrowingConsumer<String[]> commandExecutor = TigerBrowserUtil::runCommand;
 
   static BrowserOpener desktopBrowser =
       uri -> {
@@ -61,19 +67,23 @@ public class TigerBrowserUtil {
       if (url.startsWith("http")) {
         uri = new URI(url);
       } else {
-        uri = new File(url).toURI();
+        uri = Path.of(url).toUri();
       }
 
-      if (tryOpen("Java Desktop API", purpose, url, () -> desktopBrowser.open(uri))) return;
+      List<String> failures = new ArrayList<>();
+      if (tryOpen("Java Desktop API", purpose, url, failures, () -> desktopBrowser.open(uri)))
+        return;
       if (tryOpen(
           "xdg-open",
           purpose,
           url,
+          failures,
           () -> commandExecutor.accept(new String[] {"xdg-open", uri.toString()}))) return;
       if (tryOpen(
           "wslview",
           purpose,
           url,
+          failures,
           () -> commandExecutor.accept(new String[] {"wslview", uri.toString()}))) return;
 
       String os = System.getProperty("os.name").toLowerCase();
@@ -83,7 +93,10 @@ public class TigerBrowserUtil {
       } else if (os.contains("mac")) {
         commandExecutor.accept(new String[] {"open", uri.toString()});
       } else {
-        log.error("Unable to open browser for {}: no working method found", purpose);
+        log.error(
+            "Unable to open browser for {}: no working method found ({})",
+            purpose,
+            String.join("; ", failures));
         return;
       }
       log.info(Ansi.colorize(purpose + " " + url, RbelAnsiColors.BLUE_BOLD));
@@ -99,7 +112,7 @@ public class TigerBrowserUtil {
   }
 
   private static boolean tryOpen(
-      String method, String purpose, String url, ThrowingRunnable action) {
+      String method, String purpose, String url, List<String> failures, ThrowingRunnable action) {
     try {
       log.info("Starting {} via {}", purpose, method);
       action.run();
@@ -107,7 +120,28 @@ public class TigerBrowserUtil {
       return true;
     } catch (RuntimeException | IOException e) {
       log.debug("{} failed ({}), trying next method", method, e.getMessage());
+      failures.add(method + ": " + e.getMessage());
       return false;
+    }
+  }
+
+  /**
+   * A launcher such as xdg-open may stay alive as long as the browser it started, so a command that
+   * is still running after the timeout counts as started successfully.
+   */
+  static void runCommand(String[] command) throws IOException {
+    Process process =
+        new ProcessBuilder(command)
+            .redirectOutput(Redirect.DISCARD)
+            .redirectError(Redirect.DISCARD)
+            .start();
+    try {
+      if (process.waitFor(COMMAND_EXIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+          && process.exitValue() != 0) {
+        throw new IOException(command[0] + " exited with code " + process.exitValue());
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 

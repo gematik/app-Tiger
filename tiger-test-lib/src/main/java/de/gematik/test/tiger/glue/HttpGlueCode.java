@@ -24,7 +24,6 @@ import static de.gematik.test.tiger.lib.TigerHttpClient.*;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.glue.annotation.FirstColumnKeyTable;
 import de.gematik.test.tiger.glue.annotation.FirstRowKeyTable;
 import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.datatable.DataTable;
@@ -32,8 +31,13 @@ import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.config.HeaderConfig;
 import io.restassured.config.RedirectConfig;
+import io.restassured.http.Header;
+import io.restassured.http.Headers;
 import io.restassured.http.Method;
+import io.restassured.specification.FilterableRequestSpecification;
+import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -91,12 +95,14 @@ public class HttpGlueCode {
    *
    * <pre>
    *     When TGR send empty GET request to "${myAddress}" with headers:
-   *      | name | bob |
-   *      | age  | 27  |
+   *      | name | age |
+   *      | bob  | 27  |
    * </pre>
    *
    * This will add two headers (name and age) with the respective values "bob" and "27" on top of
-   * the headers which are used by default.
+   * the headers which are used by default. To send a header multiple times, repeat its name in the
+   * first row and provide the corresponding values in the second row, where the header permits
+   * multiple values.
    *
    * @param method HTTP request method (see {@link Method})
    * @param address target address
@@ -110,19 +116,18 @@ public class HttpGlueCode {
           + " sendet:")
   @Dann("TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:")
   @ResolvableArgument
-  @FirstColumnKeyTable
+  @FirstRowKeyTable
   public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
-    Map<String, String> defaultHeaders =
-        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
-    defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
-    executeCommandWithContingentWait(
-        () -> givenDefaultSpec().headers(defaultHeaders).request(method, address));
+    Headers headers = resolveCustomHeaders(customHeaders);
+    executeCommandWithContingentWait(() -> requestWithHeaders(headers).request(method, address));
   }
 
   /**
    * Sends an empty request via the selected method and expands the list of default headers with the
    * headers provided by the caller. Placeholders in address and in the data table will be resolved.
+   * To send a header multiple times, repeat its name in the first row and provide the corresponding
+   * values in the second row, where the header permits multiple values.
    *
    * <p>This method is NON-BLOCKING, meaning it will not wait for the response before continuing the
    * test.
@@ -140,15 +145,69 @@ public class HttpGlueCode {
       "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten"
           + " mit folgenden Headern:")
   @ResolvableArgument
-  @FirstColumnKeyTable
+  @FirstRowKeyTable
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} non-blocking request with headers to {}", method, address);
-    Map<String, String> defaultHeaders =
-        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
-    defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
-    executeCommandInBackground(
-        () -> givenDefaultSpec().headers(defaultHeaders).request(method, address));
+    Headers headers = resolveCustomHeaders(customHeaders);
+    executeCommandInBackground(() -> requestWithHeaders(headers).request(method, address));
+  }
+
+  private Headers resolveCustomHeaders(DataTable customHeaders) {
+    List<List<String>> rows = customHeaders.cells();
+    if (rows.size() != 2) {
+      throw new AssertionError(
+          "Expected exactly one entry for data table, got " + Math.max(0, rows.size() - 1));
+    }
+    var headers = new ArrayList<Header>();
+    var customNames = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    for (int i = 0; i < rows.getFirst().size(); i++) {
+      String name = resolveToString(rows.getFirst().get(i));
+      String value = resolveToString(rows.get(1).get(i));
+      customNames.add(name);
+      headers.add(new Header(name, value));
+    }
+    TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER)
+        .forEach(
+            (name, value) -> {
+              if (!customNames.contains(name)) {
+                headers.add(new Header(name, value));
+              }
+            });
+    return new Headers(headers);
+  }
+
+  private RequestSpecification requestWithHeaders(Headers headers) {
+    RequestSpecification request = givenDefaultSpec();
+    var queryable = (QueryableRequestSpecification) request;
+    HeaderConfig existingConfig = queryable.getConfig().getHeaderConfig();
+    var seen = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    var repeatedOverwritten = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    for (Header header : headers) {
+      if (!seen.add(header.getName())
+          && existingConfig.shouldOverwriteHeaderWithName(header.getName())) {
+        repeatedOverwritten.add(header.getName());
+      }
+    }
+    if (!repeatedOverwritten.isEmpty()) {
+      var filterable = (FilterableRequestSpecification) request;
+      repeatedOverwritten.forEach(filterable::removeHeader);
+      var overwritten = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+      queryable.getHeaders().forEach(header -> seen.add(header.getName()));
+      for (String name : seen) {
+        if (!repeatedOverwritten.contains(name)
+            && existingConfig.shouldOverwriteHeaderWithName(name)) {
+          overwritten.add(name);
+        }
+      }
+      HeaderConfig headerConfig =
+          overwritten.isEmpty()
+              ? existingConfig.mergeHeadersWithName(repeatedOverwritten.first())
+              : existingConfig.overwriteHeadersWithName(
+                  overwritten.first(), overwritten.stream().skip(1).toArray(String[]::new));
+      request.config(queryable.getConfig().headerConfig(headerConfig));
+    }
+    return request.headers(headers);
   }
 
   /**

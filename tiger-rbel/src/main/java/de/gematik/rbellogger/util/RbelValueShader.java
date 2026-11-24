@@ -135,6 +135,9 @@ public class RbelValueShader {
 
     @Override
     public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+      if (jexlNoteMap.isEmpty()) {
+        return;
+      }
       addNote(rbelElement);
       rbelElement.getChildNodesStream().forEach(child -> consumeElement(child, converter));
     }

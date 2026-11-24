@@ -43,8 +43,13 @@ public class RbelX5cKeyReader extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+    if (!RbelJsonFacet.isRootOfDocument(rbelElement)) {
+      return;
+    }
     final List<RbelElement> elementList =
-        rbelElement.findRbelPathMembers("$..x5c").stream()
+        rbelElement
+            .findAllInTreeWithKey("x5c", element -> !RbelJsonFacet.isRootOfDocument(element))
+            .stream()
             .filter(el -> el.hasFacet(RbelJsonFacet.class))
             .toList();
     for (RbelElement x5cElement : elementList) {

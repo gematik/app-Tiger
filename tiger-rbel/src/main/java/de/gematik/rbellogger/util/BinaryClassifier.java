@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021-2025 gematik GmbH
+ * Copyright 2021-2026 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@
  */
 package de.gematik.rbellogger.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import lombok.SneakyThrows;
@@ -37,28 +39,77 @@ public class BinaryClassifier {
   private BinaryClassifier() {}
 
   private static final int CHARS_TO_CHECK = 512;
+  private static final int MAX_BYTES_PER_CHAR = 4;
 
-  @SneakyThrows
   public static boolean isBinary(byte[] data) {
-    try (var stream = new ByteArrayInputStream(data)) {
-      return isBinary(stream);
+    int limit = Math.min(data.length, CHARS_TO_CHECK);
+    int position = 0;
+    while (position < limit && data[position] >= 0) {
+      if (isForbiddenControl(data[position])) {
+        return true;
+      }
+      position++;
     }
+    return position < limit && isBinaryUtf8(data, position, data.length - position, position);
+  }
+
+  /**
+   * The same classification without copying the content. The chunks are searched in place for the
+   * first byte that is not plain text, which ends the search for content that is binary early. Only
+   * from the first non-ASCII character on, the bytes that the remaining characters can take are
+   * copied for the decoder.
+   */
+  public static boolean isBinary(RbelContent data) {
+    int size = data.size();
+    int limit = Math.min(size, CHARS_TO_CHECK);
+    int position =
+        limit == 0 ? -1 : data.indexOfFirst(b -> b < 0 || isForbiddenControl(b), 0, limit);
+    if (position < 0) {
+      return false;
+    }
+    if (data.get(position) >= 0) {
+      return true;
+    }
+    int end = Math.min(size, position + (CHARS_TO_CHECK - position) * MAX_BYTES_PER_CHAR);
+    byte[] window = data.toByteArray(position, end);
+    return isBinaryUtf8(window, 0, window.length, position);
+  }
+
+  private static boolean isBinaryUtf8(byte[] bytes, int offset, int length, int charsChecked) {
+    var decoder = newUtf8Decoder();
+    var chars = CharBuffer.allocate(CHARS_TO_CHECK - charsChecked);
+    if (decoder.decode(ByteBuffer.wrap(bytes, offset, length), chars, true).isError()) {
+      return true;
+    }
+    chars.flip();
+    while (chars.hasRemaining()) {
+      if (isForbiddenControl(chars.get())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static CharsetDecoder newUtf8Decoder() {
+    return StandardCharsets.UTF_8
+        .newDecoder()
+        .onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT);
+  }
+
+  private static boolean isForbiddenControl(int ch) {
+    return Character.isISOControl(ch) && ch != '\t' && ch != '\n' && ch != '\r';
   }
 
   @SneakyThrows
   public static boolean isBinary(InputStream data) {
-    var decoder =
-        StandardCharsets.UTF_8
-            .newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .onUnmappableCharacter(CodingErrorAction.REPORT);
-    try (var reader = new InputStreamReader(data, decoder)) {
+    try (var reader = new InputStreamReader(data, newUtf8Decoder())) {
       for (int pos = 0; pos < CHARS_TO_CHECK; pos++) {
         int ch = reader.read();
         if (ch == -1) {
           break;
         }
-        if (Character.isISOControl(ch) && ch != '\t' && ch != '\n' && ch != '\r') {
+        if (isForbiddenControl(ch)) {
           return true;
         }
       }

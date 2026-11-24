@@ -22,6 +22,7 @@ package de.gematik.rbellogger.facets.jackson;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.io.IOException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.dataformat.cbor.CBORMapper;
@@ -47,6 +48,48 @@ public class RbelCborConverter extends AbstractJacksonConverter<RbelCborFacet> {
     if (target.hasFacet(RbelRootFacet.class)) {
       return null;
     }
+    int firstByte = target.getContent().get(0) & 0xFF;
+    if (firstByte < 0x80 || firstByte > 0xDF) {
+      return null;
+    }
+    if (isCertainlyNoCbor(target.getContent())) {
+      return null;
+    }
     return getMapper().readTree(target.getContent().toInputStream());
+  }
+
+  /**
+   * True only if the first item of the content is certainly not a well-formed CBOR array or map, so
+   * that Jackson would only build an exception, or a scalar the converter does not take. Only the
+   * header of that item is looked at, whatever fails deeper inside it is left to Jackson.
+   */
+  static boolean isCertainlyNoCbor(RbelContent content) {
+    final int initial = content.get(0) & 0xFF;
+    final int major = initial >> 5;
+    final int info = initial & 0x1F;
+    int remaining = content.size() - 1;
+    if (info == 31) {
+      return major <= 1 || major >= 6 || remaining == 0;
+    }
+    if (info > 27) {
+      return true;
+    }
+    long argument = info;
+    if (info >= 24) {
+      final int argumentBytes = 1 << (info - 24);
+      if (argumentBytes > remaining) {
+        return true;
+      }
+      argument = 0;
+      for (int i = 1; i <= argumentBytes; i++) {
+        argument = (argument << 8) | (content.get(i) & 0xFF);
+      }
+      remaining -= argumentBytes;
+    }
+    return switch (major) {
+      case 2, 3, 4 -> argument < 0 || argument > remaining;
+      case 5 -> argument < 0 || argument > remaining / 2;
+      default -> false;
+    };
   }
 }

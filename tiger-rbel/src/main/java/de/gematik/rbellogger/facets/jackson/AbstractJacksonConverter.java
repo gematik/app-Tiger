@@ -108,11 +108,11 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
     if (node.isString()) {
       addFacetAndConvertNestedElement(parentElement, node.asString(), context);
     } else if (node.isFloatingPointNumber()) {
-      addFacetAndConvertNestedElement(parentElement, node.doubleValue(), context);
+      addFacetAndConvertPlainValue(parentElement, node.doubleValue(), context);
     } else if (node.isNumber()) {
-      addFacetAndConvertNestedElement(parentElement, node.longValue(), context);
+      addFacetAndConvertPlainValue(parentElement, node.longValue(), context);
     } else if (node.isBoolean()) {
-      addFacetAndConvertNestedElement(parentElement, node.booleanValue(), context);
+      addFacetAndConvertPlainValue(parentElement, node.booleanValue(), context);
     } else if (node.isBinary()) {
       final RbelElement nestedElement = new RbelElement(node.binaryValue(), parentElement);
       nestedElement.addFacet(new RbelBinaryFacet());
@@ -148,6 +148,13 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
       augmentRbelElementWithFacet(entry.getValue(), context, newChild);
       elementMap.put(entry.getKey(), newChild);
     }
+  }
+
+  private void addFacetAndConvertPlainValue(
+      RbelElement parentElement, Object value, RbelConversionExecutor context) {
+    final RbelElement nestedElement = RbelElement.wrap(parentElement, value);
+    context.convertPlainValue(nestedElement);
+    parentElement.addFacet(new RbelNestedFacet(nestedElement));
   }
 
   private void addFacetAndConvertNestedElement(

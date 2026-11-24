@@ -23,8 +23,8 @@
   <version>1.2.0-SNAPSHOT</version>
 
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
 
     <version.maven.failsafe>3.3.1</version.maven.failsafe>
     <!-- please adapt Tiger version property to the most current one obtained from -->

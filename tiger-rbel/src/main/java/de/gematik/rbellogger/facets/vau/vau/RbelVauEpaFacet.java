@@ -35,17 +35,25 @@ import de.gematik.rbellogger.key.RbelVauKey;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.util.RbelContent;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.bouncycastle.util.encoders.Hex;
 
 @RequiredArgsConstructor
 @Builder
 @Getter
 public class RbelVauEpaFacet implements RbelFacet {
+
+  public static final int KEY_ID_LENGTH = 32;
+
+  public static String keyIdHexOf(RbelContent message) {
+    return Hex.toHexString(message.toByteArray(0, KEY_ID_LENGTH));
+  }
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(

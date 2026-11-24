@@ -115,6 +115,27 @@ class XmlConverterTest {
   }
 
   @Test
+  void aParseErrorDoesNotAffectTheNextDocument() {
+    val converter = RbelLogger.build().getRbelConverter();
+    converter.convertElement("<a><b></a>".getBytes(StandardCharsets.UTF_8), null);
+
+    val next = converter.convertElement("<a><b>x</b></a>".getBytes(StandardCharsets.UTF_8), null);
+
+    assertThat(next).hasStringContentEqualToAtPosition("$.a.b.text", "x");
+  }
+
+  @Test
+  void anEntityDefinedInOneDocumentDoesNotLeakIntoTheNext() {
+    val converter = RbelLogger.build().getRbelConverter();
+    converter.convertElement(
+        "<!DOCTYPE a [<!ENTITY e \"leaked\">]><a>&e;</a>".getBytes(StandardCharsets.UTF_8), null);
+
+    val next = converter.convertElement("<a>&e;</a>".getBytes(StandardCharsets.UTF_8), null);
+
+    assertThat(next.printTreeStructureWithoutColors()).doesNotContain("leaked");
+  }
+
+  @Test
   void nestedXmlWithOtherEncodingThanParent_shouldUseCorrectCharset() {
     val parent = new RbelElement(new byte[] {}, null, Optional.of(StandardCharsets.UTF_8));
     val xml =

@@ -25,13 +25,31 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntPredicate;
 import javax.annotation.Nullable;
 
 @SuppressWarnings("java:S1610")
 public abstract class RbelContent {
   public static RbelContent of(@Nullable byte[] content) {
     return RbelContentBase.of(content);
+  }
+
+  public static RbelContent wrap(byte[] content) {
+    return RbelContentBase.wrap(content);
+  }
+
+  public static RbelContent of(String content, Charset charset) {
+    return wrap(content.getBytes(charset));
+  }
+
+  public static RbelContent concat(RbelContent... parts) {
+    return concat(Arrays.asList(parts));
+  }
+
+  public static RbelContent concat(List<RbelContent> parts) {
+    return RbelContentConcat.create(parts);
   }
 
   public static RbelContent of(List<RbelContent> content) {
@@ -122,11 +140,41 @@ public abstract class RbelContent {
 
   public abstract List<RbelContent> split(byte[] delimiter);
 
+  /**
+   * The index of the first byte in {@code [from, to)} of this content that the predicate accepts,
+   * or -1. Nothing is copied, and the search ends at the first match.
+   */
+  public int indexOfFirst(IntPredicate matches, int from, int to) {
+    int offset = offsetInBase();
+    int found = getBaseContent().indexOfFirstInBase(matches, offset + from, offset + to);
+    return found < 0 ? -1 : found - offset;
+  }
+
+  /** Position of this content in its base content; the base itself starts at 0. */
+  public int offsetInBase() {
+    return 0;
+  }
+
+  record Segment(RbelContentBase base, int start, int size) {
+
+    int end() {
+      return start + size;
+    }
+  }
+
+  List<Segment> segments() {
+    return isEmpty() ? List.of() : List.of(new Segment(getBaseContent(), offsetInBase(), size()));
+  }
+
   public abstract boolean contains(byte[] crlfBytes);
 
   public abstract void truncate(int usedBytes);
 
   public String toReadableString() {
-    return new String(toByteArray(), StandardCharsets.UTF_8);
+    return toReadableString(StandardCharsets.UTF_8);
+  }
+
+  public String toReadableString(Charset charset) {
+    return new String(toByteArray(), charset);
   }
 }

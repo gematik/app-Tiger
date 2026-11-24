@@ -306,8 +306,8 @@ class TestHttpClientSteps {
   @Test
   void sendRequestWithCustomHeader() { // NOSONAR
     List<List<String>> data = new ArrayList<>();
-    data.add(List.of("schmoo", "lar"));
-    data.add(List.of("foo", "bar"));
+    data.add(List.of("schmoo", "foo"));
+    data.add(List.of("lar", "bar"));
     httpGlueCode.sendEmptyRequestWithHeaders(
         Method.GET, createAddress("http://httpbin/get"), DataTable.create(data, tableConverter));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
@@ -337,7 +337,8 @@ class TestHttpClientSteps {
   void sendGetRequestWithCustomAndDefaultHeader() { // NOSONAR
     httpGlueCode.setDefaultHeader("key", "value");
     List<List<String>> data = new ArrayList<>();
-    data.add(List.of("foo", "bar"));
+    data.add(List.of("foo"));
+    data.add(List.of("bar"));
     httpGlueCode.sendEmptyRequestWithHeaders(
         Method.GET, createAddress("http://httpbin/get"), DataTable.create(data, tableConverter));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
@@ -345,6 +346,23 @@ class TestHttpClientSteps {
         tigerResolvedString("!{rbel:currentRequestAsString('$.header.key')}"), "value");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.header.foo')}"), "bar");
+  }
+
+  @Test
+  void headerStepsRejectTablesWithoutExactlyOneValueRow() {
+    URI address = createAddress("http://httpbin/get");
+    for (List<List<String>> rows :
+        List.of(
+            List.of(List.of("name")), List.of(List.of("name"), List.of("one"), List.of("two")))) {
+      DataTable table = DataTable.create(rows, tableConverter);
+      assertThatThrownBy(() -> httpGlueCode.sendEmptyRequestWithHeaders(Method.GET, address, table))
+          .isInstanceOf(AssertionError.class)
+          .hasMessageContaining("Expected exactly one entry for data table");
+      assertThatThrownBy(
+              () -> httpGlueCode.sendEmptyRequestWithHeadersNonBlocking(Method.GET, address, table))
+          .isInstanceOf(AssertionError.class)
+          .hasMessageContaining("Expected exactly one entry for data table");
+    }
   }
 
   @Test

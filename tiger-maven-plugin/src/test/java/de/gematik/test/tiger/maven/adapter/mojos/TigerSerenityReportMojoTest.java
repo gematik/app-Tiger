@@ -22,15 +22,16 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.readString;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
+import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,6 +55,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -180,12 +182,19 @@ class TigerSerenityReportMojoTest {
           + " serenity report")
   @SneakyThrows
   void testIfTheBrowserOpensWithSerenityReport() {
-    assertThatNoException()
-        .isThrownBy(
-            () -> {
-              underTest.setOpenSerenityReportInBrowser(true);
-              underTest.execute();
-            });
+    prepareReportDir();
+    underTest.setOpenSerenityReportInBrowser(true);
+
+    try (MockedStatic<TigerBrowserUtil> browserUtil = mockStatic(TigerBrowserUtil.class)) {
+      executeIgnoringMojoFailureException();
+
+      Path indexHtml = reportDir.resolve("index.html");
+      assertTrue(Files.exists(indexHtml));
+      browserUtil.verify(
+          () ->
+              TigerBrowserUtil.openUrlInBrowser(
+                  indexHtml.toString(), "browser for serenity report"));
+    }
   }
 
   @SneakyThrows

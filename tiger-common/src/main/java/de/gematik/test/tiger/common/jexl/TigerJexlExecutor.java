@@ -21,8 +21,11 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
+import de.gematik.test.tiger.common.util.JandexIndexReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.*;
 import java.util.function.BiFunction;
 import lombok.AccessLevel;
@@ -32,11 +35,15 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.DotName;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerJexlExecutor {
 
+  private static final DotName INLINE_JEXL_METHODS_ANNOTATION =
+      DotName.createSimple(InlineJexlMethods.class.getName());
   private static final Map<String, Object> NAMESPACE_MAP = new HashMap<>();
   private static final List<TigerJexlContextDecorator> CONTEXT_DECORATORS = new ArrayList<>();
   @Setter @Getter private static boolean activateJexlDebugging = false;
@@ -59,19 +66,52 @@ public class TigerJexlExecutor {
   }
 
   private static void registerAdditionalInlineMethods() {
-    try (ScanResult scanResult =
-        new ClassGraph()
-            .acceptPackages("de.gematik.test.tiger.common.jexl")
-            .enableAnnotationInfo()
-            .scan()) {
-      scanResult
-          .getClassesWithAnnotation(InlineJexlMethods.class.getName())
-          .loadClasses()
-          .forEach(
-              type -> {
-                var namespacePrefix = type.getAnnotation(InlineJexlMethods.class).namespacePrefix();
-                NAMESPACE_MAP.put(namespacePrefix, type);
-              });
+    NAMESPACE_MAP.putAll(
+        findIndexedNamespaces(JandexIndexReader.classLoaders(TigerJexlExecutor.class)));
+  }
+
+  static Map<String, Class<?>> findIndexedNamespaces(List<ClassLoader> loaders) {
+    Map<String, Class<?>> namespaces = new LinkedHashMap<>();
+    Set<String> visitedClasses = new HashSet<>();
+    for (var match :
+        JandexIndexReader.findClassAnnotations(
+            loaders,
+            INLINE_JEXL_METHODS_ANNOTATION,
+            type -> Modifier.isPublic(type.flags()),
+            TigerJexlExecutor::indexReadException)) {
+      var annotation = match.annotation();
+      if (visitedClasses.add(annotation.target().asClass().name().toString())) {
+        var entry =
+            loadIndexedNamespace(
+                annotation, match.resource().classLoader(), match.resource().url());
+        namespaces.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return namespaces;
+  }
+
+  private static TigerJexlException indexReadException(String message, Exception cause) {
+    if (cause instanceof IOException ioException) {
+      return new TigerJexlException(message, new UncheckedIOException(ioException));
+    }
+    return new TigerJexlException(
+        message,
+        cause instanceof RuntimeException runtime ? runtime : new IllegalStateException(cause));
+  }
+
+  private static Map.Entry<String, Class<?>> loadIndexedNamespace(
+      AnnotationInstance annotation, ClassLoader loader, URL resource) {
+    String className = annotation.target().asClass().name().toString();
+    try {
+      String namespace = annotation.value("namespacePrefix").asString();
+      return new AbstractMap.SimpleImmutableEntry<>(
+          namespace, Class.forName(className, false, loader));
+    } catch (ClassNotFoundException e) {
+      throw new TigerJexlException(
+          "Unable to load inline JEXL methods " + className + " from " + resource,
+          new IllegalStateException(e));
+    } catch (IllegalArgumentException e) {
+      throw new TigerJexlException("Unable to read Jandex index " + resource, e);
     }
   }
 

@@ -53,8 +53,8 @@ Feature: Playwright Test feature
 
   Scenario: Request with custom header
     When TGR send empty GET request to "http://httpbin/not_a_file" with headers:
-      | foo    | bar |
-      | schmoo | lar |
+      | foo | schmoo |
+      | bar | lar    |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
     And TGR assert "!{rbel:currentRequestAsString('$.header.schmoo')}" matches "lar"
@@ -74,7 +74,8 @@ Feature: Playwright Test feature
   Scenario: Request with custom and default header
     Given TGR set default header "key" to "value"
     When TGR send empty GET request to "http://httpbin/not_a_file" with headers:
-      | foo | bar |
+      | foo |
+      | bar |
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
@@ -167,7 +168,8 @@ Feature: Playwright Test feature
   Scenario: Request for testing tooltips
     Given TGR set default header "key" to "value"
     When TGR send empty GET request to "http://httpbin/not_a_file" with headers:
-      | foo | bar |
+      | foo |
+      | bar |
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"

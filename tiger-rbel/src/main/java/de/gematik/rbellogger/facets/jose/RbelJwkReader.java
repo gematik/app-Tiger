@@ -44,10 +44,14 @@ public class RbelJwkReader extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+    if (!RbelJsonFacet.isRootOfDocument(rbelElement)) {
+      return;
+    }
     final List<RbelElement> keysList =
-        rbelElement.findRbelPathMembers("$..keys").stream()
+        rbelElement
+            .findAllInTreeWithKey("keys", element -> !RbelJsonFacet.isRootOfDocument(element))
+            .stream()
             .filter(element -> element.hasFacet(RbelJsonFacet.class))
-            .filter(el -> el.hasFacet(RbelJsonFacet.class))
             .map(el -> el.getFacet(RbelListFacet.class))
             .filter(Optional::isPresent)
             .map(Optional::get)

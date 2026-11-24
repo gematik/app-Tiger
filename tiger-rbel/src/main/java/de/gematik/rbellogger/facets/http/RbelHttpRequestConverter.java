@@ -74,10 +74,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
     val pathElement = converter.convertElement(path, targetElement);
 
-    var stringContent = targetElement.getRawStringContent();
-    if (stringContent == null) {
-      return;
-    }
+    var stringContent = decodeHead(targetElement, endOfHeadIndex + 2 * eol.length());
 
     final RbelElement headerElement =
         extractHeaderFromMessage(targetElement, converter, eol, stringContent);

@@ -51,13 +51,7 @@ public class RbelJsonFacet implements RbelFacet {
           public boolean checkForRendering(RbelElement element) {
             return element
                 .getFacet(RbelJsonFacet.class)
-                .filter(
-                    jsonFacet ->
-                        element.getFacets().stream()
-                            .filter(RbelRootFacet.class::isInstance)
-                            .map(RbelRootFacet.class::cast)
-                            .map(RbelRootFacet::getRootFacet)
-                            .anyMatch(jsonFacet::equals))
+                .filter(json -> json.isRootOf(element))
                 .isPresent();
           }
 
@@ -95,5 +89,25 @@ public class RbelJsonFacet implements RbelFacet {
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<>();
+  }
+
+  /** Whether the element is the root of this JSON document, and not only a node inside of it. */
+  public boolean isRootOf(RbelElement element) {
+    for (RbelFacet facet : element.getFacets()) {
+      if (facet instanceof RbelRootFacet<?> root && root.getRootFacet() == this) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Whether the element is the root of a JSON document, and not only a node inside of one. */
+  public static boolean isRootOfDocument(RbelElement element) {
+    for (RbelFacet facet : element.getFacets()) {
+      if (facet instanceof RbelJsonFacet json) {
+        return json.isRootOf(element);
+      }
+    }
+    return false;
   }
 }

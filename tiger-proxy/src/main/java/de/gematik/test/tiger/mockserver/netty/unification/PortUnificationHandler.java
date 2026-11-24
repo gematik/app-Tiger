@@ -416,9 +416,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private void switchToBinary(ChannelHandlerContext ctx, ByteBuf msg) {
     addLastIfNotPresent(
-        ctx.pipeline(),
-        new BinaryHandler(
-            configuration, actionHandler.getHttpClient(), server.getBinaryModifierApplier()));
+        ctx.pipeline(), new BinaryHandler(configuration, actionHandler.getHttpClient()));
     // after switching to binary there is no coming back, and we can remove the port unification
     // handler
     ctx.pipeline().remove(this);

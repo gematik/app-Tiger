@@ -21,9 +21,26 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.RbelContent;
 
 public interface RbelElementWriter {
   boolean canWrite(RbelElement oldTargetElement);
 
-  byte[] write(RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent);
+  /**
+   * Writers that need the content as an array implement {@link #write(RbelElement, RbelElement,
+   * byte[])} instead; writers that can work on the content directly override this method.
+   */
+  default RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
+    return RbelContent.wrap(
+        write(oldTargetElement, oldTargetModifiedChild, newContent.toByteArray()));
+  }
+
+  default byte[] write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+    throw new UnsupportedOperationException(
+        getClass().getName()
+            + " must implement write(RbelElement, RbelElement, RbelContent) or write(RbelElement,"
+            + " RbelElement, byte[])");
+  }
 }

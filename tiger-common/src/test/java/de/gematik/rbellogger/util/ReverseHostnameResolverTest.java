@@ -29,6 +29,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -37,6 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ReverseHostnameResolverTest {
 
@@ -67,6 +71,134 @@ class ReverseHostnameResolverTest {
             name -> name.equals("popp-client") ? List.of(CLIENT) : List.of());
 
     assertThat(resolver.lookup(CLIENT)).contains("popp-client");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "testhub-local-vsdm-zeta-pdp-opa-1, testhub-local_testhub_network, vsdm-zeta-pdp-opa",
+    "testhub-local-popp-zeta-pep-1, testhub-local_default, popp-zeta-pep",
+    "testhub-ci-42-popp-client, testhub-ci-42_default, popp-client",
+    "testhub-123-vsdm-client, testhub-123_default, vsdm-client",
+    "testhub_local-vsdm-client-1, testhub_local_testhub_network, vsdm-client",
+    "testhub-local-service-42-1, testhub-local_default, service-42"
+  })
+  void shouldUseTheServiceAliasWhenItResolvesOnlyToTheContainerAddress(
+      String containerName, String networkName, String serviceName) {
+    final List<String> queries = new ArrayList<>();
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of(containerName + "." + networkName + "."),
+            name -> {
+              queries.add(name);
+              if (name.equals(containerName) || name.equals(serviceName)) {
+                return List.of(CLIENT);
+              }
+              throw new AssertionError("Unexpected DNS query: " + name);
+            });
+
+    assertThat(resolver.lookup(CLIENT)).contains(serviceName);
+    assertThat(queries).containsExactly(containerName, serviceName);
+  }
+
+  @Test
+  void shouldNotProbeShorterAliasesEvenIfTheyResolveToTheSameAddress() {
+    final List<String> queries = new ArrayList<>();
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address ->
+                Optional.of("testhub-local-vsdm-zeta-pdp-opa-1.testhub-local_testhub_network"),
+            name -> {
+              queries.add(name);
+              return List.of(CLIENT);
+            });
+
+    assertThat(resolver.lookup(CLIENT)).contains("vsdm-zeta-pdp-opa");
+    assertThat(queries).containsExactly("testhub-local-vsdm-zeta-pdp-opa-1", "vsdm-zeta-pdp-opa");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"vsdm-client", "vsdm-zeta-pdp-opa", "vsdm-client-42", "other-vsdm-client-1"})
+  void shouldNotProbeAliasesWithoutAMatchingProjectPrefix(String containerName) {
+    final List<String> queries = new ArrayList<>();
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of(containerName + ".testhub-local_testhub_network"),
+            name -> {
+              queries.add(name);
+              if (name.equals(containerName)) {
+                return List.of(CLIENT);
+              }
+              throw new AssertionError("Unexpected DNS query: " + name);
+            });
+
+    assertThat(resolver.lookup(CLIENT)).contains(containerName);
+    assertThat(queries).containsExactly(containerName);
+  }
+
+  @Test
+  void shouldKeepTheContainerNameWhenTheDerivedServiceAliasDoesNotResolve() {
+    final String containerName = "testhub-local-vsdm-client-1";
+    final List<String> queries = new ArrayList<>();
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of(containerName + ".testhub-local_default"),
+            name -> {
+              queries.add(name);
+              if (name.equals(containerName)) {
+                return List.of(CLIENT);
+              }
+              throw new UnknownHostException(name);
+            });
+
+    assertThat(resolver.lookup(CLIENT)).contains(containerName);
+    assertThat(queries).containsExactly(containerName, "vsdm-client");
+  }
+
+  @Test
+  void shouldNotDeriveAServiceNameFromACustomNetworkName() {
+    final List<String> queries = new ArrayList<>();
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of("testhub-local-vsdm-client-1.custom-network"),
+            name -> {
+              queries.add(name);
+              return List.of(CLIENT);
+            });
+
+    assertThat(resolver.lookup(CLIENT)).contains("testhub-local-vsdm-client-1");
+    assertThat(queries).containsExactly("testhub-local-vsdm-client-1");
+  }
+
+  @Test
+  void shouldKeepTheContainerNameWhenTheServiceAliasResolvesElsewhere() {
+    final String containerName = "testhub-local-vsdm-client-1";
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of(containerName + ".testhub-local_default"),
+            name -> name.equals(containerName) ? List.of(CLIENT) : List.of(ip(172, 18, 0, 20)));
+
+    assertThat(resolver.lookup(CLIENT)).contains(containerName);
+  }
+
+  @Test
+  void shouldKeepTheContainerNameWhenTheServiceAliasResolvesToMultipleReplicas() {
+    final InetAddress containerAddress = ip(172, 18, 0, 19);
+    final String containerName = "testhub-local-vsdm-zeta-pdp-opa-1";
+    final ReverseHostnameResolver resolver =
+        resolver(
+            address -> Optional.of(containerName + ".testhub-local_testhub_network"),
+            name -> {
+              if (name.equals(containerName)) {
+                return List.of(containerAddress);
+              }
+              if (name.equals("vsdm-zeta-pdp-opa")) {
+                return List.of(containerAddress, ip(172, 18, 0, 20));
+              }
+              return List.of();
+            });
+
+    assertThat(resolver.lookup(containerAddress)).contains(containerName);
   }
 
   @Test

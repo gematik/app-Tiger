@@ -149,7 +149,7 @@ public class RbelHttp2FrameConverter extends RbelConverterPlugin {
       // Non-DATA frame payloads (HPACK headers, settings, etc.) are always binary.
       // DATA frame payloads might be text, so use BinaryClassifier.
       if (frameType != Http2FrameType.DATA
-          || BinaryClassifier.isBinary(payloadElement.getContent().toInputStream())) {
+          || BinaryClassifier.isBinary(payloadElement.getContent())) {
         payloadElement.addFacet(new RbelBinaryFacet());
       }
       facetBuilder

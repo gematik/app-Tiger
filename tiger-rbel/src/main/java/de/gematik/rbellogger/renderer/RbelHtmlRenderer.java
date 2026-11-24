@@ -176,8 +176,7 @@ public class RbelHtmlRenderer {
   private static String printRawContentOfElement(
       final RbelElement el, final RbelHtmlRenderingToolkit renderingToolkit) {
     if (renderingToolkit.shouldRenderEntitiesWithSize(el.getSize())) {
-      if (el.hasFacet(RbelBinaryFacet.class)
-          || BinaryClassifier.isBinary(el.getContent().toInputStream())) {
+      if (el.hasFacet(RbelBinaryFacet.class) || BinaryClassifier.isBinary(el.getContent())) {
         return Hex.toHexString(el.getRawContent());
       } else {
         return el.getRawStringContent();

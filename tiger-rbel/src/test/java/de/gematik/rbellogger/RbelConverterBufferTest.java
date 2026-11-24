@@ -81,6 +81,23 @@ class RbelConverterBufferTest {
   }
 
   @Test
+  void fractionalBufferSize_shouldKeepAboutHalfAMegabyte() {
+    final String curlMessage = RandomStringUtils.insecure().nextAlphanumeric(5000);
+    final RbelLogger rbelLogger =
+        RbelLogger.build(
+            RbelConfiguration.builder().manageBuffer(true).rbelBufferSizeInMb(0.5).build());
+    RbelConverter rbelConverter = rbelLogger.getRbelConverter();
+
+    final int messagesInOneMegabyte = MB / curlMessage.getBytes().length + 1;
+    for (int i = 0; i < messagesInOneMegabyte; i++) {
+      rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
+    }
+
+    long sizeInBuffer = rbelLogger.getMessages().stream().mapToLong(RbelElement::getSize).sum();
+    assertThat(sizeInBuffer).isPositive().isLessThanOrEqualTo(MB / 2);
+  }
+
+  @Test
   void negativeBufferSize_shouldClearAllMessages() {
     final String curlMessage = RandomStringUtils.insecure().nextAlphanumeric(5000);
     final RbelLogger rbelLogger =

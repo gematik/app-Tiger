@@ -20,24 +20,32 @@
  */
 package de.gematik.rbellogger.modifier;
 
+import static de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet.KEY_ID_LENGTH;
+import static de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet.keyIdHexOf;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;
 import de.gematik.rbellogger.util.CryptoUtils;
+import de.gematik.rbellogger.util.RbelContent;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -59,6 +67,32 @@ public class RbelVauEpaWriter implements RbelElementWriter {
     return encMessage;
   }
 
+  @SneakyThrows
+  private static RbelContent encrypt(
+      RbelContent keyId,
+      RbelContent iv,
+      byte[] key,
+      byte[] head,
+      int headLength,
+      RbelContent tail) {
+    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC"); // NOSONAR
+    cipher.init(
+        Cipher.ENCRYPT_MODE,
+        new SecretKeySpec(key, "AES"),
+        new GCMParameterSpec(16 * 8, iv.toByteArray()));
+
+    final InputStream cleartext =
+        new SequenceInputStream(
+            new ByteArrayInputStream(head, 0, headLength), tail.toInputStream());
+    return RbelContent.from(
+        new SequenceInputStream(
+            Collections.enumeration(
+                List.of(
+                    keyId.toInputStream(),
+                    iv.toInputStream(),
+                    new CipherInputStream(cleartext, cipher)))));
+  }
+
   @Override
   public boolean canWrite(RbelElement oldTargetElement) {
     return oldTargetElement.hasFacet(RbelVauEpaFacet.class);
@@ -66,8 +100,8 @@ public class RbelVauEpaWriter implements RbelElementWriter {
 
   @SneakyThrows
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     final Optional<RbelKey> decryptionKey =
         oldTargetElement.getFacet(RbelVauEpaFacet.class).flatMap(RbelVauEpaFacet::getKeyUsed);
     if (decryptionKey.isEmpty()) {
@@ -77,39 +111,35 @@ public class RbelVauEpaWriter implements RbelElementWriter {
     final var oldEncryptedMessage =
         oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getEncryptedMessage().getContent();
     final byte[] oldCleartext =
-        CryptoUtils.decrypt(
-                oldEncryptedMessage,
-                oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getKeyUsed().get().getKey())
-            .get();
+        CryptoUtils.decrypt(oldEncryptedMessage, decryptionKey.get().getKey()).get();
     // for details see gemSpec_krypt, chapter 6
-    int headerLength =
-        java.nio.ByteBuffer.wrap((Arrays.copyOfRange(oldCleartext, 1 + 8, 1 + 8 + 4))).getInt();
-    int introLength = 1 + 8 + 4 + headerLength;
-    byte[] oldIv = oldEncryptedMessage.toByteArray(0, 12);
-    final byte[] newCleartext =
-        ArrayUtils.addAll(Arrays.copyOfRange(oldCleartext, 0, introLength), newContent);
-
-    final byte[] newVauMessage =
-        ArrayUtils.addAll(
-            Arrays.copyOfRange(oldTargetElement.getRawContent(), 0, 32),
-            encrypt(newCleartext, decryptionKey.get().getKey().getEncoded(), oldIv));
-    var splitVauMessage = splitVauMessage(newVauMessage);
-    log.info(
-        "splitted into {} and {}",
-        Base64.getEncoder().encodeToString(splitVauMessage.getLeft()),
-        Base64.getEncoder().encodeToString(splitVauMessage.getRight()));
-    return newVauMessage;
-  }
-
-  private Pair<byte[], byte[]> splitVauMessage(byte[] vauMessage) {
-    try {
-      byte[] keyID = new byte[32];
-      System.arraycopy(vauMessage, 0, keyID, 0, 32);
-      byte[] enc = new byte[vauMessage.length - 32];
-      System.arraycopy(vauMessage, 32, enc, 0, vauMessage.length - 32);
-      return Pair.of(keyID, enc);
-    } catch (ArrayIndexOutOfBoundsException e) {
-      throw new RbelModificationException("Unable to write VAU message", e);
+    int headerLength = ByteBuffer.wrap(oldCleartext, 1 + 8, 4).getInt();
+    long introLength = 1L + 8 + 4 + headerLength;
+    if (headerLength < 0 || introLength > oldCleartext.length) {
+      throw new RbelModifier.RbelModificationException(
+          "The VAU message can not be rewritten: its header would be "
+              + headerLength
+              + " bytes long, but it only has "
+              + oldCleartext.length
+              + " bytes of cleartext (a handshake message has no header length)");
     }
+
+    final RbelContent newVauMessage =
+        encrypt(
+            oldTargetElement.getContent().subArray(0, KEY_ID_LENGTH),
+            oldEncryptedMessage.subArray(0, 12),
+            decryptionKey.get().getKey().getEncoded(),
+            oldCleartext,
+            (int) introLength,
+            newContent);
+    log.atTrace()
+        .addArgument(() -> keyIdHexOf(newVauMessage))
+        .addArgument(
+            () ->
+                Base64.getEncoder()
+                    .encodeToString(
+                        newVauMessage.subArray(KEY_ID_LENGTH, newVauMessage.size()).toByteArray()))
+        .log("wrote VAU message with key id {} and body {}");
+    return newVauMessage;
   }
 }

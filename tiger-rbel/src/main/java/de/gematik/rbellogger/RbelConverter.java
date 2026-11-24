@@ -32,6 +32,7 @@ import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.ConverterPluginMap;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelValueShader;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
@@ -70,7 +71,7 @@ public class RbelConverter implements RbelConverterInterface {
           new SynchronousQueue<>(),
           new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
 
-  @Builder.Default int rbelBufferSizeInMb = 1024;
+  @Builder.Default double rbelBufferSizeInMb = 1024;
   @Builder.Default int parsingTimeoutInSeconds = 100;
   @Builder.Default boolean manageBuffer = false;
   @Builder.Default int skipParsingWhenMessageLargerThanKb = -1;
@@ -112,13 +113,25 @@ public class RbelConverter implements RbelConverterInterface {
 
   public RbelElement convertElement(
       RbelElement rbelElement, List<RbelConversionPhase> conversionPhases) {
+    return convert(rbelElement, conversionPhases, plugin -> true);
+  }
+
+  public RbelElement convertPlainValue(RbelElement plainValue) {
+    return convert(plainValue, conversionPhases, RbelConverterPlugin::handlesPlainValues);
+  }
+
+  private RbelElement convert(
+      RbelElement rbelElement,
+      List<RbelConversionPhase> conversionPhases,
+      Predicate<RbelConverterPlugin> pluginFilter) {
     return new RbelConversionExecutor(
             this,
             rbelElement,
             skipParsingWhenMessageLargerThanKb,
             rbelKeyManager,
             conversionPhases,
-            Instant.now().plusSeconds(parsingTimeoutInSeconds))
+            Instant.now().plusSeconds(parsingTimeoutInSeconds),
+            pluginFilter)
         .execute();
   }
 
@@ -130,6 +143,10 @@ public class RbelConverter implements RbelConverterInterface {
     synchronized (converterPlugins) {
       return converterPlugins.stream().filter(filter).toList();
     }
+  }
+
+  public RbelElement convertElement(final RbelContent input, RbelElement parentNode) {
+    return convertElement(RbelElement.create(input, parentNode));
   }
 
   public RbelElement convertElement(final String input, RbelElement parentNode) {

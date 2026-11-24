@@ -21,7 +21,12 @@
 package de.gematik.test.tiger.lifecycle
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration
-import io.github.classgraph.ClassGraph
+import de.gematik.test.tiger.common.util.JandexIndexReader
+import java.lang.reflect.Modifier
+import org.jboss.jandex.CompositeIndex
+import org.jboss.jandex.DotName
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException
+import org.jboss.jandex.IndexView
 
 
 class LifecycleManager : ILifecycleManager {
@@ -29,21 +34,31 @@ class LifecycleManager : ILifecycleManager {
 
 
     fun collectLifecycleCallbacks() {
-        // find via reflection all classes implementing LifecycleCallbacks and instantiate them
-        val callbackClasses = ClassGraph()
-            .acceptPackages("de.gematik.test.tiger.lifecycle")
-            .enableClassInfo()
-            .scan()
-            .use { scanResult ->
-                scanResult
-                    .getClassesImplementing(LifecycleCallbacks::class.java.name)
-                    .loadClasses(LifecycleCallbacks::class.java)
-                    .toSet()
-            }
+        callbacks = findIndexedCallbacks(JandexIndexReader.classLoaders(LifecycleManager::class.java))
+    }
 
-        callbacks = callbackClasses.mapNotNull { clazz ->
-            clazz.getDeclaredConstructor().newInstance()
+    internal fun findIndexedCallbacks(loaders: List<ClassLoader>): List<LifecycleCallbacks> {
+        val indexes = mutableListOf<IndexView>()
+        val origins = mutableMapOf<String, ClassLoader>()
+        for (resource in JandexIndexReader.readIndexes(loaders) { message, cause ->
+            TigerTestEnvException(message, cause)
+        }) {
+            indexes.add(resource.index())
+            resource.index().knownClasses.forEach {
+                origins.putIfAbsent(it.name().toString(), resource.classLoader())
+            }
         }
+
+        val index = CompositeIndex.create(indexes)
+        return index.getAllKnownImplementors(DotName.createSimple(LifecycleCallbacks::class.java.name))
+            .filter { Modifier.isPublic(it.flags().toInt()) && !it.isAbstract && !it.isInterface }
+            .sortedBy { it.name().toString() }
+            .map { type ->
+                val name = type.name().toString()
+                val clazz = Class.forName(name, false, origins.getValue(name))
+                    .asSubclass(LifecycleCallbacks::class.java)
+                clazz.getDeclaredConstructor().newInstance()
+            }
     }
 
     override fun beforeReadConfiguration() {

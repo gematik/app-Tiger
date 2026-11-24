@@ -66,11 +66,14 @@ class TigerCucumberRunnerTest {
   }
 
   @Test
-  void appendAutoDiscoveredGlues_addsTigerGluePackageScanResult() {
+  void appendAutoDiscoveredGlues_addsIndexedTigerGluePackages() {
     String[] augmented = TigerCucumberRunner.appendAutoDiscoveredGlues(new String[0]);
     assertThat(augmented)
-        .as("must add --glue <pkg> for the scanned fixture package")
-        .contains(TigerCucumberRunner.GLUE_OPTION, "de.gematik.test.tiger.lib.glue.testfixture");
+        .as("must add --glue <pkg> for the indexed fixture packages")
+        .contains(
+            TigerCucumberRunner.GLUE_OPTION,
+            "de.gematik.test.tiger.lib.glue.testfixture",
+            "com.example.tiger.glue");
   }
 
   @Test

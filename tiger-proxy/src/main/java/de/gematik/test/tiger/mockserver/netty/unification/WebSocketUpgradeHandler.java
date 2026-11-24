@@ -35,7 +35,6 @@ import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
-import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyException;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.HttpClientCodec;
@@ -92,7 +91,6 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
           MockServerHttpClientCodec.class,
           MockServerHttpServerCodec.class);
   private final MockServerConfiguration configuration;
-  private final BinaryModifierApplier binaryModifierApplier;
   private boolean isUpgrading = false;
   private final List<Object> messageQueue = Collections.synchronizedList(new ArrayList<>());
 
@@ -150,7 +148,7 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
     removeHttpHandlers(outgoingPipeline);
     outgoingPipeline.addLast(new MockServerBinaryClientCodec());
     outgoingPipeline.addLast(new WebSocketCloseHandler());
-    outgoingPipeline.addLast(new BinaryBridgeHandler(configuration, binaryModifierApplier));
+    outgoingPipeline.addLast(new BinaryBridgeHandler(configuration));
   }
 
   public void upgradeIncomingPipeline(ChannelPipeline pipeline) {
@@ -161,7 +159,7 @@ public class WebSocketUpgradeHandler extends ChannelInboundHandlerAdapter {
       log.error("No http client found!");
       throw new TigerProxyException("HttpClient is null");
     }
-    pipeline.addLast(new BinaryHandler(configuration, httpClient, binaryModifierApplier));
+    pipeline.addLast(new BinaryHandler(configuration, httpClient));
   }
 
   @SneakyThrows

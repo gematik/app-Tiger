@@ -40,6 +40,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
@@ -84,17 +85,25 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
 
   private static RbelContent decodeChunked(RbelContent inputData, String eol, Charset charset) {
     log.atTrace().log(() -> "Decoding data with chunked encoding");
-    int chunkSeparator = inputData.indexOf(eol.getBytes()) + eol.length();
-
-    final int indexOfChunkTerminator = determineEndOfChunkedBody(inputData, 0, eol) - 7;
-    if (indexOfChunkTerminator >= 0) {
-      return inputData.subArray(Math.min(inputData.size(), chunkSeparator), indexOfChunkTerminator);
-    } else {
-      throw new RbelConversionException(
-          "Detected incorrect use of chunked encoding: Chunked was given as"
-              + " transfer-encoding, but the chunk-separator could not be found in the"
-              + " content. Message will not be parsed.");
+    final int endOfBody = determineEndOfChunkedBody(inputData, 0, eol);
+    final byte[] eolBytes = eol.getBytes();
+    final List<RbelContent> chunks = new ArrayList<>();
+    int position = 0;
+    while (position < endOfBody) {
+      final int endOfSizeLine = inputData.indexOf(eolBytes, position);
+      final int chunkSize =
+          HexFormat.fromHexDigits(new String(inputData.toByteArray(position, endOfSizeLine)));
+      if (chunkSize == 0) {
+        break;
+      }
+      final int startOfChunk = endOfSizeLine + eolBytes.length;
+      chunks.add(inputData.subArray(startOfChunk, startOfChunk + chunkSize));
+      position = startOfChunk + chunkSize + eolBytes.length;
     }
+    if (chunks.isEmpty()) {
+      return RbelContent.of(new byte[0]);
+    }
+    return chunks.size() == 1 ? chunks.get(0) : RbelContent.concat(chunks);
   }
 
   public RbelHttpResponseConverter(RbelConfiguration configuration) {
@@ -152,8 +161,8 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
         }
       }
       var endOfHeaderIndex = endOfHeaderIndexOpt.get();
-      var stringContent = targetElement.getRawStringContent();
-      if (stringContent == null) {
+      var stringContent = decodeHead(targetElement, endOfHeaderIndex);
+      if (!hasStatusLineWithCode(stringContent, eol)) {
         return;
       }
 
@@ -166,7 +175,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       val rbelHttpResponse =
           RbelHttpResponseFacet.builder()
               .responseCode(responseCode)
-              .reasonPhrase(extractReasonPhraseFromMessage(stringContent))
+              .reasonPhrase(extractReasonPhraseFromMessage(stringContent, eol))
               .build();
 
       targetElement.addFacet(rbelHttpResponse);
@@ -195,6 +204,12 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       return Optional.of(endOfHeadIndex);
     }
 
+    private boolean hasStatusLineWithCode(String head, String eol) {
+      var endOfStatusLine = head.indexOf(eol);
+      var statusLine = endOfStatusLine < 0 ? head : head.substring(0, endOfStatusLine);
+      return statusLine.indexOf(' ') > 0 && statusLine.split("\\s").length > 1;
+    }
+
     private RbelElement extractResponseCodeFromMessage(String content) {
       return RbelElement.builder()
           .parentNode(targetElement)
@@ -202,9 +217,10 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
           .build();
     }
 
-    private RbelElement extractReasonPhraseFromMessage(String content) {
-      String[] responseStatusLineSplit = content.split("\\r\\n")[0].trim().split("\\s", 3);
-      if (responseStatusLineSplit.length == 2) {
+    private RbelElement extractReasonPhraseFromMessage(String content, String eol) {
+      String[] responseStatusLineSplit =
+          content.split(Pattern.quote(eol))[0].trim().split("\\s", 3);
+      if (responseStatusLineSplit.length < 3) {
         return RbelElement.builder().parentNode(targetElement).build();
       } else {
         return RbelElement.builder()
@@ -214,6 +230,12 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
             .build();
       }
     }
+  }
+
+  static String decodeHead(RbelElement message, int headLength) {
+    var content = message.getContent();
+    return new String(
+        content.toByteArray(0, Math.min(headLength, content.size())), message.getElementCharset());
   }
 
   public RbelElement extractHeaderFromMessage(

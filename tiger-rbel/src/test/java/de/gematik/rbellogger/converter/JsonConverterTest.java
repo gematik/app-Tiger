@@ -23,6 +23,10 @@ package de.gematik.rbellogger.converter;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
@@ -30,14 +34,52 @@ import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("de.gematik.test.tiger.common.SmokeTest")
 class JsonConverterTest {
+
+  @ParameterizedTest
+  @ValueSource(ints = {100, 8192, 8193, 100_000})
+  void jsonOfAnySizeIsReadWithTheCharsetOfTheElement(int size) {
+    String value = "\u00e4" + "x".repeat(size - 9);
+    byte[] bytes = ("{\"k\":\"" + value + "\"}").getBytes(StandardCharsets.ISO_8859_1);
+    var element =
+        new RbelElement(
+            null, RbelContent.of(bytes), null, Optional.of(StandardCharsets.ISO_8859_1));
+
+    RbelLogger.build().getRbelConverter().convertElement(element);
+
+    assertThat(bytes).hasSize(size);
+    assertThat(element).hasStringContentEqualToAtPosition("$.k", value);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"8192,false", "8193,true"})
+  void onlyJsonLargerThanTheReaderBufferIsReadThroughAStream(int size, boolean throughStream) {
+    byte[] bytes = ("{\"k\":\"" + "x".repeat(size - 8) + "\"}").getBytes(StandardCharsets.UTF_8);
+    RbelContent content = spy(RbelContent.of(bytes));
+    var element = RbelElement.create(content, null);
+
+    RbelLogger.build().getRbelConverter().convertElement(element);
+
+    assertThat(element.hasFacet(RbelJsonFacet.class)).isTrue();
+    if (throughStream) {
+      verify(content, atLeastOnce()).toInputStream();
+    } else {
+      verify(content, never()).toInputStream();
+    }
+  }
 
   @Test
   void convertMessage_shouldGiveJsonBody() throws IOException {

@@ -22,6 +22,7 @@ package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.uri.RbelUriParameterFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.StringJoiner;
@@ -34,23 +35,23 @@ public class RbelUriParameterWriter implements RbelElementWriter {
   }
 
   @Override
-  public byte[] write(
-      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+  public RbelContent write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, RbelContent newContent) {
     final RbelUriParameterFacet uriFacet =
         oldTargetElement.getFacetOrFail(RbelUriParameterFacet.class);
     StringJoiner result = new StringJoiner("=");
     if (uriFacet.getKey() == oldTargetModifiedChild) {
-      result.add(URLEncoder.encode(new String(newContent), StandardCharsets.UTF_8));
+      result.add(URLEncoder.encode(newContent.toReadableString(), StandardCharsets.UTF_8));
     } else {
       result.add(uriFacet.getKeyAsString());
     }
 
     if (uriFacet.getValue() == oldTargetModifiedChild) {
-      result.add(URLEncoder.encode(new String(newContent), StandardCharsets.UTF_8));
+      result.add(URLEncoder.encode(newContent.toReadableString(), StandardCharsets.UTF_8));
     } else {
       result.add(uriFacet.getValue().getRawStringContent());
     }
 
-    return result.toString().getBytes(oldTargetElement.getElementCharset());
+    return RbelContent.of(result.toString(), oldTargetElement.getElementCharset());
   }
 }

@@ -1,5 +1,89 @@
 # Changelog Tiger Test platform
 
+# Release 5.0.0
+
+## Dependencies
+
+* Docker base image gematik1/osadl-alpine-openjdk21-jre updated to 1.1.5 (TGR-2367)
+
+## Breaking Changes
+
+* TGR-1943: The `TGR send empty ... request ... with headers:` steps now expect header names in the first table row and their values in the second row, matching the format used by request-parameter steps. Update existing feature files that list each header as a separate row.
+
+  To send multiple values for a header that permits them, repeat its name in the first row and provide the corresponding values in the second row.
+* TGR-2221: `rbelBufferSizeInMb` can now be a fraction of a megabyte, for example `0.5`. Configuration files are not affected. Java code that uses the setting must be recompiled: its type changed from `int` to `double` in `TigerProxyConfiguration`, `RbelConfiguration` and `RbelConverter`.
+
+  A converter of your own (`RbelConverterPlugin`) is no longer offered the plain values of JSON and CBOR documents, such as numbers and booleans, unless it returns `true` from the new method `handlesPlainValues` (default `false`).
+* TGR-2325: ### Breaking Changes
+
+  Tiger now discovers custom RBel converters, `@InlineJexlMethods`, `LifecycleCallbacks`,
+  `@TigerServerType`, `@TigerGluePackage`, and binary modifier plugins from Jandex indexes.
+  Extensions may use any package.
+
+  **Required migration:** Extension modules must generate and ship `META-INF/jandex.idx`, including
+  test indexes for test-only extensions and indexes for intermediate converter or lifecycle types.
+  Projects inheriting from `tiger-starter-parent` generate these automatically. Other projects must
+  configure `io.smallrye:jandex-maven-plugin:3.6.0`. Unindexed extensions are no longer discovered automatically.
+
+  Additional converters and lifecycle callbacks now use fully qualified class-name ordering.
+  Converter seed order is retained; use `@ConverterInfo.dependsOn` for required converter dependencies.
+
+  See the user manual's extension registration sections for build, IDE, and packaging instructions.
+
+  Unreadable or unsupported dependency indexes are skipped with a warning instead of aborting discovery.
+  Extensions relying on skipped indexes may not be available.
+* TGR-2326: Support for binary traffic modifier plugins in the direct reverse proxy has been removed without a deprecation period.
+  Existing `directReverseProxy.modifierPlugins` configuration is now silently ignored.
+* TGR-2329: Tiger-Proxy: the bundled `CertificateAuthorityCertificate.pem` and its private key have been replaced
+  with a Tiger-branded CA identity instead of the previous MockServer identity. The RSA key size and
+  certificate validity duration remain unchanged.
+
+  If your test environment explicitly trusts the previous bundled CA, import the new
+  `CertificateAuthorityCertificate.pem` into the relevant truststores and update any certificate or
+  public-key pins. Trusting only the old CA is no longer sufficient for certificates signed by the new
+  CA. Keep the old trust entry only while it is still needed for older Tiger versions.
+
+  Custom CA identities configured via `tls.serverRootCa` and custom client identities configured via
+  `tls.forwardMutualTlsIdentity` are unaffected. The bundled CA uses a publicly distributed private key
+  and must only be trusted in test environments.
+* TGR-2351: Tiger now requires JDK 21 or newer to build and run. Update local development environments, CI jobs, and downstream
+  test-suite images to use JDK 21 before upgrading.
+
+## Features
+
+* TGR-2221: Meshed Tiger Proxies send messages in binary frames if both proxies support it; older proxies keep working.
+* TGR-2328: Parsing and modifying messages needs much less memory and time. The same benchmark was run on the previous release and on this one (one run each after warm-up; the memory is what is allocated per operation):
+
+  - A request with eight headers and a small JSON body: 1.4 MB and 3.7 ms before, 0.12 MB and 0.7 ms now.
+  - A GET request with eight headers: 0.97 MB and 2.6 ms before, 0.06 MB and 0.4 ms now.
+  - A 256 KB XML document: 746 MB and 1,956 ms before, 66 MB and 325 ms now.
+  - A 256 KB JSON document: 915 MB and 2,319 ms before, 91 MB and 259 ms now.
+  - An HTTP response with a 1 MB text body: 17.6 MB and 114 ms before, 1.0 MB and 9 ms now.
+  - An HTTP response with a 4 MB binary body: 65.6 MB and 422 ms before, 4.1 MB and 3.8 ms now.
+  - Changing one header of that 4 MB message: 73.6 MB and 411 ms before, 0.18 MB and 2.6 ms now.
+
+  Parsing a message that arrives in many fragments is faster as well: a 1 MB request that arrives in 16 KB fragments takes about 3 times less time in total.
+* TGR-2349: Reverse DNS lookup for Compose containers uses the service name when it resolves to exactly one matching IP address. The project prefix is derived from the network name in the PTR response instead of probing arbitrary suffixes, avoiding slow DNS misses for those candidates. Scaled services and names without a matching project prefix keep their container names.
+
+## Bugfixes
+
+* TGR-2220: When `runTestsOnStart` and `activateWorkflowUi` are both set to `false`, `mvn verify` now shuts down Tiger after test discovery instead of waiting indefinitely for a Workflow UI shutdown that cannot occur.
+* TGR-2221: A slice of a message no longer sees the bytes around it: `split`, `startsWith`, `endsWith` and their trimmed and case-insensitive variants could return or match text beyond the ends of the slice. `indexOf` and `startsWith` on an empty slice, or from its end, no longer throw an `IndexOutOfBoundsException`.
+* TGR-2328: VAU messages shorter than 32 bytes are now rejected by an explicit length check instead of by catching an `ArrayIndexOutOfBoundsException`, which did not work in native builds and caused conversion errors there.
+
+  Modifying the base path of a request URI (for example `$.path.basicPath`) no longer replaces it with a text like `[B@1a2b3c`; the new path is written correctly.
+
+  A message with a chunked body is written correctly when it is modified: the size of a chunk is written in hexadecimal, the body ends with the empty line after the last chunk, a chunked message keeps its `Transfer-Encoding` and gets no `Content-Length` when its body is replaced, and a body that arrives in several chunks is decoded completely, where the sizes of the later chunks used to stay in the body.
+
+  The reason phrase of a response whose lines end in a bare line feed (`\n` instead of `\r\n`) is now the rest of its status line. It used to contain the rest of the message, the headers and sometimes the body.
+
+  Modifying a VAU (EPA) handshake message, which has no header length, now fails at once with a `RbelModificationException` that says so. It used to try to allocate about 1.8 GB and failed with an `OutOfMemoryError` or a `NegativeArraySizeException` after about 30 seconds.
+
+  Reading a small part of a large message as a stream no longer reads all the bytes in front of it. Parsing a message made of many slices, for example the body of a large e-mail with many short lines, took quadratic time and could stall the parsing of the following messages of the connection for minutes.
+* TGR-2340: A Tiger Proxy no longer keeps the HTTP request and response objects of every recorded message in memory.
+* TGR-2357: Tiger Maven Plugin: `openSerenityReportInBrowser` now also opens the Serenity report on Linux and macOS.
+
+
 # Release 4.5.0
 
 ## Breaking Changes

@@ -143,6 +143,29 @@ class JwtConverterTest {
   }
 
   @Test
+  void jwtWhoseHeaderStartsWithWhitespace_isStillConverted() {
+    final var encoder = java.util.Base64.getUrlEncoder().withoutPadding();
+    final String token =
+        encoder.encodeToString(" {\"alg\":\"HS256\"}".getBytes())
+            + "."
+            + encoder.encodeToString("{\"a\":1}".getBytes())
+            + "."
+            + encoder.encodeToString("signature".getBytes());
+
+    final RbelElement converted = rbelConverter.convertElement(token.getBytes(), null);
+
+    assertThat(converted.hasFacet(RbelJwtFacet.class)).isTrue();
+  }
+
+  @Test
+  void jwtSurroundedByWhitespace_isStillConverted() {
+    final RbelElement converted =
+        rbelConverter.convertElement(("\n    " + JWT_WITH_SECRET + "\n  ").getBytes(), null);
+
+    assertThat(converted.hasFacet(RbelJwtFacet.class)).isTrue();
+  }
+
+  @Test
   void jwtWithInvalidSignature_tryToConvert() {
     final RbelElement convertedToken =
         rbelConverter.convertElement((JWT_WITH_SECRET + "sigInvalid").getBytes(), null);

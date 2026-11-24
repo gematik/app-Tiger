@@ -93,6 +93,16 @@ class AsyncByteQueueTest {
   }
 
   @Test
+  void truncatingThePeekedDataLeavesTheBufferedFragmentAlone() {
+    addClientMessage("abcdef");
+
+    queue.peek().getData().truncate(3);
+
+    assertThat(peekQueue()).isEqualTo("abcdef");
+    assertThat(queue.availableBytes()).isEqualTo(6);
+  }
+
+  @Test
   void testWriteAndPeek() {
     addClientMessage("Hello");
     addClientMessage(" World");

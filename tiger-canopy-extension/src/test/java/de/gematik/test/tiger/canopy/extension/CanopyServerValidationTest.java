@@ -39,6 +39,12 @@ import tools.jackson.databind.ObjectMapper;
  */
 class CanopyServerValidationTest {
 
+  @Test
+  @TigerTest(tigerYaml = "localProxyActive: false", skipEnvironmentSetup = true)
+  void registersCanopyServerFromExtensionIndex(TigerTestEnvMgr mgr) {
+    assertThat(mgr.getServerClasses()).containsEntry("canopy", CanopyServer.class);
+  }
+
   private static CfgServer cfgWith(String json) {
     CfgServer cfg = new CfgServer().setType("canopy").setHostname("canopyunit");
     if (json != null) {

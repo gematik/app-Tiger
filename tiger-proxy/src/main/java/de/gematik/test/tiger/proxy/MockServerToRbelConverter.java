@@ -23,6 +23,7 @@ package de.gematik.test.tiger.proxy;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
@@ -45,7 +46,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.Arrays;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -132,21 +132,21 @@ public class MockServerToRbelConverter {
   }
 
   public RbelElement responseToRbelMessage(final HttpResponse response, final HttpRequest request) {
-    final byte[] httpMessage =
+    final RbelContent httpMessage =
         responseToRawMessage(response, request != null ? request.getProtocol() : null);
-    final RbelElement result = RbelElement.builder().rawContent(httpMessage).build();
+    final RbelElement result = RbelElement.builder().content(httpMessage).build();
     result.addFacet(new MockServerResponseFacet(request, response));
     return result;
   }
 
   public RbelElement requestToRbelMessage(final HttpRequest request) {
-    final byte[] httpMessage = requestToRawMessage(request);
-    final RbelElement result = RbelElement.builder().rawContent(httpMessage).build();
+    final RbelContent httpMessage = requestToRawMessage(request);
+    final RbelElement result = RbelElement.builder().content(httpMessage).build();
     result.addFacet(new MockServerRequestFacet(request));
     return result;
   }
 
-  private byte[] requestToRawMessage(HttpRequest request) {
+  private RbelContent requestToRawMessage(HttpRequest request) {
     String httpVersion = request.getProtocol() == HttpProtocol.HTTP_2 ? "HTTP/2.0" : "HTTP/1.1";
     byte[] httpRequestHeader =
         (request.getMethod()
@@ -159,10 +159,10 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes();
 
-    return Arrays.concatenate(httpRequestHeader, request.getBody());
+    return RbelContent.concat(RbelContent.wrap(httpRequestHeader), bodyOf(request.getBody()));
   }
 
-  private byte[] responseToRawMessage(HttpResponse response, HttpProtocol protocol) {
+  private RbelContent responseToRawMessage(HttpResponse response, HttpProtocol protocol) {
     String httpVersion = protocol == HttpProtocol.HTTP_2 ? "HTTP/2.0" : "HTTP/1.1";
     byte[] httpResponseHeader =
         (httpVersion
@@ -175,7 +175,11 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII);
 
-    return Arrays.concatenate(httpResponseHeader, response.getBody());
+    return RbelContent.concat(RbelContent.wrap(httpResponseHeader), bodyOf(response.getBody()));
+  }
+
+  private static RbelContent bodyOf(byte[] body) {
+    return RbelContent.wrap(body != null ? body : new byte[0]);
   }
 
   private String formatHeaderList(List<Header> headerList) {

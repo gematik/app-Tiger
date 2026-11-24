@@ -20,8 +20,8 @@
  */
 package de.gematik.rbellogger;
 
+import de.gematik.rbellogger.RbelConverterIndex.ConverterDescriptor;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.exceptions.RbelInitializationException;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1Converter;
 import de.gematik.rbellogger.facets.cetp.RbelCetpConverter;
@@ -40,9 +40,6 @@ import de.gematik.rbellogger.facets.uri.RbelUriConverter;
 import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaKeyDeriver;
 import de.gematik.rbellogger.facets.xml.RbelMtomConverter;
 import de.gematik.rbellogger.facets.xml.RbelXmlConverter;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -55,60 +52,55 @@ public class RbelConverterInitializer {
   private final RbelConverter rbelConverter;
   private final RbelConfiguration rbelConfiguration;
   private final List<String> activateRbelParsingFor;
-  private final Set<Class<? extends RbelConverterPlugin>> leftovers = new HashSet<>();
-  private final List<Class<? extends RbelConverterPlugin>> converters = new ArrayList<>();
+  private final Set<ConverterDescriptor> leftovers = new LinkedHashSet<>();
+  private final List<ConverterDescriptor> converters = new ArrayList<>();
+  private final Set<String> addedConverterNames = new HashSet<>();
 
   public void addConverters() {
-    final List<Class<? extends RbelConverterPlugin>> subclasses = findAllAvailableConverters();
-    rbelConverter.setKnownOptionalParsers(collectParserIdentifiers(subclasses));
+    final List<ConverterDescriptor> candidates = findAllAvailableConverters();
+    rbelConverter.setKnownOptionalParsers(collectParserIdentifiers(candidates));
 
     // find the correct list in correct order
-    for (Class<? extends RbelConverterPlugin> converterClass : subclasses) {
-      if (Modifier.isAbstract(converterClass.getModifiers())) {
+    for (ConverterDescriptor converter : candidates) {
+      if (!converter.addAutomatically() || isOptionalAndNotActivated(converter)) {
         continue;
       }
-      if (converterClass.isAnnotationPresent(ConverterInfo.class)) {
-        ConverterInfo converterInfo = converterClass.getAnnotation(ConverterInfo.class);
-        if ((!converterInfo.addAutomatically()) || isOptionalAndNotActivated(converterClass)) {
-          continue;
-        }
-
-        if (isAnyDependencyMissingForThisConverter(converterInfo)) {
-          log.atTrace().addArgument(converterClass::getSimpleName).log("Adding {} to leftovers");
-          leftovers.add(converterClass);
-          continue;
-        } else {
-          log.atTrace()
-              .addArgument(converterClass::getSimpleName)
-              .log("NOT adding {} to leftovers");
-        }
+      if (isAnyDependencyMissingForThisConverter(converter)) {
+        log.atTrace().addArgument(converter::className).log("Adding {} to leftovers");
+        leftovers.add(converter);
+      } else {
+        addToConverters(converter);
       }
-      converters.add(converterClass);
     }
 
     // add the leftovers
-    checkAndAddLeftoverConverters(leftovers);
+    checkAndAddLeftoverConverters();
 
     log.atTrace()
         .addArgument(
-            () -> converters.stream().map(Class::getSimpleName).collect(Collectors.joining("\n")))
+            () ->
+                converters.stream()
+                    .map(ConverterDescriptor::className)
+                    .collect(Collectors.joining("\n")))
         .log("Final converter list is {}");
 
     // finally instantiate and add them to the rbelConverter
-    for (Class<? extends RbelConverterPlugin> converterClass : converters) {
-      buildConverterInstance(converterClass).ifPresent(rbelConverter::addConverter);
+    for (ConverterDescriptor converter : converters) {
+      buildConverterInstance(converter.loadClass()).ifPresent(rbelConverter::addConverter);
     }
   }
 
   /** Every parser id declared anywhere on the classpath, whether activated or not. */
-  private static Set<String> collectParserIdentifiers(
-      List<Class<? extends RbelConverterPlugin>> converterClasses) {
-    return converterClasses.stream()
-        .map(converterClass -> converterClass.getAnnotation(ConverterInfo.class))
-        .filter(Objects::nonNull)
-        .map(ConverterInfo::onlyActivateFor)
-        .flatMap(Arrays::stream)
+  private static Set<String> collectParserIdentifiers(List<ConverterDescriptor> converters) {
+    return converters.stream()
+        .map(ConverterDescriptor::onlyActivateFor)
+        .flatMap(List::stream)
         .collect(Collectors.toCollection(() -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER)));
+  }
+
+  private void addToConverters(ConverterDescriptor converter) {
+    converters.add(converter);
+    addedConverterNames.add(converter.className());
   }
 
   private Optional<RbelConverterPlugin> buildConverterInstance(
@@ -136,86 +128,86 @@ public class RbelConverterInitializer {
     }
   }
 
-  private boolean isOptionalAndNotActivated(Class<? extends RbelConverterPlugin> converterClass) {
-    ConverterInfo converterInfo = converterClass.getAnnotation(ConverterInfo.class);
-    if (converterInfo.onlyActivateFor() != null && converterInfo.onlyActivateFor().length > 0) {
-      if (Arrays.stream(converterInfo.onlyActivateFor())
-          .noneMatch(
-              item ->
-                  activateRbelParsingFor.stream()
-                      .anyMatch(activated -> activated.equalsIgnoreCase(item)))) {
-        log.atTrace()
-            .addArgument(converterClass::getSimpleName)
-            .log("SKIPPING optional converter {}");
-        return true;
-      } else {
-        log.atTrace()
-            .addArgument(converterClass::getSimpleName)
-            .log("ADDING optional converter {}");
-      }
+  private boolean isOptionalAndNotActivated(ConverterDescriptor converter) {
+    if (converter.onlyActivateFor().isEmpty()) {
+      return false;
     }
+    if (converter.onlyActivateFor().stream()
+        .noneMatch(
+            item ->
+                activateRbelParsingFor.stream()
+                    .anyMatch(activated -> activated.equalsIgnoreCase(item)))) {
+      log.atTrace().addArgument(converter::className).log("SKIPPING optional converter {}");
+      return true;
+    }
+    log.atTrace().addArgument(converter::className).log("ADDING optional converter {}");
     return false;
   }
 
-  private static List<Class<? extends RbelConverterPlugin>> findAllAvailableConverters() {
-    var initialList =
-        new ArrayList<>(
-            List.of(
-                RbelUriConverter.class,
-                RbelHttpResponseConverter.class,
-                RbelHttpRequestConverter.class,
-                RbelJwtConverter.class,
-                RbelHttpFormDataConverter.class,
-                RbelJweConverter.class,
-                RbelAuthorizationHeaderConverter.class,
-                RbelXmlConverter.class,
-                RbelJsonConverter.class,
-                RbelVauEpaKeyDeriver.class,
-                RbelMtomConverter.class,
-                RbelX509Converter.class,
-                RbelX500Converter.class,
-                RbelSicctEnvelopeConverter.class,
-                RbelCetpConverter.class,
-                RbelCborConverter.class,
-                RbelAsn1Converter.class));
-    try (ScanResult scanResult =
-        new ClassGraph().acceptPackages("de.gematik").enableClassInfo().scan()) {
-      scanResult
-          .getSubclasses(RbelConverterPlugin.class.getName())
-          .loadClasses(RbelConverterPlugin.class)
-          .stream()
-          .filter(c -> !initialList.contains(c))
-          .filter(c -> !c.isAnonymousClass())
-          .forEach(initialList::add);
+  static List<ConverterDescriptor> findAllAvailableConverters() {
+    var seeds =
+        List.of(
+            RbelUriConverter.class,
+            RbelHttpResponseConverter.class,
+            RbelHttpRequestConverter.class,
+            RbelJwtConverter.class,
+            RbelHttpFormDataConverter.class,
+            RbelJweConverter.class,
+            RbelAuthorizationHeaderConverter.class,
+            RbelXmlConverter.class,
+            RbelJsonConverter.class,
+            RbelVauEpaKeyDeriver.class,
+            RbelMtomConverter.class,
+            RbelX509Converter.class,
+            RbelX500Converter.class,
+            RbelSicctEnvelopeConverter.class,
+            RbelCetpConverter.class,
+            RbelCborConverter.class,
+            RbelAsn1Converter.class);
+    Map<String, ConverterDescriptor> indexed = new LinkedHashMap<>();
+    RbelConverterIndex.readIndex().forEach(d -> indexed.put(d.className(), d));
+
+    Map<String, ConverterDescriptor> result = new LinkedHashMap<>();
+    for (Class<? extends RbelConverterPlugin> seed : seeds) {
+      result.put(
+          seed.getName(),
+          Optional.ofNullable(indexed.get(seed.getName()))
+              .orElseGet(
+                  () -> {
+                    throw new RbelInitializationException(
+                        "Missing converter "
+                            + seed.getName()
+                            + " in "
+                            + RbelConverterIndex.INDEX_RESOURCE
+                            + ". Build the module with jandex-maven-plugin.");
+                  }));
     }
-    return initialList;
+    indexed.forEach(result::putIfAbsent);
+    return new ArrayList<>(result.values());
   }
 
-  private void checkAndAddLeftoverConverters(Set<Class<? extends RbelConverterPlugin>> leftovers) {
+  private void checkAndAddLeftoverConverters() {
     boolean wasAnyConverterAdded;
     int iterationsLeft = 1000;
     do {
       wasAnyConverterAdded = false;
       log.trace("Checking leftovers {}...", leftovers);
-      for (Class<? extends RbelConverterPlugin> converterClass : new HashSet<>(leftovers)) {
-        ConverterInfo converterInfo = converterClass.getAnnotation(ConverterInfo.class);
-        if (isAnyDependencyMissingForThisConverter(converterInfo)) {
+      for (ConverterDescriptor converter : new ArrayList<>(leftovers)) {
+        if (isAnyDependencyMissingForThisConverter(converter)) {
           continue;
         }
-        converters.add(converterClass);
-        leftovers.remove(converterClass);
+        addToConverters(converter);
+        leftovers.remove(converter);
         wasAnyConverterAdded = true;
         if (iterationsLeft-- <= 0) {
           throw new RbelInitializationException(
-              "Could not instantiate '" + converterClass.getName() + "' due to dependencies.");
+              "Could not instantiate '" + converter.className() + "' due to dependencies.");
         }
       }
     } while (wasAnyConverterAdded);
   }
 
-  private boolean isAnyDependencyMissingForThisConverter(ConverterInfo converterInfo) {
-    return converterInfo.dependsOn() != null
-        && converterInfo.dependsOn().length > 0
-        && !new HashSet<>(converters).containsAll(Arrays.asList(converterInfo.dependsOn()));
+  private boolean isAnyDependencyMissingForThisConverter(ConverterDescriptor converter) {
+    return !addedConverterNames.containsAll(converter.dependsOn());
   }
 }

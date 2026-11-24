@@ -74,7 +74,7 @@
     "vite": "8.2.2",
     "vite-plugin-env-compatible": "2.0.1",
     "vite-plugin-html": "3.2.2",
-    "vitest": "4.1.11",
+    "vitest": "4.1.12",
     "webstomp-client": "1.2.6"
   }
 }

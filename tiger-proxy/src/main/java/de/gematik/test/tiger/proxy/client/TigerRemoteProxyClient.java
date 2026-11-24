@@ -69,10 +69,14 @@ import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.JacksonJsonMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.Assert;
+import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -88,6 +92,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   public static final String WS_TRACING = "/topic/traces";
   public static final String WS_DATA = "/topic/data";
+
+  /** The frames with the messages in bytes, see {@link BinaryTracingFrame}. */
+  public static final String WS_RAW_BINARY = "/topic/raw-binary";
+
   public static final String WS_ERRORS = "/topic/errors";
   private static final Duration EXPIRED_MESSAGE_CHECK_INTERVAL = Duration.ofSeconds(1);
   private static final Duration REDOWNLOAD_RECHECK_INTERVAL = Duration.ofSeconds(1);
@@ -95,8 +103,13 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   private static final Duration MAX_RECONNECT_BACKOFF = Duration.ofSeconds(30);
   @Getter private final String remoteProxyUrl;
   @Getter private String connectedRemoteProxyUrl;
+
+  /** Whether the remote sends its messages in binary frames, asked at every (re)connect. */
+  @Getter private volatile boolean binaryTracing;
+
   private final String remoteProxyControlUrl;
   private final WebSocketStompClient tigerProxyStompClient;
+  private final WebSocketStompClient nativeStompClient;
 
   @Getter private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
 
@@ -155,19 +168,17 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     container.setDefaultMaxBinaryMessageBufferSize(perMessageBufferSize);
     container.setDefaultMaxTextMessageBufferSize(perMessageBufferSize);
 
-    final JacksonJsonMessageConverter messageConverter = new JacksonJsonMessageConverter();
+    // the frames of the legacy destinations are JSON, the ones with the messages are bytes
+    final MessageConverter messageConverter =
+        new CompositeMessageConverter(
+            List.of(new ByteArrayMessageConverter(), new JacksonJsonMessageConverter()));
 
     StandardWebSocketClient wsClient = new StandardWebSocketClient(container);
     webSocketClient = new SockJsClient(List.of(new WebSocketTransport(wsClient)));
-    tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
-    tigerProxyStompClient.setMessageConverter(messageConverter);
-    tigerProxyStompClient.setInboundMessageSizeLimit(
-        configuration.getStompClientBufferSizeInMb() * MB);
     heartbeatScheduler = buildHeartbeatScheduler();
-    tigerProxyStompClient.setTaskScheduler(heartbeatScheduler);
-    final long heartbeat =
-        Duration.ofSeconds(configuration.getStompHeartbeatInSeconds()).toMillis();
-    tigerProxyStompClient.setDefaultHeartbeat(new long[] {heartbeat, heartbeat});
+    tigerProxyStompClient = createStompClient(webSocketClient, messageConverter, configuration);
+    // SockJS has text frames only, so the frames with bytes need the WebSocket itself
+    nativeStompClient = createStompClient(wsClient, messageConverter, configuration);
     tigerStompSessionHandler = new TigerStompSessionHandler(this);
     messageAssembler =
         new PartialMessageAssembler(
@@ -183,6 +194,20 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     converter.addConverter(new TigerProxyMessageDeletedPlugin(this));
     converter.addClearHistoryCallback(this::discardDelayedParsingTasks);
     converter.addMessageRemovedFromHistoryCallback(this::handleMessageRemovalFromHistory);
+  }
+
+  private WebSocketStompClient createStompClient(
+      WebSocketClient transport,
+      MessageConverter converter,
+      TigerProxyConfiguration configuration) {
+    var client = new WebSocketStompClient(transport);
+    client.setMessageConverter(converter);
+    client.setInboundMessageSizeLimit(configuration.getStompClientBufferSizeInMb() * MB);
+    client.setTaskScheduler(heartbeatScheduler);
+    final long heartbeat =
+        Duration.ofSeconds(configuration.getStompHeartbeatInSeconds()).toMillis();
+    client.setDefaultHeartbeat(new long[] {heartbeat, heartbeat});
+    return client;
   }
 
   private void scheduleExpiredMessageRemoval() {
@@ -291,10 +316,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       return;
     }
     log.info("remote proxy at {} is online, now connecting...", connectedRemoteProxyUrl);
+    binaryTracing = remoteOffersBinaryFrames();
     final var tracingWebSocketUrl = getTracingWebSocketUrl(connectedRemoteProxyUrl);
     tigerStompSessionHandler.setOnConnectedCallback(
         () -> meshHandlerPool.execute(() -> finishConnecting(downloadTraffic)));
-    tigerProxyStompClient
+    (binaryTracing ? nativeStompClient : tigerProxyStompClient)
         .connectAsync(tracingWebSocketUrl, tigerStompSessionHandler)
         .orTimeout(connectionTimeoutInSeconds, TimeUnit.SECONDS)
         .thenAccept(
@@ -318,6 +344,38 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
               }
               return null;
             });
+  }
+
+  /**
+   * Asks the remote what it offers, before this proxy subscribes to anything (ADR 026). A remote
+   * that does not answer, as an older one does not, gets the legacy destinations.
+   */
+  boolean remoteOffersBinaryFrames() {
+    var configuration = getTigerProxyConfiguration();
+    if (configuration.isEnableLegacyTraffic()) {
+      return false;
+    }
+    try {
+      var response =
+          Unirest.get(connectedRemoteProxyUrl + "/tracing/capabilities")
+              .requestTimeout(configuration.getConnectionTimeoutInSeconds() * 1000)
+              .asObject(TracingCapabilities.class);
+      boolean offered =
+          response.isSuccess()
+              && response.getBody() != null
+              && WS_RAW_BINARY.equals(response.getBody().getBinaryDestination());
+      log.atDebug()
+          .addArgument(connectedRemoteProxyUrl)
+          .addArgument(offered)
+          .log("Binary frames offered by {}: {}");
+      return offered;
+    } catch (RuntimeException e) {
+      log.atDebug()
+          .addArgument(connectedRemoteProxyUrl)
+          .addArgument(e::getMessage)
+          .log("Could not ask {} for binary frames, using the legacy destinations: {}");
+      return false;
+    }
   }
 
   private void reconnect(TigerStompSessionHandler tigerStompSessionHandler) {
@@ -523,7 +581,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
               messageUuid,
               message.getSender(),
               message.getReceiver(),
-              message.buildCompleteContent().toByteArray(),
+              message.buildCompleteContent(),
               ClockSkewEstimator.withCompensatedTransmissionTime(
                   message.getAdditionalInformation(), getRemoteClockOffset()),
               message.getTracingDto().isRequest()
@@ -572,6 +630,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       stompSession.get().disconnect();
     }
     tigerProxyStompClient.stop();
+    nativeStompClient.stop();
     webSocketClient.stop();
     heartbeatScheduler.shutdown();
     meshHandlerPool.shutdownNow();

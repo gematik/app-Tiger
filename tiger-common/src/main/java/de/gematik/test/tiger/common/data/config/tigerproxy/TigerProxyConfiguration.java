@@ -93,7 +93,7 @@ public class TigerProxyConfiguration {
   @Builder.Default private int stompHeartbeatInSeconds = 10;
 
   @Builder.Default private int perMessageBufferSizeInMb = 100;
-  @Builder.Default private int rbelBufferSizeInMb = 1024;
+  @Builder.Default private double rbelBufferSizeInMb = 1024;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = 8_000;
   @Builder.Default private int skipDisplayWhenMessageLargerThanKb = 512;
   @Builder.Default private int maximumDefaultExpandedMessageDepth = 3;

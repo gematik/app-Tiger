@@ -150,7 +150,7 @@ class TestWebsocket {
         assertThat(firstWebsocketMessage)
             .extractChildWithPath("$.payload")
             .asString()
-            .startsWith("o");
+            .startsWith("CONNECT");
       }
     } finally {
       tigerProxy.clearAllRoutes();

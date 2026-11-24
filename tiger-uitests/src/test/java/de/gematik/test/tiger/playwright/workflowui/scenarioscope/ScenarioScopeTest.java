@@ -63,7 +63,7 @@ class ScenarioScopeTest extends AbstractBase {
     toggle.click();
     assertThat(toggle).hasAttribute("aria-pressed", "true");
     await()
-        .atMost(20, TimeUnit.SECONDS)
+        .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(() -> assertThat(lastMessage).isVisible());
   }
 

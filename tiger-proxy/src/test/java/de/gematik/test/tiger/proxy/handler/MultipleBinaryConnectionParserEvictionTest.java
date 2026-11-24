@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelMessageKind;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.nio.charset.StandardCharsets;
@@ -106,7 +107,10 @@ class MultipleBinaryConnectionParserEvictionTest {
 
   @SneakyThrows
   private void feed(MultipleBinaryConnectionParser parser, byte[] content) {
-    parser.addToBuffer(CLIENT, SERVER, content, ZonedDateTime.now(), RbelMessageKind.REQUEST).get();
+    parser
+        .addToBuffer(
+            CLIENT, SERVER, RbelContent.of(content), ZonedDateTime.now(), RbelMessageKind.REQUEST)
+        .get();
   }
 
   private static byte[] completeRequest() {

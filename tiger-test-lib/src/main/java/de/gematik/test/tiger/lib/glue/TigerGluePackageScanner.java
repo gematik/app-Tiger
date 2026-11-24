@@ -22,18 +22,19 @@
 package de.gematik.test.tiger.lib.glue;
 
 import de.gematik.test.tiger.common.glue.TigerGluePackage;
+import de.gematik.test.tiger.common.util.JandexIndexReader;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.jboss.jandex.DotName;
 
 /**
  * Discovers Cucumber glue packages contributed by Tiger extensions via the {@link TigerGluePackage}
- * marker annotation, by scanning {@code de.gematik.test.tiger} on the classpath. Mirrors the
- * {@code @TigerServerType} scan in {@code TigerTestEnvMgr} (see {@code
- * lookupServerPluginsInClasspath}).
+ * marker annotation in {@code META-INF/jandex.idx} resources, without loading the marker classes.
+ * Annotated classes may reside in any package.
  *
  * <p>Result is the distinct set of packages of all {@link TigerGluePackage}-annotated classes.
  * Multiple annotated classes in the same package collapse to one entry; ordering is deterministic
@@ -46,25 +47,31 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 @Slf4j
 public final class TigerGluePackageScanner {
 
-  /** Root package of the classpath scan — kept narrow for boot speed. */
-  static final String SCAN_ROOT = "de.gematik.test.tiger";
+  private static final DotName GLUE_PACKAGE_ANNOTATION =
+      DotName.createSimple(TigerGluePackage.class.getName());
 
   private TigerGluePackageScanner() {}
 
   /** Returns the distinct set of glue packages contributed via {@link TigerGluePackage}. */
   public static Set<String> discoverGluePackages() {
-    ClassPathScanningCandidateComponentProvider scanner =
-        new ClassPathScanningCandidateComponentProvider(false);
-    scanner.addIncludeFilter(new AnnotationTypeFilter(TigerGluePackage.class));
+    return discoverGluePackages(JandexIndexReader.classLoaders(TigerGluePackageScanner.class));
+  }
+
+  static Set<String> discoverGluePackages(List<ClassLoader> loaders) {
     Set<String> packages = new TreeSet<>();
-    for (BeanDefinition bd : scanner.findCandidateComponents(SCAN_ROOT)) {
-      String fqn = bd.getBeanClassName();
-      if (fqn == null) {
-        continue;
-      }
-      int lastDot = fqn.lastIndexOf('.');
+    for (var match :
+        JandexIndexReader.findClassAnnotations(
+            loaders,
+            GLUE_PACKAGE_ANNOTATION,
+            type ->
+                !type.isAbstract()
+                    && !type.isInterface()
+                    && (type.enclosingClass() == null || Modifier.isStatic(type.flags())),
+            TigerTestEnvException::new)) {
+      String name = match.annotation().target().asClass().name().toString();
+      int lastDot = name.lastIndexOf('.');
       if (lastDot > 0) {
-        packages.add(fqn.substring(0, lastDot));
+        packages.add(name.substring(0, lastDot));
       }
     }
     if (!packages.isEmpty()) {

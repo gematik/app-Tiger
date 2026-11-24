@@ -68,7 +68,6 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
     val responseFacet = rbelElement.getFacet(MockServerResponseFacet.class);
     if (rbelElement.hasFacet(RbelHttpRequestFacet.class) && requestFacet.isPresent()) {
       parseCertificateChainIfPresent(requestFacet.get().getHttpRequest(), rbelElement, converter);
-      rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
 
       addHostnames(rbelElement);
     } else if (rbelElement.hasFacet(RbelHttpResponseFacet.class)) {
@@ -80,7 +79,6 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
         // necessarily parsed completely
         addPairingFacet(
             rbelElement, responseFacet.get().getHttpRequest().getCorrespondingRbelMessage());
-        rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
       } else {
         // fallback: look for corresponding request manually
         converter
@@ -91,6 +89,8 @@ public class TigerProxyPairingConverter extends RbelConverterPlugin {
       }
       addHostnames(rbelElement);
     }
+    rbelElement.removeFacetsOfType(MockServerRequestFacet.class);
+    rbelElement.removeFacetsOfType(MockServerResponseFacet.class);
   }
 
   private void addPairingFacet(RbelElement response, RbelElement request) {

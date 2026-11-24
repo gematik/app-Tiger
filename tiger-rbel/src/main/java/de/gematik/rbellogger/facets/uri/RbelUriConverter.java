@@ -24,14 +24,16 @@ import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.uri.RbelUriFacet.RbelUriFacetBuilder;
+import de.gematik.rbellogger.util.CharsetUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -79,6 +81,84 @@ public class RbelUriConverter extends RbelConverterPlugin {
         .toList();
   }
 
+  private static final int MAX_PREFIX_CHECKED = 4096;
+
+  /**
+   * A cheap look at the bytes (only the first {@value #MAX_PREFIX_CHECKED}, new URI judges the
+   * rest), to spare most values the decoding to a String and a failing {@code new URI}. It only
+   * returns true when {@code java.net.URI} is certain to throw, or when the value has neither a
+   * scheme, nor a query, nor a leading slash, so that it would not be taken anyway.
+   */
+  static boolean isCertainlyNoUri(RbelContent content, Charset charset) {
+    if (!CharsetUtils.isAsciiCompatible(charset)) {
+      return false;
+    }
+    final int size = content.size();
+    final int end = Math.min(size, MAX_PREFIX_CHECKED);
+    final boolean complete = end == size;
+    final int delimiter =
+        content.indexOfFirst(b -> b == ':' || b == '/' || b == '?' || b == '#', 0, size);
+    if (delimiter < 0) {
+      return true;
+    }
+    final byte found = content.get(delimiter);
+    if (found == '#') {
+      return true;
+    }
+    if (found == ':') {
+      if (!isScheme(content, delimiter)) {
+        return true;
+      }
+    } else if (found == '/'
+        && delimiter > 0
+        && complete
+        && content.indexOfFirst(b -> b == '?', delimiter, end) < 0) {
+      return true;
+    }
+    final int firstHash = content.indexOfFirst(b -> b == '#', 0, end);
+    return (firstHash >= 0 && content.indexOfFirst(b -> b == '#', firstHash + 1, end) >= 0)
+        || (content.indexOfFirst(b -> b == '[', 0, end) < 0 && hasMalformedEscape(content, end))
+        || content.indexOfFirst(RbelUriConverter::isNeverInUri, 0, end) >= 0;
+  }
+
+  private static boolean isScheme(RbelContent content, int end) {
+    return end > 0
+        && isAlpha(content.get(0))
+        && content.indexOfFirst(
+                b -> !isAlpha(b) && !isDigit(b) && b != '+' && b != '-' && b != '.', 1, end)
+            < 0;
+  }
+
+  private static boolean hasMalformedEscape(RbelContent content, int end) {
+    for (int percent = content.indexOfFirst(b -> b == '%', 0, end);
+        percent >= 0;
+        percent = content.indexOfFirst(b -> b == '%', percent + 1, end)) {
+      if (percent + 2 >= content.size()
+          || !isHexDigit(content.get(percent + 1))
+          || !isHexDigit(content.get(percent + 2))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isNeverInUri(int b) {
+    return b == ' ' || b == '"' || b == '<' || b == '>' || b == 0x5C || b == '^' || b == '`'
+        || b == '{' || b == '|' || b == '}';
+  }
+
+  private static boolean isAlpha(int b) {
+    return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z');
+  }
+
+  private static boolean isDigit(int b) {
+    return b >= '0' && b <= '9';
+  }
+
+  private static boolean isHexDigit(int b) {
+    return isDigit(b) || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F');
+  }
+
   private static URI parseUri(String rawStringContent) {
     try {
       final URI uri = new URI(rawStringContent);
@@ -95,7 +175,10 @@ public class RbelUriConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConversionExecutor context) {
-    if (ArrayUtils.indexOf(rbel.getRawContent(), (byte) '\n') >= 0) {
+    final RbelContent rawContent = rbel.getContent();
+    if (rawContent.isNull()
+        || isCertainlyNoUri(rawContent, rbel.getElementCharset())
+        || rawContent.indexOfFirst(Character::isISOControl, 0, rawContent.size()) >= 0) {
       return;
     }
     var content = rbel.getRawStringContent();

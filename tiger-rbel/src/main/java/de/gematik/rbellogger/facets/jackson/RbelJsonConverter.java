@@ -34,6 +34,9 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
   private static final byte OPEN_LIST = '[';
   private static final byte CLOSE_LIST = ']';
 
+  // an InputStreamReader allocates a buffer of this size, which dwarfs most nested containers
+  private static final int INPUT_STREAM_READER_BUFFER_SIZE = 8192;
+
   public RbelJsonConverter() {
     super(
         JsonMapper.builder().enable(JsonReadFeature.ALLOW_SINGLE_QUOTES).build(),
@@ -42,9 +45,12 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
   @Override
   JsonNode convertContentUsingJackson(RbelElement target) {
+    var content = target.getContent();
+    if (content.size() <= INPUT_STREAM_READER_BUFFER_SIZE) {
+      return getMapper().readTree(content.toReadableString(target.getElementCharset()));
+    }
     return getMapper()
-        .readTree(
-            new InputStreamReader(target.getContent().toInputStream(), target.getElementCharset()));
+        .readTree(new InputStreamReader(content.toInputStream(), target.getElementCharset()));
   }
 
   @Override

@@ -62,7 +62,9 @@ public class TigerExecutionListener implements TestExecutionListener {
     if (!isATigerTest) {
       return;
     }
-    TigerDirector.getTigerTestEnvMgr()
+    var tigerTestEnvMgr = TigerDirector.getTigerTestEnvMgr();
+    var libConfig = TigerDirector.getLibConfig();
+    tigerTestEnvMgr
         .receiveTestEnvUpdate(
             TigerStatusUpdate.builder().testSuiteLifecycle(TestSuiteLifecycle.IDLE).build());
     testPlan
@@ -71,14 +73,17 @@ public class TigerExecutionListener implements TestExecutionListener {
         .ifPresent(
             dryRun -> {
               if (dryRun) {
+                if (!libConfig.isActivateWorkflowUi()) {
+                  log.debug("Dry run without Workflow UI detected. Shutting down Tiger");
+                  TigerDirector.waitForAcknowledgedQuit();
+                  return;
+                }
                 log.debug("Dry run detected. Will wait for tiger shutdown");
                 await()
                     .logging(log::trace)
                     .pollInterval(1, TimeUnit.SECONDS)
-                    .atMost(
-                        TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(),
-                        TimeUnit.SECONDS)
-                    .until(() -> TigerDirector.getTigerTestEnvMgr().isShutDown());
+                    .atMost(libConfig.getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
+                    .until(tigerTestEnvMgr::isShutDown);
               }
             });
   }

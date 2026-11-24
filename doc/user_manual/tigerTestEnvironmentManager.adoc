@@ -57,6 +57,24 @@ include::serverTypes.adoc[]
 
 include::../../tiger-canopy/doc/CANOPY-USER-GUIDE.adoc[leveloffset=+2]
 
+=== Adding custom server types
+
+Implement a concrete subclass of `de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer`
+and annotate it with `@TigerServerType("myServer")`.
+The token is used as the server's `type` in `tiger.yaml`.
+Keep the public constructor accepting `(String serverId, CfgServer configuration, TigerTestEnvMgr environment)`.
+The class must be top-level or a static nested class and may reside in any Java package.
+
+Tiger discovers the annotation and its token from `META-INF/jandex.idx` resources in the application
+and dependency JARs, without a runtime package scan.
+Every module contributing server types must generate and ship an index.
+Projects inheriting from `tiger-starter-parent` generate main and test indexes automatically.
+Other projects must configure `io.smallrye:jandex-maven-plugin:3.6.0` as described in
+xref:tigerProxy.adoc#_adding_custom_rbel_converters[Adding custom RBel converters], including the
+test execution for test-only server types.
+Run Maven through `process-classes` or `process-test-classes`, respectively, before launching from an IDE.
+The same packaging guidance applies: regenerate a combined index for shaded JARs; do not concatenate binary indexes.
+
 === Server type example
 
 Here is a little example of how the server names are set and used and how the server is reachable via the tiger proxy.
@@ -844,4 +862,3 @@ So you may skip the first and just use it with two different values being set.
 
 In many configuration values (e.g. `exports`, `environment`, `source`, etc.), placeholders like `${PORT:xxxx}` or `${NAME}` can be used.
 These are replaced at runtime with the actual values (e.g. the exposed port of a Docker container or the hostname of a node).
-

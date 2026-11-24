@@ -23,6 +23,7 @@ package de.gematik.rbellogger.util;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,16 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 class RbelContentTest {
+
+  @Test
+  void wrapReturnsTheSameArrayEvenAboveTheDefaultChunkSize() {
+    byte[] small = "0123456789".getBytes();
+    byte[] large = new byte[20_000];
+    Arrays.fill(large, (byte) 7);
+
+    assertSame(small, RbelContent.wrap(small).toByteArray());
+    assertSame(large, RbelContent.wrap(large).toByteArray());
+  }
 
   @Test
   void append() {
@@ -60,6 +71,23 @@ class RbelContentTest {
     bytes.append(fourthChunk);
     assertEquals(10, bytes.getChunks().get(1).length);
     assertArrayEquals(bytes.toByteArray(11, 12), fourthChunk);
+  }
+
+  @Test
+  void indexOfFirst_findsAByteAcrossChunksAndInASliceWithoutCopying() {
+    RbelContentBase bytes = RbelContent.builder().chunkSize(4).build();
+    bytes.append("abcdefghij=lmn".getBytes());
+
+    assertEquals(10, bytes.indexOfFirst(b -> b == '=', 0, bytes.size()));
+    assertEquals(-1, bytes.indexOfFirst(b -> b == '=', 0, 10));
+    assertEquals(-1, bytes.indexOfFirst(b -> b == 'z', 0, bytes.size()));
+    assertEquals(7, bytes.indexOfFirst(b -> b == 'h', 3, bytes.size()));
+
+    RbelContent slice = bytes.subArray(5, 12);
+    assertEquals("fghij=l", new String(slice.toByteArray()));
+    assertEquals(5, slice.indexOfFirst(b -> b == '=', 0, slice.size()));
+    assertEquals(2, slice.indexOfFirst(b -> b == 'h', 1, slice.size()));
+    assertEquals(-1, slice.indexOfFirst(b -> b == 'm', 0, slice.size()));
   }
 
   @Test
@@ -128,6 +156,65 @@ class RbelContentTest {
       assertEquals(end - start, inputStreamBytes.length);
       assertArrayEquals(slice.toByteArray(), inputStreamBytes);
     }
+  }
+
+  @Test
+  void toInputStreamOfEveryRangeContainsExactlyTheBytesOfTheRange() throws IOException {
+    byte[] input = new byte[47];
+    for (int i = 0; i < input.length; i++) {
+      input[i] = (byte) i;
+    }
+    for (int chunkSize : new int[] {1, 7, 10, 47, 100}) {
+      RbelContentBase content =
+          RbelContent.builder().chunkSize(chunkSize).content(List.of(input)).build();
+      for (int start = 0; start <= input.length; start++) {
+        for (int end = start; end <= input.length; end++) {
+          try (var inputStream = content.toInputStream(start, end)) {
+            assertArrayEquals(
+                Arrays.copyOfRange(input, start, end),
+                inputStream.readAllBytes(),
+                "chunk size " + chunkSize + ", range [" + start + ", " + end + ")");
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  void toInputStreamOfAnEmptyContentIsEmpty() throws IOException {
+    try (var inputStream = RbelContent.of(new byte[0]).toInputStream()) {
+      assertEquals(0, inputStream.readAllBytes().length);
+    }
+    try (var inputStream = RbelContent.builder().build().toInputStream()) {
+      assertEquals(0, inputStream.readAllBytes().length);
+    }
+  }
+
+  @Test
+  void streamingManySmallSlicesOfALargeContentDoesNotReadTheBytesInFrontOfEachSlice() {
+    // e.g. the lines of a large e-mail body: if every stream first read all the bytes before its
+    // slice, this would read about 6 TB and take minutes instead of a few seconds
+    final int sliceSize = 80;
+    final int numberOfSlices = 400_000;
+    byte[] input = new byte[sliceSize * numberOfSlices];
+    for (int i = 0; i < input.length; i++) {
+      input[i] = (byte) (i % 251);
+    }
+    var content = RbelContent.of(input);
+
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(30),
+        () -> {
+          for (int i = 0; i < numberOfSlices; i++) {
+            var slice = content.subArray(i * sliceSize, (i + 1) * sliceSize);
+            try (var inputStream = slice.toInputStream()) {
+              byte[] read = inputStream.readAllBytes();
+              assertEquals(sliceSize, read.length);
+              assertEquals(input[i * sliceSize], read[0]);
+              assertEquals(input[(i + 1) * sliceSize - 1], read[sliceSize - 1]);
+            }
+          }
+        });
   }
 
   @Test

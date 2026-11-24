@@ -27,9 +27,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for classes which implement inline JEXL methods The classes implementing this
- * interface AND under the package de.gematik.test.tiger.common.jexl are initialized per reflection
- * and added to the Tiger namespace map.
+ * Marks public classes providing inline JEXL methods. Classes listed in a {@code
+ * META-INF/jandex.idx} resource are automatically added to the Tiger namespace map, regardless of
+ * their Java package.
  *
  * <p>This is useful for method which are expected to be called directly when initializing the tiger
  * configuration.

@@ -26,7 +26,7 @@
   <parent>
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>4.5.0</version>
+    <version>5.0.0</version>
     <relativePath>./tiger-bom/pom.xml</relativePath>
   </parent>
   <artifactId>tiger</artifactId>
@@ -97,8 +97,8 @@
 
   <properties>
     <asciidoctor.skip>true</asciidoctor.skip>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <mycila.license-maven-plugin.version>5.1.2</mycila.license-maven-plugin.version>
     <skipSurefire>false</skipSurefire>
     <skipFrontendUnitTests>false</skipFrontendUnitTests>
@@ -317,6 +317,38 @@
               <configuration>
                 <skip>${skipFrontendUnitTests}</skip>
                 <arguments>run test</arguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <version>${version.jandex}</version>
+          <executions>
+            <execution>
+              <id>index-classes</id>
+              <goals>
+                <goal>jandex</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>index-test-classes</id>
+              <goals>
+                <goal>jandex</goal>
+              </goals>
+              <phase>process-test-classes</phase>
+              <configuration>
+                <processDefaultFileSet>false</processDefaultFileSet>
+                <fileSets>
+                  <fileSet>
+                    <directory>${project.build.testOutputDirectory}</directory>
+                    <includes>
+                      <include>**/*.class</include>
+                    </includes>
+                  </fileSet>
+                </fileSets>
+                <indexDir>${project.build.testOutputDirectory}/META-INF</indexDir>
               </configuration>
             </execution>
           </executions>
@@ -627,6 +659,9 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-maven-plugin</artifactId>
             <version>${version.kotlin}</version>
+            <configuration>
+              <jvmTarget>${maven.compiler.target}</jvmTarget>
+            </configuration>
             <executions>
               <execution>
                 <id>compile</id>
@@ -635,7 +670,6 @@
                 </goals>
                 <phase>compile</phase>
                 <configuration>
-                  <jvmTarget>17</jvmTarget>
                   <sourceDirs>
                     <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
                     <sourceDir>${project.basedir}/src/main/java</sourceDir>
@@ -649,7 +683,6 @@
                 </goals>
                 <phase>test-compile</phase>
                 <configuration>
-                  <jvmTarget>17</jvmTarget>
                   <sourceDirs>
                     <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                     <sourceDir>${project.basedir}/src/test/java</sourceDir>

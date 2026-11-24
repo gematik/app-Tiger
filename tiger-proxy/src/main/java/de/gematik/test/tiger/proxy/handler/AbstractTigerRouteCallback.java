@@ -467,6 +467,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
                     extractReceiverAddressForRequest(request),
                     routingException,
                     previousMessageUuid));
+    Optional.ofNullable(tigerProxy)
+        .ifPresent(proxy -> proxy.propagateException(routingException));
     return new CloseChannel();
   }
 

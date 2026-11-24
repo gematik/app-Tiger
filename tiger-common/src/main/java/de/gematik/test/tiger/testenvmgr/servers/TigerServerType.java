@@ -25,6 +25,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Registers a concrete, top-level or static nested server class under the given configuration
+ * token.
+ *
+ * <p>Server types may reside in any package and are discovered from {@code META-INF/jandex.idx}.
+ * Their module must generate and ship a Jandex index. Projects inheriting from {@code
+ * tiger-starter-parent} generate main and test indexes automatically.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface TigerServerType {

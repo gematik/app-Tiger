@@ -34,6 +34,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.util.JandexIndexReader;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import de.gematik.test.tiger.lifecycle.ILifecycleManager;
@@ -51,6 +52,7 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -68,16 +70,14 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.jandex.DotName;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -87,6 +87,8 @@ public class TigerTestEnvMgr
     implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
   public static final String HTTP = "http://";
+  private static final DotName SERVER_TYPE_ANNOTATION =
+      DotName.createSimple(TigerServerType.class.getName());
   public static final String HTTPS = "https://";
   public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
   public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
@@ -317,32 +319,46 @@ public class TigerTestEnvMgr
   }
 
   private void lookupServerPluginsInClasspath() {
-    ClassPathScanningCandidateComponentProvider scanner =
-        new ClassPathScanningCandidateComponentProvider(false);
-    scanner.addIncludeFilter(new AnnotationTypeFilter(TigerServerType.class));
-    Set<BeanDefinition> serverBeanDefinitions =
-        scanner.findCandidateComponents("de.gematik.test.tiger");
+    serverClasses.putAll(
+        findIndexedServerClasses(JandexIndexReader.classLoaders(TigerTestEnvMgr.class)));
+    serverClasses.forEach(
+        (token, type) ->
+            log.info("Registered server type {} with class {}", token, type.getName()));
+  }
 
-    for (BeanDefinition serverBeanDefinition : serverBeanDefinitions) {
+  static Map<String, Class<? extends AbstractTigerServer>> findIndexedServerClasses(
+      List<ClassLoader> loaders) {
+    record ServerType(String token, ClassLoader loader) {}
+    Map<String, ServerType> indexedTypes = new TreeMap<>();
+    for (var match :
+        JandexIndexReader.findClassAnnotations(
+            loaders,
+            SERVER_TYPE_ANNOTATION,
+            type ->
+                !type.isAbstract()
+                    && !type.isInterface()
+                    && (type.enclosingClass() == null || Modifier.isStatic(type.flags())),
+            TigerTestEnvException::new)) {
       try {
-        Class<?> clz =
-            Class.forName(
-                serverBeanDefinition.getBeanClassName(),
-                true,
-                Thread.currentThread().getContextClassLoader());
-        String typeToken = clz.getAnnotation(TigerServerType.class).value();
-        serverClasses.put(typeToken, clz.asSubclass(AbstractTigerServer.class));
-        log.info(
-            "Registered server type {} with class {}",
-            typeToken,
-            serverBeanDefinition.getBeanClassName());
-      } catch (ClassNotFoundException e) {
-        throw new TigerTestEnvException(
-            "Unable to instantiate / find class "
-                + serverBeanDefinition.getBeanClassName()
-                + " for server",
-            e);
+        indexedTypes.putIfAbsent(
+            match.annotation().target().asClass().name().toString(),
+            new ServerType(match.annotation().value().asString(), match.resource().classLoader()));
+      } catch (IllegalArgumentException e) {
+        throw new TigerTestEnvException("Unable to read Jandex index " + match.resource().url(), e);
       }
+    }
+    Map<String, Class<? extends AbstractTigerServer>> result = new LinkedHashMap<>();
+    indexedTypes.forEach(
+        (name, type) -> result.put(type.token(), loadIndexedServerClass(name, type.loader())));
+    return result;
+  }
+
+  private static Class<? extends AbstractTigerServer> loadIndexedServerClass(
+      String name, ClassLoader loader) {
+    try {
+      return Class.forName(name, false, loader).asSubclass(AbstractTigerServer.class);
+    } catch (ClassNotFoundException | ClassCastException e) {
+      throw new TigerTestEnvException("Unable to load indexed server type " + name, e);
     }
   }
 
@@ -471,8 +487,8 @@ public class TigerTestEnvMgr
       if (!serverClasses.containsKey(serverTypeName)) {
         throw new TigerTestEnvException(
             MessageFormat.format(
-                "No server class registered for type {0} used in server {1}. "
-                    + "Did you add appropriate dependencies for {0}?",
+                "No server class registered for type {0} used in server {1}. Did you add"
+                    + " appropriate dependencies for {0} and generate their Jandex indexes?",
                 serverTypeName, serverId));
       }
       val serverClass = serverClasses.get(serverTypeName);

@@ -26,12 +26,12 @@
 
   <groupId>de.gematik.test</groupId>
   <artifactId>tiger-testsuite-baseimage</artifactId>
-  <version>4.4.5</version>
+  <version>4.5.0</version>
   <name>${project.artifactId}</name>
   <description>Tiger testsuite baseimage modul of the tiger test platform.</description>
   <properties>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
